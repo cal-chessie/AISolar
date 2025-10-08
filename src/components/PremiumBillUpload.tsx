@@ -112,11 +112,26 @@ export default function PremiumBillUpload({ onUploadComplete }: PremiumBillUploa
               </div>
               
               <div className="mt-6 flex gap-4 justify-center">
-                <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors font-medium text-slate-700">
+                <button 
+                  type="button"
+                  className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors font-medium text-slate-700"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.capture = 'environment';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) onDrop([file]);
+                    };
+                    input.click();
+                  }}
+                >
                   <Camera size={20} />
                   Take Photo
                 </button>
                 <button 
+                  type="button"
                   className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors font-medium text-slate-700"
                   onClick={() => onUploadComplete?.({ success: true, manual_entry: true })}
                 >
