@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, TrendingDown, Calendar, Shield, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ConsultationBooking from './ConsultationBooking';
 
 interface ProposalResultsProps {
-  onRequestConsultation: () => void;
   onStartOver: () => void;
 }
 
-export default function ProposalResults({ onRequestConsultation, onStartOver }: ProposalResultsProps) {
+export default function ProposalResults({ onStartOver }: ProposalResultsProps) {
+  const [bookingOpen, setBookingOpen] = useState(false);
+  
   // Mock data - in production this would come from AI analysis
   const results = {
     currentBill: '€145',
@@ -126,7 +129,7 @@ export default function ProposalResults({ onRequestConsultation, onStartOver }: 
         {/* CTA Buttons */}
         <div className="p-8 flex flex-col sm:flex-row gap-4">
           <Button
-            onClick={onRequestConsultation}
+            onClick={() => setBookingOpen(true)}
             className="flex-1 gradient-primary text-white py-6 text-lg font-semibold hover:shadow-lg"
             size="lg"
           >
@@ -158,6 +161,8 @@ export default function ProposalResults({ onRequestConsultation, onStartOver }: 
           <span>Expert advice</span>
         </div>
       </div>
+
+      <ConsultationBooking open={bookingOpen} onOpenChange={setBookingOpen} />
     </div>
   );
 }

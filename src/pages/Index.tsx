@@ -32,12 +32,6 @@ const Index = () => {
             />
           ) : (
             <ProposalResults 
-              onRequestConsultation={() => {
-                toast({
-                  title: 'Consultation Requested',
-                  description: 'Our team will contact you within 24 hours to schedule your free site survey.',
-                });
-              }}
               onStartOver={() => setShowResults(false)}
             />
           )}
