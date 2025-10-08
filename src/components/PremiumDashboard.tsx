@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -97,7 +98,17 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
               <p className="text-slate-600 mt-1">Consultant Portal</p>
             </div>
             <div className="flex items-center gap-4">
-              <button className="gradient-primary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all">
+              <button 
+                className="gradient-primary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all"
+                onClick={() => {
+                  setActiveTab('proposals');
+                  toast({
+                    title: 'New proposal',
+                    description: 'Fill in the details in the Proposals tab.',
+                  });
+                }}
+                aria-label="Create new proposal"
+              >
                 <Zap size={20} />
                 New Proposal
               </button>
