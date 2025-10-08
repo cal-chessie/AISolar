@@ -44,7 +44,7 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
 
 type TabType = 'leads' | 'proposals' | 'installations' | 'analytics';
 
-export default function PremiumDashboard() {
+export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
   const [activeTab, setActiveTab] = useState<TabType>('leads');
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
 
