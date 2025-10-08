@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -26,6 +27,7 @@ const timeSlots = [
 ];
 
 export default function ConsultationBooking({ open, onOpenChange }: ConsultationBookingProps) {
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>();
   const [name, setName] = useState('');
@@ -58,7 +60,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
       description: `Your consultation is scheduled for ${format(date, 'EEEE, MMMM d, yyyy')} at ${selectedTime}. Confirmation email sent to ${email}.`,
     });
 
-    // Close dialog and reset
+    // Close dialog and navigate to upsell page
     setTimeout(() => {
       onOpenChange(false);
       setDate(undefined);
@@ -66,7 +68,8 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
       setName('');
       setEmail('');
       setPhone('');
-    }, 500);
+      navigate('/upsell');
+    }, 1000);
   };
 
   return (
