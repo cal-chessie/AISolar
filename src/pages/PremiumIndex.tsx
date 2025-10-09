@@ -63,7 +63,7 @@ export default function PremiumIndex() {
                   <Zap size={20} />
                   <span>Get Your Instant Solar Proposal - Save Up To 70% On Electricity</span>
                 </div>
-                <button className="sticky-cta" onClick={() => navigate('/')}>
+                <button className="sticky-cta" onClick={() => navigate('/upload')}>
                   Upload Bill Now <ArrowRight size={16} />
                 </button>
               </div>
@@ -113,7 +113,7 @@ export default function PremiumIndex() {
 
             {/* Main CTA */}
             <div className="hero-cta">
-              <button className="primary-cta" onClick={() => navigate('/')}>
+              <button className="primary-cta" onClick={() => navigate('/upload')}>
                 <FileText size={20} />
                 Upload Your Bill - Get Free Analysis
                 <ArrowRight size={16} />
@@ -453,7 +453,7 @@ function FinalCTASection({ navigate }: { navigate: (path: string) => void }) {
             <p>Upload your bill now and get your free solar proposal in 30 seconds</p>
             
             <div className="cta-buttons">
-              <button className="primary-cta" onClick={() => navigate('/')}>
+              <button className="primary-cta" onClick={() => navigate('/upload')}>
                 <Upload size={20} />
                 Upload Your Bill Now
                 <ArrowRight size={16} />
