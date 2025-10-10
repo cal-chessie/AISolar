@@ -49,6 +49,19 @@ export default function PremiumIndex() {
       />
       
       <div className="premium-sales-page">
+        {/* Top Navigation Bar */}
+        <nav className="top-nav">
+          <div className="nav-content">
+            <div className="nav-logo">
+              <Zap size={24} />
+              <span>SolarPro</span>
+            </div>
+            <button className="consultant-login-btn" onClick={() => navigate('/auth')}>
+              Consultant Login
+            </button>
+          </div>
+        </nav>
+
         {/* Sticky CTA Header */}
         <AnimatePresence>
           {isSticky && (
@@ -63,9 +76,14 @@ export default function PremiumIndex() {
                   <Zap size={20} />
                   <span>Get Your Instant Solar Proposal - Save Up To 70% On Electricity</span>
                 </div>
-                <button className="sticky-cta" onClick={() => navigate('/upload')}>
-                  Upload Bill Now <ArrowRight size={16} />
-                </button>
+                <div className="sticky-actions">
+                  <button className="sticky-cta" onClick={() => navigate('/upload')}>
+                    Upload Bill Now <ArrowRight size={16} />
+                  </button>
+                  <button className="consultant-login-btn small" onClick={() => navigate('/auth')}>
+                    Consultant Login
+                  </button>
+                </div>
               </div>
             </motion.header>
           )}

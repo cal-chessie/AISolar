@@ -159,6 +159,59 @@ All colors MUST be HSL.
   background: hsl(var(--background));
 }
 
+/* Top Navigation */
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid hsl(var(--border));
+  z-index: 999;
+  padding: 1rem 0;
+}
+
+.nav-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.consultant-login-btn {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.consultant-login-btn:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.consultant-login-btn.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
 .sticky-cta-header {
   position: fixed;
   top: 0;
@@ -178,6 +231,23 @@ All colors MUST be HSL.
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
+}
+
+.sticky-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sticky-actions .consultant-login-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: hsl(var(--primary-foreground));
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.sticky-actions .consultant-login-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: hsl(var(--primary-foreground));
 }
 
 .sticky-text {
@@ -212,7 +282,7 @@ All colors MUST be HSL.
   grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 4rem;
-  padding: 6rem 2rem;
+  padding: 8rem 2rem 6rem;
   max-width: 1400px;
   margin: 0 auto;
   position: relative;
