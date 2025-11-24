@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
 import { Zap } from 'lucide-react';
@@ -18,6 +19,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -95,6 +98,44 @@ export default function Auth() {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse(resetEmail);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Validation Error',
+          description: error.issues[0].message,
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+
+    if (error) {
+      toast({
+        title: 'Reset Password Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Check Your Email',
+        description: 'We sent you a password reset link. Please check your email.',
+      });
+      setResetDialogOpen(false);
+      setResetEmail('');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -148,6 +189,45 @@ export default function Auth() {
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </form>
+              
+              <div className="mt-4 text-center">
+                <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                      Forgot your password?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Reset Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your email address and we'll send you a link to reset your password.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePasswordReset} className="space-y-4">
+                      <div>
+                        <Label htmlFor="reset-email">Email</Label>
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          placeholder="consultant@example.com"
+                          required
+                          className="mt-1"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full gradient-primary text-white"
+                        disabled={loading}
+                      >
+                        {loading ? 'Sending...' : 'Send Reset Link'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </TabsContent>
 
             <TabsContent value="signup">
