@@ -21,12 +21,20 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check if user is already logged in or if this is a password recovery
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate('/consultant');
+        // Check if this is a password recovery session
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.get('type') === 'recovery') {
+          setIsPasswordRecovery(true);
+        } else {
+          navigate('/consultant');
+        }
       }
     });
   }, [navigate]);
@@ -135,6 +143,88 @@ export default function Auth() {
     }
     setLoading(false);
   };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      passwordSchema.parse(newPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Validation Error',
+          description: error.issues[0].message,
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      toast({
+        title: 'Update Password Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setLoading(false);
+    } else {
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been updated successfully.',
+      });
+      setIsPasswordRecovery(false);
+      navigate('/consultant');
+    }
+  };
+
+  if (isPasswordRecovery) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Set New Password</CardTitle>
+            <CardDescription>Enter your new password below</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div>
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="mt-1"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Minimum 8 characters
+                </p>
+              </div>
+              <Button
+                type="submit"
+                className="w-full gradient-primary text-white"
+                disabled={loading}
+              >
+                {loading ? 'Updating...' : 'Update Password'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center p-4">
