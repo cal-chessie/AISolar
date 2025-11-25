@@ -19,6 +19,7 @@ import {
   Quote
 } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
+import LeadCaptureForm from '@/components/LeadCaptureForm';
 
 export default function PremiumIndex() {
   const navigate = useNavigate();
@@ -227,6 +228,7 @@ export default function PremiumIndex() {
 
         <SocialProofSection />
         <HowItWorksSection />
+        <LeadCaptureSection />
         <SavingsCalculatorSection 
           estimatedBill={estimatedBill}
           setEstimatedBill={setEstimatedBill}
@@ -386,6 +388,28 @@ function HowItWorksSection() {
               <p>{step.description}</p>
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LeadCaptureSection() {
+  return (
+    <section className="savings-calculator-section">
+      <div className="container">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="section-header"
+        >
+          <h2>Start Your Solar Journey Today</h2>
+          <p>Fill out the form below and we'll contact you with a personalized solar proposal</p>
+        </motion.div>
+
+        <div className="max-w-2xl mx-auto">
+          <LeadCaptureForm />
         </div>
       </div>
     </section>

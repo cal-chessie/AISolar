@@ -23,6 +23,7 @@ export default function Auth() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [role, setRole] = useState<'consultant' | 'installer'>('consultant');
 
   useEffect(() => {
     // Check if user is already logged in or if this is a password recovery
@@ -61,12 +62,16 @@ export default function Auth() {
     if (!validateInputs()) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const redirectUrl = `${window.location.origin}/`;
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/consultant`,
-      },
+        emailRedirectTo: redirectUrl,
+        data: {
+          role: role
+        }
+      }
     });
 
     if (error) {
@@ -75,12 +80,48 @@ export default function Auth() {
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Success!',
-        description: 'Account created successfully. You can now sign in.',
-      });
+      setLoading(false);
+      return;
     }
+
+    // Create user_role entry
+    if (data.user) {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: data.user.id, role: role });
+
+      if (roleError) {
+        console.error('Error creating user role:', roleError);
+      }
+
+      // Create profile entry
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({ 
+          user_id: data.user.id,
+          role: role
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      }
+
+      // Create installer profile if role is installer
+      if (role === 'installer') {
+        const { error: installerError } = await supabase
+          .from('installers')
+          .insert({ user_id: data.user.id });
+
+        if (installerError) {
+          console.error('Error creating installer profile:', installerError);
+        }
+      }
+    }
+
+    toast({
+      title: 'Success!',
+      description: 'Account created successfully. You can now sign in.',
+    });
     setLoading(false);
   };
 
@@ -347,6 +388,21 @@ export default function Auth() {
                   />
                   <p className="text-xs text-slate-500 mt-1">
                     Minimum 8 characters
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="role">I am a</Label>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as 'consultant' | 'installer')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                  >
+                    <option value="consultant">Consultant</option>
+                    <option value="installer">Installer</option>
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select your role to access the appropriate dashboard
                   </p>
                 </div>
                 <Button
