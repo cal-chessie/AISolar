@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import LeadDetailView from './LeadDetailView';
-
+import ProposalQuestionnaire from './ProposalQuestionnaire';
 interface StatCardProps {
   icon: React.ReactNode;
   value: string | number;
@@ -57,7 +57,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const [activeTab, setActiveTab] = useState<TabType>('leads');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedLeadData, setSelectedLeadData] = useState<any | null>(null);
-
+  const [activeLeadForProposal, setActiveLeadForProposal] = useState<any | null>(null);
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
@@ -119,11 +119,15 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
               <button 
                 className="gradient-primary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all"
                 onClick={() => {
+                  if (!activeLeadForProposal) {
+                    toast({
+                      title: 'Select a lead first',
+                      description: 'Open a lead from the Leads tab to start a proposal.',
+                    });
+                    setActiveTab('leads');
+                    return;
+                  }
                   setActiveTab('proposals');
-                  toast({
-                    title: 'New proposal',
-                    description: 'Fill in the details in the Proposals tab.',
-                  });
                 }}
                 aria-label="Create new proposal"
               >
@@ -187,8 +191,25 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 transition={{ duration: 0.2 }}
                 className="bg-card rounded-2xl border border-border shadow-lg p-6 min-h-[600px]"
               >
-                {activeTab === 'leads' && <LeadsPanel onLeadSelect={(lead) => setSelectedLeadData(lead)} />}
-                {activeTab === 'proposals' && <ProposalsPanel />}
+                {activeTab === 'leads' && (
+                  <LeadsPanel
+                    onLeadSelect={(lead) => {
+                      setSelectedLeadData(lead);
+                      setSelectedLeadId(lead.id);
+                      setActiveLeadForProposal(lead);
+                    }}
+                  />
+                )}
+                {activeTab === 'proposals' && (
+                  activeLeadForProposal ? (
+                    <ProposalQuestionnaire
+                      leadId={activeLeadForProposal.id}
+                      onBack={() => setActiveLeadForProposal(null)}
+                    />
+                  ) : (
+                    <ProposalsPanel />
+                  )
+                )}
                 {activeTab === 'installations' && <InstallationsPanel />}
                 {activeTab === 'analytics' && <AnalyticsPanel />}
               </motion.div>
