@@ -8,14 +8,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { ChevronRight, ChevronLeft, Save, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProposalQuestionnaireProps {
   leadId: string;
+  onBack?: () => void;
 }
 
 const TOTAL_STEPS = 26;
 
-export default function ProposalQuestionnaire({ leadId }: ProposalQuestionnaireProps) {
+export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuestionnaireProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, any>>({});
 
@@ -42,11 +44,62 @@ export default function ProposalQuestionnaire({ leadId }: ProposalQuestionnaireP
     });
   };
 
-  const handleSubmit = () => {
-    toast({
-      title: 'Proposal generated',
-      description: 'Your proposal has been created successfully',
-    });
+  const handleSubmit = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast({
+          title: 'Not signed in',
+          description: 'Please log in again to create a proposal.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const annualConsumption = parseFloat(formData.annualConsumption || '0');
+      const currentTariff = parseFloat(formData.currentTariff || '0.35');
+      const systemSizeKw = parseFloat(formData.systemSize || (annualConsumption ? (annualConsumption / 900).toFixed(1) : '0'));
+      const estimatedProduction = systemSizeKw * 900; // kWh/year
+      const monthlySavings = estimatedProduction && currentTariff ? (estimatedProduction * currentTariff) / 12 : null;
+      const systemCost = systemSizeKw ? systemSizeKw * 1500 : null;
+      const seaiGrant = systemSizeKw ? Math.min(2400, systemSizeKw * 900) : null;
+      const netCost = systemCost !== null && seaiGrant !== null ? systemCost - seaiGrant : null;
+      const annualSavings = monthlySavings !== null ? monthlySavings * 12 : null;
+      const paybackYears = netCost !== null && annualSavings ? netCost / annualSavings : null;
+
+      const { error } = await supabase.from('proposals').insert({
+        lead_id: leadId,
+        consultant_id: user.id,
+        system_size_kw: systemSizeKw || null,
+        estimated_annual_production_kwh: estimatedProduction || null,
+        monthly_savings: monthlySavings || null,
+        system_cost: systemCost || null,
+        seai_grant: seaiGrant || null,
+        net_cost: netCost || null,
+        payback_period_years: paybackYears || null,
+        roof_type: formData.roofType || null,
+        roof_material: formData.roofMaterial || null,
+        status: 'draft',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Proposal generated',
+        description: 'Your proposal has been created successfully.',
+      });
+
+      if (onBack) {
+        onBack();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error generating proposal',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const renderStep = () => {
