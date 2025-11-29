@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import LeadDetailView from './LeadDetailView';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
+import ProposalResultsView from './ProposalResultsView';
 interface StatCardProps {
   icon: React.ReactNode;
   value: string | number;
@@ -58,6 +59,8 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedLeadData, setSelectedLeadData] = useState<any | null>(null);
   const [activeLeadForProposal, setActiveLeadForProposal] = useState<any | null>(null);
+  const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'view' | 'edit'>('list');
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
@@ -201,13 +204,30 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                   />
                 )}
                 {activeTab === 'proposals' && (
-                  activeLeadForProposal ? (
+                  viewMode === 'view' && selectedProposal ? (
+                    <ProposalResultsView
+                      proposalId={selectedProposal.id}
+                      leadId={selectedProposal.lead_id}
+                      onBack={() => {
+                        setViewMode('list');
+                        setSelectedProposal(null);
+                      }}
+                    />
+                  ) : activeLeadForProposal ? (
                     <ProposalQuestionnaire
                       leadId={activeLeadForProposal.id}
-                      onBack={() => setActiveLeadForProposal(null)}
+                      onBack={() => {
+                        setActiveLeadForProposal(null);
+                        setViewMode('list');
+                      }}
                     />
                   ) : (
-                    <ProposalsPanel />
+                    <ProposalsPanel 
+                      onProposalSelect={(proposal, lead) => {
+                        setSelectedProposal(proposal);
+                        setViewMode('view');
+                      }}
+                    />
                   )
                 )}
                 {activeTab === 'installations' && <InstallationsPanel />}
@@ -402,42 +422,87 @@ const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => 
   );
 };
 
-const ProposalsPanel = () => {
-  const mockProposals = [
-    { id: '1', client: 'John Smith', systemSize: '6.5 kW', value: '€12,500', status: 'Pending', date: '2024-01-15' },
-    { id: '2', client: 'Mary O\'Brien', systemSize: '8.2 kW', value: '€15,800', status: 'Accepted', date: '2024-01-12' },
-    { id: '3', client: 'Patrick Murphy', systemSize: '5.8 kW', value: '€11,200', status: 'Under Review', date: '2024-01-10' },
-  ];
+const ProposalsPanel = ({ onProposalSelect }: { onProposalSelect?: (proposal: any, lead: any) => void }) => {
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProposals();
+  }, []);
+
+  const fetchProposals = async () => {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*, leads(*)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching proposals:', error);
+      toast({
+        title: 'Error loading proposals',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      setProposals(data || []);
+    }
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Recent Proposals</h2>
-        <Button className="gradient-primary text-white">Generate New</Button>
+        <h2 className="text-2xl font-bold text-slate-900">Proposals</h2>
+        <span className="text-sm text-slate-600">{proposals.length} total</span>
       </div>
-      <div className="space-y-4">
-        {mockProposals.map((proposal) => (
-          <div key={proposal.id} className="p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h3 className="font-semibold text-slate-900 text-lg">{proposal.client}</h3>
-                <p className="text-sm text-slate-600">{proposal.systemSize} system</p>
+      {proposals.length === 0 ? (
+        <div className="text-center py-12">
+          <FileText className="mx-auto text-slate-300 mb-4" size={48} />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No proposals yet</h3>
+          <p className="text-slate-600 text-sm">
+            Create proposals from the Leads tab
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {proposals.map((proposal) => (
+            <div 
+              key={proposal.id} 
+              className="p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => onProposalSelect?.(proposal, proposal.leads)}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold text-slate-900 text-lg">{proposal.leads?.name || 'Unknown'}</h3>
+                  <p className="text-sm text-slate-600">{proposal.system_size_kw} kW system</p>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  proposal.status === 'approved' ? 'bg-green-100 text-green-700' :
+                  proposal.status === 'presented' ? 'bg-blue-100 text-blue-700' :
+                  proposal.status === 'draft' ? 'bg-orange-100 text-orange-700' :
+                  'bg-slate-100 text-slate-700'
+                }`}>
+                  {proposal.status}
+                </span>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                proposal.status === 'Accepted' ? 'bg-green-100 text-green-700' :
-                proposal.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
-                'bg-blue-100 text-blue-700'
-              }`}>
-                {proposal.status}
-              </span>
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold text-primary">€{proposal.net_cost?.toLocaleString() || 'N/A'}</span>
+                <span className="text-sm text-slate-500">
+                  {new Date(proposal.created_at).toLocaleDateString()}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold text-primary">{proposal.value}</span>
-              <span className="text-sm text-slate-500">{proposal.date}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
