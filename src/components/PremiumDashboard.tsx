@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import LeadDetailView from './LeadDetailView';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
 import ProposalResultsView from './ProposalResultsView';
+import ProductsManagement from './ProductsManagement';
 interface StatCardProps {
   icon: React.ReactNode;
   value: string | number;
@@ -51,7 +52,7 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
   </motion.div>
 );
 
-type TabType = 'leads' | 'proposals' | 'installations' | 'analytics';
+type TabType = 'leads' | 'proposals' | 'installations' | 'products' | 'analytics';
 
 export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
     { id: 'leads' as TabType, label: 'Leads' },
     { id: 'proposals' as TabType, label: 'Proposals' },
     { id: 'installations' as TabType, label: 'Installations' },
+    { id: 'products' as TabType, label: 'Products' },
     { id: 'analytics' as TabType, label: 'Analytics' }
   ];
 
@@ -213,6 +215,15 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                         setSelectedProposal(null);
                       }}
                     />
+                  ) : viewMode === 'edit' && selectedProposal ? (
+                    <ProposalQuestionnaire
+                      leadId={selectedProposal.lead_id}
+                      proposalId={selectedProposal.id}
+                      onBack={() => {
+                        setViewMode('list');
+                        setSelectedProposal(null);
+                      }}
+                    />
                   ) : activeLeadForProposal ? (
                     <ProposalQuestionnaire
                       leadId={activeLeadForProposal.id}
@@ -227,10 +238,15 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                         setSelectedProposal(proposal);
                         setViewMode('view');
                       }}
+                      onEditProposal={(proposal) => {
+                        setSelectedProposal(proposal);
+                        setViewMode('edit');
+                      }}
                     />
                   )
                 )}
                 {activeTab === 'installations' && <InstallationsPanel />}
+                {activeTab === 'products' && <ProductsManagement />}
                 {activeTab === 'analytics' && <AnalyticsPanel />}
               </motion.div>
             </AnimatePresence>
@@ -422,7 +438,10 @@ const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => 
   );
 };
 
-const ProposalsPanel = ({ onProposalSelect }: { onProposalSelect?: (proposal: any, lead: any) => void }) => {
+const ProposalsPanel = ({ onProposalSelect, onEditProposal }: { 
+  onProposalSelect?: (proposal: any, lead: any) => void;
+  onEditProposal?: (proposal: any) => void;
+}) => {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -476,8 +495,7 @@ const ProposalsPanel = ({ onProposalSelect }: { onProposalSelect?: (proposal: an
           {proposals.map((proposal) => (
             <div 
               key={proposal.id} 
-              className="p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer"
-              onClick={() => onProposalSelect?.(proposal, proposal.leads)}
+              className="p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -495,10 +513,26 @@ const ProposalsPanel = ({ onProposalSelect }: { onProposalSelect?: (proposal: an
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-2xl font-bold text-primary">€{proposal.net_cost?.toLocaleString() || 'N/A'}</span>
-                <span className="text-sm text-slate-500">
-                  {new Date(proposal.created_at).toLocaleDateString()}
-                </span>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onEditProposal?.(proposal)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => onProposalSelect?.(proposal, proposal.leads)}
+                  >
+                    <Eye size={16} className="mr-1" />
+                    View
+                  </Button>
+                </div>
               </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Created {new Date(proposal.created_at).toLocaleDateString()}
+              </p>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +12,63 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ProposalQuestionnaireProps {
   leadId: string;
+  proposalId?: string;
   onBack?: () => void;
 }
 
 const TOTAL_STEPS = 26;
 
-export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuestionnaireProps) {
+export default function ProposalQuestionnaire({ leadId, proposalId, onBack }: ProposalQuestionnaireProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (proposalId) {
+      loadProposal();
+    }
+  }, [proposalId]);
+
+  const loadProposal = async () => {
+    if (!proposalId) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('id', proposalId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          annualConsumption: data.current_annual_consumption_kwh?.toString() || '',
+          systemSize: data.system_size_kw?.toString() || '',
+          roofType: data.roof_type || '',
+          roofMaterial: data.roof_material || '',
+          roofOrientation: data.roof_orientation || '',
+          roofPitch: data.roof_pitch?.toString() || '',
+          roofCondition: data.roof_condition || '',
+          shadingLevel: data.shading_level || '',
+          batteryStorage: data.battery_storage ? 'yes' : 'no',
+          batteryCapacity: data.battery_capacity_kwh?.toString() || '',
+          panelType: data.panel_type || '',
+          inverterType: data.inverter_type || '',
+          currentTariff: '0.35',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error loading proposal',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateFormData = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -45,6 +94,7 @@ export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuesti
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -60,7 +110,7 @@ export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuesti
       const annualConsumption = parseFloat(formData.annualConsumption || '0');
       const currentTariff = parseFloat(formData.currentTariff || '0.35');
       const systemSizeKw = parseFloat(formData.systemSize || (annualConsumption ? (annualConsumption / 900).toFixed(1) : '0'));
-      const estimatedProduction = systemSizeKw * 900; // kWh/year
+      const estimatedProduction = systemSizeKw * 900;
       const monthlySavings = estimatedProduction && currentTariff ? (estimatedProduction * currentTariff) / 12 : null;
       const systemCost = systemSizeKw ? systemSizeKw * 1500 : null;
       const seaiGrant = systemSizeKw ? Math.min(2400, systemSizeKw * 900) : null;
@@ -68,7 +118,7 @@ export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuesti
       const annualSavings = monthlySavings !== null ? monthlySavings * 12 : null;
       const paybackYears = netCost !== null && annualSavings ? netCost / annualSavings : null;
 
-      const { error } = await supabase.from('proposals').insert({
+      const proposalData = {
         lead_id: leadId,
         consultant_id: user.id,
         system_size_kw: systemSizeKw || null,
@@ -80,14 +130,37 @@ export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuesti
         payback_period_years: paybackYears || null,
         roof_type: formData.roofType || null,
         roof_material: formData.roofMaterial || null,
-        status: 'draft',
-      });
+        roof_orientation: formData.roofOrientation || null,
+        roof_pitch: formData.roofPitch ? parseFloat(formData.roofPitch) : null,
+        roof_condition: formData.roofCondition || null,
+        shading_level: formData.shadingLevel || null,
+        battery_storage: formData.batteryStorage === 'yes',
+        battery_capacity_kwh: formData.batteryCapacity ? parseFloat(formData.batteryCapacity) : null,
+        panel_type: formData.panelType || null,
+        inverter_type: formData.inverterType || null,
+        current_annual_consumption_kwh: annualConsumption || null,
+        status: proposalId ? 'draft' : 'draft',
+      };
+
+      let error;
+      if (proposalId) {
+        const result = await supabase
+          .from('proposals')
+          .update(proposalData)
+          .eq('id', proposalId);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('proposals')
+          .insert(proposalData);
+        error = result.error;
+      }
 
       if (error) throw error;
 
       toast({
-        title: 'Proposal generated',
-        description: 'Your proposal has been created successfully.',
+        title: proposalId ? 'Proposal updated' : 'Proposal generated',
+        description: `Your proposal has been ${proposalId ? 'updated' : 'created'} successfully.`,
       });
 
       if (onBack) {
@@ -95,10 +168,12 @@ export default function ProposalQuestionnaire({ leadId, onBack }: ProposalQuesti
       }
     } catch (error: any) {
       toast({
-        title: 'Error generating proposal',
+        title: 'Error saving proposal',
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 

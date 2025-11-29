@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, Save, CheckCircle } from 'lucide-react';
+import { Loader2, Save, CheckCircle, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 
 const surveySchema = z.object({
   roof_type: z.string().min(1, 'Roof type is required'),
@@ -42,6 +43,8 @@ export default function SiteSurveyForm({ leadId }: SiteSurveyFormProps) {
   const [loading, setLoading] = useState(false);
   const [existingSurvey, setExistingSurvey] = useState<any>(null);
   const [fetchingData, setFetchingData] = useState(true);
+  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; type: string; description: string }>>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<SurveyFormData>({
     resolver: zodResolver(surveySchema),
@@ -74,6 +77,20 @@ export default function SiteSurveyForm({ leadId }: SiteSurveyFormProps) {
             setValue(key as any, String(data[key]));
           }
         });
+
+        // Load existing photos
+        const { data: photos } = await supabase
+          .from('survey_photos')
+          .select('*')
+          .eq('survey_id', data.id);
+        
+        if (photos) {
+          setUploadedPhotos(photos.map(p => ({
+            url: p.photo_url,
+            type: p.photo_type || 'general',
+            description: p.description || '',
+          })));
+        }
       }
     } catch (error: any) {
       console.error('Error fetching survey:', error);
@@ -85,6 +102,63 @@ export default function SiteSurveyForm({ leadId }: SiteSurveyFormProps) {
     } finally {
       setFetchingData(false);
     }
+  };
+
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+
+    setUploadingPhotos(true);
+    try {
+      const uploadPromises = acceptedFiles.map(async (file) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${leadId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('survey-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('survey-photos')
+          .getPublicUrl(fileName);
+
+        return {
+          url: publicUrl,
+          type: 'general',
+          description: file.name,
+        };
+      });
+
+      const newPhotos = await Promise.all(uploadPromises);
+      setUploadedPhotos(prev => [...prev, ...newPhotos]);
+
+      toast({
+        title: 'Photos uploaded',
+        description: `${acceptedFiles.length} photo(s) uploaded successfully`,
+      });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+    },
+    maxSize: 5242880, // 5MB
+  });
+
+  const removePhoto = (index: number) => {
+    setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: SurveyFormData) => {
@@ -116,21 +190,47 @@ export default function SiteSurveyForm({ leadId }: SiteSurveyFormProps) {
         completed_at: data.status === 'completed' ? new Date().toISOString() : null,
       };
 
-      let error;
+      let surveyId;
       if (existingSurvey) {
-        const result = await supabase
+        const { error } = await supabase
           .from('site_surveys')
           .update(surveyData)
           .eq('id', existingSurvey.id);
-        error = result.error;
+        if (error) throw error;
+        surveyId = existingSurvey.id;
       } else {
-        const result = await supabase
+        const { data: newSurvey, error } = await supabase
           .from('site_surveys')
-          .insert([surveyData]);
-        error = result.error;
+          .insert([surveyData])
+          .select()
+          .single();
+        if (error) throw error;
+        surveyId = newSurvey.id;
+        setExistingSurvey(newSurvey);
       }
 
-      if (error) throw error;
+      // Save photos to survey_photos table
+      if (uploadedPhotos.length > 0 && surveyId) {
+        // Delete old photos first
+        await supabase
+          .from('survey_photos')
+          .delete()
+          .eq('survey_id', surveyId);
+
+        // Insert new photos
+        const photoInserts = uploadedPhotos.map(photo => ({
+          survey_id: surveyId,
+          photo_url: photo.url,
+          photo_type: photo.type,
+          description: photo.description,
+        }));
+
+        const { error: photoError } = await supabase
+          .from('survey_photos')
+          .insert(photoInserts);
+
+        if (photoError) throw photoError;
+      }
 
       toast({
         title: 'Success',
@@ -309,6 +409,64 @@ export default function SiteSurveyForm({ leadId }: SiteSurveyFormProps) {
             <Label htmlFor="special_requirements">Special Requirements</Label>
             <Textarea {...register('special_requirements')} placeholder="Scaffolding, permits, etc..." rows={3} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Photo Upload */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Site Photos</CardTitle>
+          <CardDescription>Upload photos of the roof, electrical panel, and property</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            {uploadingPhotos ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <p className="text-sm text-muted-foreground">Uploading...</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {isDragActive ? 'Drop photos here' : 'Drag & drop photos here, or click to browse'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Accepts JPEG, PNG, WebP (max 5MB per file)
+                </p>
+              </>
+            )}
+          </div>
+
+          {uploadedPhotos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+              {uploadedPhotos.map((photo, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={photo.url}
+                    alt={photo.description}
+                    className="w-full h-32 object-cover rounded-lg border border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <div className="mt-1">
+                    <p className="text-xs text-muted-foreground truncate">{photo.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
