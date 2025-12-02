@@ -3,14 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Phone, Mail, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, CheckCircle, Clock, AlertCircle, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import SurveyDetailsCard from './installer/SurveyDetailsCard';
 
 export default function InstallerDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadAssignments();
@@ -179,6 +182,11 @@ export default function InstallerDashboard() {
             </div>
           )}
 
+          {/* Site Survey Details */}
+          {lead?.id && (
+            <SurveyDetailsCard leadId={lead.id} />
+          )}
+
           <div className="flex gap-2 pt-2">
             {assignment.status === 'pending' && (
               <>
@@ -232,6 +240,15 @@ export default function InstallerDashboard() {
     );
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+    toast({
+      title: 'Logged out',
+      description: 'You have been signed out.',
+    });
+  };
+
   const pendingCount = filterAssignments('pending').length;
   const activeCount = filterAssignments('in_progress').length + filterAssignments('accepted').length;
   const completedCount = filterAssignments('completed').length;
@@ -239,9 +256,15 @@ export default function InstallerDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Installer Dashboard</h1>
-          <p className="text-muted-foreground">Manage your installation assignments</p>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Installer Dashboard</h1>
+            <p className="text-muted-foreground">Manage your installation assignments</p>
+          </div>
+          <Button variant="outline" onClick={handleLogout} className="gap-2">
+            <LogOut size={18} />
+            Logout
+          </Button>
         </div>
 
         {/* Stats */}

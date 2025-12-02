@@ -10,7 +10,9 @@ import {
   ArrowDown,
   Star,
   LogOut,
-  Eye
+  Eye,
+  ClipboardList,
+  Plus
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -20,6 +22,12 @@ import LeadDetailView from './LeadDetailView';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
 import ProposalResultsView from './ProposalResultsView';
 import ProductsManagement from './ProductsManagement';
+import SurveysPanel from './dashboard/SurveysPanel';
+import InstallationsPanel from './dashboard/InstallationsPanel';
+import AnalyticsPanel from './dashboard/AnalyticsPanel';
+import AddLeadDialog from './dashboard/AddLeadDialog';
+import SiteSurveyForm from './SiteSurveyForm';
+
 interface StatCardProps {
   icon: React.ReactNode;
   value: string | number;
@@ -52,7 +60,7 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
   </motion.div>
 );
 
-type TabType = 'leads' | 'proposals' | 'installations' | 'products' | 'analytics';
+type TabType = 'leads' | 'proposals' | 'surveys' | 'installations' | 'products' | 'analytics';
 
 export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
   const navigate = useNavigate();
@@ -62,6 +70,9 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const [activeLeadForProposal, setActiveLeadForProposal] = useState<any | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'view' | 'edit'>('list');
+  const [surveyLeadId, setSurveyLeadId] = useState<string | null>(null);
+  const [refreshLeads, setRefreshLeads] = useState(0);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/auth');
@@ -105,6 +116,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const tabs = [
     { id: 'leads' as TabType, label: 'Leads' },
     { id: 'proposals' as TabType, label: 'Proposals' },
+    { id: 'surveys' as TabType, label: 'Surveys' },
     { id: 'installations' as TabType, label: 'Installations' },
     { id: 'products' as TabType, label: 'Products' },
     { id: 'analytics' as TabType, label: 'Analytics' }
@@ -203,6 +215,12 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                       setSelectedLeadId(lead.id);
                       setActiveLeadForProposal(lead);
                     }}
+                    onStartSurvey={(leadId) => {
+                      setSurveyLeadId(leadId);
+                      setActiveTab('surveys');
+                    }}
+                    onLeadAdded={() => setRefreshLeads(r => r + 1)}
+                    refreshKey={refreshLeads}
                   />
                 )}
                 {activeTab === 'proposals' && (
@@ -243,6 +261,22 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                         setViewMode('edit');
                       }}
                     />
+                  )
+                )}
+                {activeTab === 'surveys' && (
+                  surveyLeadId ? (
+                    <div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setSurveyLeadId(null)}
+                        className="mb-4"
+                      >
+                        ← Back to Surveys
+                      </Button>
+                      <SiteSurveyForm leadId={surveyLeadId} />
+                    </div>
+                  ) : (
+                    <SurveysPanel />
                   )
                 )}
                 {activeTab === 'installations' && <InstallationsPanel />}
@@ -295,14 +329,21 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   );
 }
 
-// Placeholder components for each tab
-const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => {
+// LeadsPanel with survey and add lead support
+interface LeadsPanelProps {
+  onLeadSelect: (lead: any) => void;
+  onStartSurvey?: (leadId: string) => void;
+  onLeadAdded?: () => void;
+  refreshKey?: number;
+}
+
+const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: LeadsPanelProps) => {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [refreshKey]);
 
   const fetchLeads = async () => {
     const { data, error } = await supabase
@@ -375,15 +416,25 @@ const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => 
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-slate-900">Active Leads</h2>
-        <span className="text-sm text-slate-600">{leads.length} total leads</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-600">{leads.length} total leads</span>
+          <AddLeadDialog onLeadAdded={() => {
+            fetchLeads();
+            onLeadAdded?.();
+          }} />
+        </div>
       </div>
       {leads.length === 0 ? (
         <div className="text-center py-12">
           <Users className="mx-auto text-slate-300 mb-4" size={48} />
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No leads yet</h3>
-          <p className="text-slate-600 text-sm">
+          <p className="text-slate-600 text-sm mb-4">
             Leads will appear here as clients submit their information
           </p>
+          <AddLeadDialog onLeadAdded={() => {
+            fetchLeads();
+            onLeadAdded?.();
+          }} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -403,8 +454,8 @@ const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => 
                   </p>
                   <p className="text-xs text-slate-500 mt-1">{lead.email}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-4 py-2 rounded-full text-xs font-medium ${
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                     lead.status === 'new' ? 'bg-primary text-white' :
                     lead.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
                     lead.status === 'qualified' ? 'bg-purple-100 text-purple-700' :
@@ -412,15 +463,26 @@ const LeadsPanel = ({ onLeadSelect }: { onLeadSelect: (lead: any) => void }) => 
                     lead.status === 'closed_won' ? 'bg-green-100 text-green-700' :
                     'bg-red-100 text-red-700'
                   }`}>
-                    {lead.status.replace('_', ' ').toUpperCase()}
+                    {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
                   </span>
+                  {onStartSurvey && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onStartSurvey(lead.id)}
+                      className="gap-1"
+                    >
+                      <ClipboardList size={14} />
+                      Survey
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onLeadSelect(lead)}
-                    className="gap-2"
+                    className="gap-1"
                   >
-                    <Eye size={16} />
+                    <Eye size={14} />
                     View
                   </Button>
                 </div>
@@ -541,79 +603,8 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
   );
 };
 
-const InstallationsPanel = () => {
-  const mockInstallations = [
-    { id: '1', client: 'Sarah Kelly', date: '2024-01-22', time: '09:00', crew: 'Team A', status: 'Scheduled' },
-    { id: '2', client: 'John Smith', date: '2024-01-24', time: '14:00', crew: 'Team B', status: 'Confirmed' },
-    { id: '3', client: 'Mary O\'Brien', date: '2024-01-20', time: '10:00', crew: 'Team A', status: 'Completed' },
-  ];
+// InstallationsPanel and AnalyticsPanel are now imported from dashboard/
 
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Scheduled Installations</h2>
-      <div className="space-y-4">
-        {mockInstallations.map((install) => (
-          <div key={install.id} className="p-5 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-slate-900 text-lg mb-2">{install.client}</h3>
-                <div className="space-y-1 text-sm text-slate-600">
-                  <p>📅 {install.date} at {install.time}</p>
-                  <p>👥 {install.crew}</p>
-                </div>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                install.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                install.status === 'Confirmed' ? 'bg-blue-100 text-blue-700' :
-                'bg-orange-100 text-orange-700'
-              }`}>
-                {install.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const AnalyticsPanel = () => {
-  const metrics = [
-    { label: 'Total Revenue', value: '€287,450', change: '+23%', positive: true },
-    { label: 'Conversion Rate', value: '23.5%', change: '+5.2%', positive: true },
-    { label: 'Avg. Response Time', value: '2.4 hours', change: '-18%', positive: true },
-    { label: 'Customer Satisfaction', value: '4.8/5', change: '+0.3', positive: true },
-  ];
-
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Performance Analytics</h2>
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
-        {metrics.map((metric, idx) => (
-          <div key={idx} className="p-6 bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-sm text-slate-600">{metric.label}</span>
-              <span className={`text-xs font-medium ${metric.positive ? 'text-green-600' : 'text-red-600'}`}>
-                {metric.change}
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-slate-900">{metric.value}</div>
-          </div>
-        ))}
-      </div>
-      <div className="p-6 bg-primary-50 rounded-xl border border-primary-100">
-        <h3 className="font-semibold text-slate-900 mb-2">Monthly Goal Progress</h3>
-        <div className="flex items-center gap-4">
-          <div className="flex-1 h-3 bg-white rounded-full overflow-hidden">
-            <div className="h-full gradient-primary" style={{ width: '68%' }}></div>
-          </div>
-          <span className="font-semibold text-primary">68%</span>
-        </div>
-        <p className="text-sm text-slate-600 mt-2">€287k of €420k monthly target</p>
-      </div>
-    </div>
-  );
-};
 
 const AISalesCoachPanel = ({ leadId }: { leadId: string }) => (
   <div>
