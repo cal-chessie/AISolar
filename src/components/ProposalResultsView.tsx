@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, TrendingDown, Calendar, Shield, CheckCircle, FileText, Download, Send, ArrowLeft } from 'lucide-react';
+import { Zap, TrendingDown, Calendar, Shield, CheckCircle, FileText, Download, Send, ArrowLeft, Battery, Package, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -70,6 +70,23 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
     }
   };
 
+  const handleDownloadPDF = () => {
+    // Open print dialog for PDF generation
+    window.print();
+    toast({
+      title: "PDF Export",
+      description: "Use Print → Save as PDF to download your proposal.",
+    });
+  };
+
+  const handleSendToCustomer = () => {
+    // TODO: Implement email sending
+    toast({
+      title: "Coming Soon",
+      description: "Email sending will be available in a future update.",
+    });
+  };
+
   if (loading || !proposal || !lead) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -81,12 +98,13 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
   const roiYears = proposal.payback_period_years || 0;
   const twentyYearSavings = (proposal.monthly_savings || 0) * 12 * 20;
   const co2Reduction = (proposal.estimated_annual_production_kwh || 0) * 0.233; // kg CO2 per kWh
+  const panelCount = proposal.panel_count || Math.ceil((proposal.system_size_kw || 0) / 0.4);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
-      <Button onClick={onBack} variant="ghost" className="mb-6">
+    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 print:p-0">
+      <Button onClick={onBack} variant="ghost" className="mb-6 print:hidden">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Questionnaire
+        Back to Dashboard
       </Button>
 
       <motion.div
@@ -95,63 +113,165 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
         className="space-y-6"
       >
         {/* Header */}
-        <Card className="gradient-primary text-white">
-          <CardContent className="p-8">
-            <div className="flex items-start justify-between">
+        <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+          <CardContent className="p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Solar Proposal for {lead.name}</h1>
-                <p className="text-white/90">{lead.address}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">Solar Proposal for {lead.name}</h1>
+                <p className="text-primary-foreground/90">{lead.address}</p>
                 <Badge variant="secondary" className="mt-2">
                   {proposal.status}
                 </Badge>
               </div>
-              <Zap size={64} className="opacity-50" />
+              <Zap size={64} className="opacity-50 hidden sm:block" />
             </div>
           </CardContent>
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-6 text-center">
-              <TrendingDown className="text-green-600 mx-auto mb-3" size={32} />
-              <div className="text-2xl font-bold text-foreground">€{proposal.monthly_savings}</div>
-              <div className="text-sm text-muted-foreground">Monthly Savings</div>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <TrendingDown className="text-green-600 mx-auto mb-2 sm:mb-3" size={28} />
+              <div className="text-xl sm:text-2xl font-bold text-foreground">€{Math.round(proposal.monthly_savings || 0)}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Monthly Savings</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6 text-center">
-              <Zap className="text-primary mx-auto mb-3" size={32} />
-              <div className="text-2xl font-bold text-foreground">{proposal.system_size_kw} kW</div>
-              <div className="text-sm text-muted-foreground">System Size</div>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <Zap className="text-primary mx-auto mb-2 sm:mb-3" size={28} />
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{proposal.system_size_kw} kW</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">System Size</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6 text-center">
-              <Calendar className="text-orange-600 mx-auto mb-3" size={32} />
-              <div className="text-2xl font-bold text-foreground">{roiYears.toFixed(1)} years</div>
-              <div className="text-sm text-muted-foreground">Payback Period</div>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <Calendar className="text-orange-600 mx-auto mb-2 sm:mb-3" size={28} />
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{roiYears.toFixed(1)} yrs</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Payback Period</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6 text-center">
-              <Shield className="text-blue-600 mx-auto mb-3" size={32} />
-              <div className="text-2xl font-bold text-foreground">€{proposal.seai_grant}</div>
-              <div className="text-sm text-muted-foreground">SEAI Grant</div>
+            <CardContent className="p-4 sm:p-6 text-center">
+              <Shield className="text-blue-600 mx-auto mb-2 sm:mb-3" size={28} />
+              <div className="text-xl sm:text-2xl font-bold text-foreground">€{proposal.seai_grant?.toLocaleString()}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">SEAI Grant</div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Equipment Package - NEW Section */}
+        <Card className="border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              Your Solar Package
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {/* Solar Panels */}
+              <div className="p-4 bg-muted rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Sun className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Solar Panels</h4>
+                    <p className="text-sm text-muted-foreground">{panelCount} panels</p>
+                  </div>
+                </div>
+                <ul className="text-sm space-y-1">
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="font-medium">{proposal.panel_type || 'Premium Mono PERC'}</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Power:</span>
+                    <span className="font-medium">400W each</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Warranty:</span>
+                    <span className="font-medium">25 years</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Inverter */}
+              <div className="p-4 bg-muted rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Inverter</h4>
+                    <p className="text-sm text-muted-foreground">{proposal.inverter_type || 'Hybrid'}</p>
+                  </div>
+                </div>
+                <ul className="text-sm space-y-1">
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Capacity:</span>
+                    <span className="font-medium">{proposal.system_size_kw} kW</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Efficiency:</span>
+                    <span className="font-medium">97.5%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-muted-foreground">Warranty:</span>
+                    <span className="font-medium">10 years</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Battery (if included) */}
+              <div className={`p-4 rounded-xl ${proposal.battery_storage ? 'bg-green-50 border border-green-200' : 'bg-muted'}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`p-2 rounded-lg ${proposal.battery_storage ? 'bg-green-100' : 'bg-primary/10'}`}>
+                    <Battery className={`h-6 w-6 ${proposal.battery_storage ? 'text-green-600' : 'text-muted-foreground'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Battery Storage</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {proposal.battery_storage ? `${proposal.battery_capacity_kwh} kWh` : 'Not included'}
+                    </p>
+                  </div>
+                </div>
+                {proposal.battery_storage ? (
+                  <ul className="text-sm space-y-1">
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Capacity:</span>
+                      <span className="font-medium">{proposal.battery_capacity_kwh} kWh</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="font-medium">Lithium-ion</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-muted-foreground">Warranty:</span>
+                      <span className="font-medium">10 years</span>
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Add battery storage for energy independence and backup power.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Detailed Tabs */}
         <Tabs defaultValue="financial" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="system">System Design</TabsTrigger>
-            <TabsTrigger value="environmental">Environmental</TabsTrigger>
-            <TabsTrigger value="installation">Installation</TabsTrigger>
+            <TabsTrigger value="system">System</TabsTrigger>
+            <TabsTrigger value="environmental">Impact</TabsTrigger>
+            <TabsTrigger value="installation">Install</TabsTrigger>
           </TabsList>
 
           <TabsContent value="financial" className="space-y-4">
@@ -190,7 +310,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                   </div>
                   <div className="p-4 bg-muted rounded-xl">
                     <div className="text-sm text-muted-foreground mb-1">20-Year Savings</div>
-                    <div className="text-2xl font-bold">€{twentyYearSavings.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">€{Math.round(twentyYearSavings).toLocaleString()}</div>
                   </div>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
@@ -210,36 +330,24 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                 <CardTitle>System Specifications</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-muted rounded-xl">
                     <div className="text-sm text-muted-foreground mb-1">System Size</div>
                     <div className="text-xl font-bold">{proposal.system_size_kw} kW</div>
                   </div>
                   <div className="p-4 bg-muted rounded-xl">
                     <div className="text-sm text-muted-foreground mb-1">Panel Count</div>
-                    <div className="text-xl font-bold">{proposal.panel_count} panels</div>
+                    <div className="text-xl font-bold">{panelCount} panels</div>
                   </div>
                   <div className="p-4 bg-muted rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Panel Type</div>
-                    <div className="text-xl font-bold">{proposal.panel_type || 'Premium Mono'}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Annual Production</div>
+                    <div className="text-xl font-bold">{proposal.estimated_annual_production_kwh?.toLocaleString()} kWh</div>
                   </div>
                   <div className="p-4 bg-muted rounded-xl">
-                    <div className="text-sm text-muted-foreground mb-1">Inverter Type</div>
-                    <div className="text-xl font-bold">{proposal.inverter_type || 'Hybrid'}</div>
+                    <div className="text-sm text-muted-foreground mb-1">Energy Offset</div>
+                    <div className="text-xl font-bold">{proposal.energy_offset_percentage || '~80'}%</div>
                   </div>
                 </div>
-
-                {proposal.battery_storage && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="text-blue-600" />
-                      <span className="font-semibold text-blue-900">Battery Storage Included</span>
-                    </div>
-                    <p className="text-sm text-blue-700">
-                      {proposal.battery_capacity_kwh} kWh capacity for energy independence
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -247,7 +355,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
               <CardHeader>
                 <CardTitle>Roof Details</CardTitle>
               </CardHeader>
-              <CardContent className="grid md:grid-cols-3 gap-4">
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Type</div>
                   <div className="font-semibold">{proposal.roof_type || 'N/A'}</div>
@@ -282,7 +390,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                 <CardTitle>Environmental Impact</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="p-6 bg-green-50 rounded-xl">
                     <div className="text-sm text-green-700 mb-1">Annual Production</div>
                     <div className="text-3xl font-bold text-green-900">
@@ -292,7 +400,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                   <div className="p-6 bg-blue-50 rounded-xl">
                     <div className="text-sm text-blue-700 mb-1">Energy Offset</div>
                     <div className="text-3xl font-bold text-blue-900">
-                      {proposal.energy_offset_percentage}%
+                      {proposal.energy_offset_percentage || '~80'}%
                     </div>
                   </div>
                 </div>
@@ -302,11 +410,11 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-green-700">Annual CO₂ Reduction</span>
-                      <span className="font-bold text-green-900">{co2Reduction.toLocaleString()} kg</span>
+                      <span className="font-bold text-green-900">{Math.round(co2Reduction).toLocaleString()} kg</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-green-700">20-Year CO₂ Reduction</span>
-                      <span className="font-bold text-green-900">{(co2Reduction * 20).toLocaleString()} kg</span>
+                      <span className="font-bold text-green-900">{Math.round(co2Reduction * 20).toLocaleString()} kg</span>
                     </div>
                     <p className="text-sm text-green-600 mt-4">
                       Equivalent to planting {Math.round(co2Reduction * 20 / 21)} trees over 20 years
@@ -325,7 +433,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
               <CardContent className="space-y-4">
                 <div className="p-4 bg-muted rounded-xl">
                   <div className="text-sm text-muted-foreground mb-1">Estimated Timeline</div>
-                  <div className="text-2xl font-bold">{proposal.installation_timeline_weeks} weeks</div>
+                  <div className="text-2xl font-bold">{proposal.installation_timeline_weeks || 2-4} weeks</div>
                   <p className="text-sm text-muted-foreground mt-2">From contract signing to system activation</p>
                 </div>
 
@@ -376,18 +484,18 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
         </Tabs>
 
         {/* Actions */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-wrap gap-4">
+        <Card className="print:hidden">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button onClick={handlePresent} className="flex-1" disabled={proposal.status === 'presented'}>
                 <Send className="mr-2 h-4 w-4" />
                 {proposal.status === 'presented' ? 'Already Presented' : 'Mark as Presented'}
               </Button>
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="flex-1" onClick={handleDownloadPDF}>
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="flex-1" onClick={handleSendToCustomer}>
                 <FileText className="mr-2 h-4 w-4" />
                 Send to Customer
               </Button>
@@ -395,6 +503,15 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .print\\:hidden { display: none !important; }
+          .print\\:p-0 { padding: 0 !important; }
+        }
+      `}</style>
     </div>
   );
 }
