@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { ChevronRight, ChevronLeft, Save, FileText, CheckCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Save, FileText, CheckCircle, Zap, Battery, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProposalQuestionnaireProps {
@@ -17,7 +18,8 @@ interface ProposalQuestionnaireProps {
   onBack?: () => void;
 }
 
-const TOTAL_STEPS = 26;
+// Consolidated from 26 to 15 steps
+const TOTAL_STEPS = 15;
 
 export default function ProposalQuestionnaire({ leadId, proposalId, initialData, onBack }: ProposalQuestionnaireProps) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -32,7 +34,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       setFormData(prev => ({ ...prev, ...initialData }));
       toast({
         title: 'Survey data loaded',
-        description: 'Form pre-filled with survey information',
+        description: 'Form pre-filled with survey information. Review and adjust as needed.',
       });
     }
   }, [proposalId, initialData]);
@@ -66,6 +68,8 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
           panelType: data.panel_type || '',
           inverterType: data.inverter_type || '',
           currentTariff: '0.35',
+          installationNotes: data.installation_notes || '',
+          specialRequirements: data.special_requirements || '',
         });
       }
     } catch (error: any) {
@@ -98,7 +102,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
   const handleSave = () => {
     toast({
       title: 'Progress saved',
-      description: `Questionnaire progress saved for step ${currentStep}`,
+      description: `Questionnaire progress saved at step ${currentStep}`,
     });
   };
 
@@ -129,10 +133,8 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       let requiresReview = false;
       
       if (propertyType === 'residential') {
-        // Domestic: €900/kWp up to €1,800 max for systems ≥2kWp
         seaiGrant = systemSizeKw >= 2 ? 1800 : Math.round(systemSizeKw * 900);
       } else if (propertyType === 'commercial') {
-        // Commercial: €900/kWp up to €2,700 for <6kWp, then €300/kWp additional
         if (systemSizeKw < 6) {
           seaiGrant = Math.min(2700, Math.round(systemSizeKw * 900));
         } else if (systemSizeKw <= 50) {
@@ -140,7 +142,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
           seaiGrant = Math.min(16200, seaiGrant);
           requiresReview = systemSizeKw > 20;
         } else {
-          seaiGrant = 16200; // Estimate pending consultation
+          seaiGrant = 16200;
           requiresReview = true;
         }
       } else if (propertyType === 'industrial') {
@@ -152,10 +154,14 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       const annualSavings = monthlySavings !== null ? monthlySavings * 12 : null;
       const paybackYears = netCost !== null && annualSavings ? netCost / annualSavings : null;
 
+      // Calculate panel count based on system size
+      const panelCount = Math.ceil(systemSizeKw / 0.4); // Assuming 400W panels
+
       const proposalData = {
         lead_id: leadId,
         consultant_id: user.id,
         system_size_kw: systemSizeKw || null,
+        panel_count: panelCount || null,
         estimated_annual_production_kwh: estimatedProduction || null,
         monthly_savings: monthlySavings || null,
         system_cost: systemCost || null,
@@ -172,10 +178,13 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
         shading_level: formData.shadingLevel || null,
         battery_storage: formData.batteryStorage === 'yes',
         battery_capacity_kwh: formData.batteryCapacity ? parseFloat(formData.batteryCapacity) : null,
-        panel_type: formData.panelType || null,
-        inverter_type: formData.inverterType || null,
+        panel_type: formData.panelType || 'Premium Mono PERC',
+        inverter_type: formData.inverterType || 'Hybrid',
         current_annual_consumption_kwh: annualConsumption || null,
-        status: proposalId ? 'draft' : 'draft',
+        installation_notes: formData.installationNotes || formData.customerNotes || null,
+        special_requirements: formData.specialRequirements || null,
+        installation_timeline_weeks: formData.timeline === 'asap' ? 2 : formData.timeline === '1-3months' ? 6 : 12,
+        status: 'draft',
       };
 
       let error;
@@ -220,11 +229,12 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
 
   const renderStep = () => {
     switch (currentStep) {
+      // Step 1: Property & Energy Overview
       case 1:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="property-type" className="flex items-center gap-2">
+              <Label htmlFor="property-type" className="flex items-center gap-2 mb-2">
                 Property Type
                 {isFieldPrefilled('propertyType') && <CheckCircle className="h-4 w-4 text-green-500" />}
               </Label>
@@ -242,116 +252,9 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        );
 
-      case 2:
-        return (
-          <div className="space-y-4">
             <div>
-              <Label htmlFor="roof-type" className="flex items-center gap-2">
-                Roof Type
-                {isFieldPrefilled('roofType') && <CheckCircle className="h-4 w-4 text-green-500" />}
-              </Label>
-              <Select 
-                value={formData.roofType || ''} 
-                onValueChange={(value) => updateFormData('roofType', value)}
-              >
-                <SelectTrigger id="roof-type">
-                  <SelectValue placeholder="Select roof type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pitched">Pitched</SelectItem>
-                  <SelectItem value="flat">Flat</SelectItem>
-                  <SelectItem value="mixed">Mixed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="roof-material" className="flex items-center gap-2">
-                Roof Material
-                {isFieldPrefilled('roofMaterial') && <CheckCircle className="h-4 w-4 text-green-500" />}
-              </Label>
-              <Select 
-                value={formData.roofMaterial || ''} 
-                onValueChange={(value) => updateFormData('roofMaterial', value)}
-              >
-                <SelectTrigger id="roof-material">
-                  <SelectValue placeholder="Select roof material" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
-                  <SelectItem value="Clay tiles">Clay tiles</SelectItem>
-                  <SelectItem value="Slate">Slate</SelectItem>
-                  <SelectItem value="Metal">Metal</SelectItem>
-                  <SelectItem value="Felt/Membrane">Felt/Membrane</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="roof-age">Roof Age (years)</Label>
-              <Input
-                id="roof-age"
-                type="number"
-                placeholder="Enter roof age"
-                value={formData.roofAge || ''}
-                onChange={(e) => updateFormData('roofAge', e.target.value)}
-              />
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label className="flex items-center gap-2">
-                Shading Analysis
-                {isFieldPrefilled('shadingLevel') && <CheckCircle className="h-4 w-4 text-green-500" />}
-              </Label>
-              <RadioGroup 
-                value={formData.shadingAnalysis || formData.shadingLevel || ''} 
-                onValueChange={(value) => updateFormData('shadingAnalysis', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="None" id="shading-none" />
-                  <Label htmlFor="shading-none">No shading</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Minimal" id="shading-minimal" />
-                  <Label htmlFor="shading-minimal">Minimal shading</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Partial" id="shading-moderate" />
-                  <Label htmlFor="shading-moderate">Moderate shading</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Significant" id="shading-significant" />
-                  <Label htmlFor="shading-significant">Significant shading</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="annual-consumption" className="flex items-center gap-2">
+              <Label htmlFor="annual-consumption" className="flex items-center gap-2 mb-2">
                 Annual Energy Consumption (kWh)
                 {isFieldPrefilled('annualConsumption') && <CheckCircle className="h-4 w-4 text-green-500" />}
               </Label>
@@ -366,20 +269,205 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
                 <p className="text-xs text-green-600 mt-1">Calculated from monthly bill</p>
               )}
             </div>
+
+            <div>
+              <Label htmlFor="current-tariff" className="mb-2 block">Current Electricity Tariff (€/kWh)</Label>
+              <Input
+                id="current-tariff"
+                type="number"
+                step="0.01"
+                placeholder="0.35"
+                value={formData.currentTariff || ''}
+                onChange={(e) => updateFormData('currentTariff', e.target.value)}
+              />
+            </div>
           </div>
         );
 
-      case 7:
+      // Step 2: Roof Details (consolidated)
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="flex items-center gap-2 mb-2">
+                  Roof Type
+                  {isFieldPrefilled('roofType') && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </Label>
+                <Select 
+                  value={formData.roofType || ''} 
+                  onValueChange={(value) => updateFormData('roofType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select roof type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pitched">Pitched</SelectItem>
+                    <SelectItem value="flat">Flat</SelectItem>
+                    <SelectItem value="mixed">Mixed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-2 mb-2">
+                  Roof Material
+                  {isFieldPrefilled('roofMaterial') && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </Label>
+                <Select 
+                  value={formData.roofMaterial || ''} 
+                  onValueChange={(value) => updateFormData('roofMaterial', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
+                    <SelectItem value="Clay tiles">Clay tiles</SelectItem>
+                    <SelectItem value="Slate">Slate</SelectItem>
+                    <SelectItem value="Metal">Metal</SelectItem>
+                    <SelectItem value="Felt/Membrane">Felt/Membrane</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-2 mb-2">
+                  Roof Orientation
+                  {isFieldPrefilled('roofOrientation') && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </Label>
+                <Select 
+                  value={formData.roofOrientation || ''} 
+                  onValueChange={(value) => updateFormData('roofOrientation', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select orientation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="South">South</SelectItem>
+                    <SelectItem value="South-East">South-East</SelectItem>
+                    <SelectItem value="South-West">South-West</SelectItem>
+                    <SelectItem value="East">East</SelectItem>
+                    <SelectItem value="West">West</SelectItem>
+                    <SelectItem value="North">North</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="flex items-center gap-2 mb-2">
+                  Roof Condition
+                  {isFieldPrefilled('roofCondition') && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </Label>
+                <Select 
+                  value={formData.roofCondition || ''} 
+                  onValueChange={(value) => updateFormData('roofCondition', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excellent">Excellent</SelectItem>
+                    <SelectItem value="good">Good</SelectItem>
+                    <SelectItem value="fair">Fair</SelectItem>
+                    <SelectItem value="poor">Poor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="roof-pitch" className="mb-2 block">Roof Pitch (degrees)</Label>
+              <Input
+                id="roof-pitch"
+                type="number"
+                placeholder="Enter roof pitch"
+                value={formData.roofPitch || ''}
+                onChange={(e) => updateFormData('roofPitch', e.target.value)}
+              />
+            </div>
+          </div>
+        );
+
+      // Step 3: Shading Analysis
+      case 3:
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="peak-usage">Peak Usage Time</Label>
+              <Label className="flex items-center gap-2 mb-2">
+                Shading Analysis
+                {isFieldPrefilled('shadingLevel') && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </Label>
+              <RadioGroup 
+                value={formData.shadingAnalysis || formData.shadingLevel || ''} 
+                onValueChange={(value) => updateFormData('shadingAnalysis', value)}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="None" id="shading-none" />
+                  <Label htmlFor="shading-none" className="cursor-pointer flex-1">
+                    <span className="font-medium">No shading</span>
+                    <p className="text-xs text-muted-foreground">Optimal solar production</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="Minimal" id="shading-minimal" />
+                  <Label htmlFor="shading-minimal" className="cursor-pointer flex-1">
+                    <span className="font-medium">Minimal shading</span>
+                    <p className="text-xs text-muted-foreground">Early morning/late evening only</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="Partial" id="shading-moderate" />
+                  <Label htmlFor="shading-moderate" className="cursor-pointer flex-1">
+                    <span className="font-medium">Moderate shading</span>
+                    <p className="text-xs text-muted-foreground">Some hours affected</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="Significant" id="shading-significant" />
+                  <Label htmlFor="shading-significant" className="cursor-pointer flex-1">
+                    <span className="font-medium">Significant shading</span>
+                    <p className="text-xs text-muted-foreground">May affect system sizing</p>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        );
+
+      // Step 4: System Size & Design
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div>
+              <Label htmlFor="system-size" className="flex items-center gap-2 mb-2">
+                <Zap className="h-4 w-4 text-primary" />
+                System Size (kW)
+                {isFieldPrefilled('systemSize') && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </Label>
+              <Input
+                id="system-size"
+                type="number"
+                step="0.1"
+                placeholder="Enter system size"
+                value={formData.systemSize || ''}
+                onChange={(e) => updateFormData('systemSize', e.target.value)}
+              />
+              {isFieldPrefilled('systemSize') && (
+                <p className="text-xs text-green-600 mt-1">Recommended from survey assessment</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="peak-usage" className="mb-2 block">Peak Usage Time</Label>
               <Select 
                 value={formData.peakUsage || ''} 
                 onValueChange={(value) => updateFormData('peakUsage', value)}
               >
                 <SelectTrigger id="peak-usage">
-                  <SelectValue placeholder="Select peak usage time" />
+                  <SelectValue placeholder="When do you use the most electricity?" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="morning">Morning (6am-12pm)</SelectItem>
@@ -392,100 +480,75 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
           </div>
         );
 
-      case 8:
+      // Step 5: Battery Storage
+      case 5:
         return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="current-tariff">Current Electricity Tariff (€/kWh)</Label>
-              <Input
-                id="current-tariff"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.currentTariff || ''}
-                onChange={(e) => updateFormData('currentTariff', e.target.value)}
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 border rounded-lg">
+              <Battery className="h-8 w-8 text-primary" />
+              <div className="flex-1">
+                <Label className="text-base font-semibold">Battery Storage</Label>
+                <p className="text-sm text-muted-foreground">Store excess energy for use at night</p>
+              </div>
+              <Switch
+                checked={formData.batteryStorage === 'yes'}
+                onCheckedChange={(checked) => updateFormData('batteryStorage', checked ? 'yes' : 'no')}
               />
             </div>
+
+            {formData.batteryStorage === 'yes' && (
+              <div className="space-y-4 animate-in fade-in-50">
+                <div>
+                  <Label htmlFor="battery-capacity" className="mb-2 block">Battery Capacity (kWh)</Label>
+                  <Select 
+                    value={formData.batteryCapacity || ''} 
+                    onValueChange={(value) => updateFormData('batteryCapacity', value)}
+                  >
+                    <SelectTrigger id="battery-capacity">
+                      <SelectValue placeholder="Select capacity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 kWh (Small home)</SelectItem>
+                      <SelectItem value="10">10 kWh (Average home)</SelectItem>
+                      <SelectItem value="13.5">13.5 kWh (Large home)</SelectItem>
+                      <SelectItem value="20">20+ kWh (High consumption)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
         );
 
-      case 9:
+      // Step 6: Equipment Selection
+      case 6:
         return (
-          <div className="space-y-4">
-            <div>
-              <Label>Battery Storage Interest</Label>
-              <RadioGroup 
-                value={formData.batteryInterest || ''} 
-                onValueChange={(value) => updateFormData('batteryInterest', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="battery-yes" />
-                  <Label htmlFor="battery-yes">Yes</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="battery-no" />
-                  <Label htmlFor="battery-no">No</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="maybe" id="battery-maybe" />
-                  <Label htmlFor="battery-maybe">Maybe later</Label>
-                </div>
-              </RadioGroup>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="h-5 w-5 text-primary" />
+              <span className="font-semibold">Equipment Package</span>
             </div>
-          </div>
-        );
 
-      case 10:
-        return (
-          <div className="space-y-4">
             <div>
-              <Label htmlFor="system-size" className="flex items-center gap-2">
-                Desired System Size (kW)
-                {isFieldPrefilled('systemSize') && <CheckCircle className="h-4 w-4 text-green-500" />}
-              </Label>
-              <Input
-                id="system-size"
-                type="number"
-                step="0.1"
-                placeholder="Enter system size"
-                value={formData.systemSize || ''}
-                onChange={(e) => updateFormData('systemSize', e.target.value)}
-              />
-              {isFieldPrefilled('systemSize') && (
-                <p className="text-xs text-green-600 mt-1">Recommended from survey</p>
-              )}
-            </div>
-          </div>
-        );
-
-      case 11:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="panel-preference">Panel Brand Preference</Label>
+              <Label htmlFor="panel-type" className="mb-2 block">Solar Panel Type</Label>
               <Select 
-                value={formData.panelPreference || ''} 
-                onValueChange={(value) => updateFormData('panelPreference', value)}
+                value={formData.panelType || ''} 
+                onValueChange={(value) => updateFormData('panelType', value)}
               >
-                <SelectTrigger id="panel-preference">
-                  <SelectValue placeholder="Select preference" />
+                <SelectTrigger id="panel-type">
+                  <SelectValue placeholder="Select panel type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="premium">Premium brands</SelectItem>
-                  <SelectItem value="mid">Mid-range brands</SelectItem>
-                  <SelectItem value="budget">Budget friendly</SelectItem>
-                  <SelectItem value="no-preference">No preference</SelectItem>
+                  <SelectItem value="Premium Mono PERC">Premium Mono PERC (400W+)</SelectItem>
+                  <SelectItem value="Standard Mono">Standard Mono (370-390W)</SelectItem>
+                  <SelectItem value="All-Black Mono">All-Black Mono (Aesthetic)</SelectItem>
+                  <SelectItem value="Bifacial">Bifacial (High efficiency)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        );
 
-      case 12:
-        return (
-          <div className="space-y-4">
             <div>
-              <Label htmlFor="inverter-type">Inverter Type Preference</Label>
+              <Label htmlFor="inverter-type" className="mb-2 block">Inverter Type</Label>
               <Select 
                 value={formData.inverterType || ''} 
                 onValueChange={(value) => updateFormData('inverterType', value)}
@@ -494,20 +557,39 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
                   <SelectValue placeholder="Select inverter type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="string">String inverter</SelectItem>
-                  <SelectItem value="micro">Micro inverters</SelectItem>
-                  <SelectItem value="hybrid">Hybrid inverter</SelectItem>
+                  <SelectItem value="String">String Inverter (Cost effective)</SelectItem>
+                  <SelectItem value="Micro">Micro Inverters (Panel-level optimisation)</SelectItem>
+                  <SelectItem value="Hybrid">Hybrid Inverter (Battery ready)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="panel-preference" className="mb-2 block">Brand Preference</Label>
+              <Select 
+                value={formData.panelPreference || ''} 
+                onValueChange={(value) => updateFormData('panelPreference', value)}
+              >
+                <SelectTrigger id="panel-preference">
+                  <SelectValue placeholder="Select preference" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="premium">Premium brands (25yr warranty)</SelectItem>
+                  <SelectItem value="mid">Mid-range brands (20yr warranty)</SelectItem>
+                  <SelectItem value="budget">Budget friendly (15yr warranty)</SelectItem>
+                  <SelectItem value="no-preference">No preference - recommend best value</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         );
 
-      case 13:
+      // Step 7: Budget & Financing
+      case 7:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="budget">Budget Range (€)</Label>
+              <Label htmlFor="budget" className="mb-2 block">Budget Range (€)</Label>
               <Select 
                 value={formData.budget || ''} 
                 onValueChange={(value) => updateFormData('budget', value)}
@@ -520,90 +602,361 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
                   <SelectItem value="8000-12000">€8,000 - €12,000</SelectItem>
                   <SelectItem value="12000-15000">€12,000 - €15,000</SelectItem>
                   <SelectItem value="15000+">€15,000+</SelectItem>
+                  <SelectItem value="flexible">Flexible - focus on best value</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        );
 
-      case 14:
-        return (
-          <div className="space-y-4">
             <div>
-              <Label htmlFor="financing">Financing Option</Label>
-              <Select 
+              <Label htmlFor="financing" className="mb-2 block">Payment Preference</Label>
+              <RadioGroup 
                 value={formData.financing || ''} 
                 onValueChange={(value) => updateFormData('financing', value)}
+                className="space-y-3"
               >
-                <SelectTrigger id="financing">
-                  <SelectValue placeholder="Select financing option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Full payment upfront</SelectItem>
-                  <SelectItem value="loan">Solar loan</SelectItem>
-                  <SelectItem value="lease">Lease option</SelectItem>
-                  <SelectItem value="ppa">Power Purchase Agreement</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="cash" id="financing-cash" />
+                  <Label htmlFor="financing-cash" className="cursor-pointer flex-1">
+                    <span className="font-medium">Full payment upfront</span>
+                    <p className="text-xs text-muted-foreground">Best value - no interest</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="loan" id="financing-loan" />
+                  <Label htmlFor="financing-loan" className="cursor-pointer flex-1">
+                    <span className="font-medium">Solar loan</span>
+                    <p className="text-xs text-muted-foreground">Fixed monthly payments</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="deposit" id="financing-deposit" />
+                  <Label htmlFor="financing-deposit" className="cursor-pointer flex-1">
+                    <span className="font-medium">Deposit + balance</span>
+                    <p className="text-xs text-muted-foreground">Pay deposit now, balance on completion</p>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         );
 
-      case 15:
+      // Step 8: Timeline
+      case 8:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="timeline">Installation Timeline Preference</Label>
-              <Select 
+              <Label className="mb-2 block">When would you like installation?</Label>
+              <RadioGroup 
                 value={formData.timeline || ''} 
                 onValueChange={(value) => updateFormData('timeline', value)}
+                className="space-y-3"
               >
-                <SelectTrigger id="timeline">
-                  <SelectValue placeholder="Select timeline" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asap">As soon as possible</SelectItem>
-                  <SelectItem value="1-3months">1-3 months</SelectItem>
-                  <SelectItem value="3-6months">3-6 months</SelectItem>
-                  <SelectItem value="6months+">6+ months</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="asap" id="timeline-asap" />
+                  <Label htmlFor="timeline-asap" className="cursor-pointer flex-1">
+                    <span className="font-medium">As soon as possible</span>
+                    <p className="text-xs text-muted-foreground">Usually 2-4 weeks</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="1-3months" id="timeline-1-3" />
+                  <Label htmlFor="timeline-1-3" className="cursor-pointer flex-1">
+                    <span className="font-medium">1-3 months</span>
+                    <p className="text-xs text-muted-foreground">Planning ahead</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="3-6months" id="timeline-3-6" />
+                  <Label htmlFor="timeline-3-6" className="cursor-pointer flex-1">
+                    <span className="font-medium">3-6 months</span>
+                    <p className="text-xs text-muted-foreground">Flexible timing</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="exploring" id="timeline-exploring" />
+                  <Label htmlFor="timeline-exploring" className="cursor-pointer flex-1">
+                    <span className="font-medium">Just exploring options</span>
+                    <p className="text-xs text-muted-foreground">Gathering information</p>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         );
 
-      // Steps 16-25: Additional questions
-      case 16:
-      case 17:
-      case 18:
-      case 19:
-      case 20:
-      case 21:
-      case 22:
-      case 23:
-      case 24:
-      case 25:
+      // Step 9: Additional Features (EV, Smart Home)
+      case 9:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <p className="text-sm text-muted-foreground">Select any additional features you're interested in:</p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium">EV Charger</Label>
+                  <p className="text-xs text-muted-foreground">Add electric vehicle charging capability</p>
+                </div>
+                <Switch
+                  checked={formData.evCharger === 'yes'}
+                  onCheckedChange={(checked) => updateFormData('evCharger', checked ? 'yes' : 'no')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium">Smart Home Integration</Label>
+                  <p className="text-xs text-muted-foreground">Connect to home automation systems</p>
+                </div>
+                <Switch
+                  checked={formData.smartHome === 'yes'}
+                  onCheckedChange={(checked) => updateFormData('smartHome', checked ? 'yes' : 'no')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium">Monitoring App</Label>
+                  <p className="text-xs text-muted-foreground">Track production on your phone</p>
+                </div>
+                <Switch
+                  checked={formData.monitoring !== 'no'}
+                  onCheckedChange={(checked) => updateFormData('monitoring', checked ? 'yes' : 'no')}
+                  defaultChecked
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium">Extended Warranty</Label>
+                  <p className="text-xs text-muted-foreground">Additional coverage beyond standard</p>
+                </div>
+                <Switch
+                  checked={formData.extendedWarranty === 'yes'}
+                  onCheckedChange={(checked) => updateFormData('extendedWarranty', checked ? 'yes' : 'no')}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      // Step 10: Environmental Goals
+      case 10:
+        return (
+          <div className="space-y-6">
             <div>
-              <Label htmlFor={`additional-${currentStep}`}>Additional Information (Step {currentStep})</Label>
+              <Label className="mb-2 block">What matters most to you?</Label>
+              <RadioGroup 
+                value={formData.primaryGoal || ''} 
+                onValueChange={(value) => updateFormData('primaryGoal', value)}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="savings" id="goal-savings" />
+                  <Label htmlFor="goal-savings" className="cursor-pointer flex-1">
+                    <span className="font-medium">Maximum savings</span>
+                    <p className="text-xs text-muted-foreground">Reduce electricity bills as much as possible</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="independence" id="goal-independence" />
+                  <Label htmlFor="goal-independence" className="cursor-pointer flex-1">
+                    <span className="font-medium">Energy independence</span>
+                    <p className="text-xs text-muted-foreground">Reduce reliance on the grid</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="environment" id="goal-environment" />
+                  <Label htmlFor="goal-environment" className="cursor-pointer flex-1">
+                    <span className="font-medium">Environmental impact</span>
+                    <p className="text-xs text-muted-foreground">Reduce carbon footprint</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="property" id="goal-property" />
+                  <Label htmlFor="goal-property" className="cursor-pointer flex-1">
+                    <span className="font-medium">Property value</span>
+                    <p className="text-xs text-muted-foreground">Increase home value with green upgrade</p>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        );
+
+      // Step 11: Concerns & Questions for Customer (NEW CONSOLIDATED)
+      case 11:
+        return (
+          <div className="space-y-6">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Customer Questions & Concerns</h3>
+              <p className="text-sm text-muted-foreground">Capture anything the customer wants to discuss</p>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Main concerns or hesitations?</Label>
+              <div className="space-y-2">
+                {['Cost/affordability', 'Roof suitability', 'How it looks', 'Reliability', 'Payback time', 'Installation disruption'].map((concern) => (
+                  <div key={concern} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`concern-${concern}`}
+                      checked={(formData.concerns || []).includes(concern)}
+                      onChange={(e) => {
+                        const current = formData.concerns || [];
+                        if (e.target.checked) {
+                          updateFormData('concerns', [...current, concern]);
+                        } else {
+                          updateFormData('concerns', current.filter((c: string) => c !== concern));
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor={`concern-${concern}`} className="cursor-pointer">{concern}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="customer-questions" className="mb-2 block">Questions to address in proposal</Label>
               <Textarea
-                id={`additional-${currentStep}`}
-                placeholder="Enter any additional information..."
-                value={formData[`additional${currentStep}`] || ''}
-                onChange={(e) => updateFormData(`additional${currentStep}`, e.target.value)}
+                id="customer-questions"
+                placeholder="Any specific questions the customer asked..."
+                value={formData.customerQuestions || ''}
+                onChange={(e) => updateFormData('customerQuestions', e.target.value)}
+                rows={3}
               />
             </div>
           </div>
         );
 
-      case 26:
+      // Step 12: Special Requirements (from survey if available)
+      case 12:
+        return (
+          <div className="space-y-6">
+            <div>
+              <Label htmlFor="special-requirements" className="flex items-center gap-2 mb-2">
+                Special Requirements
+                {isFieldPrefilled('specialRequirements') && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </Label>
+              <Textarea
+                id="special-requirements"
+                placeholder="Planning permission, HOA restrictions, specific installation requirements..."
+                value={formData.specialRequirements || ''}
+                onChange={(e) => updateFormData('specialRequirements', e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="installation-notes" className="flex items-center gap-2 mb-2">
+                Installation Notes
+                {isFieldPrefilled('installationNotes') && <CheckCircle className="h-4 w-4 text-green-500" />}
+              </Label>
+              <Textarea
+                id="installation-notes"
+                placeholder="Access issues, scaffolding needs, date preferences..."
+                value={formData.installationNotes || ''}
+                onChange={(e) => updateFormData('installationNotes', e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+
+      // Step 13: Consultant Notes (internal)
+      case 13:
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-2">Internal Notes</h3>
+              <p className="text-sm text-blue-700">These notes are for internal use and won't appear on the customer proposal.</p>
+            </div>
+
+            <div>
+              <Label htmlFor="consultant-notes" className="mb-2 block">Consultant Assessment</Label>
+              <Textarea
+                id="consultant-notes"
+                placeholder="Your assessment of this lead, recommended approach, follow-up actions..."
+                value={formData.consultantNotes || ''}
+                onChange={(e) => updateFormData('consultantNotes', e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="follow-up" className="mb-2 block">Recommended Follow-up</Label>
+              <Select 
+                value={formData.followUp || ''} 
+                onValueChange={(value) => updateFormData('followUp', value)}
+              >
+                <SelectTrigger id="follow-up">
+                  <SelectValue placeholder="Select follow-up action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call_tomorrow">Call tomorrow</SelectItem>
+                  <SelectItem value="email_proposal">Email proposal today</SelectItem>
+                  <SelectItem value="schedule_survey">Schedule site survey</SelectItem>
+                  <SelectItem value="wait_callback">Wait for customer callback</SelectItem>
+                  <SelectItem value="not_interested">Not interested - close</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      // Step 14: Summary Review
+      case 14:
+        return (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Proposal Summary</h3>
+            
+            <div className="grid gap-3">
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Property Type</span>
+                <span className="font-medium">{formData.propertyType || 'Not set'}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">System Size</span>
+                <span className="font-medium">{formData.systemSize || 'Auto-calculated'} kW</span>
+              </div>
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Battery Storage</span>
+                <span className="font-medium">{formData.batteryStorage === 'yes' ? `Yes (${formData.batteryCapacity} kWh)` : 'No'}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Panel Type</span>
+                <span className="font-medium">{formData.panelType || 'Premium Mono PERC'}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Inverter Type</span>
+                <span className="font-medium">{formData.inverterType || 'Hybrid'}</span>
+              </div>
+              <div className="flex justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Timeline</span>
+                <span className="font-medium">{formData.timeline || 'Not set'}</span>
+              </div>
+            </div>
+
+            {initialData && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                <p className="text-green-700 text-sm flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Survey data was automatically loaded - review above for accuracy
+                </p>
+              </div>
+            )}
+          </div>
+        );
+
+      // Step 15: Final Generate
+      case 15:
         return (
           <div className="space-y-4 text-center">
             <FileText className="mx-auto h-16 w-16 text-primary" />
             <h3 className="text-xl font-bold">Ready to Generate Proposal</h3>
-            <p className="text-slate-600">
-              Review your answers and click "Generate Proposal" to create your solar system proposal.
+            <p className="text-muted-foreground">
+              Click "Generate Proposal" to create a detailed solar system proposal with pricing, savings calculations, and equipment specifications.
             </p>
             {initialData && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
@@ -623,49 +976,38 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
 
   const getStepTitle = () => {
     const titles: { [key: number]: string } = {
-      1: 'Property Type',
-      2: 'Roof Type',
-      3: 'Roof Material',
-      4: 'Roof Age',
-      5: 'Shading Analysis',
-      6: 'Energy Consumption',
-      7: 'Peak Usage',
-      8: 'Current Tariff',
-      9: 'Battery Interest',
-      10: 'System Size',
-      11: 'Panel Preference',
-      12: 'Inverter Type',
-      13: 'Budget Range',
-      14: 'Financing Option',
-      15: 'Installation Timeline',
-      16: 'Property Access',
-      17: 'Grid Connection',
-      18: 'Meter Details',
-      19: 'EV Charger Interest',
-      20: 'Smart Home Integration',
-      21: 'Monitoring Preferences',
-      22: 'Warranty Expectations',
-      23: 'Maintenance Plan',
-      24: 'Environmental Goals',
-      25: 'Additional Notes',
-      26: 'Review & Generate',
+      1: 'Property & Energy',
+      2: 'Roof Details',
+      3: 'Shading Analysis',
+      4: 'System Design',
+      5: 'Battery Storage',
+      6: 'Equipment Package',
+      7: 'Budget & Financing',
+      8: 'Installation Timeline',
+      9: 'Additional Features',
+      10: 'Your Goals',
+      11: 'Customer Questions',
+      12: 'Special Requirements',
+      13: 'Internal Notes',
+      14: 'Review Summary',
+      15: 'Generate Proposal',
     };
     return titles[currentStep] || `Step ${currentStep}`;
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Progress Bar */}
-      <div className="mb-6">
+    <div className="max-w-2xl mx-auto pb-24">
+      {/* Progress Bar - Sticky */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-slate-600">
+          <span className="text-sm font-medium text-muted-foreground">
             Step {currentStep} of {TOTAL_STEPS}
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted-foreground">
             {Math.round((currentStep / TOTAL_STEPS) * 100)}% complete
           </span>
         </div>
-        <div className="w-full bg-slate-200 rounded-full h-2">
+        <div className="w-full bg-muted rounded-full h-2">
           <div 
             className="bg-primary h-2 rounded-full transition-all duration-300"
             style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
@@ -674,7 +1016,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       </div>
 
       {/* Question Card */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             {getStepTitle()}
@@ -685,7 +1027,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
             )}
           </CardTitle>
           <CardDescription>
-            {currentStep === 26 
+            {currentStep === TOTAL_STEPS 
               ? 'Final step - generate your proposal' 
               : 'Please provide the following information'}
           </CardDescription>
@@ -695,39 +1037,41 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
         </CardContent>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 1}
-          className="gap-2"
-        >
-          <ChevronLeft size={18} />
-          Previous
-        </Button>
-
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSave} className="gap-2">
-            <Save size={18} />
-            Save
+      {/* Fixed Navigation at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border z-50">
+        <div className="max-w-2xl mx-auto flex justify-between gap-3">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            className="gap-2 flex-1 sm:flex-none"
+          >
+            <ChevronLeft size={18} />
+            <span className="hidden sm:inline">Previous</span>
           </Button>
 
-          {currentStep === TOTAL_STEPS ? (
-            <Button 
-              onClick={handleSubmit} 
-              disabled={loading}
-              className="gap-2 gradient-primary text-white"
-            >
-              <FileText size={18} />
-              {loading ? 'Generating...' : 'Generate Proposal'}
+          <div className="flex gap-2 flex-1 sm:flex-none">
+            <Button variant="outline" onClick={handleSave} className="gap-2">
+              <Save size={18} />
+              <span className="hidden sm:inline">Save</span>
             </Button>
-          ) : (
-            <Button onClick={handleNext} className="gap-2">
-              Next
-              <ChevronRight size={18} />
-            </Button>
-          )}
+
+            {currentStep === TOTAL_STEPS ? (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={loading}
+                className="gap-2 flex-1 sm:flex-none"
+              >
+                <FileText size={18} />
+                {loading ? 'Generating...' : 'Generate Proposal'}
+              </Button>
+            ) : (
+              <Button onClick={handleNext} className="gap-2 flex-1 sm:flex-none">
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight size={18} />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

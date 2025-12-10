@@ -9,8 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
-import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight } from 'lucide-react';
+import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { validateSurveyCompletion, mapSurveyToProposal } from '@/lib/surveyValidation';
 import SurveyProgressIndicator from '@/components/survey/SurveyProgressIndicator';
@@ -33,6 +35,14 @@ const surveySchema = z.object({
   installation_notes: z.string().optional(),
   special_requirements: z.string().optional(),
   status: z.string().default('draft'),
+  // New installer logistics fields
+  property_storeys: z.string().optional(),
+  scaffolding_required: z.string().optional(),
+  parking_situation: z.string().optional(),
+  attic_access: z.string().optional(),
+  access_notes: z.string().optional(),
+  customer_availability: z.string().optional(),
+  existing_solar: z.boolean().optional(),
 });
 
 type SurveyFormData = z.infer<typeof surveySchema>;
@@ -42,6 +52,17 @@ interface SiteSurveyFormProps {
   onCreateProposal?: (surveyData: any, leadData: any) => void;
 }
 
+const PHOTO_TYPES = [
+  { value: 'roof_overview', label: 'Roof Overview' },
+  { value: 'roof_closeup', label: 'Roof Close-up' },
+  { value: 'electrical_panel', label: 'Electrical Panel' },
+  { value: 'meter', label: 'Meter' },
+  { value: 'attic', label: 'Attic Space' },
+  { value: 'inverter_location', label: 'Inverter Location' },
+  { value: 'access_point', label: 'Access Point' },
+  { value: 'other', label: 'Other' },
+];
+
 export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyFormProps) {
   const [loading, setLoading] = useState(false);
   const [existingSurvey, setExistingSurvey] = useState<any>(null);
@@ -49,11 +70,22 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   const [fetchingData, setFetchingData] = useState(true);
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; type: string; description: string }>>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  
+  // Collapsible section states
+  const [openSections, setOpenSections] = useState({
+    roof: true,
+    environmental: false,
+    electrical: false,
+    recommendations: false,
+    logistics: false,
+    photos: false,
+  });
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, getValues } = useForm<SurveyFormData>({
     resolver: zodResolver(surveySchema),
     defaultValues: {
       status: 'draft',
+      existing_solar: false,
     },
   });
 
@@ -62,6 +94,10 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
 
   // Calculate completion status
   const completionStatus = validateSurveyCompletion(formValues, uploadedPhotos.length);
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   useEffect(() => {
     fetchExistingSurvey();
@@ -93,7 +129,11 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         // Populate form with existing data
         Object.keys(data).forEach((key) => {
           if (data[key] !== null && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-            setValue(key as any, String(data[key]));
+            if (key === 'existing_solar') {
+              setValue(key as any, Boolean(data[key]));
+            } else {
+              setValue(key as any, String(data[key]));
+            }
           }
         });
 
@@ -106,7 +146,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         if (photos) {
           setUploadedPhotos(photos.map(p => ({
             url: p.photo_url,
-            type: p.photo_type || 'general',
+            type: p.photo_type || 'other',
             description: p.description || '',
           })));
         }
@@ -144,7 +184,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
 
         return {
           url: publicUrl,
-          type: 'general',
+          type: 'other',
           description: file.name,
         };
       });
@@ -178,6 +218,12 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePhotoType = (index: number, newType: string) => {
+    setUploadedPhotos(prev => prev.map((photo, i) => 
+      i === index ? { ...photo, type: newType } : photo
+    ));
   };
 
   const onSubmit = async (data: SurveyFormData, shouldComplete: boolean = false) => {
@@ -219,6 +265,14 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         special_requirements: data.special_requirements || null,
         status: finalStatus,
         completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
+        // New installer logistics fields
+        property_storeys: data.property_storeys ? parseInt(data.property_storeys) : null,
+        scaffolding_required: data.scaffolding_required || null,
+        parking_situation: data.parking_situation || null,
+        attic_access: data.attic_access || null,
+        access_notes: data.access_notes || null,
+        customer_availability: data.customer_availability || null,
+        existing_solar: data.existing_solar || false,
       };
 
       let surveyId;
@@ -312,297 +366,439 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     );
   }
 
+  const SectionHeader = ({ 
+    title, 
+    section, 
+    isComplete,
+    description 
+  }: { 
+    title: string; 
+    section: keyof typeof openSections;
+    isComplete?: boolean;
+    description?: string;
+  }) => (
+    <CollapsibleTrigger 
+      className="flex items-center justify-between w-full p-4 hover:bg-muted/50 transition-colors"
+      onClick={() => toggleSection(section)}
+    >
+      <div className="flex items-center gap-3">
+        <span className="font-semibold text-base">{title}</span>
+        {isComplete && <CheckCircle className="h-5 w-5 text-green-500" />}
+      </div>
+      <div className="flex items-center gap-2">
+        {description && (
+          <span className="text-xs text-muted-foreground hidden sm:inline">{description}</span>
+        )}
+        {openSections[section] ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </div>
+    </CollapsibleTrigger>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-32">
       {/* Progress Indicator - Sticky on mobile */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <SurveyProgressIndicator status={completionStatus} />
       </div>
 
-      <form onSubmit={handleSubmit((data) => onSubmit(data, false))} className="space-y-6">
-        {/* Roof Details */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center justify-between">
-              Roof Details
-              {completionStatus.sections.roof.complete && (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              )}
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Information about the property's roof</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="roof_type">Roof Type *</Label>
-                <Select onValueChange={(value) => setValue('roof_type', value)} value={watch('roof_type')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select roof type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pitched">Pitched</SelectItem>
-                    <SelectItem value="flat">Flat</SelectItem>
-                    <SelectItem value="mixed">Mixed</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.roof_type && <p className="text-sm text-destructive mt-1">{errors.roof_type.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="roof_condition">Roof Condition *</Label>
-                <Select onValueChange={(value) => setValue('roof_condition', value)} value={watch('roof_condition')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select condition" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="excellent">Excellent</SelectItem>
-                    <SelectItem value="good">Good</SelectItem>
-                    <SelectItem value="fair">Fair</SelectItem>
-                    <SelectItem value="poor">Poor</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.roof_condition && <p className="text-sm text-destructive mt-1">{errors.roof_condition.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="roof_orientation">Roof Orientation *</Label>
-                <Select onValueChange={(value) => setValue('roof_orientation', value)} value={watch('roof_orientation')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select orientation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="South">South</SelectItem>
-                    <SelectItem value="South-East">South-East</SelectItem>
-                    <SelectItem value="South-West">South-West</SelectItem>
-                    <SelectItem value="East">East</SelectItem>
-                    <SelectItem value="West">West</SelectItem>
-                    <SelectItem value="North">North (not ideal)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="roof_pitch">Roof Pitch (degrees) *</Label>
-                <Input {...register('roof_pitch')} type="number" step="1" placeholder="e.g., 30" className="w-full" />
-              </div>
-
-              <div className="sm:col-span-2">
-                <Label htmlFor="roof_material">Roof Material *</Label>
-                <Select onValueChange={(value) => setValue('roof_material', value)} value={watch('roof_material')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select material" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
-                    <SelectItem value="Clay tiles">Clay tiles</SelectItem>
-                    <SelectItem value="Slate">Slate</SelectItem>
-                    <SelectItem value="Metal">Metal</SelectItem>
-                    <SelectItem value="Felt/Membrane">Felt/Membrane (flat)</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Environmental Analysis */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Environmental Analysis</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Shading and surrounding conditions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="shading_analysis">Shading Analysis</Label>
-              <Select onValueChange={(value) => setValue('shading_analysis', value)} value={watch('shading_analysis')}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select shading level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="None">No shading</SelectItem>
-                  <SelectItem value="Minimal">Minimal (early morning/late evening only)</SelectItem>
-                  <SelectItem value="Partial">Partial (some hours affected)</SelectItem>
-                  <SelectItem value="Significant">Significant (major obstruction)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="nearby_obstructions">Nearby Obstructions</Label>
-              <Textarea {...register('nearby_obstructions')} placeholder="Trees, chimneys, neighboring buildings..." rows={2} className="w-full" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Electrical System */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center justify-between">
-              Electrical System
-              {completionStatus.sections.electrical.complete && (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              )}
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Current electrical infrastructure</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="electrical_panel_capacity">Panel Capacity *</Label>
-                <Select onValueChange={(value) => setValue('electrical_panel_capacity', value)} value={watch('electrical_panel_capacity')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select capacity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="40A">40A (older property)</SelectItem>
-                    <SelectItem value="63A">63A (standard)</SelectItem>
-                    <SelectItem value="80A">80A (modern)</SelectItem>
-                    <SelectItem value="100A">100A (large property)</SelectItem>
-                    <SelectItem value="3-phase">3-phase (commercial)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="electrical_panel_condition">Panel Condition *</Label>
-                <Select onValueChange={(value) => setValue('electrical_panel_condition', value)} value={watch('electrical_panel_condition')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select condition" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="excellent">Excellent (modern, compliant)</SelectItem>
-                    <SelectItem value="good">Good (adequate)</SelectItem>
-                    <SelectItem value="needs_upgrade">Needs Upgrade</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="meter_location">Meter Location</Label>
-                <Input {...register('meter_location')} placeholder="e.g., Outside front, utility room" className="w-full" />
-              </div>
-
-              <div>
-                <Label htmlFor="grid_connection_type">Grid Connection *</Label>
-                <Select onValueChange={(value) => setValue('grid_connection_type', value)} value={watch('grid_connection_type')}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Single phase">Single phase</SelectItem>
-                    <SelectItem value="Three phase">Three phase</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Recommendations */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center justify-between">
-              System Recommendations
-              {completionStatus.sections.recommendations.complete && (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              )}
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Proposed solar system specifications</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="recommended_system_size">System Size (kW) *</Label>
-                <Input {...register('recommended_system_size')} type="number" step="0.1" placeholder="e.g., 6.5" className="w-full" />
-              </div>
-
-              <div>
-                <Label htmlFor="recommended_panel_count">Panel Count *</Label>
-                <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full" />
-              </div>
-
-              <div>
-                <Label htmlFor="estimated_installation_cost">Est. Cost (€)</Label>
-                <Input {...register('estimated_installation_cost')} type="number" step="0.01" placeholder="e.g., 12000" className="w-full" />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="installation_notes">Installation Notes</Label>
-              <Textarea {...register('installation_notes')} placeholder="Access requirements, scaffolding needs, special considerations..." rows={2} className="w-full" />
-            </div>
-
-            <div>
-              <Label htmlFor="special_requirements">Special Requirements</Label>
-              <Textarea {...register('special_requirements')} placeholder="Permits, planning permission, HOA restrictions..." rows={2} className="w-full" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Photo Upload */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center justify-between">
-              Site Photos
-              {completionStatus.sections.photos.complete && (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              )}
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Upload photos of roof, electrical panel, meter ({completionStatus.sections.photos.count}/{completionStatus.sections.photos.required} minimum)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center cursor-pointer transition-colors ${
-                isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-              }`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3" />
-              {uploadingPhotos ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-sm text-muted-foreground">Uploading...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {isDragActive ? 'Drop photos here' : 'Tap to add photos or drag & drop'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    JPEG, PNG, WebP (max 5MB)
-                  </p>
-                </>
-              )}
-            </div>
-
-            {uploadedPhotos.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {uploadedPhotos.map((photo, index) => (
-                  <div key={index} className="relative group aspect-square">
-                    <img
-                      src={photo.url}
-                      alt={photo.description}
-                      className="w-full h-full object-cover rounded-lg border border-border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+      <form onSubmit={handleSubmit((data) => onSubmit(data, false))} className="space-y-3">
+        {/* Roof Details - Collapsible */}
+        <Card className="overflow-hidden">
+          <Collapsible open={openSections.roof}>
+            <SectionHeader 
+              title="Roof Details" 
+              section="roof" 
+              isComplete={completionStatus.sections.roof.complete}
+              description="Required"
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="roof_type">Roof Type *</Label>
+                    <Select onValueChange={(value) => setValue('roof_type', value)} value={watch('roof_type')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select roof type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pitched">Pitched</SelectItem>
+                        <SelectItem value="flat">Flat</SelectItem>
+                        <SelectItem value="mixed">Mixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.roof_type && <p className="text-sm text-destructive mt-1">{errors.roof_type.message}</p>}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
+
+                  <div>
+                    <Label htmlFor="roof_condition">Roof Condition *</Label>
+                    <Select onValueChange={(value) => setValue('roof_condition', value)} value={watch('roof_condition')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">Excellent</SelectItem>
+                        <SelectItem value="good">Good</SelectItem>
+                        <SelectItem value="fair">Fair</SelectItem>
+                        <SelectItem value="poor">Poor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.roof_condition && <p className="text-sm text-destructive mt-1">{errors.roof_condition.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="roof_orientation">Roof Orientation *</Label>
+                    <Select onValueChange={(value) => setValue('roof_orientation', value)} value={watch('roof_orientation')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select orientation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="South">South</SelectItem>
+                        <SelectItem value="South-East">South-East</SelectItem>
+                        <SelectItem value="South-West">South-West</SelectItem>
+                        <SelectItem value="East">East</SelectItem>
+                        <SelectItem value="West">West</SelectItem>
+                        <SelectItem value="North">North (not ideal)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="roof_pitch">Roof Pitch (degrees) *</Label>
+                    <Input {...register('roof_pitch')} type="number" step="1" placeholder="e.g., 30" className="w-full" />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="roof_material">Roof Material *</Label>
+                    <Select onValueChange={(value) => setValue('roof_material', value)} value={watch('roof_material')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select material" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
+                        <SelectItem value="Clay tiles">Clay tiles</SelectItem>
+                        <SelectItem value="Slate">Slate</SelectItem>
+                        <SelectItem value="Metal">Metal</SelectItem>
+                        <SelectItem value="Felt/Membrane">Felt/Membrane (flat)</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
-        {/* Status & Actions */}
+        {/* Environmental Analysis - Collapsible */}
+        <Card className="overflow-hidden">
+          <Collapsible open={openSections.environmental}>
+            <SectionHeader 
+              title="Environmental Analysis" 
+              section="environmental"
+              description="Shading & obstructions"
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div>
+                  <Label htmlFor="shading_analysis">Shading Analysis</Label>
+                  <Select onValueChange={(value) => setValue('shading_analysis', value)} value={watch('shading_analysis')}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select shading level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None">No shading</SelectItem>
+                      <SelectItem value="Minimal">Minimal (early morning/late evening only)</SelectItem>
+                      <SelectItem value="Partial">Partial (some hours affected)</SelectItem>
+                      <SelectItem value="Significant">Significant (major obstruction)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="nearby_obstructions">Nearby Obstructions</Label>
+                  <Textarea {...register('nearby_obstructions')} placeholder="Trees, chimneys, neighboring buildings..." rows={2} className="w-full" />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* Electrical System - Collapsible */}
+        <Card className="overflow-hidden">
+          <Collapsible open={openSections.electrical}>
+            <SectionHeader 
+              title="Electrical System" 
+              section="electrical"
+              isComplete={completionStatus.sections.electrical.complete}
+              description="Required"
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="electrical_panel_capacity">Panel Capacity *</Label>
+                    <Select onValueChange={(value) => setValue('electrical_panel_capacity', value)} value={watch('electrical_panel_capacity')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select capacity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="40A">40A (older property)</SelectItem>
+                        <SelectItem value="63A">63A (standard)</SelectItem>
+                        <SelectItem value="80A">80A (modern)</SelectItem>
+                        <SelectItem value="100A">100A (large property)</SelectItem>
+                        <SelectItem value="3-phase">3-phase (commercial)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="electrical_panel_condition">Panel Condition *</Label>
+                    <Select onValueChange={(value) => setValue('electrical_panel_condition', value)} value={watch('electrical_panel_condition')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">Excellent (modern, compliant)</SelectItem>
+                        <SelectItem value="good">Good (adequate)</SelectItem>
+                        <SelectItem value="needs_upgrade">Needs Upgrade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="meter_location">Meter Location</Label>
+                    <Input {...register('meter_location')} placeholder="e.g., Outside front, utility room" className="w-full" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="grid_connection_type">Grid Connection *</Label>
+                    <Select onValueChange={(value) => setValue('grid_connection_type', value)} value={watch('grid_connection_type')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Single phase">Single phase</SelectItem>
+                        <SelectItem value="Three phase">Three phase</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* System Recommendations - Collapsible */}
+        <Card className="overflow-hidden">
+          <Collapsible open={openSections.recommendations}>
+            <SectionHeader 
+              title="System Recommendations" 
+              section="recommendations"
+              isComplete={completionStatus.sections.recommendations.complete}
+              description="Required"
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="recommended_system_size">System Size (kW) *</Label>
+                    <Input {...register('recommended_system_size')} type="number" step="0.1" placeholder="e.g., 6.5" className="w-full" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="recommended_panel_count">Panel Count *</Label>
+                    <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="estimated_installation_cost">Est. Cost (€)</Label>
+                    <Input {...register('estimated_installation_cost')} type="number" step="0.01" placeholder="e.g., 12000" className="w-full" />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="installation_notes">Installation Notes</Label>
+                  <Textarea {...register('installation_notes')} placeholder="Access requirements, scaffolding needs, special considerations..." rows={2} className="w-full" />
+                </div>
+
+                <div>
+                  <Label htmlFor="special_requirements">Special Requirements</Label>
+                  <Textarea {...register('special_requirements')} placeholder="Permits, planning permission, HOA restrictions..." rows={2} className="w-full" />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* Installer Logistics - NEW Collapsible Section */}
+        <Card className="overflow-hidden border-dashed border-amber-300">
+          <Collapsible open={openSections.logistics}>
+            <SectionHeader 
+              title="Installer Logistics" 
+              section="logistics"
+              description="Recommended for installers"
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 mb-4">
+                  <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-800">
+                    These optional fields help installers prepare for the site visit, reducing the need for second visits.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="property_storeys">Property Storeys</Label>
+                    <Select onValueChange={(value) => setValue('property_storeys', value)} value={watch('property_storeys')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select storeys" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1-storey (bungalow)</SelectItem>
+                        <SelectItem value="2">2-storey</SelectItem>
+                        <SelectItem value="3">3+ storey</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="scaffolding_required">Scaffolding Required</Label>
+                    <Select onValueChange={(value) => setValue('scaffolding_required', value)} value={watch('scaffolding_required')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes - Full scaffolding</SelectItem>
+                        <SelectItem value="partial">Partial - Some walls only</SelectItem>
+                        <SelectItem value="no">No - Ladder access OK</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="attic_access">Attic Access</Label>
+                    <Select onValueChange={(value) => setValue('attic_access', value)} value={watch('attic_access')}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select access type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy hatch access</SelectItem>
+                        <SelectItem value="difficult">Difficult access</SelectItem>
+                        <SelectItem value="none">No attic access</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="parking_situation">Parking Situation</Label>
+                    <Input {...register('parking_situation')} placeholder="e.g., Driveway, street parking" className="w-full" />
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <Switch
+                      checked={watch('existing_solar') || false}
+                      onCheckedChange={(checked) => setValue('existing_solar', checked)}
+                    />
+                    <Label htmlFor="existing_solar" className="cursor-pointer">
+                      Property has existing solar system
+                    </Label>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="customer_availability">Customer Availability</Label>
+                    <Textarea {...register('customer_availability')} placeholder="Best days/times for installation, any date restrictions..." rows={2} className="w-full" />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="access_notes">Access Notes</Label>
+                    <Textarea {...register('access_notes')} placeholder="Gate codes, dog in garden, ring doorbell, etc..." rows={2} className="w-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* Photo Upload - Collapsible */}
+        <Card className="overflow-hidden">
+          <Collapsible open={openSections.photos}>
+            <SectionHeader 
+              title="Site Photos" 
+              section="photos"
+              isComplete={completionStatus.sections.photos.complete}
+              description={`${completionStatus.sections.photos.count}/${completionStatus.sections.photos.required} min`}
+            />
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                <div
+                  {...getRootProps()}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                  {uploadingPhotos ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <p className="text-sm text-muted-foreground">Uploading...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {isDragActive ? 'Drop photos here' : 'Tap to add photos or drag & drop'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        JPEG, PNG, WebP (max 5MB)
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {uploadedPhotos.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {uploadedPhotos.map((photo, index) => (
+                      <div key={index} className="relative border rounded-lg overflow-hidden">
+                        <img
+                          src={photo.url}
+                          alt={photo.description}
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-2 bg-background">
+                          <Select 
+                            value={photo.type} 
+                            onValueChange={(value) => updatePhotoType(index, value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Categorize photo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PHOTO_TYPES.map(type => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* Status Selection */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -622,39 +818,46 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                 </Select>
               </div>
             </div>
-
-            {/* Action Buttons - Mobile optimized */}
-            <div className="mt-6 flex flex-col gap-3">
-              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-                {loading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
-                ) : (
-                  <><Save className="mr-2 h-4 w-4" /> Save Survey</>
-                )}
-              </Button>
-
-              {completionStatus.isComplete && onCreateProposal && (
-                <Button
-                  type="button"
-                  onClick={handleCompleteAndCreateProposal}
-                  disabled={loading}
-                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Complete & Create Proposal
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-
-              {!completionStatus.isComplete && onCreateProposal && (
-                <p className="text-sm text-muted-foreground text-center sm:text-left">
-                  Complete all required fields ({completionStatus.completionPercentage}%) to create a proposal
-                </p>
-              )}
-            </div>
           </CardContent>
         </Card>
       </form>
+
+      {/* Sticky Action Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border z-50">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
+          <Button 
+            onClick={handleSubmit((data) => onSubmit(data, false))} 
+            disabled={loading} 
+            variant="outline"
+            className="flex-1"
+          >
+            {loading ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+            ) : (
+              <><Save className="mr-2 h-4 w-4" /> Save Survey</>
+            )}
+          </Button>
+
+          {onCreateProposal && (
+            <Button
+              type="button"
+              onClick={handleCompleteAndCreateProposal}
+              disabled={loading || !completionStatus.isComplete}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Complete & Create Proposal
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {!completionStatus.isComplete && onCreateProposal && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Complete all required fields ({completionStatus.completionPercentage}%) to create a proposal
+          </p>
+        )}
+      </div>
     </div>
   );
 }
