@@ -140,6 +140,21 @@ serve(async (req) => {
               }),
             });
             console.log("Final payment confirmation email sent");
+            
+            // Also send stage change notification
+            await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify({
+                type: "stage_change",
+                leadId: invoiceData.lead_id,
+                previousStage: "installed",
+                newStage: "completed",
+              }),
+            });
           } catch (emailError) {
             console.error("Failed to send email:", emailError);
           }

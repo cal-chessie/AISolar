@@ -17,6 +17,7 @@ import { useDropzone } from 'react-dropzone';
 import { validateSurveyCompletion, mapSurveyToProposal } from '@/lib/surveyValidation';
 import SurveyProgressIndicator from '@/components/survey/SurveyProgressIndicator';
 import { logActivity } from '@/lib/activityLog';
+import { sendStageChangeNotification } from '@/lib/stageNotifications';
 
 const surveySchema = z.object({
   roof_type: z.string().min(1, 'Roof type is required'),
@@ -324,6 +325,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           .from('leads')
           .update({ workflow_stage: 'survey_complete' })
           .eq('id', leadId);
+        
+        // Send stage change notification
+        await sendStageChangeNotification(leadId, leadData?.workflow_stage || 'new', 'survey_complete');
       } else if (finalStatus === 'in_progress') {
         await supabase
           .from('leads')
