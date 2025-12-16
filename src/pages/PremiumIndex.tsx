@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
+import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 
 export default function PremiumIndex() {
   const navigate = useNavigate();
@@ -57,9 +58,12 @@ export default function PremiumIndex() {
               <Zap size={24} />
               <span>SolarPro</span>
             </div>
-            <button className="consultant-login-btn" onClick={() => navigate('/auth')}>
-              Consultant Login
-            </button>
+            <div className="flex items-center gap-2">
+              <DarkModeToggle />
+              <button className="consultant-login-btn" onClick={() => navigate('/auth')}>
+                Consultant Login
+              </button>
+            </div>
           </div>
         </nav>
 
@@ -77,7 +81,8 @@ export default function PremiumIndex() {
                   <Zap size={20} />
                   <span>Get Your Instant Solar Proposal - Save Up To 70% On Electricity</span>
                 </div>
-                <div className="sticky-actions">
+                <div className="sticky-actions flex items-center gap-2">
+                  <DarkModeToggle />
                   <button className="sticky-cta" onClick={() => navigate('/upload')}>
                     Upload Bill Now <ArrowRight size={16} />
                   </button>
