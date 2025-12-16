@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info, Camera } from 'lucide-react';
+import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info, Camera, MapPin } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
 import SurveyStepProgress, { SURVEY_STEPS } from '@/components/survey/SurveyStepProgress';
 import CameraCapture from '@/components/survey/CameraCapture';
+import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
 
@@ -718,6 +719,30 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                   <p className="text-xs text-amber-800">
                     These optional fields help installers prepare for the site visit, reducing the need for second visits.
                   </p>
+                </div>
+
+                {/* Address Lookup with Map */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <Label className="font-medium">Property Location</Label>
+                  </div>
+                  <EircodeAddressLookup 
+                    value={leadData?.address || ''}
+                    onChange={(address) => {
+                      // Update lead address if changed
+                      if (address && leadData) {
+                        supabase
+                          .from('leads')
+                          .update({ address })
+                          .eq('id', leadId)
+                          .then(() => {
+                            setLeadData({ ...leadData, address });
+                          });
+                      }
+                    }}
+                    showMap={true}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
