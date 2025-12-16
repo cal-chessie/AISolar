@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import PremiumBillUpload from '@/components/PremiumBillUpload';
-import ProposalResults from '@/components/ProposalResults';
+import { AIBillAnalyser } from '@/components/ai-analyser';
 import SEOHead from '@/components/SEOHead';
-import { LogIn, Sun, Users, Award, ShieldCheck } from 'lucide-react';
+import { LogIn, Sun, Users, Award, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [showResults, setShowResults] = useState(false);
 
   return (
     <>
@@ -41,7 +39,13 @@ const Index = () => {
                 <div className="p-2 bg-primary/10 rounded-xl">
                   <Sun className="h-7 w-7 text-primary" />
                 </div>
-                <span className="text-xl font-bold">Solar Dublin</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold">Solar Ireland</span>
+                  <Badge variant="secondary" className="text-xs hidden sm:flex">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    AI-Powered
+                  </Badge>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Button 
@@ -73,37 +77,29 @@ const Index = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 text-sm font-medium mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
             >
               <Award className="h-4 w-4" />
               SEAI Registered & BER Approved
             </motion.div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
-              Get Your <span className="text-primary">Free</span> Solar Quote
+              AI Solar Bill Analysis
               <br className="hidden md:block" />
-              <span className="text-muted-foreground text-3xl md:text-4xl lg:text-5xl"> in 30 Seconds</span>
+              <span className="text-muted-foreground text-3xl md:text-4xl lg:text-5xl"> for Irish Homes</span>
             </h1>
             
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Upload your electricity bill and discover how much you could save with solar panels.
-              No obligation, instant results.
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-2">
+              Upload your electricity bill and get instant savings estimates.
+              No obligation, free analysis.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              🇮🇪 Irish sunlight data • SEAI grants included • No spam
             </p>
           </motion.div>
 
-          {/* Main Content */}
-          {!showResults ? (
-            <PremiumBillUpload 
-              onUploadComplete={(data) => {
-                console.log('Upload complete:', data);
-                setShowResults(true);
-              }}
-            />
-          ) : (
-            <ProposalResults 
-              onStartOver={() => setShowResults(false)}
-            />
-          )}
+          {/* AI Bill Analyser */}
+          <AIBillAnalyser />
 
           {/* Trust Section */}
           <motion.div 
@@ -159,7 +155,7 @@ const Index = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2">
                 <Sun className="h-5 w-5 text-primary" />
-                <span className="font-semibold">Solar Dublin</span>
+                <span className="font-semibold">Solar Ireland</span>
               </div>
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <Link to="/portal" className="hover:text-foreground transition-colors">
@@ -170,7 +166,7 @@ const Index = () => {
                 </Link>
               </div>
               <p className="text-sm text-muted-foreground">
-                © {new Date().getFullYear()} Solar Dublin. All rights reserved.
+                © {new Date().getFullYear()} Solar Ireland. All rights reserved.
               </p>
             </div>
           </div>
