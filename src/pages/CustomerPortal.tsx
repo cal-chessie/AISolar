@@ -3,12 +3,14 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sun, AlertCircle, Phone, Mail } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Sun, AlertCircle, Phone, Mail, FileCheck } from 'lucide-react';
 import StatusTimeline from '@/components/customer/StatusTimeline';
 import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import ContractSignature from '@/components/contracts/ContractSignature';
 import InvoiceCard from '@/components/customer/InvoiceCard';
 import InstallationCalendar from '@/components/customer/InstallationCalendar';
+import SEAIGrantStatus from '@/components/seai/SEAIGrantStatus';
 import { Helmet } from 'react-helmet-async';
 import { toast } from '@/components/ui/use-toast';
 
@@ -261,83 +263,119 @@ export default function CustomerPortal() {
             </CardContent>
           </Card>
 
-          {/* Main Content Grid */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Proposal Summary */}
-            {proposal && (
-              <ProposalSummaryCard proposal={proposal} />
-            )}
+          {/* Main Content - Tabs for larger screens */}
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="proposal">Proposal</TabsTrigger>
+              <TabsTrigger value="payment">Payment</TabsTrigger>
+              <TabsTrigger value="grant">
+                <FileCheck className="h-4 w-4 mr-1" />
+                SEAI Grant
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Action Card */}
-            <div className="space-y-6">
-              {/* Contract Signing Section */}
-              {proposal && !contractSigned && proposal.status !== 'draft' && (
-                <ContractSignature
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Proposal Summary */}
+                {proposal && (
+                  <ProposalSummaryCard proposal={proposal} />
+                )}
+
+                {/* Action Card */}
+                <div className="space-y-6">
+                  {/* Contract Signing Section */}
+                  {proposal && !contractSigned && proposal.status !== 'draft' && (
+                    <ContractSignature
+                      proposalId={proposal.id}
+                      leadId={lead.id}
+                      leadName={lead.name}
+                      leadEmail={lead.email}
+                      totalAmount={proposal.net_cost || 0}
+                      onSignComplete={handleContractSigned}
+                    />
+                  )}
+
+                  {/* Contract Signed - Show Invoice */}
+                  {contractSigned && (
+                    <>
+                      <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                        <CardContent className="pt-6">
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            Contract signed on{' '}
+                            {contract?.signed_at 
+                              ? new Date(contract.signed_at).toLocaleDateString()
+                              : 'recently'
+                            }
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+
+                  {/* Contact Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Need Help?</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Our team is here to answer any questions about your solar installation.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button variant="outline" className="flex-1" asChild>
+                          <a href="tel:+353851234567">
+                            <Phone className="h-4 w-4 mr-2" />
+                            Call Us
+                          </a>
+                        </Button>
+                        <Button variant="outline" className="flex-1" asChild>
+                          <a href="mailto:support@solardublin.ie">
+                            <Mail className="h-4 w-4 mr-2" />
+                            Email
+                          </a>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="proposal">
+              {proposal && <ProposalSummaryCard proposal={proposal} />}
+            </TabsContent>
+
+            <TabsContent value="payment" className="space-y-6">
+              {/* Invoice Card */}
+              {invoice && <InvoiceCard invoice={invoice} portalToken={token} />}
+
+              {/* Installation Calendar - Show after deposit paid */}
+              {invoice?.deposit_paid && proposal && (
+                <InstallationCalendar
                   proposalId={proposal.id}
                   leadId={lead.id}
-                  leadName={lead.name}
-                  leadEmail={lead.email}
-                  totalAmount={proposal.net_cost || 0}
-                  onSignComplete={handleContractSigned}
+                  currentDate={proposal.confirmed_install_date}
                 />
               )}
 
-              {/* Contract Signed - Show Invoice */}
-              {contractSigned && (
-                <>
-                  <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
-                    <CardContent className="pt-6">
-                      <p className="text-sm text-green-600 dark:text-green-400">
-                        Contract signed on{' '}
-                        {contract?.signed_at 
-                          ? new Date(contract.signed_at).toLocaleDateString()
-                          : 'recently'
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  {/* Invoice Card */}
-                  {invoice && <InvoiceCard invoice={invoice} portalToken={token} />}
-
-                  {/* Installation Calendar - Show after deposit paid */}
-                  {invoice?.deposit_paid && proposal && (
-                    <InstallationCalendar
-                      proposalId={proposal.id}
-                      leadId={lead.id}
-                      currentDate={proposal.confirmed_install_date}
-                    />
-                  )}
-                </>
+              {!invoice && (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">
+                      Invoice will be available after contract signing.
+                    </p>
+                  </CardContent>
+                </Card>
               )}
+            </TabsContent>
 
-              {/* Contact Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Need Help?</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Our team is here to answer any questions about your solar installation.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" className="flex-1" asChild>
-                      <a href="tel:+353851234567">
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call Us
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="flex-1" asChild>
-                      <a href="mailto:support@solardublin.ie">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Email
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+            <TabsContent value="grant">
+              {proposal && (
+                <SEAIGrantStatus proposalId={proposal.id} leadId={lead.id} />
+              )}
+            </TabsContent>
+          </Tabs>
 
           {/* Property Details */}
           {lead.address && (

@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info, Camera } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
-import SurveyProgressIndicator from '@/components/survey/SurveyProgressIndicator';
+import SurveyStepProgress, { SURVEY_STEPS } from '@/components/survey/SurveyStepProgress';
+import CameraCapture from '@/components/survey/CameraCapture';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
 
@@ -96,6 +97,57 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
 
   // Calculate completion status
   const completionStatus = validateSurveyCompletion(formValues, uploadedPhotos.length);
+
+  // Calculate current step based on open sections
+  const getCurrentStep = () => {
+    if (openSections.roof) return 2;
+    if (openSections.environmental) return 3;
+    if (openSections.electrical) return 4;
+    if (openSections.recommendations) return 5;
+    if (openSections.logistics) return 6;
+    if (openSections.photos) return 7;
+    return 1;
+  };
+
+  const getCompletedSteps = () => {
+    const completed: string[] = [];
+    if (completionStatus.sections.roof.complete) completed.push('roof');
+    if (completionStatus.sections.electrical.complete) completed.push('electrical');
+    if (completionStatus.sections.recommendations.complete) completed.push('recommendations');
+    if (completionStatus.sections.photos.complete) completed.push('photos');
+    return completed;
+  };
+
+  // Handle camera capture
+  const handleCameraCapture = async (file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${leadId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('survey-photos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('survey-photos')
+        .getPublicUrl(fileName);
+
+      setUploadedPhotos(prev => [...prev, {
+        url: publicUrl,
+        type: 'other',
+        description: file.name,
+      }]);
+    } catch (error: any) {
+      console.error('Camera capture upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -425,7 +477,10 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     <div className="space-y-4 pb-32">
       {/* Progress Indicator - Sticky on mobile */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        <SurveyProgressIndicator status={completionStatus} />
+        <SurveyStepProgress 
+          currentStep={getCurrentStep()} 
+          completedSteps={getCompletedSteps()}
+        />
       </div>
 
       <form onSubmit={handleSubmit((data) => onSubmit(data, false))} className="space-y-3">
@@ -749,6 +804,13 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
             />
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
+                {/* Camera Capture Button */}
+                <div className="flex items-center gap-3">
+                  <CameraCapture onCapture={handleCameraCapture} disabled={uploadingPhotos} />
+                  <span className="text-sm text-muted-foreground">or</span>
+                </div>
+
+                {/* Drag & Drop Zone */}
                 <div
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
@@ -765,7 +827,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                   ) : (
                     <>
                       <p className="text-sm text-muted-foreground mb-1">
-                        {isDragActive ? 'Drop photos here' : 'Tap to add photos or drag & drop'}
+                        {isDragActive ? 'Drop photos here' : 'Select files or drag & drop'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         JPEG, PNG, WebP (max 5MB)

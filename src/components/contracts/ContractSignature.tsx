@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FileText, CheckCircle, Loader2 } from 'lucide-react';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
+import SignatureCanvas from '@/components/ui/SignatureCanvas';
 
 interface ContractSignatureProps {
   proposalId: string;
@@ -268,17 +269,14 @@ warranty registration, and customer support. I can withdraw consent at any time 
 
           {/* Digital Signature */}
           <div>
-            <Label htmlFor="signature">Digital Signature</Label>
+            <Label>Digital Signature</Label>
             <p className="text-xs text-muted-foreground mb-2">
-              Type your full legal name as your digital signature
+              Sign in the box below using your finger or mouse
             </p>
-            <Input
-              id="signature"
-              value={formData.signature}
-              onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
-              placeholder="Type your full name here"
-              className="font-signature text-lg"
-              required
+            <SignatureCanvas
+              onSignatureChange={(sig) => setFormData(prev => ({ ...prev, signature: sig || '' }))}
+              initialSignature={formData.signature || null}
+              label="Draw your signature"
             />
           </div>
 
