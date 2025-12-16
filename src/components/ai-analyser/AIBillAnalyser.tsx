@@ -4,6 +4,7 @@ import { BillInputStep } from "./BillInputStep";
 import { AnalysisResultsStep } from "./AnalysisResultsStep";
 import { LeadCaptureModal } from "./LeadCaptureModal";
 import { SoftCTAStep } from "./SoftCTAStep";
+import { brand } from "@/config/brand";
 
 export interface AnalysisData {
   monthlyBill: number;
@@ -31,7 +32,7 @@ export function AIBillAnalyser() {
     const electricityRate = 0.35; // €/kWh average
     const annualSavings = Math.round(annualProduction * electricityRate * 0.7); // 70% self-consumption
     const solarOffset = Math.min(85, Math.round((annualProduction / (annualSpend / electricityRate)) * 100));
-    const systemCost = estimatedSystemSize * 1800 - 2400; // After SEAI grant
+    const systemCost = estimatedSystemSize * 1800 - brand.grants.maxDomestic; // After SEAI grant
     const paybackYears = Math.round((systemCost / annualSavings) * 10) / 10;
     const twentyYearSavings = annualSavings * 20;
 
@@ -58,7 +59,7 @@ export function AIBillAnalyser() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto px-4 sm:px-0">
       <AnimatePresence mode="wait">
         {currentStep === "input" && (
           <motion.div
