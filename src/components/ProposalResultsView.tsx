@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, TrendingDown, Calendar, Shield, CheckCircle, FileText, Download, Send, ArrowLeft, Battery, Package, Sun } from 'lucide-react';
+import { Zap, TrendingDown, Calendar, Shield, CheckCircle, FileText, Download, Send, ArrowLeft, Battery, Package, Sun, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import ProposalPreview from '@/components/proposal/ProposalPreview';
 
 interface ProposalResultsViewProps {
   proposalId: string;
@@ -18,6 +19,7 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
   const [proposal, setProposal] = useState<any>(null);
   const [lead, setLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,12 +82,23 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
   };
 
   const handleSendToCustomer = () => {
-    // TODO: Implement email sending
-    toast({
-      title: "Coming Soon",
-      description: "Email sending will be available in a future update.",
-    });
+    setShowPreview(true);
   };
+
+  // Show preview mode with acceptance flow
+  if (showPreview && proposal && lead) {
+    return (
+      <ProposalPreview
+        proposal={proposal}
+        lead={lead}
+        onBack={() => setShowPreview(false)}
+        onComplete={() => {
+          loadData();
+          setShowPreview(false);
+        }}
+      />
+    );
+  }
 
   if (loading || !proposal || !lead) {
     return (
@@ -496,8 +509,8 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                 Download PDF
               </Button>
               <Button variant="outline" className="flex-1" onClick={handleSendToCustomer}>
-                <FileText className="mr-2 h-4 w-4" />
-                Send to Customer
+                <Eye className="mr-2 h-4 w-4" />
+                Preview & Send
               </Button>
             </div>
           </CardContent>

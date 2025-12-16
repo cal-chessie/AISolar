@@ -113,6 +113,7 @@ export function calculateSurveyStatus(
 }
 
 // Map survey data to proposal data - used for Survey → Proposal flow
+// This comprehensive mapping eliminates duplicate data entry
 export function mapSurveyToProposal(surveyData: any, leadData: any) {
   const systemSize = parseFloat(surveyData.recommended_system_size) || 0;
   const panelCount = parseInt(surveyData.recommended_panel_count) || 0;
@@ -125,28 +126,49 @@ export function mapSurveyToProposal(surveyData: any, leadData: any) {
     : systemSize * 900;
 
   return {
-    // From survey - roof details
+    // From survey - roof details (auto-populated)
     roofType: surveyData.roof_type || '',
     roofCondition: surveyData.roof_condition || '',
     roofOrientation: surveyData.roof_orientation || '',
     roofPitch: surveyData.roof_pitch?.toString() || '',
     roofMaterial: surveyData.roof_material || '',
     
-    // From survey - other
-    shadingLevel: surveyData.shading_analysis || '',
-    systemSize: systemSize.toString(),
+    // From survey - electrical (auto-populated)
     panelCapacity: surveyData.electrical_panel_capacity || '',
+    gridConnectionType: surveyData.grid_connection_type || '',
+    
+    // From survey - shading & environment (auto-populated)
+    shadingLevel: surveyData.shading_analysis || '',
+    nearbyObstructions: surveyData.nearby_obstructions || '',
+    
+    // From survey - recommendations (auto-populated)
+    systemSize: systemSize.toString(),
+    panelCount: panelCount.toString(),
+    
+    // From survey - notes (auto-populated)
     specialRequirements: surveyData.special_requirements || '',
     installationNotes: surveyData.installation_notes || '',
     
-    // Calculated/derived
-    annualConsumption: estimatedAnnualConsumption.toString(),
-    estimatedCost: surveyData.estimated_installation_cost?.toString() || '',
+    // From survey - customer goals (auto-populated if captured in survey)
+    batteryStorage: surveyData.battery_storage ? 'yes' : 'no',
+    hotWaterDiverter: surveyData.hot_water_diverter || false,
+    evCharger: surveyData.ev_charger || false,
     
-    // Defaults
+    // From survey - installer logistics (for reference)
+    propertyStoreys: surveyData.property_storeys || '',
+    scaffoldingRequired: surveyData.scaffolding_required || '',
+    atticAccess: surveyData.attic_access || '',
+    existingSolar: surveyData.existing_solar || false,
+    
+    // Calculated/derived from lead data
+    annualConsumption: estimatedAnnualConsumption.toString(),
+    
+    // Defaults that can be adjusted in proposal
     currentTariff: '0.35',
-    batteryInterest: 'no',
     propertyType: leadData?.property_type || 'residential',
+    
+    // Flag to show this data came from survey
+    _prefilledFromSurvey: true,
   };
 }
 

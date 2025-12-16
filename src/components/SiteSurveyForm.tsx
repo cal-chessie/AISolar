@@ -12,11 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info, Camera, MapPin } from 'lucide-react';
-import { useDropzone } from 'react-dropzone';
+import { Loader2, Save, CheckCircle, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info, MapPin } from 'lucide-react';
 import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
 import SurveyStepProgress, { SURVEY_STEPS } from '@/components/survey/SurveyStepProgress';
-import CameraCapture from '@/components/survey/CameraCapture';
+import GuidedPhotoCapture from '@/components/survey/GuidedPhotoCapture';
 import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
@@ -119,36 +118,6 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     return completed;
   };
 
-  // Handle camera capture
-  const handleCameraCapture = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${leadId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from('survey-photos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('survey-photos')
-        .getPublicUrl(fileName);
-
-      setUploadedPhotos(prev => [...prev, {
-        url: publicUrl,
-        type: 'other',
-        description: file.name,
-      }]);
-    } catch (error: any) {
-      console.error('Camera capture upload error:', error);
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -216,69 +185,6 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     } finally {
       setFetchingData(false);
     }
-  };
-
-  const onDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
-
-    setUploadingPhotos(true);
-    try {
-      const uploadPromises = acceptedFiles.map(async (file) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${leadId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('survey-photos')
-          .upload(fileName, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('survey-photos')
-          .getPublicUrl(fileName);
-
-        return {
-          url: publicUrl,
-          type: 'other',
-          description: file.name,
-        };
-      });
-
-      const newPhotos = await Promise.all(uploadPromises);
-      setUploadedPhotos(prev => [...prev, ...newPhotos]);
-
-      toast({
-        title: 'Photos uploaded',
-        description: `${acceptedFiles.length} photo(s) uploaded successfully`,
-      });
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: 'Upload failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingPhotos(false);
-    }
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
-    },
-    maxSize: 5242880, // 5MB
-  });
-
-  const removePhoto = (index: number) => {
-    setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updatePhotoType = (index: number, newType: string) => {
-    setUploadedPhotos(prev => prev.map((photo, i) => 
-      i === index ? { ...photo, type: newType } : photo
-    ));
   };
 
   const onSubmit = async (data: SurveyFormData, shouldComplete: boolean = false) => {
@@ -850,86 +756,33 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           </Collapsible>
         </Card>
 
-        {/* Photo Upload - Collapsible */}
+        {/* Photo Upload - Collapsible with Guided Capture */}
         <Card className="overflow-hidden">
           <Collapsible open={openSections.photos}>
             <SectionHeader 
               title="Site Photos" 
               section="photos"
               isComplete={completionStatus.sections.photos.complete}
-              description={`${completionStatus.sections.photos.count}/${completionStatus.sections.photos.required} min`}
+              description={`${uploadedPhotos.length} captured`}
             />
             <CollapsibleContent>
-              <CardContent className="space-y-4 pt-0">
-                {/* Camera Capture Button */}
-                <div className="flex items-center gap-3">
-                  <CameraCapture onCapture={handleCameraCapture} disabled={uploadingPhotos} />
-                  <span className="text-sm text-muted-foreground">or</span>
-                </div>
-
-                {/* Drag & Drop Zone */}
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                    isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-                  }`}
-                >
-                  <input {...getInputProps()} />
-                  <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-                  {uploadingPhotos ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <p className="text-sm text-muted-foreground">Uploading...</p>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {isDragActive ? 'Drop photos here' : 'Select files or drag & drop'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        JPEG, PNG, WebP (max 5MB)
-                      </p>
-                    </>
-                  )}
-                </div>
-
-                {uploadedPhotos.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {uploadedPhotos.map((photo, index) => (
-                      <div key={index} className="relative border rounded-lg overflow-hidden">
-                        <img
-                          src={photo.url}
-                          alt={photo.description}
-                          className="w-full h-32 object-cover"
-                        />
-                        <div className="p-2 bg-background">
-                          <Select 
-                            value={photo.type} 
-                            onValueChange={(value) => updatePhotoType(index, value)}
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Categorize photo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PHOTO_TYPES.map(type => (
-                                <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <CardContent className="pt-0">
+                {/* Guided Photo Capture - Individual buttons for each required photo */}
+                <GuidedPhotoCapture
+                  leadId={leadId}
+                  existingPhotos={uploadedPhotos.map((p, i) => ({ 
+                    id: `photo-${i}`, 
+                    url: p.url, 
+                    type: p.type 
+                  }))}
+                  onPhotosChange={(photos) => {
+                    setUploadedPhotos(photos.map(p => ({
+                      url: p.url,
+                      type: p.type,
+                      description: p.type
+                    })));
+                  }}
+                />
               </CardContent>
             </CollapsibleContent>
           </Collapsible>
