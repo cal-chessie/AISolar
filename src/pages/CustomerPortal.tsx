@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import ContractSignature from '@/components/contracts/ContractSignature';
 import InvoiceCard from '@/components/customer/InvoiceCard';
 import { Helmet } from 'react-helmet-async';
+import { toast } from '@/components/ui/use-toast';
 
 interface PortalData {
   lead: {
@@ -58,11 +59,32 @@ interface PortalData {
 
 export default function CustomerPortal() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
   const [contractSigned, setContractSigned] = useState(false);
 
+  // Handle payment status from URL
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast({
+        title: 'Payment Successful!',
+        description: 'Thank you for your payment. Your invoice has been updated.',
+      });
+      searchParams.delete('payment');
+      setSearchParams(searchParams);
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: 'Payment Cancelled',
+        description: 'Your payment was not completed. You can try again anytime.',
+        variant: 'destructive',
+      });
+      searchParams.delete('payment');
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, setSearchParams]);
   useEffect(() => {
     const fetchPortalData = async () => {
       if (!token) {
@@ -275,7 +297,7 @@ export default function CustomerPortal() {
                   </Card>
 
                   {/* Invoice Card */}
-                  {invoice && <InvoiceCard invoice={invoice} />}
+                  {invoice && <InvoiceCard invoice={invoice} portalToken={token} />}
                 </>
               )}
 

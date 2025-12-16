@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, CheckCircle, Clock, AlertCircle, Loader2, CreditCard } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface InvoiceCardProps {
   invoice: {
@@ -16,9 +20,11 @@ interface InvoiceCardProps {
     due_date: string | null;
     status: string | null;
   };
+  portalToken?: string;
 }
 
-export default function InvoiceCard({ invoice }: InvoiceCardProps) {
+export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) {
+  const [loading, setLoading] = useState<string | null>(null);
   const depositAmount = invoice.deposit_amount || 0;
   const finalAmount = invoice.final_amount || (invoice.total_amount - depositAmount);
   
@@ -30,6 +36,45 @@ export default function InvoiceCard({ invoice }: InvoiceCardProps) {
       return <Badge className="bg-blue-500">Deposit Paid</Badge>;
     }
     return <Badge variant="secondary">Pending</Badge>;
+  };
+
+  const handlePayment = async (paymentType: 'deposit' | 'final') => {
+    setLoading(paymentType);
+    try {
+      const baseUrl = window.location.origin;
+      const successUrl = portalToken 
+        ? `${baseUrl}/customer/${portalToken}?payment=success`
+        : `${baseUrl}?payment=success`;
+      const cancelUrl = portalToken
+        ? `${baseUrl}/customer/${portalToken}?payment=cancelled`
+        : `${baseUrl}?payment=cancelled`;
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          invoiceId: invoice.id,
+          paymentType,
+          successUrl,
+          cancelUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast({
+        title: 'Payment Error',
+        description: error.message || 'Failed to initiate payment. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -107,22 +152,41 @@ export default function InvoiceCard({ invoice }: InvoiceCardProps) {
           </div>
         </div>
 
-        {/* Payment Instructions */}
+        {/* Payment Buttons */}
         {!invoice.deposit_paid && (
-          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Next step:</strong> Please arrange deposit payment of €{depositAmount.toLocaleString()} to secure your installation date.
-            </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-              Bank transfer details will be sent to your email, or contact us for alternative payment options.
-            </p>
-          </div>
+          <Button 
+            className="w-full" 
+            onClick={() => handlePayment('deposit')}
+            disabled={loading === 'deposit'}
+          >
+            {loading === 'deposit' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 mr-2" />
+            )}
+            Pay Deposit €{depositAmount.toLocaleString()}
+          </Button>
         )}
 
         {invoice.deposit_paid && !invoice.final_paid && (
-          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>Balance due:</strong> €{finalAmount.toLocaleString()} payable upon installation completion.
+          <Button 
+            className="w-full" 
+            onClick={() => handlePayment('final')}
+            disabled={loading === 'final'}
+          >
+            {loading === 'final' ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 mr-2" />
+            )}
+            Pay Balance €{finalAmount.toLocaleString()}
+          </Button>
+        )}
+
+        {invoice.final_paid && (
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
+            <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+              ✓ Invoice paid in full
             </p>
           </div>
         )}
