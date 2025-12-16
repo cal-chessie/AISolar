@@ -7,6 +7,7 @@ import { Loader2, Sun, AlertCircle, Phone, Mail } from 'lucide-react';
 import StatusTimeline from '@/components/customer/StatusTimeline';
 import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import ContractSignature from '@/components/contracts/ContractSignature';
+import InvoiceCard from '@/components/customer/InvoiceCard';
 import { Helmet } from 'react-helmet-async';
 
 interface PortalData {
@@ -42,8 +43,16 @@ interface PortalData {
   } | null;
   invoice: {
     id: string;
-    deposit_paid: boolean | null;
+    invoice_number: string;
+    total_amount: number;
     deposit_amount: number | null;
+    deposit_paid: boolean | null;
+    deposit_paid_at: string | null;
+    final_amount: number | null;
+    final_paid: boolean | null;
+    final_paid_at: string | null;
+    due_date: string | null;
+    status: string | null;
   } | null;
 }
 
@@ -250,51 +259,24 @@ export default function CustomerPortal() {
                 />
               )}
 
-              {/* Contract Signed - Show Next Steps */}
+              {/* Contract Signed - Show Invoice */}
               {contractSigned && (
-                <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
-                  <CardHeader>
-                    <CardTitle className="text-green-700 dark:text-green-300">
-                      Contract Signed ✓
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-green-600 dark:text-green-400 mb-4">
-                      Thank you for signing! Your contract was signed on{' '}
-                      {contract?.signed_at 
-                        ? new Date(contract.signed_at).toLocaleDateString()
-                        : 'recently'
-                      }.
-                    </p>
+                <>
+                  <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                    <CardContent className="pt-6">
+                      <p className="text-sm text-green-600 dark:text-green-400">
+                        Contract signed on{' '}
+                        {contract?.signed_at 
+                          ? new Date(contract.signed_at).toLocaleDateString()
+                          : 'recently'
+                        }
+                      </p>
+                    </CardContent>
+                  </Card>
 
-                    {/* Deposit Payment Status */}
-                    {invoice && !invoice.deposit_paid && (
-                      <div className="p-4 bg-background rounded-lg border">
-                        <h4 className="font-semibold mb-2">Next Step: Pay Deposit</h4>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          30% deposit of €{(invoice.deposit_amount || 0).toLocaleString()} required
-                        </p>
-                        <Button className="w-full">
-                          Pay Deposit
-                        </Button>
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
-                          Secure payment via Stripe
-                        </p>
-                      </div>
-                    )}
-
-                    {invoice?.deposit_paid && (
-                      <div className="p-4 bg-background rounded-lg border">
-                        <h4 className="font-semibold text-green-600 mb-2">
-                          Deposit Paid ✓
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          We'll be in touch shortly to schedule your installation.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                  {/* Invoice Card */}
+                  {invoice && <InvoiceCard invoice={invoice} />}
+                </>
               )}
 
               {/* Contact Card */}

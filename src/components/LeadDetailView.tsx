@@ -14,11 +14,13 @@ import {
   ClipboardCheck,
   ArrowLeft,
   Send,
-  Trash2
+  Trash2,
+  Euro
 } from 'lucide-react';
 import SiteSurveyForm from './SiteSurveyForm';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
 import SendToCustomerDialog from './dashboard/SendToCustomerDialog';
+import InvoiceManagement from './dashboard/InvoiceManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import {
@@ -172,6 +174,10 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                   <FileText className="h-4 w-4" />
                   Proposal
                 </TabsTrigger>
+                <TabsTrigger value="invoice" className="gap-2">
+                  <Euro className="h-4 w-4" />
+                  Invoice
+                </TabsTrigger>
                 <TabsTrigger value="timeline" className="gap-2">
                   <Calendar className="h-4 w-4" />
                   Timeline
@@ -276,6 +282,10 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
 
               <TabsContent value="proposal" className="mt-0">
                 <ProposalQuestionnaire leadId={lead.id} />
+              </TabsContent>
+
+              <TabsContent value="invoice" className="mt-0">
+                <InvoiceManagement leadId={lead.id} />
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-0">
