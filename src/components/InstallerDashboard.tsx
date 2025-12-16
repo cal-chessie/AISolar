@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import SurveyDetailsCard from './installer/SurveyDetailsCard';
+import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 
 export default function InstallerDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -113,12 +114,12 @@ export default function InstallerDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'accepted': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-purple-100 text-purple-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400';
+      case 'accepted': return 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400';
+      case 'in_progress': return 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400';
+      case 'completed': return 'bg-primary/10 text-primary dark:bg-primary/20';
+      case 'cancelled': return 'bg-destructive/10 text-destructive dark:bg-destructive/20';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -254,17 +255,20 @@ export default function InstallerDashboard() {
   const completedCount = filterAssignments('completed').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 p-6">
+    <div className="min-h-screen gradient-background p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-4xl font-bold text-foreground mb-2">Installer Dashboard</h1>
             <p className="text-muted-foreground">Manage your installation assignments</p>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut size={18} />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut size={18} />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

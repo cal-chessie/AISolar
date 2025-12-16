@@ -16,6 +16,7 @@ import {
   FileCheck,
   Settings
 } from 'lucide-react';
+import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,15 +59,15 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
     transition={{ type: "spring", stiffness: 300 }}
   >
     <div className="flex items-center gap-4">
-      <div className={`p-3 rounded-xl bg-slate-50 ${color}`}>
+      <div className={`p-3 rounded-xl bg-muted ${color}`}>
         {icon}
       </div>
       <div className="flex-1">
-        <div className="text-3xl font-bold text-slate-900">{value}</div>
-        <div className="text-sm text-slate-600 mt-1">{label}</div>
+        <div className="text-3xl font-bold text-foreground">{value}</div>
+        <div className="text-sm text-muted-foreground mt-1">{label}</div>
       </div>
       <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-        trend.positive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+        trend.positive ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-destructive/10 text-destructive dark:bg-destructive/20'
       }`}>
         {trend.positive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
         {trend.value}
@@ -268,8 +269,8 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Solar Dublin</h1>
-              <p className="text-slate-600 mt-1 text-sm sm:text-base">Consultant Portal</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Solar Dublin</h1>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">Consultant Portal</p>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               <button 
@@ -280,6 +281,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 <Zap size={20} />
                 <span className="hidden sm:inline">New Proposal</span>
               </button>
+              <DarkModeToggle />
               <Button
                 variant="ghost"
                 size="icon"
@@ -342,7 +344,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                   className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm sm:text-base ${
                     activeTab === tab.id
                       ? 'gradient-primary text-white shadow-lg'
-                      : 'bg-card text-slate-600 hover:bg-slate-50 border border-border'
+                      : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                   }`}
                   onClick={() => setActiveTab(tab.id)}
                 >
@@ -469,9 +471,9 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                   className="bg-card rounded-2xl border border-border shadow-lg p-6 text-center"
                 >
                   <div className="py-12">
-                    <Zap className="mx-auto text-slate-300 mb-4" size={48} />
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">AI Sales Coach</h3>
-                    <p className="text-slate-600 text-sm">
+                    <Zap className="mx-auto text-muted-foreground/30 mb-4" size={48} />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">AI Sales Coach</h3>
+                    <p className="text-muted-foreground text-sm">
                       Select a lead to get AI-powered sales guidance
                     </p>
                   </div>
@@ -586,7 +588,7 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
           className={`cursor-pointer transition-all ${
             star <= score
               ? 'fill-yellow-400 text-yellow-400'
-              : 'text-slate-300 hover:text-yellow-300'
+              : 'text-muted-foreground/40 hover:text-yellow-300'
           }`}
           onClick={() => updateLeadScore(leadId, star)}
         />
@@ -634,10 +636,10 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Active Leads</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Active Leads</h2>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
             <Input
               placeholder="Search leads..."
               value={searchQuery}
@@ -653,7 +655,7 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
       </div>
 
       {searchQuery && filteredLeads.length > 0 && (
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Found {filteredLeads.length} of {leads.length} leads
         </p>
       )}
@@ -672,27 +674,27 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
             {paginatedLeads.map((lead) => (
               <div 
                 key={lead.id}
-                className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+                className="p-4 sm:p-5 bg-muted/50 rounded-xl border border-border hover:shadow-md transition-all"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                      <h3 className="font-semibold text-slate-900 text-base sm:text-lg truncate">{lead.name}</h3>
+                      <h3 className="font-semibold text-foreground text-base sm:text-lg truncate">{lead.name}</h3>
                       <StarRating score={lead.score || 0} leadId={lead.id} />
                     </div>
-                    <p className="text-sm text-slate-600 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {lead.address || 'No address'} • €{lead.monthly_bill || 0}/month
                     </p>
-                    <p className="text-xs text-slate-500 mt-1 truncate">{lead.email}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1 truncate">{lead.email}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                      lead.status === 'new' ? 'bg-primary text-white' :
-                      lead.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
-                      lead.status === 'qualified' ? 'bg-purple-100 text-purple-700' :
-                      lead.status === 'proposal_sent' ? 'bg-orange-100 text-orange-700' :
-                      lead.status === 'closed_won' ? 'bg-green-100 text-green-700' :
-                      'bg-red-100 text-red-700'
+                      lead.status === 'new' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+                      lead.status === 'contacted' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+                      lead.status === 'qualified' ? 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
+                      lead.status === 'proposal_sent' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+                      lead.status === 'closed_won' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+                      'bg-destructive/10 text-destructive dark:bg-destructive/20'
                     }`}>
                       {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
                     </span>
@@ -727,7 +729,7 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
                   </div>
                 </div>
                 {lead.notes && (
-                  <p className="text-sm text-slate-600 mt-2 italic truncate">
+                  <p className="text-sm text-muted-foreground mt-2 italic truncate">
                     Note: {lead.notes}
                   </p>
                 )}
@@ -804,8 +806,8 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Proposals</h2>
-        <span className="text-sm text-slate-600">{proposals.length} total</span>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Proposals</h2>
+        <span className="text-sm text-muted-foreground">{proposals.length} total</span>
       </div>
       {proposals.length === 0 ? (
         <EmptyProposalsState />
@@ -815,20 +817,20 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
             {paginatedProposals.map((proposal) => (
               <div 
                 key={proposal.id} 
-                className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+                className="p-4 sm:p-5 bg-muted/50 rounded-xl border border-border hover:shadow-md transition-all"
               >
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
                   <div>
-                    <h3 className="font-semibold text-slate-900 text-base sm:text-lg">{proposal.leads?.name || 'Unknown'}</h3>
-                    <p className="text-sm text-slate-600">{proposal.system_size_kw} kW system</p>
+                    <h3 className="font-semibold text-foreground text-base sm:text-lg">{proposal.leads?.name || 'Unknown'}</h3>
+                    <p className="text-sm text-muted-foreground">{proposal.system_size_kw} kW system</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      proposal.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      proposal.status === 'presented' ? 'bg-blue-100 text-blue-700' :
-                      proposal.status === 'draft' ? 'bg-orange-100 text-orange-700' :
-                      proposal.requires_review ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-700'
+                      proposal.status === 'approved' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+                      proposal.status === 'presented' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+                      proposal.status === 'draft' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+                      proposal.requires_review ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' :
+                      'bg-muted text-muted-foreground'
                     }`}>
                       {proposal.requires_review && !proposal.reviewed_at ? 'PENDING REVIEW' : proposal.status?.toUpperCase()}
                     </span>
@@ -853,7 +855,7 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-muted-foreground/70 mt-2">
                   Created {new Date(proposal.created_at).toLocaleDateString()}
                 </p>
               </div>
