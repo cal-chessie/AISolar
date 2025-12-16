@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.send-follow-up-digest]
 verify_jwt = false
+
+[functions.create-crypto-checkout]
+verify_jwt = false
+
+[functions.coinbase-webhook]
+verify_jwt = false

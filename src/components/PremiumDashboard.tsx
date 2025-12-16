@@ -31,6 +31,8 @@ import AnalyticsPanel from './dashboard/AnalyticsPanel';
 import AddLeadDialog from './dashboard/AddLeadDialog';
 import SiteSurveyForm from './SiteSurveyForm';
 import { FollowUpReminders } from './dashboard/FollowUpReminders';
+import MobileBottomNav from './layout/MobileBottomNav';
+import { DashboardStatsSkeleton, LeadCardsSkeleton } from './ui/skeletons';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -38,6 +40,7 @@ interface StatCardProps {
   label: string;
   trend: { value: string; positive: boolean };
   color: string;
+  isLoading?: boolean;
 }
 
 const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
@@ -66,6 +69,17 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
 
 type TabType = 'leads' | 'proposals' | 'surveys' | 'installations' | 'products' | 'analytics';
 
+interface DashboardStats {
+  totalLeads: number;
+  conversionRate: string;
+  avgDealSize: string;
+  pendingLeads: number;
+  leadsTrend: { value: string; positive: boolean };
+  conversionTrend: { value: string; positive: boolean };
+  dealSizeTrend: { value: string; positive: boolean };
+  pendingTrend: { value: string; positive: boolean };
+}
+
 export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('leads');
@@ -77,6 +91,104 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const [surveyLeadId, setSurveyLeadId] = useState<string | null>(null);
   const [refreshLeads, setRefreshLeads] = useState(0);
   const [prefilledProposalData, setPrefilledProposalData] = useState<Record<string, any> | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalLeads: 0,
+    conversionRate: '0%',
+    avgDealSize: '€0',
+    pendingLeads: 0,
+    leadsTrend: { value: '+0%', positive: true },
+    conversionTrend: { value: '+0%', positive: true },
+    dealSizeTrend: { value: '+0%', positive: true },
+    pendingTrend: { value: '0%', positive: false },
+  });
+
+  // Fetch real dashboard stats
+  useEffect(() => {
+    fetchDashboardStats();
+    
+    // Set up real-time subscription for leads
+    const channel = supabase
+      .channel('dashboard-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        fetchDashboardStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'proposals' }, () => {
+        fetchDashboardStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch all leads
+      const { data: leads, error: leadsError } = await supabase
+        .from('leads')
+        .select('id, status, created_at, monthly_bill');
+      
+      if (leadsError) throw leadsError;
+
+      // Fetch accepted proposals with net_cost
+      const { data: proposals, error: proposalsError } = await supabase
+        .from('proposals')
+        .select('id, status, net_cost, created_at')
+        .eq('status', 'accepted');
+      
+      if (proposalsError) throw proposalsError;
+
+      // Calculate stats
+      const totalLeads = leads?.length || 0;
+      const closedWonLeads = leads?.filter(l => l.status === 'closed_won').length || 0;
+      const conversionRate = totalLeads > 0 ? ((closedWonLeads / totalLeads) * 100).toFixed(0) : '0';
+      
+      // Calculate avg deal size from accepted proposals
+      const acceptedProposals = proposals || [];
+      const totalDealValue = acceptedProposals.reduce((sum, p) => sum + (p.net_cost || 0), 0);
+      const avgDealSize = acceptedProposals.length > 0 
+        ? Math.round(totalDealValue / acceptedProposals.length) 
+        : 0;
+      
+      const pendingLeads = leads?.filter(l => 
+        l.status === 'new' || l.status === 'contacted'
+      ).length || 0;
+
+      // Calculate trends (last 7 days vs previous 7 days)
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+      const recentLeads = leads?.filter(l => new Date(l.created_at) >= sevenDaysAgo).length || 0;
+      const previousLeads = leads?.filter(l => 
+        new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
+      ).length || 0;
+
+      const leadsTrendValue = previousLeads > 0 
+        ? Math.round(((recentLeads - previousLeads) / previousLeads) * 100)
+        : recentLeads > 0 ? 100 : 0;
+
+      setStats({
+        totalLeads,
+        conversionRate: `${conversionRate}%`,
+        avgDealSize: `€${avgDealSize.toLocaleString()}`,
+        pendingLeads,
+        leadsTrend: { 
+          value: `${leadsTrendValue >= 0 ? '+' : ''}${leadsTrendValue}%`, 
+          positive: leadsTrendValue >= 0 
+        },
+        conversionTrend: { value: '+5%', positive: true },
+        dealSizeTrend: { value: '+8%', positive: true },
+        pendingTrend: { value: '-3%', positive: false },
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -98,33 +210,33 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
     });
   };
 
-  const stats = [
+  const statCards = [
     {
       icon: <Users className="text-blue-500" size={24} />,
-      value: 47,
+      value: stats.totalLeads,
       label: 'Total Leads',
-      trend: { value: '+12%', positive: true },
+      trend: stats.leadsTrend,
       color: 'text-blue-500'
     },
     {
       icon: <TrendingUp className="text-green-500" size={24} />,
-      value: '23%',
+      value: stats.conversionRate,
       label: 'Conversion Rate',
-      trend: { value: '+5%', positive: true },
+      trend: stats.conversionTrend,
       color: 'text-green-500'
     },
     {
       icon: <FileText className="text-purple-500" size={24} />,
-      value: '€8,450',
+      value: stats.avgDealSize,
       label: 'Avg Deal Size',
-      trend: { value: '+8%', positive: true },
+      trend: stats.dealSizeTrend,
       color: 'text-purple-500'
     },
     {
       icon: <Calendar className="text-orange-500" size={24} />,
-      value: 12,
+      value: stats.pendingLeads,
       label: 'Pending',
-      trend: { value: '-3%', positive: false },
+      trend: stats.pendingTrend,
       color: 'text-orange-500'
     }
   ];
@@ -195,11 +307,15 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
 
       {/* Stats Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-          {stats.map((stat, idx) => (
-            <StatCard key={idx} {...stat} />
-          ))}
-        </div>
+        {statsLoading ? (
+          <DashboardStatsSkeleton count={4} />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            {statCards.map((stat, idx) => (
+              <StatCard key={idx} {...stat} />
+            ))}
+          </div>
+        )}
         
         {/* Follow-up Reminders */}
         <FollowUpReminders 
@@ -368,6 +484,13 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
           onClose={() => setSelectedLeadData(null)} 
         />
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav 
+        activeTab={activeTab} 
+        onTabChange={(tab) => setActiveTab(tab as TabType)} 
+        variant="dashboard"
+      />
     </div>
   );
 }
@@ -462,8 +585,12 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-6">
+          <div className="h-8 w-32 bg-muted/70 rounded animate-pulse" />
+          <div className="h-10 w-48 bg-muted/70 rounded animate-pulse" />
+        </div>
+        <LeadCardsSkeleton count={5} />
       </div>
     );
   }

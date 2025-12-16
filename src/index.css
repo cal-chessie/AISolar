@@ -151,6 +151,40 @@ All colors MUST be HSL.
   .gradient-background {
     background: linear-gradient(135deg, hsl(var(--slate-50)), hsl(var(--slate-100)));
   }
+
+  /* Mobile safe area for bottom navigation */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-friendly targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile input sizing to prevent zoom */
+  @media (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* Shimmer animation for skeletons */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Premium Sales Page Styles */
