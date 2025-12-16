@@ -15,12 +15,16 @@ import {
   ArrowLeft,
   Send,
   Trash2,
-  Euro
+  Euro,
+  Wrench,
+  Award
 } from 'lucide-react';
 import SiteSurveyForm from './SiteSurveyForm';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
 import SendToCustomerDialog from './dashboard/SendToCustomerDialog';
 import InvoiceManagement from './dashboard/InvoiceManagement';
+import InstallationChecklist from './installer/InstallationChecklist';
+import SEAIGrantTracker from './seai/SEAIGrantTracker';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import {
@@ -57,14 +61,20 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
   const [activeTab, setActiveTab] = useState('overview');
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [proposal, setProposal] = useState<{ id: string; status: string } | null>(null);
+  const [proposal, setProposal] = useState<{ 
+    id: string; 
+    status: string;
+    system_size_kw?: number;
+    seai_grant?: number;
+    property_type?: string;
+  } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchProposal = async () => {
       const { data } = await supabase
         .from('proposals')
-        .select('id, status')
+        .select('id, status, system_size_kw, seai_grant, property_type')
         .eq('lead_id', lead.id)
         .order('created_at', { ascending: false })
         .limit(1);
@@ -178,6 +188,14 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                   <Euro className="h-4 w-4" />
                   Invoice
                 </TabsTrigger>
+                <TabsTrigger value="installation" className="gap-2">
+                  <Wrench className="h-4 w-4" />
+                  Installation
+                </TabsTrigger>
+                <TabsTrigger value="seai" className="gap-2">
+                  <Award className="h-4 w-4" />
+                  SEAI Grant
+                </TabsTrigger>
                 <TabsTrigger value="timeline" className="gap-2">
                   <Calendar className="h-4 w-4" />
                   Timeline
@@ -286,6 +304,40 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
 
               <TabsContent value="invoice" className="mt-0">
                 <InvoiceManagement leadId={lead.id} />
+              </TabsContent>
+
+              <TabsContent value="installation" className="mt-0">
+                {proposal ? (
+                  <InstallationChecklist 
+                    proposalId={proposal.id} 
+                    leadId={lead.id}
+                    leadName={lead.name}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Create a proposal first to access the installation checklist.
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="seai" className="mt-0">
+                {proposal ? (
+                  <SEAIGrantTracker
+                    proposalId={proposal.id}
+                    leadId={lead.id}
+                    systemSizeKw={proposal.system_size_kw}
+                    grantAmount={proposal.seai_grant}
+                    propertyType={proposal.property_type}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Create a proposal first to track SEAI grant applications.
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-0">
