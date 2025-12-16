@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import ConsultantDashboard from "./pages/ConsultantDashboard";
 import InstallerPortal from "./pages/InstallerPortal";
 import CustomerPortal from "./pages/CustomerPortal";
+import ClientPortal from "./pages/ClientPortal";
 import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ function AppRoutes() {
           <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
+          <Route path="/portal" element={<PageTransition><ClientPortal /></PageTransition>} />
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

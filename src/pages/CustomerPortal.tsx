@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sun, AlertCircle, Phone, Mail, FileCheck } from 'lucide-react';
+import { Loader2, Sun, AlertCircle, Phone, Mail, FileCheck, RefreshCw } from 'lucide-react';
 import StatusTimeline from '@/components/customer/StatusTimeline';
 import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import ContractSignature from '@/components/contracts/ContractSignature';
 import InvoiceCard from '@/components/customer/InvoiceCard';
-import InstallationCalendar from '@/components/customer/InstallationCalendar';
+import InstallerAvailabilityCalendar from '@/components/installer/InstallerAvailabilityCalendar';
 import SEAIGrantStatus from '@/components/seai/SEAIGrantStatus';
 import { Helmet } from 'react-helmet-async';
 import { toast } from '@/components/ui/use-toast';
@@ -40,6 +40,7 @@ interface PortalData {
     approved_at: string | null;
     confirmed_install_date: string | null;
     installation_status: string | null;
+    assigned_installer_id: string | null;
   } | null;
   contract: {
     id: string;
@@ -88,76 +89,127 @@ export default function CustomerPortal() {
       setSearchParams(searchParams);
     }
   }, [searchParams, setSearchParams]);
-  useEffect(() => {
-    const fetchPortalData = async () => {
-      if (!token) {
-        setError('Invalid access link');
+  const fetchPortalData = useCallback(async () => {
+    if (!token) {
+      setError('Invalid access link');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch lead by access token
+      const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('access_token', token)
+        .maybeSingle();
+
+      if (leadError) throw leadError;
+      if (!lead) {
+        setError('This link is invalid or has expired');
         setLoading(false);
         return;
       }
 
-      try {
-        // Fetch lead by access token
-        const { data: lead, error: leadError } = await supabase
-          .from('leads')
+      // Fetch proposal
+      const { data: proposals } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const proposal = proposals?.[0] || null;
+
+      // Fetch contract if exists
+      let contract = null;
+      let invoice = null;
+
+      if (proposal) {
+        const { data: contracts } = await supabase
+          .from('contracts')
           .select('*')
-          .eq('access_token', token)
+          .eq('proposal_id', proposal.id)
           .maybeSingle();
+        contract = contracts;
 
-        if (leadError) throw leadError;
-        if (!lead) {
-          setError('This link is invalid or has expired');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch proposal
-        const { data: proposals } = await supabase
-          .from('proposals')
+        const { data: invoices } = await supabase
+          .from('invoices')
           .select('*')
-          .eq('lead_id', lead.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        const proposal = proposals?.[0] || null;
-
-        // Fetch contract if exists
-        let contract = null;
-        let invoice = null;
-
-        if (proposal) {
-          const { data: contracts } = await supabase
-            .from('contracts')
-            .select('*')
-            .eq('proposal_id', proposal.id)
-            .maybeSingle();
-          contract = contracts;
-
-          const { data: invoices } = await supabase
-            .from('invoices')
-            .select('*')
-            .eq('proposal_id', proposal.id)
-            .maybeSingle();
-          invoice = invoices;
-        }
-
-        setData({
-          lead,
-          proposal,
-          contract,
-          invoice
-        });
-        setContractSigned(!!contract);
-      } catch (err: any) {
-        console.error('Portal fetch error:', err);
-        setError('Unable to load your proposal. Please try again later.');
-      } finally {
-        setLoading(false);
+          .eq('proposal_id', proposal.id)
+          .maybeSingle();
+        invoice = invoices;
       }
-    };
 
-    fetchPortalData();
+      setData({
+        lead,
+        proposal,
+        contract,
+        invoice
+      });
+      setContractSigned(!!contract);
+    } catch (err: any) {
+      console.error('Portal fetch error:', err);
+      setError('Unable to load your proposal. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
+
+  useEffect(() => {
+    fetchPortalData();
+  }, [fetchPortalData]);
+
+  // Real-time updates for invoices and proposals
+  useEffect(() => {
+    if (!data?.lead?.id) return;
+
+    const channel = supabase
+      .channel('customer-portal-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+          filter: `lead_id=eq.${data.lead.id}`,
+        },
+        (payload) => {
+          console.log('Invoice update:', payload);
+          if (payload.new) {
+            setData(prev => prev ? { ...prev, invoice: payload.new as any } : null);
+            toast({
+              title: 'Invoice Updated',
+              description: 'Your invoice has been updated.',
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'proposals',
+          filter: `lead_id=eq.${data.lead.id}`,
+        },
+        (payload) => {
+          console.log('Proposal update:', payload);
+          if (payload.new) {
+            setData(prev => prev ? { ...prev, proposal: payload.new as any } : null);
+            toast({
+              title: 'Proposal Updated',
+              description: 'Your proposal has been updated.',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [data?.lead?.id]);
 
   const handleContractSigned = () => {
     setContractSigned(true);
@@ -350,13 +402,33 @@ export default function CustomerPortal() {
               {/* Invoice Card */}
               {invoice && <InvoiceCard invoice={invoice} portalToken={token} />}
 
-              {/* Installation Calendar - Show after deposit paid */}
+              {/* Installation Calendar with Availability - Show after deposit paid */}
               {invoice?.deposit_paid && proposal && (
-                <InstallationCalendar
-                  proposalId={proposal.id}
-                  leadId={lead.id}
-                  currentDate={proposal.confirmed_install_date}
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Schedule Installation</span>
+                      <Button variant="ghost" size="sm" onClick={fetchPortalData}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </CardTitle>
+                    <CardDescription>
+                      Select your preferred installation date from available slots
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <InstallerAvailabilityCalendar
+                      installerId={proposal.assigned_installer_id || undefined}
+                      onDateSelect={(date) => {
+                        toast({
+                          title: 'Date Selected',
+                          description: `You selected ${date.toLocaleDateString()}. We'll confirm availability shortly.`,
+                        });
+                      }}
+                      mode="select"
+                    />
+                  </CardContent>
+                </Card>
               )}
 
               {!invoice && (
