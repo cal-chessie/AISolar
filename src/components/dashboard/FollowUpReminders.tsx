@@ -26,6 +26,7 @@ interface StageThreshold {
 
 interface FollowUpRemindersProps {
   onLeadClick?: (leadId: string) => void;
+  expanded?: boolean;
 }
 
 // Default thresholds if settings table is empty
@@ -38,10 +39,10 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
   'installed': 14
 };
 
-export function FollowUpReminders({ onLeadClick }: FollowUpRemindersProps) {
+export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRemindersProps) {
   const [staleLeads, setStaleLeads] = useState<StaleLead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(!expanded);
   const [thresholds, setThresholds] = useState<Record<string, number>>(DEFAULT_THRESHOLDS);
 
   useEffect(() => {

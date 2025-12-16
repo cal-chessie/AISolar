@@ -14,7 +14,8 @@ import {
   ClipboardList,
   Search,
   FileCheck,
-  Settings
+  Settings,
+  Phone
 } from 'lucide-react';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from '@/components/ui/use-toast';
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import LeadDetailView from './LeadDetailView';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
 import ProposalResultsView from './ProposalResultsView';
@@ -36,6 +38,7 @@ import CollapsibleStats from './dashboard/CollapsibleStats';
 import SiteSurveyForm from './SiteSurveyForm';
 import { FollowUpReminders } from './dashboard/FollowUpReminders';
 import DocumentManager from './dashboard/DocumentManager';
+import ConsultantCalendar from './dashboard/ConsultantCalendar';
 import MobileBottomNav from './layout/MobileBottomNav';
 import AICoachFloatingButton from './ai/AICoachFloatingButton';
 import { DashboardStatsSkeleton, LeadCardsSkeleton } from './ui/skeletons';
@@ -76,7 +79,7 @@ const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
   </motion.div>
 );
 
-type TabType = 'leads' | 'proposals' | 'surveys' | 'installations' | 'products' | 'documents' | 'analytics';
+type TabType = 'leads' | 'proposals' | 'surveys' | 'installations' | 'calendar' | 'followups' | 'products' | 'documents' | 'analytics';
 
 interface DashboardStats {
   totalLeads: number;
@@ -91,6 +94,9 @@ interface DashboardStats {
 
 export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
   const navigate = useNavigate();
+  const { hasRole, isOwner } = useAuth();
+  const isAdmin = hasRole('admin') || isOwner();
+  
   const [activeTab, setActiveTab] = useState<TabType>('leads');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedLeadData, setSelectedLeadData] = useState<any | null>(null);
@@ -252,15 +258,25 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
     }
   ];
 
-  const tabs = [
-    { id: 'leads' as TabType, label: 'Leads' },
-    { id: 'surveys' as TabType, label: 'Surveys' },
-    { id: 'proposals' as TabType, label: 'Proposals' },
-    { id: 'installations' as TabType, label: 'Installations' },
-    { id: 'products' as TabType, label: 'Products' },
-    { id: 'documents' as TabType, label: 'Documents' },
-    { id: 'analytics' as TabType, label: 'Analytics' }
+  // Consultant tabs (visible to all)
+  const consultantTabs = [
+    { id: 'leads' as TabType, label: 'Leads', icon: <Users size={16} /> },
+    { id: 'surveys' as TabType, label: 'Surveys', icon: <ClipboardList size={16} /> },
+    { id: 'proposals' as TabType, label: 'Proposals', icon: <FileText size={16} /> },
+    { id: 'installations' as TabType, label: 'Installations', icon: <FileCheck size={16} /> },
+    { id: 'calendar' as TabType, label: 'Calendar', icon: <Calendar size={16} /> },
+    { id: 'followups' as TabType, label: 'Follow-ups', icon: <Phone size={16} /> },
   ];
+
+  // Admin-only tabs
+  const adminTabs = [
+    { id: 'products' as TabType, label: 'Products', icon: <FileText size={16} /> },
+    { id: 'documents' as TabType, label: 'Documents', icon: <FileText size={16} /> },
+    { id: 'analytics' as TabType, label: 'Analytics', icon: <TrendingUp size={16} /> },
+  ];
+
+  // Combine tabs based on role
+  const tabs = isAdmin ? [...consultantTabs, ...adminTabs] : consultantTabs;
 
   return (
     <div className="min-h-screen gradient-background">
@@ -444,9 +460,22 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                     )
                   )}
                   {activeTab === 'installations' && <InstallationsPanel />}
-                  {activeTab === 'products' && <ProductsManagement />}
-                  {activeTab === 'documents' && <DocumentManager />}
-                  {activeTab === 'analytics' && <AnalyticsPanel />}
+                  {activeTab === 'calendar' && <ConsultantCalendar />}
+                  {activeTab === 'followups' && (
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Follow-ups</h2>
+                      <FollowUpReminders 
+                        onLeadClick={(leadId) => {
+                          setSelectedLeadId(leadId);
+                          setActiveTab('leads');
+                        }}
+                        expanded
+                      />
+                    </div>
+                  )}
+                  {activeTab === 'products' && isAdmin && <ProductsManagement />}
+                  {activeTab === 'documents' && isAdmin && <DocumentManager />}
+                  {activeTab === 'analytics' && isAdmin && <AnalyticsPanel />}
                 </ErrorBoundary>
               </motion.div>
             </AnimatePresence>

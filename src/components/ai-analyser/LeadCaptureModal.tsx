@@ -56,7 +56,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         monthly_bill: analysisData?.monthlyBill || null,
         status: "new",
         workflow_stage: "new",
-        notes: `AI Analysis via ${brand.domain}: System ${analysisData?.estimatedSystemSize}kWp, Savings €${analysisData?.annualSavings}/yr, Payback ${analysisData?.paybackYears}yrs`,
+        notes: `[AI Analysis via ${brand.domain}]\nEstimated System: ${analysisData?.estimatedSystemSize}kWp\nAnnual Savings: €${analysisData?.annualSavings}\nPayback: ${analysisData?.paybackYears} years\nAnnual Spend: €${analysisData?.annualSpend}\nSolar Offset: ${analysisData?.solarOffset}%`,
       });
 
       if (error) throw error;

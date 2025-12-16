@@ -8,8 +8,7 @@ import {
   Wrench, 
   MoreHorizontal,
   Home,
-  BarChart3,
-  Package
+  Calendar
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -61,7 +60,7 @@ export default function MobileBottomNav({
     { id: 'leads', icon: <Users size={22} />, label: 'Leads' },
     { id: 'surveys', icon: <ClipboardList size={22} />, label: 'Surveys' },
     { id: 'proposals', icon: <FileText size={22} />, label: 'Proposals' },
-    { id: 'installations', icon: <Wrench size={22} />, label: 'Installs' },
+    { id: 'calendar', icon: <Calendar size={22} />, label: 'Calendar' },
     { id: 'more', icon: <MoreHorizontal size={22} />, label: 'More' },
   ];
 
