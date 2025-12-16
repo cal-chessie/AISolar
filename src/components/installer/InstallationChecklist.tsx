@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -12,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
+import SignatureCanvas from '@/components/ui/SignatureCanvas';
 import { 
   Loader2, 
   Zap, 
@@ -142,14 +142,20 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
     setChecklist(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSign = async (type: 'installer' | 'customer', signature: string) => {
-    if (!signature.trim()) return;
-    
-    const updates = type === 'installer' 
-      ? { installer_signature: signature, installer_signed_at: new Date().toISOString() }
-      : { customer_signature: signature, customer_signed_at: new Date().toISOString() };
-    
-    setChecklist(prev => ({ ...prev, ...updates }));
+  const handleSign = (type: 'installer' | 'customer', signatureData: string | null) => {
+    if (type === 'installer') {
+      setChecklist(prev => ({ 
+        ...prev, 
+        installer_signature: signatureData,
+        installer_signed_at: signatureData ? new Date().toISOString() : null
+      }));
+    } else {
+      setChecklist(prev => ({ 
+        ...prev, 
+        customer_signature: signatureData,
+        customer_signed_at: signatureData ? new Date().toISOString() : null
+      }));
+    }
   };
 
   const completeChecklist = async () => {
@@ -416,21 +422,33 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
                     <CardTitle className="text-base">Installer Signature</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {checklist.installer_signature ? (
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="font-signature text-lg">{checklist.installer_signature}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                    {checklist.installer_signature && checklist.installer_signature.startsWith('data:image') ? (
+                      <div className="space-y-2">
+                        <img 
+                          src={checklist.installer_signature} 
+                          alt="Installer signature" 
+                          className="h-24 border rounded bg-white"
+                        />
+                        <p className="text-xs text-muted-foreground">
                           Signed: {checklist.installer_signed_at ? new Date(checklist.installer_signed_at).toLocaleString() : ''}
                         </p>
+                        {!isComplete && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleSign('installer', null)}
+                          >
+                            Clear & Re-sign
+                          </Button>
+                        )}
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <Input
-                          placeholder="Type full name to sign"
-                          onBlur={(e) => handleSign('installer', e.target.value)}
-                          disabled={isComplete}
-                        />
-                      </div>
+                      <SignatureCanvas
+                        onSignatureChange={(sig) => handleSign('installer', sig)}
+                        initialSignature={checklist.installer_signature}
+                        disabled={isComplete}
+                        label="Installer signs here"
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -441,21 +459,33 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
                     <CardTitle className="text-base">Customer Signature ({leadName})</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {checklist.customer_signature ? (
-                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="font-signature text-lg">{checklist.customer_signature}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                    {checklist.customer_signature && checklist.customer_signature.startsWith('data:image') ? (
+                      <div className="space-y-2">
+                        <img 
+                          src={checklist.customer_signature} 
+                          alt="Customer signature" 
+                          className="h-24 border rounded bg-white"
+                        />
+                        <p className="text-xs text-muted-foreground">
                           Signed: {checklist.customer_signed_at ? new Date(checklist.customer_signed_at).toLocaleString() : ''}
                         </p>
+                        {!isComplete && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleSign('customer', null)}
+                          >
+                            Clear & Re-sign
+                          </Button>
+                        )}
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <Input
-                          placeholder="Customer types full name to sign"
-                          onBlur={(e) => handleSign('customer', e.target.value)}
-                          disabled={isComplete}
-                        />
-                      </div>
+                      <SignatureCanvas
+                        onSignatureChange={(sig) => handleSign('customer', sig)}
+                        initialSignature={checklist.customer_signature}
+                        disabled={isComplete}
+                        label="Customer signs here"
+                      />
                     )}
                   </CardContent>
                 </Card>
