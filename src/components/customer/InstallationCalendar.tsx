@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { CalendarIcon, CheckCircle, Loader2 } from 'lucide-react';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { sendStageChangeNotification } from '@/lib/stageNotifications';
 
 interface InstallationCalendarProps {
   proposalId: string;
@@ -57,6 +58,9 @@ export default function InstallationCalendar({
         .from('leads')
         .update({ workflow_stage: 'installation_scheduled' })
         .eq('id', leadId);
+
+      // Send stage change notification (in addition to specific installation email)
+      await sendStageChangeNotification(leadId, 'approved', 'installation_scheduled');
 
       // Send notification email
       try {

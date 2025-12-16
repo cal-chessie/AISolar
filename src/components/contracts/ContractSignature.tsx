@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, CheckCircle, Loader2 } from 'lucide-react';
 import { logActivity } from '@/lib/activityLog';
+import { sendStageChangeNotification } from '@/lib/stageNotifications';
 
 interface ContractSignatureProps {
   proposalId: string;
@@ -130,6 +131,9 @@ warranty registration, and customer support. I can withdraw consent at any time 
           status: 'closed_won'
         })
         .eq('id', leadId);
+      
+      // Send stage change notification
+      await sendStageChangeNotification(leadId, 'proposal', 'approved');
 
       // Log activity
       await logActivity({

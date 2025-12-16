@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activityLog';
+import { sendStageChangeNotification } from '@/lib/stageNotifications';
 import { 
   Loader2, 
   Zap, 
@@ -177,6 +178,9 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
         .from('leads')
         .update({ workflow_stage: 'installed' })
         .eq('id', leadId);
+      
+      // Send stage change notification
+      await sendStageChangeNotification(leadId, 'installation_scheduled', 'installed');
 
       // Log activity
       await logActivity({

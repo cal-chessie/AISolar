@@ -10,10 +10,12 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: "invoice_created" | "deposit_paid" | "final_paid" | "installation_scheduled";
+  type: "invoice_created" | "deposit_paid" | "final_paid" | "installation_scheduled" | "stage_change";
   leadId: string;
   invoiceId?: string;
   installationDate?: string;
+  previousStage?: string;
+  newStage?: string;
 }
 
 serve(async (req) => {
@@ -22,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, leadId, invoiceId, installationDate }: EmailRequest = await req.json();
+    const { type, leadId, invoiceId, installationDate, previousStage, newStage }: EmailRequest = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -207,6 +209,62 @@ serve(async (req) => {
               </ul>
               <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
                 Our team will arrive between 8:00 AM and 9:00 AM. Installation typically takes 1-2 days depending on system size.
+              </p>
+            </div>
+            <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+            </div>
+          </div>
+        `;
+        break;
+
+      case "stage_change":
+        const stageLabels: Record<string, string> = {
+          new: 'New Lead',
+          contacted: 'Contacted',
+          survey: 'Survey Scheduled',
+          proposal: 'Proposal Sent',
+          approved: 'Proposal Approved',
+          scheduled: 'Installation Scheduled',
+          installed: 'Installation Complete',
+          completed: 'Project Completed',
+        };
+        const prevLabel = stageLabels[previousStage || 'new'] || previousStage;
+        const newLabel = stageLabels[newStage || 'new'] || newStage;
+        
+        subject = `Project Update: ${newLabel}`;
+        html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+            </div>
+            <div style="padding: 32px; background: #f9fafb;">
+              <h2 style="color: #111827; margin-top: 0;">Hi ${lead.name},</h2>
+              <p style="color: #4b5563; line-height: 1.6;">
+                Great news! Your solar project has progressed to a new stage.
+              </p>
+              <div style="background: white; border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+                  <div style="text-align: center; padding: 12px 20px; background: #f3f4f6; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Previous</div>
+                    <div style="font-weight: 600; color: #374151;">${prevLabel}</div>
+                  </div>
+                  <div style="font-size: 24px;">→</div>
+                  <div style="text-align: center; padding: 12px 20px; background: #ecfdf5; border-radius: 8px; border: 2px solid #10b981;">
+                    <div style="font-size: 12px; color: #059669; margin-bottom: 4px;">Current</div>
+                    <div style="font-weight: 600; color: #065f46;">${newLabel}</div>
+                  </div>
+                </div>
+              </div>
+              ${portalUrl ? `
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${portalUrl}" style="display: inline-block; background: #10b981; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                  View Your Project
+                </a>
+              </div>
+              ` : ""}
+              <p style="color: #6b7280; font-size: 14px;">
+                If you have any questions about your project status, please contact us at support@solardublin.ie
               </p>
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
