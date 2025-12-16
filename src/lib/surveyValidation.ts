@@ -50,10 +50,9 @@ export function validateSurveyCompletion(
   if (!surveyData.roof_pitch) roofFields.push('Roof Pitch');
   if (!surveyData.roof_material) roofFields.push('Roof Material');
   
-  // Electrical section (required: panel capacity, panel condition, grid connection)
+  // Electrical section (required: panel capacity, grid connection) - removed panel condition
   const electricalFields: string[] = [];
   if (!surveyData.electrical_panel_capacity) electricalFields.push('Panel Capacity');
-  if (!surveyData.electrical_panel_condition) electricalFields.push('Panel Condition');
   if (!surveyData.grid_connection_type) electricalFields.push('Grid Connection Type');
   
   // Recommendations section (required: system size, panel count)
@@ -72,7 +71,7 @@ export function validateSurveyCompletion(
   }
   
   // Calculate completion percentage
-  const totalRequiredFields = 10; // 5 roof + 3 electrical + 2 recommendations
+  const totalRequiredFields = 9; // 5 roof + 2 electrical + 2 recommendations
   const completedFields = totalRequiredFields - (roofFields.length + electricalFields.length + recommendationsFields.length);
   const fieldPercentage = (completedFields / totalRequiredFields) * 80; // Fields worth 80%
   const photoPercentage = photosComplete ? 20 : (photoCount / requiredPhotos) * 20; // Photos worth 20%
@@ -91,6 +90,26 @@ export function validateSurveyCompletion(
       photos: { complete: photosComplete, count: photoCount, required: requiredPhotos }
     }
   };
+}
+
+// Auto-calculate survey status based on completion
+export type SurveyAutoStatus = 'draft' | 'in_progress' | 'completed';
+
+export function calculateSurveyStatus(
+  surveyData: SurveyData,
+  photoCount: number = 0
+): SurveyAutoStatus {
+  const validation = validateSurveyCompletion(surveyData, photoCount);
+  
+  if (validation.isComplete) {
+    return 'completed';
+  }
+  
+  if (validation.completionPercentage >= 25) {
+    return 'in_progress';
+  }
+  
+  return 'draft';
 }
 
 // Map survey data to proposal data - used for Survey → Proposal flow
@@ -168,4 +187,8 @@ export const WORKFLOW_STAGES = [
   { id: 'pending_review', label: 'Pending Review', color: 'bg-red-100 text-red-700' },
   { id: 'presented', label: 'Presented', color: 'bg-indigo-100 text-indigo-700' },
   { id: 'approved', label: 'Approved', color: 'bg-green-100 text-green-700' },
+  { id: 'installation_pending', label: 'Installation Pending', color: 'bg-cyan-100 text-cyan-700' },
+  { id: 'installation_scheduled', label: 'Installation Scheduled', color: 'bg-teal-100 text-teal-700' },
+  { id: 'installed', label: 'Installed', color: 'bg-emerald-100 text-emerald-700' },
+  { id: 'completed', label: 'Completed', color: 'bg-green-100 text-green-700' },
 ];

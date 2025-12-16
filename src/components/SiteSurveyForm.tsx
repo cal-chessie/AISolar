@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
-import { validateSurveyCompletion, mapSurveyToProposal } from '@/lib/surveyValidation';
+import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
 import SurveyProgressIndicator from '@/components/survey/SurveyProgressIndicator';
 import { logActivity } from '@/lib/activityLog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
@@ -244,7 +244,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const finalStatus = shouldComplete ? 'completed' : data.status;
+      // Auto-calculate status based on completion
+      const autoStatus = calculateSurveyStatus(data, uploadedPhotos.length);
+      const finalStatus = shouldComplete ? 'completed' : autoStatus;
 
       const surveyData = {
         lead_id: leadId,
@@ -814,24 +816,26 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           </Collapsible>
         </Card>
 
-        {/* Status Selection */}
+        {/* Auto-calculated Status Display */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <Label htmlFor="status" className="mb-2 block">Survey Status</Label>
-                <Select onValueChange={(value) => setValue('status', value)} value={status}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed" disabled={!completionStatus.isComplete}>
-                      Completed {!completionStatus.isComplete && `(${completionStatus.completionPercentage}%)`}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="mb-1 block">Survey Status</Label>
+                <p className="text-xs text-muted-foreground">Auto-calculated based on completion</p>
+              </div>
+              <div className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress'
+                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+              }`}>
+                {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' && (
+                  <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Completed</span>
+                )}
+                {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress' && 'In Progress'}
+                {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'draft' && 'Draft'}
               </div>
             </div>
           </CardContent>
