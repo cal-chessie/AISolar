@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sun, AlertCircle, Phone, Mail, FileCheck, RefreshCw } from 'lucide-react';
+import { Loader2, Sun, AlertCircle, Phone, Mail, FileCheck, RefreshCw, ArrowLeft } from 'lucide-react';
 import StatusTimeline from '@/components/customer/StatusTimeline';
 import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import ContractSignature from '@/components/contracts/ContractSignature';
@@ -13,6 +13,7 @@ import InstallerAvailabilityCalendar from '@/components/installer/InstallerAvail
 import SEAIGrantStatus from '@/components/seai/SEAIGrantStatus';
 import { Helmet } from 'react-helmet-async';
 import { toast } from '@/components/ui/use-toast';
+import { brand } from '@/config/brand';
 
 interface PortalData {
   lead: {
@@ -64,10 +65,12 @@ interface PortalData {
 export default function CustomerPortal() {
   const { token } = useParams<{ token: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
   const [contractSigned, setContractSigned] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Handle payment status from URL
   useEffect(() => {
@@ -271,13 +274,24 @@ export default function CustomerPortal() {
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-        {/* Header */}
+        {/* Header with Back Button */}
         <header className="bg-background border-b sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sun className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl">Solar Dublin</span>
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate(-1)}
+                  className="mr-2"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Sun className="h-8 w-8 text-primary" />
+                  <span className="font-bold text-xl">{brand.name}</span>
+                </div>
               </div>
               <div className="text-right">
                 <p className="font-medium">{lead.name}</p>
