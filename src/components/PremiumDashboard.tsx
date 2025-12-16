@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -38,6 +38,9 @@ import DocumentManager from './dashboard/DocumentManager';
 import MobileBottomNav from './layout/MobileBottomNav';
 import AICoachFloatingButton from './ai/AICoachFloatingButton';
 import { DashboardStatsSkeleton, LeadCardsSkeleton } from './ui/skeletons';
+import ErrorBoundary from './ui/ErrorBoundary';
+import { PaginationControls, usePagination } from './ui/PaginationControls';
+import { EmptyLeadsState, EmptyProposalsState, EmptySearchResultsState } from './ui/EmptyState';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -358,89 +361,91 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 transition={{ duration: 0.2 }}
                 className="bg-card rounded-2xl border border-border shadow-lg p-4 sm:p-6 min-h-[500px] sm:min-h-[600px]"
               >
-                {activeTab === 'leads' && (
-                  <LeadsPanel
-                    onLeadSelect={(lead) => {
-                      setSelectedLeadData(lead);
-                      setSelectedLeadId(lead.id);
-                      setActiveLeadForProposal(lead);
-                    }}
-                    onStartSurvey={(leadId) => {
-                      setSurveyLeadId(leadId);
-                      setActiveTab('surveys');
-                    }}
-                    onLeadAdded={() => setRefreshLeads(r => r + 1)}
-                    refreshKey={refreshLeads}
-                  />
-                )}
-                {activeTab === 'proposals' && (
-                  viewMode === 'view' && selectedProposal ? (
-                    <ProposalResultsView
-                      proposalId={selectedProposal.id}
-                      leadId={selectedProposal.lead_id}
-                      onBack={() => {
-                        setViewMode('list');
-                        setSelectedProposal(null);
+                <ErrorBoundary>
+                  {activeTab === 'leads' && (
+                    <LeadsPanel
+                      onLeadSelect={(lead) => {
+                        setSelectedLeadData(lead);
+                        setSelectedLeadId(lead.id);
+                        setActiveLeadForProposal(lead);
                       }}
+                      onStartSurvey={(leadId) => {
+                        setSurveyLeadId(leadId);
+                        setActiveTab('surveys');
+                      }}
+                      onLeadAdded={() => setRefreshLeads(r => r + 1)}
+                      refreshKey={refreshLeads}
                     />
-                  ) : viewMode === 'edit' && selectedProposal ? (
-                    <ProposalQuestionnaire
-                      leadId={selectedProposal.lead_id}
-                      proposalId={selectedProposal.id}
-                      onBack={() => {
-                        setViewMode('list');
-                        setSelectedProposal(null);
-                      }}
-                    />
-                  ) : activeLeadForProposal ? (
-                    <ProposalQuestionnaire
-                      leadId={activeLeadForProposal.id}
-                      initialData={prefilledProposalData}
-                      onBack={() => {
-                        setActiveLeadForProposal(null);
-                        setPrefilledProposalData(null);
-                        setViewMode('list');
-                      }}
-                    />
-                  ) : (
-                    <ProposalsPanel 
-                      onProposalSelect={(proposal, lead) => {
-                        setSelectedProposal(proposal);
-                        setViewMode('view');
-                      }}
-                      onEditProposal={(proposal) => {
-                        setSelectedProposal(proposal);
-                        setViewMode('edit');
-                      }}
-                    />
-                  )
-                )}
-                {activeTab === 'surveys' && (
-                  surveyLeadId ? (
-                    <div>
-                      <Button
-                        variant="outline"
-                        onClick={() => setSurveyLeadId(null)}
-                        className="mb-4"
-                      >
-                        ← Back to Surveys
-                      </Button>
-                      <SiteSurveyForm 
-                        leadId={surveyLeadId} 
-                        onCreateProposal={(surveyData, leadData) => {
-                          setSurveyLeadId(null);
-                          handleCreateProposalFromSurvey(surveyData, leadData);
+                  )}
+                  {activeTab === 'proposals' && (
+                    viewMode === 'view' && selectedProposal ? (
+                      <ProposalResultsView
+                        proposalId={selectedProposal.id}
+                        leadId={selectedProposal.lead_id}
+                        onBack={() => {
+                          setViewMode('list');
+                          setSelectedProposal(null);
                         }}
                       />
-                    </div>
-                  ) : (
-                    <SurveysPanel onCreateProposal={handleCreateProposalFromSurvey} />
-                  )
-                )}
-                {activeTab === 'installations' && <InstallationsPanel />}
-                {activeTab === 'products' && <ProductsManagement />}
-                {activeTab === 'documents' && <DocumentManager />}
-                {activeTab === 'analytics' && <AnalyticsPanel />}
+                    ) : viewMode === 'edit' && selectedProposal ? (
+                      <ProposalQuestionnaire
+                        leadId={selectedProposal.lead_id}
+                        proposalId={selectedProposal.id}
+                        onBack={() => {
+                          setViewMode('list');
+                          setSelectedProposal(null);
+                        }}
+                      />
+                    ) : activeLeadForProposal ? (
+                      <ProposalQuestionnaire
+                        leadId={activeLeadForProposal.id}
+                        initialData={prefilledProposalData}
+                        onBack={() => {
+                          setActiveLeadForProposal(null);
+                          setPrefilledProposalData(null);
+                          setViewMode('list');
+                        }}
+                      />
+                    ) : (
+                      <ProposalsPanel 
+                        onProposalSelect={(proposal, lead) => {
+                          setSelectedProposal(proposal);
+                          setViewMode('view');
+                        }}
+                        onEditProposal={(proposal) => {
+                          setSelectedProposal(proposal);
+                          setViewMode('edit');
+                        }}
+                      />
+                    )
+                  )}
+                  {activeTab === 'surveys' && (
+                    surveyLeadId ? (
+                      <div>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSurveyLeadId(null)}
+                          className="mb-4"
+                        >
+                          ← Back to Surveys
+                        </Button>
+                        <SiteSurveyForm 
+                          leadId={surveyLeadId} 
+                          onCreateProposal={(surveyData, leadData) => {
+                            setSurveyLeadId(null);
+                            handleCreateProposalFromSurvey(surveyData, leadData);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <SurveysPanel onCreateProposal={handleCreateProposalFromSurvey} />
+                    )
+                  )}
+                  {activeTab === 'installations' && <InstallationsPanel />}
+                  {activeTab === 'products' && <ProductsManagement />}
+                  {activeTab === 'documents' && <DocumentManager />}
+                  {activeTab === 'analytics' && <AnalyticsPanel />}
+                </ErrorBoundary>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -590,16 +595,29 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
   );
 
   // Filter leads by search query
-  const filteredLeads = leads.filter(lead => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      lead.name?.toLowerCase().includes(query) ||
-      lead.email?.toLowerCase().includes(query) ||
-      lead.phone?.toLowerCase().includes(query) ||
-      lead.address?.toLowerCase().includes(query)
-    );
-  });
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        lead.name?.toLowerCase().includes(query) ||
+        lead.email?.toLowerCase().includes(query) ||
+        lead.phone?.toLowerCase().includes(query) ||
+        lead.address?.toLowerCase().includes(query)
+      );
+    });
+  }, [leads, searchQuery]);
+
+  // Pagination
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedItems: paginatedLeads,
+    handlePageChange,
+    handlePageSizeChange,
+  } = usePagination(filteredLeads, 10);
 
   if (loading) {
     return (
@@ -634,97 +652,101 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
         </div>
       </div>
 
-      {searchQuery && (
+      {searchQuery && filteredLeads.length > 0 && (
         <p className="text-sm text-slate-500 mb-4">
-          Showing {filteredLeads.length} of {leads.length} leads
+          Found {filteredLeads.length} of {leads.length} leads
         </p>
       )}
 
       {filteredLeads.length === 0 ? (
-        <div className="text-center py-12">
-          <Users className="mx-auto text-slate-300 mb-4" size={48} />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            {searchQuery ? 'No leads found' : 'No leads yet'}
-          </h3>
-          <p className="text-slate-600 text-sm mb-4">
-            {searchQuery 
-              ? 'Try a different search term' 
-              : 'Leads will appear here as clients submit their information'}
-          </p>
-          {!searchQuery && (
-            <AddLeadDialog onLeadAdded={() => {
-              fetchLeads();
-              onLeadAdded?.();
-            }} />
-          )}
-        </div>
+        searchQuery ? (
+          <EmptySearchResultsState query={searchQuery} />
+        ) : (
+          <EmptyLeadsState onAddLead={() => {
+            // Trigger the AddLeadDialog - this is handled by the button above
+          }} />
+        )
       ) : (
-        <div className="space-y-3 sm:space-y-4">
-          {filteredLeads.map((lead) => (
-            <div 
-              key={lead.id}
-              className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                    <h3 className="font-semibold text-slate-900 text-base sm:text-lg truncate">{lead.name}</h3>
-                    <StarRating score={lead.score || 0} leadId={lead.id} />
+        <>
+          <div className="space-y-3 sm:space-y-4">
+            {paginatedLeads.map((lead) => (
+              <div 
+                key={lead.id}
+                className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                      <h3 className="font-semibold text-slate-900 text-base sm:text-lg truncate">{lead.name}</h3>
+                      <StarRating score={lead.score || 0} leadId={lead.id} />
+                    </div>
+                    <p className="text-sm text-slate-600 truncate">
+                      {lead.address || 'No address'} • €{lead.monthly_bill || 0}/month
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 truncate">{lead.email}</p>
                   </div>
-                  <p className="text-sm text-slate-600 truncate">
-                    {lead.address || 'No address'} • €{lead.monthly_bill || 0}/month
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1 truncate">{lead.email}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                    lead.status === 'new' ? 'bg-primary text-white' :
-                    lead.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
-                    lead.status === 'qualified' ? 'bg-purple-100 text-purple-700' :
-                    lead.status === 'proposal_sent' ? 'bg-orange-100 text-orange-700' :
-                    lead.status === 'closed_won' ? 'bg-green-100 text-green-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
-                  </span>
-                  {onStartSurvey && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
+                      lead.status === 'new' ? 'bg-primary text-white' :
+                      lead.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
+                      lead.status === 'qualified' ? 'bg-purple-100 text-purple-700' :
+                      lead.status === 'proposal_sent' ? 'bg-orange-100 text-orange-700' :
+                      lead.status === 'closed_won' ? 'bg-green-100 text-green-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
+                    </span>
+                    {onStartSurvey && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onStartSurvey(lead.id)}
+                        className="gap-1 text-xs sm:text-sm"
+                      >
+                        <ClipboardList size={14} />
+                        <span className="hidden sm:inline">Survey</span>
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onStartSurvey(lead.id)}
+                      onClick={() => onLeadSelect(lead)}
                       className="gap-1 text-xs sm:text-sm"
                     >
-                      <ClipboardList size={14} />
-                      <span className="hidden sm:inline">Survey</span>
+                      <Eye size={14} />
+                      <span className="hidden sm:inline">View</span>
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onLeadSelect(lead)}
-                    className="gap-1 text-xs sm:text-sm"
-                  >
-                    <Eye size={14} />
-                    <span className="hidden sm:inline">View</span>
-                  </Button>
-                  <DeleteLeadDialog
-                    leadId={lead.id}
-                    leadName={lead.name}
-                    onDeleted={() => {
-                      fetchLeads();
-                      onLeadAdded?.();
-                    }}
-                  />
+                    <DeleteLeadDialog
+                      leadId={lead.id}
+                      leadName={lead.name}
+                      onDeleted={() => {
+                        fetchLeads();
+                        onLeadAdded?.();
+                      }}
+                    />
+                  </div>
                 </div>
+                {lead.notes && (
+                  <p className="text-sm text-slate-600 mt-2 italic truncate">
+                    Note: {lead.notes}
+                  </p>
+                )}
               </div>
-              {lead.notes && (
-                <p className="text-sm text-slate-600 mt-2 italic truncate">
-                  Note: {lead.notes}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              showPageSize={totalItems > 10}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -760,6 +782,17 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
     setLoading(false);
   };
 
+  // Pagination
+  const {
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    paginatedItems: paginatedProposals,
+    handlePageChange,
+    handlePageSizeChange,
+  } = usePagination(proposals, 10);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -775,62 +808,70 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
         <span className="text-sm text-slate-600">{proposals.length} total</span>
       </div>
       {proposals.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="mx-auto text-slate-300 mb-4" size={48} />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No proposals yet</h3>
-          <p className="text-slate-600 text-sm">
-            Create proposals from the Leads tab or complete a survey first
-          </p>
-        </div>
+        <EmptyProposalsState />
       ) : (
-        <div className="space-y-4">
-          {proposals.map((proposal) => (
-            <div 
-              key={proposal.id} 
-              className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
-            >
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
-                <div>
-                  <h3 className="font-semibold text-slate-900 text-base sm:text-lg">{proposal.leads?.name || 'Unknown'}</h3>
-                  <p className="text-sm text-slate-600">{proposal.system_size_kw} kW system</p>
+        <>
+          <div className="space-y-4">
+            {paginatedProposals.map((proposal) => (
+              <div 
+                key={proposal.id} 
+                className="p-4 sm:p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900 text-base sm:text-lg">{proposal.leads?.name || 'Unknown'}</h3>
+                    <p className="text-sm text-slate-600">{proposal.system_size_kw} kW system</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      proposal.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      proposal.status === 'presented' ? 'bg-blue-100 text-blue-700' :
+                      proposal.status === 'draft' ? 'bg-orange-100 text-orange-700' :
+                      proposal.requires_review ? 'bg-red-100 text-red-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {proposal.requires_review && !proposal.reviewed_at ? 'PENDING REVIEW' : proposal.status?.toUpperCase()}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    proposal.status === 'approved' ? 'bg-green-100 text-green-700' :
-                    proposal.status === 'presented' ? 'bg-blue-100 text-blue-700' :
-                    proposal.status === 'draft' ? 'bg-orange-100 text-orange-700' :
-                    proposal.requires_review ? 'bg-red-100 text-red-700' :
-                    'bg-slate-100 text-slate-700'
-                  }`}>
-                    {proposal.requires_review && !proposal.reviewed_at ? 'PENDING REVIEW' : proposal.status?.toUpperCase()}
-                  </span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <span className="text-xl sm:text-2xl font-bold text-primary">€{proposal.net_cost?.toLocaleString() || 'N/A'}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEditProposal?.(proposal)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => onProposalSelect?.(proposal, proposal.leads)}
+                    >
+                      <Eye size={16} className="mr-1" />
+                      View
+                    </Button>
+                  </div>
                 </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Created {new Date(proposal.created_at).toLocaleDateString()}
+                </p>
               </div>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <span className="text-xl sm:text-2xl font-bold text-primary">€{proposal.net_cost?.toLocaleString() || 'N/A'}</span>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onEditProposal?.(proposal)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => onProposalSelect?.(proposal, proposal.leads)}
-                  >
-                    <Eye size={16} className="mr-1" />
-                    View
-                  </Button>
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Created {new Date(proposal.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              showPageSize={totalItems > 10}
+            />
+          )}
+        </>
       )}
     </div>
   );
