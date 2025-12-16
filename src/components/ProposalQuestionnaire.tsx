@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { ChevronRight, ChevronLeft, Save, FileText, CheckCircle, Zap, Battery, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activityLog';
 
 interface ProposalQuestionnaireProps {
   leadId: string;
@@ -202,6 +203,19 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       }
 
       if (error) throw error;
+
+      // Log activity
+      await logActivity({
+        leadId,
+        actionType: proposalId ? 'proposal_updated' : 'proposal_created',
+        description: `Proposal ${proposalId ? 'updated' : 'created'} - ${systemSizeKw}kW system`,
+        metadata: {
+          system_size_kw: systemSizeKw,
+          net_cost: netCost,
+          seai_grant: seaiGrant,
+          property_type: propertyType
+        }
+      });
 
       toast({
         title: proposalId ? 'Proposal updated' : 'Proposal generated',

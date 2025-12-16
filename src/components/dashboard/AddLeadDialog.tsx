@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Plus, Loader2 } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
 import {
   Dialog,
   DialogContent,
@@ -50,7 +51,7 @@ export default function AddLeadDialog({ onLeadAdded }: AddLeadDialogProps) {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data: newLead, error } = await supabase
         .from('leads')
         .insert({
           name: formData.name,
@@ -60,9 +61,24 @@ export default function AddLeadDialog({ onLeadAdded }: AddLeadDialogProps) {
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
           notes: formData.notes || null,
           status: 'new',
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Log activity
+      if (newLead) {
+        await logActivity({
+          leadId: newLead.id,
+          actionType: 'lead_created',
+          description: `New lead "${formData.name}" created`,
+          metadata: {
+            email: formData.email,
+            monthly_bill: formData.monthly_bill || null
+          }
+        });
+      }
 
       toast({
         title: 'Lead added',

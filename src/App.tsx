@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import ConsultantDashboard from "./pages/ConsultantDashboard";
 import InstallerPortal from "./pages/InstallerPortal";
 import CustomerPortal from "./pages/CustomerPortal";
+import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/consultant" element={<ConsultantDashboard />} />
             <Route path="/installer" element={<InstallerPortal />} />
             <Route path="/customer/:token" element={<CustomerPortal />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

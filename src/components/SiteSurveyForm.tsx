@@ -11,11 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, CheckCircle, Upload, X, FileText, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { validateSurveyCompletion, mapSurveyToProposal } from '@/lib/surveyValidation';
 import SurveyProgressIndicator from '@/components/survey/SurveyProgressIndicator';
+import { logActivity } from '@/lib/activityLog';
 
 const surveySchema = z.object({
   roof_type: z.string().min(1, 'Roof type is required'),
@@ -328,6 +329,26 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           .from('leads')
           .update({ workflow_stage: 'survey_in_progress' })
           .eq('id', leadId);
+      }
+
+      // Log activity
+      if (finalStatus === 'completed') {
+        await logActivity({
+          leadId,
+          actionType: 'survey_completed',
+          description: `Site survey completed for ${leadData?.name || 'lead'}`,
+          metadata: {
+            recommended_system_size: data.recommended_system_size,
+            panel_count: data.recommended_panel_count,
+            roof_type: data.roof_type
+          }
+        });
+      } else if (!existingSurvey) {
+        await logActivity({
+          leadId,
+          actionType: 'survey_started',
+          description: `Site survey started for ${leadData?.name || 'lead'}`
+        });
       }
 
       toast({

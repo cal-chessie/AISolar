@@ -7,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { useDropzone } from 'react-dropzone';
+import { logActivity } from '@/lib/activityLog';
 import { 
   Loader2, 
   FileText, 
@@ -254,6 +255,18 @@ export default function SEAIGrantTracker({
         status: 'submitted',
         submitted_at: new Date().toISOString()
       });
+
+      // Log activity
+      await logActivity({
+        leadId,
+        actionType: 'seai_application_submitted',
+        description: `SEAI grant application submitted`,
+        metadata: {
+          grant_amount: application.grant_amount,
+          application_number: application.application_number
+        }
+      });
+
       toast({ title: 'Application Submitted', description: 'Your SEAI grant application has been submitted.' });
     } finally {
       setSaving(false);

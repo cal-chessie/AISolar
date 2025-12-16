@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
+import { logActivity } from '@/lib/activityLog';
 import { 
   Loader2, 
   Zap, 
@@ -176,6 +177,16 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
         .from('leads')
         .update({ workflow_stage: 'installed' })
         .eq('id', leadId);
+
+      // Log activity
+      await logActivity({
+        leadId,
+        actionType: 'installation_completed',
+        description: `Installation completed for ${leadName}`,
+        metadata: {
+          proposal_id: proposalId
+        }
+      });
 
       setChecklist(prev => ({ ...prev, status: 'completed' }));
       toast({ title: 'Installation Complete', description: 'The installation has been marked as complete.' });

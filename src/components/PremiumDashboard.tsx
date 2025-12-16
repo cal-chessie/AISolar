@@ -13,7 +13,8 @@ import {
   Eye,
   ClipboardList,
   Search,
-  FileCheck
+  FileCheck,
+  Settings
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -167,6 +168,14 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 <Zap size={20} />
                 <span className="hidden sm:inline">New Proposal</span>
               </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/admin/settings')}
+                className="hidden sm:flex"
+              >
+                <Settings size={18} />
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleLogout}

@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, CheckCircle, Loader2 } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
 
 interface ContractSignatureProps {
   proposalId: string;
@@ -129,6 +130,17 @@ warranty registration, and customer support. I can withdraw consent at any time 
           status: 'closed_won'
         })
         .eq('id', leadId);
+
+      // Log activity
+      await logActivity({
+        leadId,
+        actionType: 'contract_signed',
+        description: `Contract signed by ${formData.signedByName}`,
+        metadata: {
+          total_amount: totalAmount,
+          signed_by_email: formData.signedByEmail
+        }
+      });
 
       setSigned(true);
       toast({

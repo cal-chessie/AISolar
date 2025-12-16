@@ -9,9 +9,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { createCustomerPortalLink, getExistingPortalLink } from '@/lib/customerPortal';
 import { Send, Copy, Check, Loader2, ExternalLink } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
 
 interface SendToCustomerDialogProps {
   leadId: string;
@@ -45,6 +46,18 @@ export default function SendToCustomerDialog({
       }
       
       setPortalLink(link);
+      
+      // Log activity
+      await logActivity({
+        leadId,
+        actionType: 'proposal_sent',
+        description: `Proposal sent to customer ${leadName}`,
+        metadata: {
+          proposal_id: proposalId,
+          customer_email: leadEmail
+        }
+      });
+      
       toast({
         title: 'Portal Link Ready',
         description: 'You can now share this link with your customer.',
