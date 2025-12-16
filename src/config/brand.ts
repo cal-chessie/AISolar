@@ -51,7 +51,7 @@ export const brand = {
   
   certifications: [
     { name: "SEAI Registered", icon: "ShieldCheck" },
-    { name: "BER Certified", icon: "Award" },
+    { name: "RECI Certified", icon: "Award" },
     { name: "Fully Insured", icon: "ShieldCheck" },
   ],
   

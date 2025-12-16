@@ -160,13 +160,21 @@ export default function ConsultantCalendar() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
+        // Get consultant profile for email
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('user_id', user.id)
+          .single();
+
         // Create survey
+        const surveyDate = new Date(`${scheduleForm.date}T${scheduleForm.time || '09:00'}`);
         const { error } = await supabase
           .from('site_surveys')
           .insert({
             lead_id: selectedLead.id,
             surveyor_id: user.id,
-            survey_date: new Date(`${scheduleForm.date}T${scheduleForm.time || '09:00'}`).toISOString(),
+            survey_date: surveyDate.toISOString(),
             status: 'draft',
             access_notes: scheduleForm.notes
           });
@@ -179,9 +187,27 @@ export default function ConsultantCalendar() {
           .update({ status: 'contacted', workflow_stage: 'survey' })
           .eq('id', selectedLead.id);
 
+        // Send email notification
+        try {
+          await supabase.functions.invoke('send-survey-notification', {
+            body: {
+              customerName: selectedLead.name,
+              customerEmail: selectedLead.email,
+              surveyDate: surveyDate.toISOString(),
+              surveyTime: scheduleForm.time || '09:00',
+              consultantName: profile?.full_name || 'Your Solar Consultant',
+              consultantPhone: profile?.phone,
+              consultantEmail: user.email,
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send email notification:', emailError);
+          // Don't fail the whole operation if email fails
+        }
+
         toast({
           title: 'Survey scheduled',
-          description: `Survey scheduled for ${selectedLead.name} on ${scheduleForm.date}`
+          description: `Survey scheduled for ${selectedLead.name} on ${scheduleForm.date}. Email notification sent.`
         });
       } else {
         // For calls, update lead status and add note

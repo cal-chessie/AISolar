@@ -662,20 +662,20 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           </Collapsible>
         </Card>
 
-        {/* System Recommendations - Collapsible */}
+        {/* Customer Goals & System Options - Collapsible */}
         <Card className="overflow-hidden">
           <Collapsible open={openSections.recommendations}>
             <SectionHeader 
-              title="System Recommendations" 
+              title="Customer Goals & System" 
               section="recommendations"
               isComplete={completionStatus.sections.recommendations.complete}
               description="Required"
             />
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="recommended_system_size">System Size (kW) *</Label>
+                    <Label htmlFor="recommended_system_size">Recommended System Size (kW) *</Label>
                     <Input {...register('recommended_system_size')} type="number" step="0.1" placeholder="e.g., 6.5" className="w-full" />
                   </div>
 
@@ -683,10 +683,42 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     <Label htmlFor="recommended_panel_count">Panel Count *</Label>
                     <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full" />
                   </div>
+                </div>
 
-                  <div>
-                    <Label htmlFor="estimated_installation_cost">Est. Cost (€)</Label>
-                    <Input {...register('estimated_installation_cost')} type="number" step="0.01" placeholder="e.g., 12000" className="w-full" />
+                {/* Energy Management Options */}
+                <div className="p-3 bg-muted/50 rounded-lg space-y-3">
+                  <Label className="font-medium">Energy Management Options</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                      <Switch
+                        checked={watch('battery_storage' as any) || false}
+                        onCheckedChange={(checked) => setValue('battery_storage' as any, checked)}
+                      />
+                      <div>
+                        <Label className="cursor-pointer font-medium">Battery Storage</Label>
+                        <p className="text-xs text-muted-foreground">Store excess solar energy</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                      <Switch
+                        checked={watch('hot_water_diverter' as any) || false}
+                        onCheckedChange={(checked) => setValue('hot_water_diverter' as any, checked)}
+                      />
+                      <div>
+                        <Label className="cursor-pointer font-medium">Hot Water Diverter</Label>
+                        <p className="text-xs text-muted-foreground">Eddi/iBoost for hot water</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                      <Switch
+                        checked={watch('ev_charger' as any) || false}
+                        onCheckedChange={(checked) => setValue('ev_charger' as any, checked)}
+                      />
+                      <div>
+                        <Label className="cursor-pointer font-medium">EV Charger</Label>
+                        <p className="text-xs text-muted-foreground">Electric vehicle charging</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
