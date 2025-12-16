@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from "@/components/layout/PageTransition";
+import GlobalSearchModal from "@/components/search/GlobalSearchModal";
+import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import Index from "./pages/Index";
 import PremiumIndex from "./pages/PremiumIndex";
 import NotFound from "./pages/NotFound";
@@ -16,6 +21,39 @@ import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
+function AppRoutes() {
+  const location = useLocation();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useGlobalShortcuts({
+    onSearch: () => setIsSearchOpen(true),
+    onEscape: () => setIsSearchOpen(false),
+  });
+
+  return (
+    <>
+      <GlobalSearchModal 
+        open={isSearchOpen} 
+        onOpenChange={setIsSearchOpen} 
+      />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><PremiumIndex /></PageTransition>} />
+          <Route path="/upload" element={<PageTransition><Index /></PageTransition>} />
+          <Route path="/upsell" element={<PageTransition><ValueUpsell /></PageTransition>} />
+          <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
+          <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
+          <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
+          <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        </Routes>
+      </AnimatePresence>
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -23,18 +61,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<PremiumIndex />} />
-            <Route path="/upload" element={<Index />} />
-            <Route path="/upsell" element={<ValueUpsell />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/consultant" element={<ConsultantDashboard />} />
-            <Route path="/installer" element={<InstallerPortal />} />
-            <Route path="/customer/:token" element={<CustomerPortal />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </HelmetProvider>

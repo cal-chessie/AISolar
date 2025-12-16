@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, CheckCircle, Clock, AlertCircle, Loader2, CreditCard } from 'lucide-react';
+import { FileText, CheckCircle, Clock, AlertCircle, Loader2, CreditCard, Bitcoin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 
 interface InvoiceCardProps {
   invoice: {
@@ -24,7 +25,9 @@ interface InvoiceCardProps {
 }
 
 export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loadingCard, setLoadingCard] = useState(false);
+  const [loadingCrypto, setLoadingCrypto] = useState(false);
+  
   const depositAmount = invoice.deposit_amount || 0;
   const finalAmount = invoice.final_amount || (invoice.total_amount - depositAmount);
   
@@ -38,8 +41,10 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
     return <Badge variant="secondary">Pending</Badge>;
   };
 
-  const handlePayment = async (paymentType: 'deposit' | 'final') => {
-    setLoading(paymentType);
+  const handlePayment = async (paymentType: 'deposit' | 'final', method: 'card' | 'crypto') => {
+    const setLoading = method === 'card' ? setLoadingCard : setLoadingCrypto;
+    setLoading(true);
+    
     try {
       const baseUrl = window.location.origin;
       const successUrl = portalToken 
@@ -49,7 +54,9 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
         ? `${baseUrl}/customer/${portalToken}?payment=cancelled`
         : `${baseUrl}?payment=cancelled`;
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const endpoint = method === 'crypto' ? 'create-crypto-checkout' : 'create-checkout';
+
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         body: {
           invoiceId: invoice.id,
           paymentType,
@@ -60,8 +67,10 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
 
       if (error) throw error;
 
-      if (data?.url) {
-        window.location.href = data.url;
+      const redirectUrl = data?.hosted_url || data?.url;
+      
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
         throw new Error('No checkout URL returned');
       }
@@ -73,9 +82,13 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
         variant: 'destructive',
       });
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
+
+  const needsPayment = !invoice.deposit_paid || (invoice.deposit_paid && !invoice.final_paid);
+  const currentPaymentType: 'deposit' | 'final' = !invoice.deposit_paid ? 'deposit' : 'final';
+  const currentAmount = !invoice.deposit_paid ? depositAmount : finalAmount;
 
   return (
     <Card>
@@ -152,35 +165,15 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
           </div>
         </div>
 
-        {/* Payment Buttons */}
-        {!invoice.deposit_paid && (
-          <Button 
-            className="w-full" 
-            onClick={() => handlePayment('deposit')}
-            disabled={loading === 'deposit'}
-          >
-            {loading === 'deposit' ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <CreditCard className="h-4 w-4 mr-2" />
-            )}
-            Pay Deposit €{depositAmount.toLocaleString()}
-          </Button>
-        )}
-
-        {invoice.deposit_paid && !invoice.final_paid && (
-          <Button 
-            className="w-full" 
-            onClick={() => handlePayment('final')}
-            disabled={loading === 'final'}
-          >
-            {loading === 'final' ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <CreditCard className="h-4 w-4 mr-2" />
-            )}
-            Pay Balance €{finalAmount.toLocaleString()}
-          </Button>
+        {/* Payment Method Selector */}
+        {needsPayment && (
+          <PaymentMethodSelector
+            onSelectCard={() => handlePayment(currentPaymentType, 'card')}
+            onSelectCrypto={() => handlePayment(currentPaymentType, 'crypto')}
+            isLoadingCard={loadingCard}
+            isLoadingCrypto={loadingCrypto}
+            amount={currentAmount}
+          />
         )}
 
         {invoice.final_paid && (
