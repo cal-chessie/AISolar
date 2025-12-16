@@ -208,6 +208,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          access_token: string | null
           address: string | null
           created_at: string
           email: string
@@ -223,6 +224,7 @@ export type Database = {
           workflow_stage: string | null
         }
         Insert: {
+          access_token?: string | null
           address?: string | null
           created_at?: string
           email: string
@@ -238,6 +240,7 @@ export type Database = {
           workflow_stage?: string | null
         }
         Update: {
+          access_token?: string | null
           address?: string | null
           created_at?: string
           email?: string
@@ -293,6 +296,7 @@ export type Database = {
           assigned_installer_id: string | null
           battery_capacity_kwh: number | null
           battery_storage: boolean | null
+          confirmed_install_date: string | null
           consultant_id: string
           created_at: string
           current_annual_consumption_kwh: number | null
@@ -303,6 +307,7 @@ export type Database = {
           id: string
           installation_cost: number | null
           installation_notes: string | null
+          installation_status: string | null
           installation_timeline_weeks: number | null
           inverter_type: string | null
           lead_id: string
@@ -312,6 +317,7 @@ export type Database = {
           panel_count: number | null
           panel_type: string | null
           payback_period_years: number | null
+          preferred_install_dates: Json | null
           presented_at: string | null
           property_type: string | null
           requires_review: boolean | null
@@ -336,6 +342,7 @@ export type Database = {
           assigned_installer_id?: string | null
           battery_capacity_kwh?: number | null
           battery_storage?: boolean | null
+          confirmed_install_date?: string | null
           consultant_id: string
           created_at?: string
           current_annual_consumption_kwh?: number | null
@@ -346,6 +353,7 @@ export type Database = {
           id?: string
           installation_cost?: number | null
           installation_notes?: string | null
+          installation_status?: string | null
           installation_timeline_weeks?: number | null
           inverter_type?: string | null
           lead_id: string
@@ -355,6 +363,7 @@ export type Database = {
           panel_count?: number | null
           panel_type?: string | null
           payback_period_years?: number | null
+          preferred_install_dates?: Json | null
           presented_at?: string | null
           property_type?: string | null
           requires_review?: boolean | null
@@ -379,6 +388,7 @@ export type Database = {
           assigned_installer_id?: string | null
           battery_capacity_kwh?: number | null
           battery_storage?: boolean | null
+          confirmed_install_date?: string | null
           consultant_id?: string
           created_at?: string
           current_annual_consumption_kwh?: number | null
@@ -389,6 +399,7 @@ export type Database = {
           id?: string
           installation_cost?: number | null
           installation_notes?: string | null
+          installation_status?: string | null
           installation_timeline_weeks?: number | null
           inverter_type?: string | null
           lead_id?: string
@@ -398,6 +409,7 @@ export type Database = {
           panel_count?: number | null
           panel_type?: string | null
           payback_period_years?: number | null
+          preferred_install_dates?: Json | null
           presented_at?: string | null
           property_type?: string | null
           requires_review?: boolean | null

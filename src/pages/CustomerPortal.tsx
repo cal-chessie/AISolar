@@ -1,0 +1,351 @@
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, Sun, AlertCircle, Phone, Mail } from 'lucide-react';
+import StatusTimeline from '@/components/customer/StatusTimeline';
+import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
+import ContractSignature from '@/components/contracts/ContractSignature';
+import { Helmet } from 'react-helmet-async';
+
+interface PortalData {
+  lead: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    address: string | null;
+    workflow_stage: string | null;
+  };
+  proposal: {
+    id: string;
+    status: string | null;
+    system_size_kw: number | null;
+    panel_count: number | null;
+    panel_type: string | null;
+    battery_storage: boolean | null;
+    battery_capacity_kwh: number | null;
+    system_cost: number | null;
+    seai_grant: number | null;
+    net_cost: number | null;
+    monthly_savings: number | null;
+    payback_period_years: number | null;
+    estimated_annual_production_kwh: number | null;
+    approved_at: string | null;
+    confirmed_install_date: string | null;
+    installation_status: string | null;
+  } | null;
+  contract: {
+    id: string;
+    signed_at: string;
+  } | null;
+  invoice: {
+    id: string;
+    deposit_paid: boolean | null;
+    deposit_amount: number | null;
+  } | null;
+}
+
+export default function CustomerPortal() {
+  const { token } = useParams<{ token: string }>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<PortalData | null>(null);
+  const [contractSigned, setContractSigned] = useState(false);
+
+  useEffect(() => {
+    const fetchPortalData = async () => {
+      if (!token) {
+        setError('Invalid access link');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch lead by access token
+        const { data: lead, error: leadError } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('access_token', token)
+          .maybeSingle();
+
+        if (leadError) throw leadError;
+        if (!lead) {
+          setError('This link is invalid or has expired');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch proposal
+        const { data: proposals } = await supabase
+          .from('proposals')
+          .select('*')
+          .eq('lead_id', lead.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const proposal = proposals?.[0] || null;
+
+        // Fetch contract if exists
+        let contract = null;
+        let invoice = null;
+
+        if (proposal) {
+          const { data: contracts } = await supabase
+            .from('contracts')
+            .select('*')
+            .eq('proposal_id', proposal.id)
+            .maybeSingle();
+          contract = contracts;
+
+          const { data: invoices } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('proposal_id', proposal.id)
+            .maybeSingle();
+          invoice = invoices;
+        }
+
+        setData({
+          lead,
+          proposal,
+          contract,
+          invoice
+        });
+        setContractSigned(!!contract);
+      } catch (err: any) {
+        console.error('Portal fetch error:', err);
+        setError('Unable to load your proposal. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPortalData();
+  }, [token]);
+
+  const handleContractSigned = () => {
+    setContractSigned(true);
+    // Refresh data
+    window.location.reload();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your proposal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Access Error</h2>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <p className="text-sm text-muted-foreground">
+                If you believe this is an error, please contact us:
+              </p>
+              <div className="flex justify-center gap-4 mt-4">
+                <Button variant="outline" size="sm" asChild>
+                  <a href="tel:+353851234567">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Call Us
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="mailto:support@solardublin.ie">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Email
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { lead, proposal, contract, invoice } = data;
+
+  return (
+    <>
+      <Helmet>
+        <title>Your Solar Proposal | Solar Dublin</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+        {/* Header */}
+        <header className="bg-background border-b sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sun className="h-8 w-8 text-primary" />
+                <span className="font-bold text-xl">Solar Dublin</span>
+              </div>
+              <div className="text-right">
+                <p className="font-medium">{lead.name}</p>
+                <p className="text-sm text-muted-foreground">{lead.email}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8 max-w-4xl">
+          {/* Welcome Message */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
+              Welcome, {lead.name.split(' ')[0]}!
+            </h1>
+            <p className="text-muted-foreground">
+              Track your solar installation journey below
+            </p>
+          </div>
+
+          {/* Status Timeline */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Project Status</CardTitle>
+              <CardDescription>Your installation progress</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatusTimeline
+                currentStage={lead.workflow_stage || 'proposal'}
+                proposalStatus={proposal?.status || undefined}
+                contractSigned={contractSigned}
+                depositPaid={invoice?.deposit_paid || false}
+                installationScheduled={!!proposal?.confirmed_install_date}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Main Content Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Proposal Summary */}
+            {proposal && (
+              <ProposalSummaryCard proposal={proposal} />
+            )}
+
+            {/* Action Card */}
+            <div className="space-y-6">
+              {/* Contract Signing Section */}
+              {proposal && !contractSigned && proposal.status !== 'draft' && (
+                <ContractSignature
+                  proposalId={proposal.id}
+                  leadId={lead.id}
+                  leadName={lead.name}
+                  leadEmail={lead.email}
+                  totalAmount={proposal.net_cost || 0}
+                  onSignComplete={handleContractSigned}
+                />
+              )}
+
+              {/* Contract Signed - Show Next Steps */}
+              {contractSigned && (
+                <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
+                  <CardHeader>
+                    <CardTitle className="text-green-700 dark:text-green-300">
+                      Contract Signed ✓
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-green-600 dark:text-green-400 mb-4">
+                      Thank you for signing! Your contract was signed on{' '}
+                      {contract?.signed_at 
+                        ? new Date(contract.signed_at).toLocaleDateString()
+                        : 'recently'
+                      }.
+                    </p>
+
+                    {/* Deposit Payment Status */}
+                    {invoice && !invoice.deposit_paid && (
+                      <div className="p-4 bg-background rounded-lg border">
+                        <h4 className="font-semibold mb-2">Next Step: Pay Deposit</h4>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          30% deposit of €{(invoice.deposit_amount || 0).toLocaleString()} required
+                        </p>
+                        <Button className="w-full">
+                          Pay Deposit
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          Secure payment via Stripe
+                        </p>
+                      </div>
+                    )}
+
+                    {invoice?.deposit_paid && (
+                      <div className="p-4 bg-background rounded-lg border">
+                        <h4 className="font-semibold text-green-600 mb-2">
+                          Deposit Paid ✓
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          We'll be in touch shortly to schedule your installation.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Contact Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Need Help?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Our team is here to answer any questions about your solar installation.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" className="flex-1" asChild>
+                      <a href="tel:+353851234567">
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call Us
+                      </a>
+                    </Button>
+                    <Button variant="outline" className="flex-1" asChild>
+                      <a href="mailto:support@solardublin.ie">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Property Details */}
+          {lead.address && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Installation Address</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">{lead.address}</p>
+              </CardContent>
+            </Card>
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t bg-background mt-12">
+          <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+            <p>© {new Date().getFullYear()} Solar Dublin. All rights reserved.</p>
+            <p className="mt-1">SEAI Registered Installer | BER Approved</p>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
+}
