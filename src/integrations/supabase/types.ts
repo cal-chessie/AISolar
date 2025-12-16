@@ -113,6 +113,124 @@ export type Database = {
         }
         Relationships: []
       }
+      installation_checklists: {
+        Row: {
+          battery_installed: boolean | null
+          cable_routing_complete: boolean | null
+          completion_notes: string | null
+          created_at: string
+          ct_clamp_location: string | null
+          customer_app_setup: boolean | null
+          customer_signature: string | null
+          customer_signed_at: string | null
+          earth_bond_confirmed: boolean | null
+          export_limiter_required: boolean | null
+          flashing_installed: boolean | null
+          id: string
+          installer_id: string | null
+          installer_signature: string | null
+          installer_signed_at: string | null
+          inverter_installed: boolean | null
+          isolator_installed: boolean | null
+          lead_id: string
+          main_fuse_size: string | null
+          monitoring_online: boolean | null
+          myenergi_setup: boolean | null
+          network_provider: string | null
+          panels_installed: boolean | null
+          proposal_id: string
+          rcd_present_tested: boolean | null
+          roof_tiles_secure: boolean | null
+          status: string | null
+          updated_at: string
+          weatherproofing_complete: boolean | null
+        }
+        Insert: {
+          battery_installed?: boolean | null
+          cable_routing_complete?: boolean | null
+          completion_notes?: string | null
+          created_at?: string
+          ct_clamp_location?: string | null
+          customer_app_setup?: boolean | null
+          customer_signature?: string | null
+          customer_signed_at?: string | null
+          earth_bond_confirmed?: boolean | null
+          export_limiter_required?: boolean | null
+          flashing_installed?: boolean | null
+          id?: string
+          installer_id?: string | null
+          installer_signature?: string | null
+          installer_signed_at?: string | null
+          inverter_installed?: boolean | null
+          isolator_installed?: boolean | null
+          lead_id: string
+          main_fuse_size?: string | null
+          monitoring_online?: boolean | null
+          myenergi_setup?: boolean | null
+          network_provider?: string | null
+          panels_installed?: boolean | null
+          proposal_id: string
+          rcd_present_tested?: boolean | null
+          roof_tiles_secure?: boolean | null
+          status?: string | null
+          updated_at?: string
+          weatherproofing_complete?: boolean | null
+        }
+        Update: {
+          battery_installed?: boolean | null
+          cable_routing_complete?: boolean | null
+          completion_notes?: string | null
+          created_at?: string
+          ct_clamp_location?: string | null
+          customer_app_setup?: boolean | null
+          customer_signature?: string | null
+          customer_signed_at?: string | null
+          earth_bond_confirmed?: boolean | null
+          export_limiter_required?: boolean | null
+          flashing_installed?: boolean | null
+          id?: string
+          installer_id?: string | null
+          installer_signature?: string | null
+          installer_signed_at?: string | null
+          inverter_installed?: boolean | null
+          isolator_installed?: boolean | null
+          lead_id?: string
+          main_fuse_size?: string | null
+          monitoring_online?: boolean | null
+          myenergi_setup?: boolean | null
+          network_provider?: string | null
+          panels_installed?: boolean | null
+          proposal_id?: string
+          rcd_present_tested?: boolean | null
+          roof_tiles_secure?: boolean | null
+          status?: string | null
+          updated_at?: string
+          weatherproofing_complete?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_checklists_installer_id_fkey"
+            columns: ["installer_id"]
+            isOneToOne: false
+            referencedRelation: "installers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_checklists_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_checklists_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installers: {
         Row: {
           availability_status: string | null
@@ -442,6 +560,140 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seai_applications: {
+        Row: {
+          application_number: string | null
+          approved_at: string | null
+          ber_cert_uploaded: boolean | null
+          completion_cert_uploaded: boolean | null
+          created_at: string
+          engineer_email: string | null
+          engineer_notes: string | null
+          engineer_reviewed_at: string | null
+          grant_amount: number | null
+          id: string
+          invoice_uploaded: boolean | null
+          lead_id: string
+          notes: string | null
+          photos_uploaded: boolean | null
+          property_type: string | null
+          proposal_id: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          requires_engineer_review: boolean | null
+          status: string | null
+          submitted_at: string | null
+          system_size_kw: number | null
+          updated_at: string
+        }
+        Insert: {
+          application_number?: string | null
+          approved_at?: string | null
+          ber_cert_uploaded?: boolean | null
+          completion_cert_uploaded?: boolean | null
+          created_at?: string
+          engineer_email?: string | null
+          engineer_notes?: string | null
+          engineer_reviewed_at?: string | null
+          grant_amount?: number | null
+          id?: string
+          invoice_uploaded?: boolean | null
+          lead_id: string
+          notes?: string | null
+          photos_uploaded?: boolean | null
+          property_type?: string | null
+          proposal_id: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          requires_engineer_review?: boolean | null
+          status?: string | null
+          submitted_at?: string | null
+          system_size_kw?: number | null
+          updated_at?: string
+        }
+        Update: {
+          application_number?: string | null
+          approved_at?: string | null
+          ber_cert_uploaded?: boolean | null
+          completion_cert_uploaded?: boolean | null
+          created_at?: string
+          engineer_email?: string | null
+          engineer_notes?: string | null
+          engineer_reviewed_at?: string | null
+          grant_amount?: number | null
+          id?: string
+          invoice_uploaded?: boolean | null
+          lead_id?: string
+          notes?: string | null
+          photos_uploaded?: boolean | null
+          property_type?: string | null
+          proposal_id?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          requires_engineer_review?: boolean | null
+          status?: string | null
+          submitted_at?: string | null
+          system_size_kw?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seai_applications_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seai_applications_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seai_documents: {
+        Row: {
+          application_id: string
+          created_at: string
+          document_type: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seai_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "seai_applications"
             referencedColumns: ["id"]
           },
         ]
