@@ -111,15 +111,15 @@ export default function CustomerPortal() {
     }
 
     try {
-      // Fetch lead by access token
+      // Fetch lead by access token - use custom header for RLS policy
       const { data: lead, error: leadError } = await supabase
         .from('leads')
         .select('*')
         .eq('access_token', token)
-        .maybeSingle();
+        .single();
 
-      if (leadError) throw leadError;
-      if (!lead) {
+      if (leadError || !lead) {
+        console.error('Lead fetch error:', leadError);
         setError('This link is invalid or has expired');
         setLoading(false);
         return;
