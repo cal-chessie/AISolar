@@ -83,14 +83,31 @@ warranty registration, and customer support. I can withdraw consent at any time 
 
       if (contractError) throw contractError;
 
-      // Update proposal status to approved
-      await supabase
+      // Update proposal status to approved and get proposal data
+      const { data: proposal } = await supabase
         .from('proposals')
         .update({ 
           status: 'approved',
           approved_at: new Date().toISOString()
         })
-        .eq('id', proposalId);
+        .eq('id', proposalId)
+        .select('system_size_kw, panel_count, panel_type, battery_capacity_kwh, battery_storage, inverter_type')
+        .single();
+
+      // Auto-create installation checklist with pre-filled proposal data
+      const { error: checklistError } = await supabase
+        .from('installation_checklists')
+        .insert({
+          proposal_id: proposalId,
+          lead_id: leadId,
+          status: 'pending',
+          battery_installed: proposal?.battery_storage || false,
+        });
+
+      if (checklistError) {
+        console.error('Failed to create installation checklist:', checklistError);
+        // Don't fail the signing process if checklist creation fails
+      }
 
       // Create invoice
       const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
