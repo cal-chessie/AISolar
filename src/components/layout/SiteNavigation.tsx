@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Sun, Menu, X, Sparkles, LogIn, Users, Info, Upload, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,15 @@ export default function SiteNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
@@ -21,17 +30,17 @@ export default function SiteNavigation() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b pt-safe">
-      <div className="container mx-auto py-2.5 xs:py-3 sm:py-4">
+    <header className={`sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b pt-safe transition-all duration-300 ${isScrolled ? 'py-0' : ''}`}>
+      <div className={`container mx-auto transition-all duration-300 ${isScrolled ? 'py-1.5 xs:py-2' : 'py-2.5 xs:py-3 sm:py-4'}`}>
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 min-h-[44px]">
-            <div className="p-1.5 xs:p-2 bg-primary/10 rounded-lg">
-              <Sun className="h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7 text-primary" />
+            <div className={`bg-primary/10 rounded-lg transition-all duration-300 ${isScrolled ? 'p-1 xs:p-1.5' : 'p-1.5 xs:p-2'}`}>
+              <Sun className={`text-primary transition-all duration-300 ${isScrolled ? 'h-4 w-4 xs:h-5 xs:w-5' : 'h-5 w-5 xs:h-6 xs:w-6 sm:h-7 sm:w-7'}`} />
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base xs:text-lg sm:text-xl font-bold">{brand.name}</span>
-              <Badge variant="secondary" className="text-[9px] xs:text-[10px] sm:text-xs px-1.5 py-0.5 hidden xs:flex">
+              <span className={`font-bold transition-all duration-300 ${isScrolled ? 'text-sm xs:text-base' : 'text-base xs:text-lg sm:text-xl'}`}>{brand.name}</span>
+              <Badge variant="secondary" className={`px-1.5 py-0.5 hidden xs:flex transition-all duration-300 ${isScrolled ? 'text-[8px] xs:text-[9px]' : 'text-[9px] xs:text-[10px] sm:text-xs'}`}>
                 <Sparkles className="w-2.5 h-2.5 mr-0.5" />
                 AI
               </Badge>

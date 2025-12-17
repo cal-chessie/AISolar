@@ -22,6 +22,45 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
+const dummyInstallations = [
+  {
+    id: 'dummy-1',
+    status: 'pending',
+    priority: 'high',
+    assignment_type: 'installation',
+    scheduled_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: '6.6kW system with battery storage. Access via side gate.',
+    leads: { name: 'John Murphy', address: '42 Oak Drive, Dublin 6' }
+  },
+  {
+    id: 'dummy-2',
+    status: 'accepted',
+    priority: 'normal',
+    assignment_type: 'installation',
+    scheduled_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: '4.4kW standard install. Scaffolding required.',
+    leads: { name: 'Sarah O\'Brien', address: '15 Willow Lane, Cork' }
+  },
+  {
+    id: 'dummy-3',
+    status: 'in_progress',
+    priority: 'urgent',
+    assignment_type: 'installation',
+    scheduled_date: new Date().toISOString(),
+    notes: '8.8kW commercial install. Customer waiting on SEAI deadline.',
+    leads: { name: 'Michael Collins', address: '8 Business Park, Galway' }
+  },
+  {
+    id: 'dummy-4',
+    status: 'completed',
+    priority: 'normal',
+    assignment_type: 'maintenance',
+    scheduled_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    notes: 'Annual panel cleaning and inspection.',
+    leads: { name: 'Emma Walsh', address: '23 Meadow View, Limerick' }
+  },
+];
+
 export default function InstallationsPanel() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +68,7 @@ export default function InstallationsPanel() {
   const [installers, setInstallers] = useState<any[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showDummy, setShowDummy] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
     lead_id: '',
     installer_id: '',
@@ -171,7 +211,7 @@ export default function InstallationsPanel() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Scheduled Installations</h2>
+        <h2 className="text-2xl font-bold text-foreground">Scheduled Installations</h2>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
@@ -284,22 +324,32 @@ export default function InstallationsPanel() {
         </Dialog>
       </div>
 
-      {assignments.length === 0 ? (
+      {assignments.length === 0 && !showDummy ? (
         <div className="text-center py-12">
-          <Calendar className="mx-auto text-slate-300 mb-4" size={48} />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No installations scheduled</h3>
-          <p className="text-slate-600 text-sm">
+          <Calendar className="mx-auto text-muted-foreground/30 mb-4" size={48} />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No installations scheduled</h3>
+          <p className="text-muted-foreground text-sm mb-4">
             Create an assignment to schedule an installation
           </p>
+          <Button variant="outline" size="sm" onClick={() => setShowDummy(true)}>
+            Show Demo Data
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {assignments.map((assignment) => (
-            <div key={assignment.id} className="p-5 bg-slate-50 rounded-xl border border-slate-200 hover:shadow-md transition-all">
+          {showDummy && assignments.length === 0 && (
+            <div className="flex justify-end mb-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowDummy(false)}>
+                Hide Demo Data
+              </Button>
+            </div>
+          )}
+          {(assignments.length > 0 ? assignments : showDummy ? dummyInstallations : []).map((assignment) => (
+            <div key={assignment.id} className="p-5 bg-muted/50 rounded-xl border hover:shadow-md transition-all">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-slate-900 text-lg">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-semibold text-foreground text-lg">
                       {assignment.leads?.name || 'Unknown'}
                     </h3>
                     <Badge className={getStatusBadge(assignment.status)}>
@@ -309,7 +359,7 @@ export default function InstallationsPanel() {
                       {assignment.priority}
                     </Badge>
                   </div>
-                  <div className="space-y-1 text-sm text-slate-600">
+                  <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <MapPin size={14} />
                       {assignment.leads?.address || 'No address'}
@@ -325,7 +375,7 @@ export default function InstallationsPanel() {
                 <Badge variant="outline">{assignment.assignment_type}</Badge>
               </div>
               {assignment.notes && (
-                <p className="text-sm text-slate-600 italic mt-2">
+                <p className="text-sm text-muted-foreground italic mt-2">
                   Note: {assignment.notes}
                 </p>
               )}
