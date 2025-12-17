@@ -739,6 +739,31 @@ All colors MUST be HSL.
   margin: 3rem 0;
 }
 
+/* Mobile horizontal scroll for testimonials */
+@media (max-width: 768px) {
+  .testimonials-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 1rem;
+    padding: 0.5rem;
+    margin: 1.5rem -1rem;
+  }
+  
+  .testimonials-grid::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .testimonials-grid .testimonial-card {
+    flex: 0 0 85%;
+    min-width: 280px;
+    max-width: 320px;
+    scroll-snap-align: center;
+  }
+}
+
 .testimonial-card {
   background: hsl(var(--card));
   padding: 2rem;
@@ -837,6 +862,31 @@ All colors MUST be HSL.
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
+}
+
+/* Mobile horizontal scroll for steps */
+@media (max-width: 768px) {
+  .steps-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 1rem;
+    padding: 1.5rem 0.5rem 0.5rem;
+    margin: 0 -1rem;
+  }
+  
+  .steps-grid::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .steps-grid .step-card {
+    flex: 0 0 80%;
+    min-width: 240px;
+    max-width: 280px;
+    scroll-snap-align: center;
+  }
 }
 
 .step-card {
@@ -1004,6 +1054,25 @@ All colors MUST be HSL.
 .final-cta-section {
   padding: 6rem 2rem;
   background: hsl(var(--background));
+}
+
+/* Add bottom padding for mobile nav */
+@media (max-width: 768px) {
+  .final-cta-section {
+    padding: 3rem 1rem 8rem;
+  }
+  
+  .social-proof-section {
+    padding: 3rem 1rem;
+  }
+  
+  .how-it-works-section {
+    padding: 3rem 1rem;
+  }
+  
+  .savings-calculator-section {
+    padding: 3rem 1rem;
+  }
 }
 
 .cta-card {

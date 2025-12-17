@@ -5,3 +5,4 @@ export { HowItWorksSection } from './HowItWorksSection';
 export { WhyUsSection } from './WhyUsSection';
 export { FAQSection, faqStructuredData } from './FAQSection';
 export { StickyCTA } from './StickyCTA';
+export { MobileHomeNav } from './MobileHomeNav';
