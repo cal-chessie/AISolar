@@ -295,20 +295,20 @@ export default function PremiumIndex() {
               </motion.div>
             </div>
 
-            {/* Bottom corner trust element */}
+            {/* Bottom corner trust element - aligned under cards */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.6, duration: 0.5 }}
-              className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm"
+              className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm w-fit ml-auto mt-3"
             >
               <div className="flex -space-x-1.5">
-                <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-[10px]">👤</div>
-                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-[10px]">👤</div>
-                <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-[10px]">👤</div>
+                <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-[9px]">👤</div>
+                <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-[9px]">👤</div>
+                <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-[9px]">👤</div>
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                500+ switched this year
+              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                500+ switched
               </span>
             </motion.div>
           </div>
