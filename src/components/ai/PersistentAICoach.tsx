@@ -2,19 +2,31 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, X, MessageSquare, Phone, Calendar, FileText, 
-  TrendingUp, AlertTriangle, Lightbulb, Copy, Check, ChevronDown
+  TrendingUp, AlertTriangle, Lightbulb, Copy, Check, ChevronDown,
+  Target, Zap, DollarSign, Users, Award, ThumbsUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface CoachContext {
   page: string;
   leadId?: string;
   stage?: string;
+  leadData?: LeadData | null;
+}
+
+interface LeadData {
+  name: string;
+  email: string;
+  monthly_bill: number | null;
+  property_type: string | null;
+  workflow_stage: string | null;
+  address: string | null;
+  score: number | null;
 }
 
 interface Tip {
@@ -28,6 +40,14 @@ interface Tip {
 interface ObjectionHandler {
   objection: string;
   response: string;
+  category: 'price' | 'timing' | 'technical' | 'trust';
+}
+
+interface ClosingTechnique {
+  name: string;
+  description: string;
+  script: string;
+  bestFor: string;
 }
 
 export default function PersistentAICoach() {
@@ -36,25 +56,57 @@ export default function PersistentAICoach() {
   const [tips, setTips] = useState<Tip[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showObjections, setShowObjections] = useState(false);
+  const [showClosing, setShowClosing] = useState(false);
+  const [activeSection, setActiveSection] = useState<'tips' | 'objections' | 'closing' | 'stats'>('tips');
   const location = useLocation();
 
-  // Determine context from current route
+  // Extract lead ID from URL if present
   useEffect(() => {
     const path = location.pathname;
     let page = 'dashboard';
+    let leadId: string | undefined;
     
     if (path.includes('/survey')) page = 'survey';
     else if (path.includes('/proposal')) page = 'proposal';
-    else if (path.includes('/lead')) page = 'lead';
+    else if (path.includes('/lead')) {
+      page = 'lead';
+      // Extract lead ID from path like /lead/123
+      const match = path.match(/\/lead\/([^/]+)/);
+      if (match) leadId = match[1];
+    }
     else if (path.includes('/installer')) page = 'installer';
     else if (path.includes('/calendar')) page = 'calendar';
+    else if (path.includes('/consultant')) page = 'dashboard';
 
-    setContext(prev => ({ ...prev, page }));
-    generateContextualTips(page);
+    setContext(prev => ({ ...prev, page, leadId }));
+    
+    if (leadId) {
+      fetchLeadData(leadId);
+    } else {
+      setContext(prev => ({ ...prev, leadData: null }));
+      generateContextualTips(page, null);
+    }
   }, [location.pathname]);
 
-  const generateContextualTips = (page: string) => {
-    const contextTips: Record<string, Tip[]> = {
+  const fetchLeadData = async (leadId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('name, email, monthly_bill, property_type, workflow_stage, address, score')
+        .eq('id', leadId)
+        .single();
+
+      if (!error && data) {
+        setContext(prev => ({ ...prev, leadData: data }));
+        generateContextualTips(context.page, data);
+      }
+    } catch (error) {
+      console.error('Error fetching lead data:', error);
+    }
+  };
+
+  const generateContextualTips = (page: string, leadData: LeadData | null) => {
+    const baseTips: Record<string, Tip[]> = {
       dashboard: [
         {
           id: '1',
@@ -182,34 +234,126 @@ export default function PersistentAICoach() {
       ]
     };
 
-    setTips(contextTips[page] || contextTips.dashboard);
+    let contextualTips = [...(baseTips[page] || baseTips.dashboard)];
+
+    // Add lead-specific tips based on data
+    if (leadData) {
+      if (leadData.monthly_bill && leadData.monthly_bill >= 200) {
+        contextualTips.unshift({
+          id: 'lead-high-bill',
+          title: `High-Value Lead: €${leadData.monthly_bill}/month`,
+          content: `${leadData.name} pays €${leadData.monthly_bill} monthly - emphasise ROI and quick payback. Estimated annual savings: €${Math.round(leadData.monthly_bill * 12 * 0.7)}.`,
+          type: 'opportunity'
+        });
+      }
+
+      if (leadData.property_type === 'commercial') {
+        contextualTips.unshift({
+          id: 'lead-commercial',
+          title: 'Commercial Property',
+          content: 'Larger system potential with higher grants. Mention accelerated capital allowances for business tax benefits.',
+          type: 'opportunity',
+          copyText: '"As a business, you can claim accelerated capital allowances, effectively reducing your tax bill while generating free electricity."'
+        });
+      }
+
+      if (leadData.score && leadData.score >= 4) {
+        contextualTips.unshift({
+          id: 'lead-hot',
+          title: '⭐ Hot Lead - Act Fast!',
+          content: `${leadData.name} is rated ${leadData.score}/5 stars. Prioritise this lead - schedule survey or present proposal today.`,
+          type: 'action'
+        });
+      }
+
+      if (leadData.workflow_stage === 'proposal' || leadData.workflow_stage === 'approved') {
+        contextualTips.push({
+          id: 'lead-closing',
+          title: 'Closing Time',
+          content: 'This lead is in proposal stage - use assumptive close: "When would you like us to schedule the installation?"',
+          type: 'action',
+          copyText: '"So the system looks perfect for your home. Let\'s get the installation booked - do mornings or afternoons work better for you?"'
+        });
+      }
+    }
+
+    setTips(contextualTips);
   };
 
   const objectionHandlers: ObjectionHandler[] = [
     {
       objection: '"It\'s too expensive"',
       response: 'With the €1,800 SEAI grant and 8-year payback, you\'re essentially getting free electricity for 17+ years. The system pays for itself, then keeps saving you money.',
+      category: 'price'
     },
     {
       objection: '"I\'ll wait for technology to improve"',
       response: 'Solar technology is already mature at 21%+ efficiency. Waiting means missing today\'s grants and paying higher electricity costs. Panels from 10 years ago are still performing at 95%.',
+      category: 'timing'
     },
     {
       objection: '"What about Irish weather?"',
       response: 'Ireland gets sufficient diffuse sunlight - our systems average 900kWh per kW annually. Germany, with similar weather, is Europe\'s solar leader. Panels work in cloudy conditions.',
+      category: 'technical'
     },
     {
       objection: '"My roof isn\'t suitable"',
       response: 'Modern panels work on most roofs including east/west facing. Let\'s do a free site survey - we\'ll give you an honest assessment and exact figures for your situation.',
+      category: 'technical'
     },
     {
       objection: '"I need to think about it"',
       response: 'Absolutely, it\'s a significant decision. What specific concerns can I address today? Many customers find that once they see the numbers, the decision becomes clearer.',
+      category: 'timing'
     },
     {
       objection: '"I\'ve seen cheaper quotes"',
       response: 'Quality varies significantly. We use tier-1 panels with 25-year warranties and RECI-certified installers. Cheaper systems often use lower-grade equipment with shorter lifespans.',
+      category: 'trust'
     },
+    {
+      objection: '"What if the company goes bust?"',
+      response: 'Our manufacturer warranties are backed globally - they\'re from billion-euro companies like JA Solar and GoodWe. The panels themselves will last 25+ years regardless.',
+      category: 'trust'
+    },
+    {
+      objection: '"I\'m renting / planning to move"',
+      response: 'Solar adds 4-6% to property value. Many homeowners install before selling to increase their asking price. For landlords, it attracts quality tenants and justifies higher rent.',
+      category: 'price'
+    }
+  ];
+
+  const closingTechniques: ClosingTechnique[] = [
+    {
+      name: 'Assumptive Close',
+      description: 'Assume the sale and move to logistics',
+      script: '"Great, so let\'s get your installation scheduled. Do mornings or afternoons work better for you?"',
+      bestFor: 'Warm leads who have shown strong interest'
+    },
+    {
+      name: 'Summary Close',
+      description: 'Recap all benefits before asking for commitment',
+      script: '"So to summarise: you\'ll save €[X] annually, get €1,800 off with the SEAI grant, and have a 6-year payback. The system then generates free electricity for 20+ years. Shall we proceed?"',
+      bestFor: 'Detail-oriented customers who need reassurance'
+    },
+    {
+      name: 'Urgency Close',
+      description: 'Create time-sensitive motivation',
+      script: '"The SEAI grant is currently €1,800, but budgets are reviewed annually. By booking now, you lock in today\'s rates. When can we schedule your installation?"',
+      bestFor: 'Procrastinators or price-sensitive leads'
+    },
+    {
+      name: 'Alternative Choice Close',
+      description: 'Offer two positive options',
+      script: '"Would you prefer the 10-panel system with battery, or the 14-panel system without? Both give excellent savings."',
+      bestFor: 'Indecisive customers who need guidance'
+    },
+    {
+      name: 'Deposit Close',
+      description: 'Secure commitment with small upfront payment',
+      script: '"A €500 deposit today secures your installation slot and current pricing. The balance isn\'t due until after completion. Does that work for you?"',
+      bestFor: 'Converting interest to action in-person'
+    }
   ];
 
   const handleCopy = async (text: string, id: string) => {
@@ -222,7 +366,7 @@ export default function PersistentAICoach() {
   const getTipIcon = (type: Tip['type']) => {
     switch (type) {
       case 'opportunity': return <TrendingUp className="h-4 w-4" />;
-      case 'action': return <Phone className="h-4 w-4" />;
+      case 'action': return <Zap className="h-4 w-4" />;
       case 'warning': return <AlertTriangle className="h-4 w-4" />;
       case 'tip': return <Lightbulb className="h-4 w-4" />;
     }
@@ -234,6 +378,15 @@ export default function PersistentAICoach() {
       case 'action': return 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300';
       case 'warning': return 'bg-orange-50 border-orange-200 text-orange-800 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300';
       case 'tip': return 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300';
+    }
+  };
+
+  const getCategoryColor = (category: ObjectionHandler['category']) => {
+    switch (category) {
+      case 'price': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+      case 'timing': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'technical': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+      case 'trust': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
     }
   };
 
@@ -284,7 +437,9 @@ export default function PersistentAICoach() {
                 </div>
                 <div>
                   <h2 className="font-semibold text-foreground">AI Sales Coach</h2>
-                  <p className="text-xs text-muted-foreground">Context: {getPageLabel(context.page)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {context.leadData ? context.leadData.name : getPageLabel(context.page)}
+                  </p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
@@ -292,109 +447,243 @@ export default function PersistentAICoach() {
               </Button>
             </div>
 
+            {/* Lead Context Banner */}
+            {context.leadData && (
+              <div className="px-4 py-3 bg-primary/5 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{context.leadData.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {context.leadData.monthly_bill && (
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />€{context.leadData.monthly_bill}/mo
+                        </span>
+                      )}
+                      {context.leadData.property_type && (
+                        <Badge variant="outline" className="text-xs py-0">
+                          {context.leadData.property_type}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {context.leadData.score && (
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={`text-sm ${i < context.leadData!.score! ? 'text-yellow-500' : 'text-muted'}`}>
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tab Navigation */}
+            <div className="flex border-b px-2">
+              {[
+                { key: 'tips', label: 'Tips', icon: Lightbulb },
+                { key: 'objections', label: 'Objections', icon: MessageSquare },
+                { key: 'closing', label: 'Closing', icon: Target },
+                { key: 'stats', label: 'Stats', icon: Award },
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveSection(key as typeof activeSection)}
+                  className={`flex-1 py-2.5 text-xs font-medium flex flex-col items-center gap-1 border-b-2 transition-colors ${
+                    activeSection === key 
+                      ? 'border-primary text-primary' 
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Contextual Tips */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-primary" />
-                  Tips for {getPageLabel(context.page)}
-                </h3>
-                {tips.map((tip) => (
-                  <div key={tip.id} className={`p-3 rounded-lg border ${getTipColor(tip.type)}`}>
-                    <div className="flex items-start gap-2">
-                      {getTipIcon(tip.type)}
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{tip.title}</p>
-                        <p className="text-xs mt-1 opacity-90">{tip.content}</p>
-                        {tip.copyText && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2 h-7 text-xs"
-                            onClick={() => handleCopy(tip.copyText!, tip.id)}
-                          >
-                            {copiedId === tip.id ? (
-                              <Check className="h-3 w-3 mr-1" />
-                            ) : (
-                              <Copy className="h-3 w-3 mr-1" />
-                            )}
-                            Copy Script
-                          </Button>
+              {activeSection === 'tips' && (
+                <div className="space-y-3">
+                  {tips.map((tip) => (
+                    <motion.div 
+                      key={tip.id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-3 rounded-lg border ${getTipColor(tip.type)}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {getTipIcon(tip.type)}
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{tip.title}</p>
+                          <p className="text-xs mt-1 opacity-90">{tip.content}</p>
+                          {tip.copyText && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="mt-2 h-7 text-xs"
+                              onClick={() => handleCopy(tip.copyText!, tip.id)}
+                            >
+                              {copiedId === tip.id ? (
+                                <Check className="h-3 w-3 mr-1" />
+                              ) : (
+                                <Copy className="h-3 w-3 mr-1" />
+                              )}
+                              Copy Script
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Objection Handlers */}
+              {activeSection === 'objections' && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {['all', 'price', 'timing', 'technical', 'trust'].map((cat) => (
+                      <Badge 
+                        key={cat} 
+                        variant="outline" 
+                        className="cursor-pointer text-xs capitalize"
+                      >
+                        {cat}
+                      </Badge>
+                    ))}
+                  </div>
+                  {objectionHandlers.map((handler, idx) => (
+                    <Card key={idx} className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="font-medium text-sm text-foreground">{handler.objection}</p>
+                        <Badge className={`text-xs ${getCategoryColor(handler.category)}`}>
+                          {handler.category}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{handler.response}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-7 text-xs"
+                        onClick={() => handleCopy(handler.response, `obj-${idx}`)}
+                      >
+                        {copiedId === `obj-${idx}` ? (
+                          <Check className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Copy className="h-3 w-3 mr-1" />
                         )}
+                        Copy Response
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Closing Techniques */}
+              {activeSection === 'closing' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Choose the right closing technique based on your customer's personality and buying signals.
+                  </p>
+                  {closingTechniques.map((technique, idx) => (
+                    <Card key={idx} className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <p className="font-medium text-sm">{technique.name}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{technique.description}</p>
+                      <div className="bg-muted/50 rounded p-2 mb-2">
+                        <p className="text-xs italic">"{technique.script}"</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          <ThumbsUp className="h-3 w-3 mr-1" />
+                          {technique.bestFor}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => handleCopy(technique.script, `close-${idx}`)}
+                        >
+                          {copiedId === `close-${idx}` ? (
+                            <Check className="h-3 w-3 mr-1" />
+                          ) : (
+                            <Copy className="h-3 w-3 mr-1" />
+                          )}
+                          Copy
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick Stats */}
+              {activeSection === 'stats' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">Key Numbers to Remember</h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">SEAI Grant (Domestic)</p>
+                        <p className="font-bold text-foreground text-lg">€1,800</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Typical Payback</p>
+                        <p className="font-bold text-foreground text-lg">6-9 years</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Export Rate</p>
+                        <p className="font-bold text-foreground text-lg">€0.21/kWh</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Panel Warranty</p>
+                        <p className="font-bold text-foreground text-lg">25 years</p>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Objection Handlers */}
-              <div className="space-y-3">
-                <button
-                  onClick={() => setShowObjections(!showObjections)}
-                  className="w-full text-sm font-semibold text-foreground flex items-center justify-between py-2"
-                >
-                  <span className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-primary" />
-                    Objection Handlers
-                  </span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showObjections ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <AnimatePresence>
-                  {showObjections && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="space-y-2 overflow-hidden"
-                    >
-                      {objectionHandlers.map((handler, idx) => (
-                        <Card key={idx} className="p-3">
-                          <p className="font-medium text-sm text-foreground">{handler.objection}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{handler.response}</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2 h-7 text-xs"
-                            onClick={() => handleCopy(handler.response, `obj-${idx}`)}
-                          >
-                            {copiedId === `obj-${idx}` ? (
-                              <Check className="h-3 w-3 mr-1" />
-                            ) : (
-                              <Copy className="h-3 w-3 mr-1" />
-                            )}
-                            Copy Response
-                          </Button>
-                        </Card>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">Typical Annual Savings</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">€100/month bill</span>
+                        <span className="font-medium">€600-€720/year</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">€200/month bill</span>
+                        <span className="font-medium">€1,200-€1,440/year</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">€300/month bill</span>
+                        <span className="font-medium">€1,800-€2,160/year</span>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Quick Stats */}
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="text-sm font-semibold mb-3">Key Numbers to Remember</h4>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="text-muted-foreground">SEAI Grant (Domestic)</p>
-                    <p className="font-bold text-foreground">€1,800</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Typical Payback</p>
-                    <p className="font-bold text-foreground">6-9 years</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Export Rate</p>
-                    <p className="font-bold text-foreground">€0.21/kWh</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Panel Warranty</p>
-                    <p className="font-bold text-foreground">25 years</p>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">System Sizing Guide</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">1-2 bed apartment</span>
+                        <span className="font-medium">2-3 kW</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">3-4 bed house</span>
+                        <span className="font-medium">4-6 kW</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Large house / EV</span>
+                        <span className="font-medium">8-10 kW</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </motion.div>
         )}
