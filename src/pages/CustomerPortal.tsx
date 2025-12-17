@@ -60,6 +60,17 @@ interface PortalData {
     due_date: string | null;
     status: string | null;
   } | null;
+  installationChecklist: {
+    status: string | null;
+    customer_signed_at: string | null;
+    installer_signed_at: string | null;
+  } | null;
+  seaiApplication: {
+    id: string;
+    status: string | null;
+    submitted_at: string | null;
+    approved_at: string | null;
+  } | null;
 }
 
 export default function CustomerPortal() {
@@ -127,6 +138,8 @@ export default function CustomerPortal() {
       // Fetch contract if exists
       let contract = null;
       let invoice = null;
+      let installationChecklist = null;
+      let seaiApplication = null;
 
       if (proposal) {
         const { data: contracts } = await supabase
@@ -142,13 +155,29 @@ export default function CustomerPortal() {
           .eq('proposal_id', proposal.id)
           .maybeSingle();
         invoice = invoices;
+
+        const { data: checklist } = await supabase
+          .from('installation_checklists')
+          .select('status, customer_signed_at, installer_signed_at')
+          .eq('proposal_id', proposal.id)
+          .maybeSingle();
+        installationChecklist = checklist;
+
+        const { data: seai } = await supabase
+          .from('seai_applications')
+          .select('id, status, submitted_at, approved_at')
+          .eq('proposal_id', proposal.id)
+          .maybeSingle();
+        seaiApplication = seai;
       }
 
       setData({
         lead,
         proposal,
         contract,
-        invoice
+        invoice,
+        installationChecklist,
+        seaiApplication
       });
       setContractSigned(!!contract);
     } catch (err: any) {
@@ -264,7 +293,7 @@ export default function CustomerPortal() {
     );
   }
 
-  const { lead, proposal, contract, invoice } = data;
+  const { lead, proposal, contract, invoice, installationChecklist, seaiApplication } = data;
 
   return (
     <>
@@ -324,6 +353,10 @@ export default function CustomerPortal() {
                 contractSigned={contractSigned}
                 depositPaid={invoice?.deposit_paid || false}
                 installationScheduled={!!proposal?.confirmed_install_date}
+                installationInProgress={proposal?.installation_status === 'in_progress'}
+                installationComplete={installationChecklist?.status === 'completed' || !!installationChecklist?.customer_signed_at}
+                finalPaymentPaid={invoice?.final_paid || false}
+                seaiApplicationStarted={!!seaiApplication}
               />
             </CardContent>
           </Card>
