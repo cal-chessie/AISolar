@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
+const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+const POSTMARK_SENDER_EMAIL = Deno.env.get("POSTMARK_SENDER_EMAIL") || "notifications@aisolar.ie";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -202,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
             ` : ''}
             
             <p style="text-align: center; margin-top: 24px;">
-              <a href="${Deno.env.get("SITE_URL") || "https://your-app.lovable.app"}" 
+              <a href="${Deno.env.get("SITE_URL") || "https://aisolar.ie"}/consultant" 
                  style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
                 Open Dashboard
               </a>
@@ -217,21 +218,38 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Send email to all consultants
-    const emailResponse = await resend.emails.send({
-      from: `${BRAND_NAME} <onboarding@resend.dev>`,
-      to: consultantEmails,
-      subject: `📋 Follow-up Reminder: ${staleLeads.length} leads need attention`,
-      html: emailHtml,
+    // Send email via Postmark
+    const postmarkResponse = await fetch(POSTMARK_API_URL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
+      },
+      body: JSON.stringify({
+        From: `${BRAND_NAME} <${POSTMARK_SENDER_EMAIL}>`,
+        To: consultantEmails.join(","),
+        Subject: `📋 Follow-up Reminder: ${staleLeads.length} leads need attention`,
+        HtmlBody: emailHtml,
+        MessageStream: "outbound",
+      }),
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    const postmarkData = await postmarkResponse.json();
+
+    if (!postmarkResponse.ok) {
+      console.error("Postmark error:", postmarkData);
+      throw new Error(postmarkData.Message || "Failed to send email");
+    }
+
+    console.log("Email sent successfully:", postmarkData.MessageID);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         staleLeadsCount: staleLeads.length,
-        emailsSent: consultantEmails.length
+        emailsSent: consultantEmails.length,
+        messageId: postmarkData.MessageID
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

@@ -1,11 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
+const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+const POSTMARK_SENDER_EMAIL = Deno.env.get("POSTMARK_SENDER_EMAIL") || "notifications@aisolar.ie";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const BRAND_NAME = "AISOLAR";
 
 interface ProposalAcceptedRequest {
   customerName: string;
@@ -72,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="text-align: center; margin-bottom: 40px;">
-      <div style="font-size: 28px; font-weight: bold; color: #10b981;">☀️ AI Solar</div>
+      <div style="font-size: 28px; font-weight: bold; color: #10b981;">☀️ ${BRAND_NAME}</div>
       <div style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; margin: 16px 0;">✓ Proposal Accepted</div>
       <h1 style="margin: 16px 0; color: #1e293b;">Congratulations, ${customerName}!</h1>
       <p style="color: #64748b; font-size: 18px;">Your solar journey officially begins today.</p>
@@ -139,37 +143,39 @@ const handler = async (req: Request): Promise<Response> => {
     ${consultantSection}
 
     <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">
-      <p>Thank you for choosing AI Solar for your renewable energy needs.</p>
+      <p>Thank you for choosing ${BRAND_NAME} for your renewable energy needs.</p>
       <p style="color: #10b981;">RECI Certified • SEAI Registered</p>
     </div>
   </div>
 </body>
 </html>`;
 
-    const emailResponse = await fetch("https://api.resend.com/emails", {
+    const postmarkResponse = await fetch(POSTMARK_API_URL, {
       method: "POST",
       headers: {
+        "Accept": "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
       },
       body: JSON.stringify({
-        from: "AI Solar <onboarding@resend.dev>",
-        to: [customerEmail],
-        subject: "🎉 Your Solar Installation is Confirmed - Next Steps",
-        html: htmlContent,
+        From: `${BRAND_NAME} <${POSTMARK_SENDER_EMAIL}>`,
+        To: customerEmail,
+        Subject: "🎉 Your Solar Installation is Confirmed - Next Steps",
+        HtmlBody: htmlContent,
+        MessageStream: "outbound",
       }),
     });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error("Resend API error:", errorText);
-      throw new Error(`Email sending failed: ${errorText}`);
+    const postmarkData = await postmarkResponse.json();
+
+    if (!postmarkResponse.ok) {
+      console.error("Postmark API error:", postmarkData);
+      throw new Error(postmarkData.Message || "Email sending failed");
     }
 
-    const result = await emailResponse.json();
-    console.log("Proposal accepted email sent successfully:", result);
+    console.log("Proposal accepted email sent successfully:", postmarkData.MessageID);
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ success: true, messageId: postmarkData.MessageID }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

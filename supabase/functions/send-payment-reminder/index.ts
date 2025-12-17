@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
+const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+const POSTMARK_SENDER_EMAIL = Deno.env.get("POSTMARK_SENDER_EMAIL") || "notifications@aisolar.ie";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,6 @@ const corsHeaders = {
 };
 
 const BRAND_NAME = "AISOLAR";
-const BRAND_EMAIL = "onboarding@resend.dev";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,9 +25,9 @@ serve(async (req) => {
 
   try {
     // Find invoices where:
-    // - Installation is completed (status = 'pending_final' or deposit_paid = true)
+    // - Installation is completed (deposit_paid = true)
     // - Final payment is NOT received
-    // - Created more than 7 days ago
+    // - Updated more than 7 days ago
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -140,19 +140,30 @@ serve(async (req) => {
       `;
 
       try {
-        const { error: emailError } = await resend.emails.send({
-          from: `${BRAND_NAME} <${BRAND_EMAIL}>`,
-          to: [lead.email],
-          subject: `Payment Reminder - €${finalAmount.toLocaleString()} Balance Due`,
-          html,
+        const postmarkResponse = await fetch(POSTMARK_API_URL, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
+          },
+          body: JSON.stringify({
+            From: `${BRAND_NAME} <${POSTMARK_SENDER_EMAIL}>`,
+            To: lead.email,
+            Subject: `Payment Reminder - €${finalAmount.toLocaleString()} Balance Due`,
+            HtmlBody: html,
+            MessageStream: "outbound",
+          }),
         });
 
-        if (emailError) {
-          console.error(`[PAYMENT-REMINDER] Failed to send email to ${lead.email}:`, emailError);
-          results.push({ invoice_id: invoice.id, success: false, error: emailError });
+        const postmarkData = await postmarkResponse.json();
+
+        if (!postmarkResponse.ok) {
+          console.error(`[PAYMENT-REMINDER] Postmark error for ${lead.email}:`, postmarkData);
+          results.push({ invoice_id: invoice.id, success: false, error: postmarkData.Message });
         } else {
           console.log(`[PAYMENT-REMINDER] Reminder sent to ${lead.email} for invoice ${invoice.invoice_number}`);
-          results.push({ invoice_id: invoice.id, success: true, email: lead.email });
+          results.push({ invoice_id: invoice.id, success: true, email: lead.email, messageId: postmarkData.MessageID });
         }
       } catch (emailError: any) {
         console.error(`[PAYMENT-REMINDER] Email error:`, emailError);

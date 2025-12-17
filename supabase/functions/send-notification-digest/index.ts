@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
+const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+const POSTMARK_SENDER_EMAIL = Deno.env.get("POSTMARK_SENDER_EMAIL") || "notifications@aisolar.ie";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -10,6 +11,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const BRAND_NAME = "AISOLAR";
 
 interface DigestUser {
   user_id: string;
@@ -77,7 +80,7 @@ function buildDigestEmail(
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">AISOLAR</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">☀️ ${BRAND_NAME}</h1>
         <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">Your ${frequency === "weekly" ? "Weekly" : "Daily"} Activity Digest</p>
       </div>
       
@@ -98,7 +101,7 @@ function buildDigestEmail(
         </div>
         
         <p style="margin-top: 32px; font-size: 12px; color: #9ca3af; text-align: center;">
-          You're receiving this email because you enabled digest notifications in your AISOLAR settings.
+          You're receiving this email because you enabled digest notifications in your ${BRAND_NAME} settings.
           <br>
           <a href="${siteUrl}/settings" style="color: #10b981;">Manage preferences</a>
         </p>
@@ -142,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Found ${digestUsers.length} users with digest enabled`);
-    const siteUrl = Deno.env.get("SITE_URL") || "https://your-app.lovable.app";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://aisolar.ie";
     const results: { userId: string; status: string; error?: string }[] = [];
 
     for (const user of digestUsers as DigestUser[]) {
@@ -213,15 +216,28 @@ const handler = async (req: Request): Promise<Response> => {
           siteUrl
         );
 
-        const { error: emailError } = await resend.emails.send({
-          from: "AISOLAR <notifications@resend.dev>",
-          to: [authUser.user.email],
-          subject: `Your ${user.digest_frequency === "weekly" ? "Weekly" : "Daily"} Activity Digest - AISOLAR`,
-          html: emailHtml,
+        // Send via Postmark
+        const postmarkResponse = await fetch(POSTMARK_API_URL, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
+          },
+          body: JSON.stringify({
+            From: `${BRAND_NAME} <${POSTMARK_SENDER_EMAIL}>`,
+            To: authUser.user.email,
+            Subject: `Your ${user.digest_frequency === "weekly" ? "Weekly" : "Daily"} Activity Digest - ${BRAND_NAME}`,
+            HtmlBody: emailHtml,
+            MessageStream: "outbound",
+          }),
         });
 
-        if (emailError) {
-          results.push({ userId: user.user_id, status: "error", error: emailError.message });
+        const postmarkData = await postmarkResponse.json();
+
+        if (!postmarkResponse.ok) {
+          console.error("Postmark error:", postmarkData);
+          results.push({ userId: user.user_id, status: "error", error: postmarkData.Message });
           continue;
         }
 
@@ -231,7 +247,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("user_id", user.user_id);
 
         results.push({ userId: user.user_id, status: "sent" });
-        console.log(`Digest sent successfully to ${authUser.user.email}`);
+        console.log(`Digest sent successfully to ${authUser.user.email}, messageId: ${postmarkData.MessageID}`);
 
       } catch (userError: any) {
         console.error(`Error processing user ${user.user_id}:`, userError);
