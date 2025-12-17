@@ -58,7 +58,7 @@ export default function AnalyticsPanel({ className }: AnalyticsPanelProps) {
         { data: invoices },
         { data: seaiApps }
       ] = await Promise.all([
-        supabase.from('leads').select('id, status, created_at'),
+        supabase.from('leads').select('id, workflow_stage, created_at'),
         supabase.from('proposals').select('id, status, net_cost, system_cost, created_at, installation_status'),
         supabase.from('assignments').select('id, status, completed_date'),
         supabase.from('invoices').select('total_amount, deposit_paid, final_paid, status'),
@@ -97,13 +97,13 @@ export default function AnalyticsPanel({ className }: AnalyticsPanelProps) {
         a.status === 'submitted' || a.status === 'under_review'
       ).length || 0;
 
-      // Group leads by status
-      const statusCounts: Record<string, number> = {};
+      // Group leads by workflow stage
+      const stageCounts: Record<string, number> = {};
       leads?.forEach(lead => {
-        const status = lead.status || 'new';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
+        const stage = lead.workflow_stage || 'new';
+        stageCounts[stage] = (stageCounts[stage] || 0) + 1;
       });
-      const leadsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
+      const leadsByStatus = Object.entries(stageCounts).map(([name, value]) => ({
         name: name.replace('_', ' ').toUpperCase(),
         value,
       }));

@@ -165,7 +165,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
         .select('*')
-        .in('status', ['new', 'contacted'])
+        .in('workflow_stage', ['new', 'survey'])
         .order('created_at', { ascending: true });
 
       if (leadsError) throw leadsError;
@@ -395,7 +395,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
 
         await supabase
           .from('leads')
-          .update({ status: 'contacted', workflow_stage: 'survey' })
+          .update({ workflow_stage: 'survey' })
           .eq('id', selectedLead.id);
 
         try {
@@ -423,7 +423,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
         await supabase
           .from('leads')
           .update({ 
-            status: 'contacted',
+            workflow_stage: 'survey',
             notes: `${existingNotes}\n\nCall scheduled: ${scheduleForm.date} ${scheduleForm.time || ''}\n${scheduleForm.notes || ''}`
           })
           .eq('id', selectedLead.id);

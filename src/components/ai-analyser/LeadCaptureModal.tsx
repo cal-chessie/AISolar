@@ -84,7 +84,6 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         monthly_bill: analysisData?.monthlyBill || null,
         mprn: analysisData?.mprn || null,
         annual_consumption_kwh: analysisData?.annualKwh || null,
-        status: "new",
         workflow_stage: "new",
         notes,
       }).select().single();

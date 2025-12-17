@@ -72,9 +72,15 @@ export function ExpertChat() {
         },
       });
 
-      if (response.error) throw response.error;
+      // Log for debugging
+      if (response.error) {
+        console.error("Expert chat function error:", response.error);
+      }
 
-      const assistantMessage = response.data?.content || "I apologize, I'm having trouble responding. Please try uploading your bill for a personalized analysis!";
+      // Handle both error response with fallback content and successful response
+      const assistantMessage = response.data?.content || 
+        response.error?.message || 
+        "I apologize, I'm having trouble responding. Please try uploading your bill for a personalized analysis!";
       
       setMessages((prev) => [
         ...prev,

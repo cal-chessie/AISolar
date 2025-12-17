@@ -42,7 +42,7 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
           phone: formData.phone || null,
           address: formData.address || null,
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
-          status: 'new',
+          workflow_stage: 'new',
         });
 
       if (error) throw error;

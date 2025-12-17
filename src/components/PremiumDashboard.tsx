@@ -147,7 +147,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
       // Fetch all leads
       const { data: leads, error: leadsError } = await supabase
         .from('leads')
-        .select('id, status, created_at, monthly_bill');
+        .select('id, workflow_stage, created_at, monthly_bill');
       
       if (leadsError) throw leadsError;
 
@@ -161,7 +161,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
 
       // Calculate stats
       const totalLeads = leads?.length || 0;
-      const closedWonLeads = leads?.filter(l => l.status === 'closed_won').length || 0;
+      const closedWonLeads = leads?.filter(l => l.workflow_stage === 'completed').length || 0;
       const conversionRate = totalLeads > 0 ? ((closedWonLeads / totalLeads) * 100).toFixed(0) : '0';
       
       // Calculate avg deal size from accepted proposals
@@ -172,7 +172,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
         : 0;
       
       const pendingLeads = leads?.filter(l => 
-        l.status === 'new' || l.status === 'contacted'
+        l.workflow_stage === 'new' || l.workflow_stage === 'survey'
       ).length || 0;
 
       // Calculate trends (last 7 days vs previous 7 days)
@@ -818,14 +818,14 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                      lead.status === 'new' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
-                      lead.status === 'contacted' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
-                      lead.status === 'qualified' ? 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
-                      lead.status === 'proposal_sent' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
-                      lead.status === 'closed_won' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
-                      'bg-destructive/10 text-destructive dark:bg-destructive/20'
+                      lead.workflow_stage === 'new' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+                      lead.workflow_stage === 'survey' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+                      lead.workflow_stage === 'proposal' ? 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
+                      lead.workflow_stage === 'approved' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+                      lead.workflow_stage === 'completed' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+                      'bg-muted text-muted-foreground'
                     }`}>
-                      {lead.status?.replace('_', ' ').toUpperCase() || 'NEW'}
+                      {lead.workflow_stage?.replace('_', ' ').toUpperCase() || 'NEW'}
                     </span>
                     {onStartSurvey && (
                       <Button

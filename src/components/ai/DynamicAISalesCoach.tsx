@@ -14,7 +14,7 @@ interface Lead {
   address?: string;
   monthly_bill?: number;
   score?: number;
-  status?: string;
+  workflow_stage?: string;
   property_type?: PropertyType;
   created_at: string;
 }
@@ -168,11 +168,11 @@ export default function DynamicAISalesCoach({ leadId }: DynamicAISalesCoachProps
     }
 
     // Time-based urgency
-    if (daysSinceCreation > 7 && lead.status === 'new') {
+    if (daysSinceCreation > 7 && lead.workflow_stage === 'new') {
       insights.push({
         type: 'warning',
         title: 'Follow-Up Overdue',
-        content: `Lead created ${daysSinceCreation} days ago with no status change. Contact immediately - response rate drops 80% after 7 days.`,
+        content: `Lead created ${daysSinceCreation} days ago with no stage change. Contact immediately - response rate drops 80% after 7 days.`,
         priority: 'high'
       });
     }
