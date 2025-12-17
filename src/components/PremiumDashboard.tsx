@@ -48,6 +48,7 @@ import ErrorBoundary from './ui/ErrorBoundary';
 import { PaginationControls, usePagination } from './ui/PaginationControls';
 import { EmptyLeadsState, EmptyProposalsState, EmptySearchResultsState } from './ui/EmptyState';
 import { NotificationBell } from './notifications/NotificationBell';
+import DemoWorkflowJourney from './dashboard/DemoWorkflowJourney';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -353,6 +354,12 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
             </div>
           )}
         </CollapsibleStats>
+        
+        {/* Demo Journey & Follow-up Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4 mb-2">
+          <DemoWorkflowJourney />
+          <div className="flex-1" />
+        </div>
         
         {/* Follow-up Reminders */}
         <FollowUpReminders 
