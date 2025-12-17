@@ -202,7 +202,7 @@ export default function PremiumIndex() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-5 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 cursor-pointer hover:shadow-xl hover:shadow-emerald-200/50 dark:hover:shadow-emerald-800/30 transition-shadow duration-200"
+                className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-5 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 cursor-pointer hover:shadow-xl hover:shadow-emerald-300/60 dark:hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-600/50 transition-all duration-300 hover:ring-2 hover:ring-emerald-400/30 dark:hover:ring-emerald-500/20"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-1.5 bg-emerald-500 rounded-lg">
