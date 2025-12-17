@@ -401,7 +401,6 @@ export type Database = {
           phone: string | null
           property_type: string | null
           score: number | null
-          status: string | null
           updated_at: string
           workflow_stage: string | null
         }
@@ -419,7 +418,6 @@ export type Database = {
           phone?: string | null
           property_type?: string | null
           score?: number | null
-          status?: string | null
           updated_at?: string
           workflow_stage?: string | null
         }
@@ -437,7 +435,6 @@ export type Database = {
           phone?: string | null
           property_type?: string | null
           score?: number | null
-          status?: string | null
           updated_at?: string
           workflow_stage?: string | null
         }
