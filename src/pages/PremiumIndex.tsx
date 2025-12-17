@@ -370,7 +370,7 @@ function SocialProofSection() {
       image: "👨‍💻"
     },
     {
-      name: "Niamh & Cian Ó Conchúir",
+      name: "Niamh and Cian Ó Conchúir Family",
       location: "Galway",
       systemInfo: "SEAI paperwork handled in full",
       savings: "€1,650", 
