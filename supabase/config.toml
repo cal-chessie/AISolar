@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.extract-bill-data]
 verify_jwt = false
+
+[functions.expert-chat]
+verify_jwt = false
