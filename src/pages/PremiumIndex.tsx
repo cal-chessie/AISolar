@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, Check, Play, Star, TrendingUp, Shield, Calculator, FileText, Calendar, Upload, Sparkles, Euro, Quote, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Zap, ArrowRight, Check, Play, Star, TrendingUp, Shield, Calculator, FileText, Calendar, Upload, Sparkles, Euro, Quote, MessageCircle, ChevronLeft, ChevronRight, Leaf, Clock } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import SiteNavigation from '@/components/layout/SiteNavigation';
@@ -9,6 +9,7 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { MobileHomeNav } from '@/components/landing/MobileHomeNav';
 import { ScrollIndicator } from '@/components/ui/ScrollIndicator';
 import { brand } from '@/config/brand';
+import { Card3D } from '@/components/ui/Card3D';
 export default function PremiumIndex() {
   const navigate = useNavigate();
   const [showVideo, setShowVideo] = useState(false);
@@ -588,6 +589,49 @@ function LeadCaptureSection() {
       </div>
     </section>;
 }
+// Animated Counter Component
+function AnimatedCounter({ 
+  value, 
+  prefix = '', 
+  suffix = '',
+  isInView 
+}: { 
+  value: number; 
+  prefix?: string; 
+  suffix?: string;
+  isInView: boolean;
+}) {
+  const [displayValue, setDisplayValue] = useState(0);
+  
+  useEffect(() => {
+    if (!isInView) return;
+    
+    const duration = 2000;
+    const startTime = performance.now();
+    const startValue = 0;
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      
+      setDisplayValue(Math.round(startValue + (value - startValue) * easeOutQuart));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [value, isInView]);
+
+  return (
+    <span className="tabular-nums">
+      {prefix}{displayValue.toLocaleString()}{suffix}
+    </span>
+  );
+}
+
 function SavingsCalculatorSection({
   estimatedBill,
   setEstimatedBill,
@@ -597,57 +641,166 @@ function SavingsCalculatorSection({
   setEstimatedBill: (value: number) => void;
   annualSavings: number;
 }) {
-  return <section className="savings-calculator-section">
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  const [sliderActive, setSliderActive] = useState(false);
+
+  // Calculate additional metrics
+  const twentyFiveYearSavings = annualSavings * 25;
+  const co2Savings = Math.round(annualSavings * 0.4); // kg CO2 per euro saved (rough estimate)
+  
+  return (
+    <section className="savings-calculator-section" ref={sectionRef}>
       <div className="container">
-        <motion.div initial={{
-        opacity: 0,
-        y: 50
-      }} whileInView={{
-        opacity: 1,
-        y: 0
-      }} viewport={{
-        once: true
-      }} className="section-header">
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }} 
+          whileInView={{ opacity: 1, y: 0 }} 
+          viewport={{ once: true }} 
+          className="section-header"
+        >
           <h2>Calculate Your Potential Savings</h2>
-          <p>See how much you could save with solar panels</p>
+          <p>Drag the slider to see your personalized solar savings</p>
         </motion.div>
 
-        <div className="calculator-card">
-          <div className="calculator-input">
+        <motion.div 
+          className="calculator-card enhanced"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Interactive Slider Section */}
+          <div className="calculator-input enhanced">
             <label>
               <Euro size={20} />
               Monthly Electricity Bill
             </label>
-            <div className="slider-container">
-              <input type="range" min="50" max="500" value={estimatedBill} onChange={e => setEstimatedBill(Number(e.target.value))} className="savings-slider" />
-              <div className="slider-value">€{estimatedBill}/month</div>
+            <div className="slider-container enhanced">
+              <div className="slider-track">
+                <motion.div 
+                  className="slider-fill"
+                  style={{ width: `${((estimatedBill - 50) / 450) * 100}%` }}
+                  animate={{ 
+                    boxShadow: sliderActive 
+                      ? '0 0 20px hsl(var(--primary) / 0.5)' 
+                      : '0 0 10px hsl(var(--primary) / 0.3)'
+                  }}
+                />
+              </div>
+              <input 
+                type="range" 
+                min="50" 
+                max="500" 
+                value={estimatedBill} 
+                onChange={e => setEstimatedBill(Number(e.target.value))} 
+                onMouseDown={() => setSliderActive(true)}
+                onMouseUp={() => setSliderActive(false)}
+                onTouchStart={() => setSliderActive(true)}
+                onTouchEnd={() => setSliderActive(false)}
+                className="savings-slider enhanced" 
+              />
+              <motion.div 
+                className="slider-value enhanced"
+                animate={{ 
+                  scale: sliderActive ? 1.1 : 1,
+                  y: sliderActive ? -5 : 0
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
+                <span className="currency">€</span>
+                <AnimatedCounter value={estimatedBill} isInView={isInView} />
+                <span className="period">/month</span>
+              </motion.div>
+            </div>
+            <div className="slider-labels">
+              <span>€50</span>
+              <span>€275</span>
+              <span>€500</span>
             </div>
           </div>
 
-          <div className="calculator-results">
-            <div className="result-card primary">
-              <div className="result-icon">
-                <TrendingUp size={24} />
+          {/* Results Grid with 3D Cards */}
+          <div className="calculator-results enhanced">
+            <Card3D className="result-card-3d primary" intensity={10}>
+              <div className="result-card primary glass">
+                <div className="result-icon-wrapper">
+                  <motion.div 
+                    className="result-icon"
+                    animate={{ 
+                      rotate: isInView ? [0, 10, -10, 0] : 0,
+                      scale: isInView ? [1, 1.1, 1] : 1
+                    }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                  >
+                    <TrendingUp size={28} />
+                  </motion.div>
+                </div>
+                <div className="result-content">
+                  <div className="result-label">Estimated Annual Savings</div>
+                  <motion.div 
+                    className="result-value large"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    €<AnimatedCounter value={annualSavings} isInView={isInView} />
+                  </motion.div>
+                </div>
+                <motion.div 
+                  className="result-sparkle"
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                    scale: [0.9, 1.1, 0.9]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Sparkles size={20} />
+                </motion.div>
               </div>
-              <div className="result-content">
-                <div className="result-label">Estimated Annual Savings</div>
-                <div className="result-value">€{annualSavings.toLocaleString()}</div>
-              </div>
-            </div>
+            </Card3D>
 
-            <div className="result-card">
-              <div className="result-label">25-Year Savings</div>
-              <div className="result-value">€{(annualSavings * 25).toLocaleString()}</div>
-            </div>
+            <div className="secondary-results">
+              <Card3D className="result-card-3d" intensity={8}>
+                <div className="result-card glass">
+                  <div className="result-icon-mini">
+                    <Calculator size={18} />
+                  </div>
+                  <div className="result-label">25-Year Savings</div>
+                  <div className="result-value">
+                    €<AnimatedCounter value={twentyFiveYearSavings} isInView={isInView} />
+                  </div>
+                </div>
+              </Card3D>
 
-            <div className="result-card">
-              <div className="result-label">Payback Period</div>
-              <div className="result-value">5-7 years</div>
+              <Card3D className="result-card-3d" intensity={8}>
+                <div className="result-card glass">
+                  <div className="result-icon-mini">
+                    <Clock size={18} />
+                  </div>
+                  <div className="result-label">Payback Period</div>
+                  <div className="result-value">5-7 years</div>
+                </div>
+              </Card3D>
+
+              <Card3D className="result-card-3d" intensity={8}>
+                <div className="result-card glass eco">
+                  <div className="result-icon-mini">
+                    <Leaf size={18} />
+                  </div>
+                  <div className="result-label">CO₂ Reduction</div>
+                  <div className="result-value">
+                    <AnimatedCounter value={co2Savings} isInView={isInView} suffix=" kg" />
+                    <span className="result-subtext">/year</span>
+                  </div>
+                </div>
+              </Card3D>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </section>;
+    </section>
+  );
 }
 function FinalCTASection({
   navigate

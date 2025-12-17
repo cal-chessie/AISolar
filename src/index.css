@@ -938,7 +938,21 @@ All colors MUST be HSL.
 
 .savings-calculator-section {
   padding: 6rem 2rem;
-  background: hsl(var(--secondary) / 0.3);
+  background: linear-gradient(180deg, hsl(var(--secondary) / 0.3), hsl(var(--background)));
+  position: relative;
+  overflow: hidden;
+}
+
+.savings-calculator-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .calculator-card {
@@ -947,6 +961,15 @@ All colors MUST be HSL.
   border-radius: 24px;
   border: 1px solid hsl(var(--border));
   box-shadow: 0 10px 30px hsl(var(--foreground) / 0.1);
+}
+
+.calculator-card.enhanced {
+  background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--card) / 0.8));
+  backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 
+    0 20px 50px hsl(var(--foreground) / 0.1),
+    inset 0 1px 0 hsl(var(--card) / 0.8);
 }
 
 .calculator-input label {
@@ -963,6 +986,29 @@ All colors MUST be HSL.
   position: relative;
 }
 
+.slider-container.enhanced {
+  padding: 1rem 0;
+}
+
+.slider-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: hsl(var(--secondary));
+  border-radius: 10px;
+  transform: translateY(-50%);
+  overflow: hidden;
+}
+
+.slider-fill {
+  height: 100%;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease;
+}
+
 .savings-slider {
   width: 100%;
   height: 8px;
@@ -971,6 +1017,17 @@ All colors MUST be HSL.
   outline: none;
   -webkit-appearance: none;
   margin-bottom: 1rem;
+}
+
+.savings-slider.enhanced {
+  position: relative;
+  background: transparent;
+  z-index: 2;
+  cursor: grab;
+}
+
+.savings-slider.enhanced:active {
+  cursor: grabbing;
 }
 
 .savings-slider::-webkit-slider-thumb {
@@ -984,6 +1041,24 @@ All colors MUST be HSL.
   box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
 }
 
+.savings-slider.enhanced::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--accent)));
+  border: 4px solid hsl(var(--card));
+  box-shadow: 
+    0 4px 15px hsl(var(--primary) / 0.4),
+    0 0 0 4px hsl(var(--primary) / 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.savings-slider.enhanced::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 6px 20px hsl(var(--primary) / 0.5),
+    0 0 0 6px hsl(var(--primary) / 0.15);
+}
+
 .savings-slider::-moz-range-thumb {
   width: 24px;
   height: 24px;
@@ -994,12 +1069,53 @@ All colors MUST be HSL.
   box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
 }
 
+.savings-slider.enhanced::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--accent)));
+  border: 4px solid hsl(var(--card));
+  box-shadow: 
+    0 4px 15px hsl(var(--primary) / 0.4),
+    0 0 0 4px hsl(var(--primary) / 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
 .slider-value {
   text-align: center;
   font-size: 1.5rem;
   font-weight: 700;
   color: hsl(var(--primary));
   margin-bottom: 2rem;
+}
+
+.slider-value.enhanced {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 2.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.slider-value .currency {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+.slider-value .period {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.6;
+  margin-left: 0.25rem;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  padding: 0 0.5rem;
 }
 
 .calculator-results {
@@ -1009,6 +1125,29 @@ All colors MUST be HSL.
   margin-top: 2rem;
 }
 
+.calculator-results.enhanced {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+@media (min-width: 768px) {
+  .calculator-results.enhanced {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+.secondary-results {
+  display: grid;
+  gap: 1rem;
+}
+
+.result-card-3d {
+  border-radius: 20px;
+}
+
 .result-card {
   background: hsl(var(--secondary) / 0.5);
   padding: 1.5rem;
@@ -1016,11 +1155,39 @@ All colors MUST be HSL.
   border: 1px solid hsl(var(--border));
 }
 
+.result-card.glass {
+  background: hsl(var(--card) / 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.result-card.glass:hover {
+  box-shadow: 0 10px 30px hsl(var(--foreground) / 0.08);
+}
+
 .result-card.primary {
   background: hsl(var(--primary) / 0.1);
   border-color: hsl(var(--primary) / 0.2);
   display: flex;
   gap: 1rem;
+}
+
+.result-card.primary.glass {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
+  border: 1px solid hsl(var(--primary) / 0.3);
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card.eco {
+  background: linear-gradient(135deg, hsl(142 76% 36% / 0.1), hsl(142 76% 36% / 0.05));
+  border-color: hsl(142 76% 36% / 0.2);
+}
+
+.result-icon-wrapper {
+  flex-shrink: 0;
 }
 
 .result-icon {
@@ -1032,6 +1199,26 @@ All colors MUST be HSL.
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.result-icon-wrapper .result-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--accent)));
+  box-shadow: 0 8px 20px hsl(var(--primary) / 0.3);
+}
+
+.result-icon-mini {
+  width: 36px;
+  height: 36px;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
 }
 
 .result-content {
@@ -1049,6 +1236,24 @@ All colors MUST be HSL.
   font-weight: 700;
   color: hsl(var(--primary));
   line-height: 1;
+}
+
+.result-value.large {
+  font-size: 2.5rem;
+}
+
+.result-subtext {
+  font-size: 0.875rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 0.25rem;
+}
+
+.result-sparkle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: hsl(var(--primary) / 0.5);
 }
 
 .final-cta-section {
