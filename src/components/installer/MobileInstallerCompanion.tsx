@@ -544,30 +544,7 @@ export default function MobileInstallerCompanion() {
     );
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-3 text-sm text-muted-foreground">Loading jobs...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const todayJobs = assignments.filter(a => {
-    if (!a.scheduled_date) return false;
-    const today = new Date().toDateString();
-    return new Date(a.scheduled_date).toDateString() === today;
-  });
-
-  const upcomingJobs = assignments.filter(a => {
-    if (!a.scheduled_date) return true;
-    return new Date(a.scheduled_date) > new Date();
-  });
-
-  // Pull-to-refresh
+  // Pull-to-refresh - MUST be before any conditional returns
   const handleRefresh = useCallback(async () => {
     await loadAssignments();
   }, []);
@@ -582,6 +559,29 @@ export default function MobileInstallerCompanion() {
     onRefresh: handleRefresh,
     threshold: 80,
   });
+
+  const todayJobs = assignments.filter(a => {
+    if (!a.scheduled_date) return false;
+    const today = new Date().toDateString();
+    return new Date(a.scheduled_date).toDateString() === today;
+  });
+
+  const upcomingJobs = assignments.filter(a => {
+    if (!a.scheduled_date) return true;
+    return new Date(a.scheduled_date) > new Date();
+  });
+
+  // Loading state - after all hooks
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-3 text-sm text-muted-foreground">Loading jobs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
