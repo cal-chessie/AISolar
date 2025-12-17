@@ -21,7 +21,12 @@ import {
   PenLine,
   Save,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 
 interface InstallationChecklistProps {
@@ -39,6 +44,21 @@ interface InvoiceStatus {
   deposit_paid: boolean;
   final_paid: boolean;
   status: string;
+}
+
+interface SeaiStatus {
+  id: string;
+  application_number: string | null;
+  status: string;
+  grant_amount: number | null;
+  system_size_kw: number | null;
+  submitted_at: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  ber_cert_uploaded: boolean;
+  completion_cert_uploaded: boolean;
+  invoice_uploaded: boolean;
+  photos_uploaded: boolean;
 }
 
 interface ChecklistData {
@@ -99,10 +119,12 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus | null>(null);
+  const [seaiStatus, setSeaiStatus] = useState<SeaiStatus | null>(null);
 
   useEffect(() => {
     fetchChecklist();
     fetchInvoiceStatus();
+    fetchSeaiStatus();
   }, [proposalId]);
 
   const fetchChecklist = async () => {
@@ -139,6 +161,59 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
     } catch (error) {
       console.error('Error fetching invoice status:', error);
     }
+  };
+
+  const fetchSeaiStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('seai_applications')
+        .select('id, application_number, status, grant_amount, system_size_kw, submitted_at, approved_at, rejected_at, ber_cert_uploaded, completion_cert_uploaded, invoice_uploaded, photos_uploaded')
+        .eq('proposal_id', proposalId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setSeaiStatus(data as SeaiStatus);
+      }
+    } catch (error) {
+      console.error('Error fetching SEAI status:', error);
+    }
+  };
+
+  const getSeaiStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />;
+      case 'submitted':
+      case 'pending_verification':
+        return <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+      default:
+        return <HelpCircle className="h-5 w-5 text-muted-foreground" />;
+    }
+  };
+
+  const getSeaiStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      draft: 'Draft - Not Submitted',
+      submitted: 'Submitted - Awaiting Review',
+      pending_verification: 'Pending Verification',
+      approved: 'Approved',
+      rejected: 'Rejected',
+    };
+    return labels[status] || status;
+  };
+
+  const getSeaiDocProgress = () => {
+    if (!seaiStatus) return 0;
+    const docs = [
+      seaiStatus.ber_cert_uploaded,
+      seaiStatus.completion_cert_uploaded,
+      seaiStatus.invoice_uploaded,
+      seaiStatus.photos_uploaded,
+    ];
+    return docs.filter(Boolean).length;
   };
 
   const saveChecklist = async () => {
@@ -371,6 +446,95 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SEAI Grant Status Indicator */}
+      {seaiStatus && (
+        <Card className={
+          seaiStatus.status === 'approved' 
+            ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+            : seaiStatus.status === 'rejected'
+            ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+            : 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+        }>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${
+                  seaiStatus.status === 'approved' 
+                    ? 'bg-green-100 dark:bg-green-900'
+                    : seaiStatus.status === 'rejected'
+                    ? 'bg-red-100 dark:bg-red-900'
+                    : 'bg-blue-100 dark:bg-blue-900'
+                }`}>
+                  <FileText className={`h-5 w-5 ${
+                    seaiStatus.status === 'approved' 
+                      ? 'text-green-600 dark:text-green-400'
+                      : seaiStatus.status === 'rejected'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-blue-600 dark:text-blue-400'
+                  }`} />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm flex items-center gap-2">
+                    SEAI Grant Application
+                    {getSeaiStatusIcon(seaiStatus.status)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {seaiStatus.application_number 
+                      ? `#${seaiStatus.application_number}` 
+                      : 'No application number yet'
+                    }
+                    {seaiStatus.grant_amount && ` • Grant: €${seaiStatus.grant_amount.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Badge 
+                  variant={seaiStatus.status === 'approved' ? 'default' : 'secondary'} 
+                  className={
+                    seaiStatus.status === 'approved' 
+                      ? 'bg-green-500' 
+                      : seaiStatus.status === 'rejected'
+                      ? 'bg-red-500'
+                      : seaiStatus.status === 'submitted' || seaiStatus.status === 'pending_verification'
+                      ? 'bg-blue-500'
+                      : ''
+                  }
+                >
+                  {getSeaiStatusLabel(seaiStatus.status)}
+                </Badge>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>Documents: {getSeaiDocProgress()}/4</span>
+                  <div className="flex gap-0.5 ml-1">
+                    {[
+                      { uploaded: seaiStatus.ber_cert_uploaded, label: 'BER' },
+                      { uploaded: seaiStatus.completion_cert_uploaded, label: 'Completion' },
+                      { uploaded: seaiStatus.invoice_uploaded, label: 'Invoice' },
+                      { uploaded: seaiStatus.photos_uploaded, label: 'Photos' },
+                    ].map((doc, i) => (
+                      <div 
+                        key={i}
+                        className={`w-2 h-2 rounded-full ${doc.uploaded ? 'bg-green-500' : 'bg-muted'}`}
+                        title={`${doc.label}: ${doc.uploaded ? 'Uploaded' : 'Pending'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {seaiStatus.status === 'approved' && seaiStatus.approved_at && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                Approved on {new Date(seaiStatus.approved_at).toLocaleDateString()}
+              </p>
+            )}
+            {seaiStatus.status === 'submitted' && seaiStatus.submitted_at && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                Submitted on {new Date(seaiStatus.submitted_at).toLocaleDateString()}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
