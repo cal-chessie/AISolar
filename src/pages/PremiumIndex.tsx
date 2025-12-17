@@ -300,7 +300,7 @@ export default function PremiumIndex() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.6, duration: 0.5 }}
-              className="hidden lg:flex items-center gap-3 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm w-fit ml-auto mt-4"
+              className="hidden lg:flex items-center gap-3 px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm w-fit mt-4"
             >
               <div className="flex -space-x-2">
                 <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs">👤</div>
