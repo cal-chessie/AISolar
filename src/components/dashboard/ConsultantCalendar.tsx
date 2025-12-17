@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, 
@@ -13,7 +13,10 @@ import {
   LayoutGrid,
   List,
   CalendarDays,
-  Plus
+  Plus,
+  FileText,
+  Truck,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EventDetailDialog } from './EventDetailDialog';
 import { QuickAddEventDialog } from './QuickAddEventDialog';
+import { PipelineProgress } from './PipelineProgress';
 import { 
   format, 
   startOfMonth, 
@@ -42,9 +46,10 @@ import {
   addWeeks,
   subWeeks,
   isToday,
-  isSameMonth,
   addDays,
-  subDays
+  subDays,
+  setMonth,
+  setYear
 } from 'date-fns';
 
 interface ScheduledEvent {
@@ -54,11 +59,13 @@ interface ScheduledEvent {
   lead_email: string;
   lead_phone?: string;
   lead_address?: string;
-  type: 'call' | 'survey';
+  type: 'call' | 'survey' | 'proposal' | 'installation';
   date: Date;
   time?: string;
   notes?: string;
   status: 'scheduled' | 'completed' | 'cancelled';
+  proposal_id?: string;
+  survey_id?: string;
 }
 
 interface LeadNeedingAction {
@@ -77,7 +84,13 @@ interface LeadNeedingAction {
 
 type ViewMode = 'month' | 'week' | 'day';
 
-export default function ConsultantCalendar() {
+interface ConsultantCalendarProps {
+  onViewLead?: (leadId: string) => void;
+  onViewSurvey?: (surveyId: string) => void;
+  onViewProposal?: (proposalId: string) => void;
+}
+
+export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewProposal }: ConsultantCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
@@ -97,11 +110,7 @@ export default function ConsultantCalendar() {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [currentDate]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch leads that need follow-up calls
@@ -120,7 +129,6 @@ export default function ConsultantCalendar() {
         const daysSince = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
         let urgency: 'high' | 'medium' | 'low' = 'low';
         
-        // AI leads get higher urgency since they're high-intent
         const isAILead = lead.notes?.includes('[SOURCE: AI_ANALYSER]') || lead.notes?.includes('[AI Analysis');
         const isHighValue = (lead.monthly_bill || 0) >= 200;
         
@@ -131,17 +139,14 @@ export default function ConsultantCalendar() {
           else if (daysSince > 1) urgency = 'medium';
         }
 
-        const source = isAILead ? 'AI Analyser' : 'Manual';
-
         return {
           ...lead,
           days_since_contact: daysSince,
           urgency,
-          source
+          source: isAILead ? 'AI Analyser' : 'Manual'
         };
       });
 
-      // Sort by urgency (high first) and AI leads first
       leadsWithUrgency.sort((a, b) => {
         const urgencyOrder = { high: 0, medium: 1, low: 2 };
         const aIsAI = a.source === 'AI Analyser' ? 0 : 1;
@@ -152,18 +157,27 @@ export default function ConsultantCalendar() {
 
       setLeadsNeedingCalls(leadsWithUrgency);
 
-      // Fetch scheduled surveys
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
+      // Get date range for fetching events (3 months window)
+      const rangeStart = subMonths(startOfMonth(currentDate), 1);
+      const rangeEnd = addMonths(endOfMonth(currentDate), 1);
       
+      // Fetch scheduled surveys
       const { data: surveysData, error: surveysError } = await supabase
         .from('site_surveys')
         .select('*, leads(name, email, phone, address)')
-        .gte('survey_date', monthStart.toISOString())
-        .lte('survey_date', monthEnd.toISOString())
+        .gte('survey_date', rangeStart.toISOString())
+        .lte('survey_date', rangeEnd.toISOString())
         .order('survey_date', { ascending: true });
 
       if (surveysError) throw surveysError;
+
+      // Fetch proposals with scheduled presentation dates
+      const { data: proposalsData } = await supabase
+        .from('proposals')
+        .select('*, leads(name, email, phone, address)')
+        .not('confirmed_install_date', 'is', null)
+        .gte('confirmed_install_date', rangeStart.toISOString())
+        .lte('confirmed_install_date', rangeEnd.toISOString());
 
       // Convert surveys to events
       const surveyEvents: ScheduledEvent[] = (surveysData || []).map(survey => ({
@@ -173,14 +187,31 @@ export default function ConsultantCalendar() {
         lead_email: survey.leads?.email || '',
         lead_phone: survey.leads?.phone,
         lead_address: survey.leads?.address,
-        type: 'survey',
+        type: 'survey' as const,
         date: new Date(survey.survey_date),
         time: format(new Date(survey.survey_date), 'HH:mm'),
-        status: survey.status === 'completed' ? 'completed' : 'scheduled',
-        notes: survey.access_notes
+        status: survey.status === 'completed' ? 'completed' : survey.status === 'cancelled' ? 'cancelled' : 'scheduled',
+        notes: survey.access_notes,
+        survey_id: survey.id
       }));
 
-      setScheduledEvents(surveyEvents);
+      // Convert proposals with install dates to events
+      const installEvents: ScheduledEvent[] = (proposalsData || []).map(proposal => ({
+        id: proposal.id,
+        lead_id: proposal.lead_id,
+        lead_name: proposal.leads?.name || 'Unknown',
+        lead_email: proposal.leads?.email || '',
+        lead_phone: proposal.leads?.phone,
+        lead_address: proposal.leads?.address,
+        type: 'installation' as const,
+        date: new Date(proposal.confirmed_install_date!),
+        time: '09:00',
+        status: proposal.installation_status === 'completed' ? 'completed' : proposal.installation_status === 'cancelled' ? 'cancelled' : 'scheduled',
+        notes: proposal.installation_notes,
+        proposal_id: proposal.id
+      }));
+
+      setScheduledEvents([...surveyEvents, ...installEvents]);
     } catch (error) {
       console.error('Error fetching calendar data:', error);
       toast({
@@ -191,7 +222,11 @@ export default function ConsultantCalendar() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSchedule = async () => {
     if (!selectedLead || !scheduleForm.date) {
@@ -250,7 +285,7 @@ export default function ConsultantCalendar() {
 
         toast({
           title: 'Survey scheduled',
-          description: `Survey scheduled for ${selectedLead.name} on ${scheduleForm.date}. Email notification sent.`
+          description: `Survey scheduled for ${selectedLead.name} on ${scheduleForm.date}`
         });
       } else {
         const existingNotes = (selectedLead as any).notes || '';
@@ -282,22 +317,42 @@ export default function ConsultantCalendar() {
     }
   };
 
-  // Navigation functions
+  // Navigation functions - synced properly
   const navigatePrevious = () => {
-    if (viewMode === 'month') setCurrentDate(subMonths(currentDate, 1));
-    else if (viewMode === 'week') setCurrentDate(subWeeks(currentDate, 1));
-    else setCurrentDate(subDays(currentDate, 1));
+    const newDate = viewMode === 'month' 
+      ? subMonths(currentDate, 1)
+      : viewMode === 'week' 
+        ? subWeeks(currentDate, 1)
+        : subDays(currentDate, 1);
+    setCurrentDate(newDate);
+    setSelectedDate(newDate);
   };
 
   const navigateNext = () => {
-    if (viewMode === 'month') setCurrentDate(addMonths(currentDate, 1));
-    else if (viewMode === 'week') setCurrentDate(addWeeks(currentDate, 1));
-    else setCurrentDate(addDays(currentDate, 1));
+    const newDate = viewMode === 'month' 
+      ? addMonths(currentDate, 1)
+      : viewMode === 'week' 
+        ? addWeeks(currentDate, 1)
+        : addDays(currentDate, 1);
+    setCurrentDate(newDate);
+    setSelectedDate(newDate);
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+  };
+
+  // Handle date selection from calendar
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      // If clicking a date in a different month, navigate to that month
+      if (date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()) {
+        setCurrentDate(date);
+      }
+    }
   };
 
   // Get events for a specific day
@@ -305,7 +360,7 @@ export default function ConsultantCalendar() {
     return scheduledEvents.filter(event => isSameDay(event.date, day));
   };
 
-  // Get week days
+  // Get week days based on currentDate
   const weekDays = eachDayOfInterval({
     start: startOfWeek(currentDate, { weekStartsOn: 1 }),
     end: endOfWeek(currentDate, { weekStartsOn: 1 })
@@ -313,7 +368,7 @@ export default function ConsultantCalendar() {
 
   // Time slots for day/week view
   const timeSlots = Array.from({ length: 12 }, (_, i) => {
-    const hour = i + 8; // 8am to 7pm
+    const hour = i + 8;
     return `${hour.toString().padStart(2, '0')}:00`;
   });
 
@@ -327,38 +382,57 @@ export default function ConsultantCalendar() {
 
   const getEventColor = (type: string, status: string) => {
     if (status === 'completed') return 'bg-muted text-muted-foreground';
-    if (type === 'survey') return 'bg-primary text-primary-foreground';
-    return 'bg-blue-500 text-white';
+    if (status === 'cancelled') return 'bg-destructive/20 text-destructive';
+    switch (type) {
+      case 'survey': return 'bg-primary text-primary-foreground';
+      case 'proposal': return 'bg-purple-500 text-white';
+      case 'installation': return 'bg-emerald-500 text-white';
+      default: return 'bg-blue-500 text-white';
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'survey': return <ClipboardList size={10} />;
+      case 'proposal': return <FileText size={10} />;
+      case 'installation': return <Truck size={10} />;
+      default: return <Phone size={10} />;
+    }
+  };
 
-  // Handle event click
   const handleEventClick = (event: ScheduledEvent) => {
     setSelectedEvent(event);
     setShowEventDetail(true);
   };
 
-  // Handle empty slot click for quick add
   const handleEmptySlotClick = (date: Date) => {
     setQuickAddDate(date);
     setShowQuickAdd(true);
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse h-20 bg-muted rounded-lg" />
+        <div className="animate-pulse h-96 bg-muted rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Pipeline Overview */}
+      <PipelineProgress compact />
+
       {/* Event Detail Dialog */}
       <EventDetailDialog
         event={selectedEvent}
         open={showEventDetail}
         onOpenChange={setShowEventDetail}
         onEventUpdated={fetchData}
+        onViewLead={onViewLead}
+        onViewSurvey={onViewSurvey}
+        onViewProposal={onViewProposal}
       />
 
       {/* Quick Add Event Dialog */}
@@ -368,59 +442,71 @@ export default function ConsultantCalendar() {
         onOpenChange={setShowQuickAdd}
         onEventAdded={fetchData}
       />
+
       {/* Header with View Toggle */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navigatePrevious}>
+          <Button variant="outline" size="icon" onClick={navigatePrevious} className="h-8 w-8">
             <ChevronLeft size={16} />
           </Button>
-          <Button variant="outline" onClick={goToToday} className="text-sm">
+          <Button variant="outline" onClick={goToToday} className="text-xs h-8 px-3">
             Today
           </Button>
-          <Button variant="outline" size="icon" onClick={navigateNext}>
+          <Button variant="outline" size="icon" onClick={navigateNext} className="h-8 w-8">
             <ChevronRight size={16} />
           </Button>
-          <h2 className="text-lg font-semibold ml-2">
-            {viewMode === 'day' && format(currentDate, 'EEEE, MMMM d, yyyy')}
+          <h2 className="text-base sm:text-lg font-semibold ml-2">
+            {viewMode === 'day' && format(currentDate, 'EEE, MMM d, yyyy')}
             {viewMode === 'week' && `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`}
             {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
           </h2>
         </div>
         
-        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
-          <ToggleGroupItem value="day" aria-label="Day view" className="gap-1">
-            <CalendarDays size={14} />
-            <span className="hidden sm:inline">Day</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="week" aria-label="Week view" className="gap-1">
-            <List size={14} />
-            <span className="hidden sm:inline">Week</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="month" aria-label="Month view" className="gap-1">
-            <LayoutGrid size={14} />
-            <span className="hidden sm:inline">Month</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <div className="flex items-center gap-2">
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)} className="h-8">
+            <ToggleGroupItem value="day" aria-label="Day view" className="gap-1 h-8 px-2 text-xs">
+              <CalendarDays size={12} />
+              <span className="hidden sm:inline">Day</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="week" aria-label="Week view" className="gap-1 h-8 px-2 text-xs">
+              <List size={12} />
+              <span className="hidden sm:inline">Week</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="month" aria-label="Month view" className="gap-1 h-8 px-2 text-xs">
+              <LayoutGrid size={12} />
+              <span className="hidden sm:inline">Month</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-        {/* Quick Add Button */}
-        <Button 
-          size="sm" 
-          onClick={() => {
-            setQuickAddDate(selectedDate);
-            setShowQuickAdd(true);
-          }}
-          className="gap-1"
-        >
-          <Plus size={14} />
-          <span className="hidden sm:inline">Add Event</span>
-        </Button>
+          <Button 
+            variant="outline"
+            size="icon"
+            onClick={fetchData}
+            className="h-8 w-8"
+            title="Refresh"
+          >
+            <RefreshCw size={14} />
+          </Button>
+
+          <Button 
+            size="sm" 
+            onClick={() => {
+              setQuickAddDate(selectedDate);
+              setShowQuickAdd(true);
+            }}
+            className="gap-1 h-8"
+          >
+            <Plus size={14} />
+            <span className="hidden sm:inline">Add Event</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Main Calendar Area */}
         <div className="lg:col-span-3">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2 sm:p-4">
               <AnimatePresence mode="wait">
                 {/* Month View */}
                 {viewMode === 'month' && (
@@ -429,24 +515,25 @@ export default function ConsultantCalendar() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    className="space-y-4"
                   >
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
+                      onSelect={handleDateSelect}
                       month={currentDate}
                       onMonthChange={setCurrentDate}
-                      className="rounded-md border w-full"
+                      className="rounded-md border w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full"
                       modifiers={{
                         hasEvent: scheduledEvents.map(e => e.date)
                       }}
                       modifiersClassNames={{
-                        hasEvent: 'bg-primary/20 font-bold'
+                        hasEvent: 'bg-primary/20 font-bold relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full'
                       }}
                     />
                     
                     {/* Selected day events */}
-                    <div className="mt-4 pt-4 border-t">
+                    <div className="pt-4 border-t">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-sm text-muted-foreground">
                           {format(selectedDate, 'EEEE, MMMM d')}
@@ -462,7 +549,7 @@ export default function ConsultantCalendar() {
                         </Button>
                       </div>
                       {getEventsForDay(selectedDate).length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No events scheduled</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">No events scheduled</p>
                       ) : (
                         <div className="space-y-2">
                           {getEventsForDay(selectedDate).map(event => (
@@ -485,11 +572,11 @@ export default function ConsultantCalendar() {
                     exit={{ opacity: 0 }}
                     className="overflow-x-auto"
                   >
-                    <div className="min-w-[700px]">
+                    <div className="min-w-[600px]">
                       {/* Day Headers */}
                       <div className="grid grid-cols-7 gap-1 mb-2">
                         {weekDays.map((day) => (
-                          <div
+                          <button
                             key={day.toISOString()}
                             className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
                               isToday(day) ? 'bg-primary text-primary-foreground' : 
@@ -499,7 +586,12 @@ export default function ConsultantCalendar() {
                           >
                             <div className="text-xs font-medium">{format(day, 'EEE')}</div>
                             <div className="text-lg font-bold">{format(day, 'd')}</div>
-                          </div>
+                            {getEventsForDay(day).length > 0 && (
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1 mt-1">
+                                {getEventsForDay(day).length}
+                              </Badge>
+                            )}
+                          </button>
                         ))}
                       </div>
 
@@ -507,49 +599,46 @@ export default function ConsultantCalendar() {
                       <div className="border rounded-lg overflow-hidden">
                         {timeSlots.map((time) => (
                           <div key={time} className="grid grid-cols-7 border-b last:border-b-0">
-                            <div className="col-span-7 grid grid-cols-7">
-                              {weekDays.map((day, dayIdx) => {
-                                const dayEvents = getEventsForDay(day).filter(
-                                  e => e.time?.startsWith(time.split(':')[0])
-                                );
-                                return (
-                                  <div 
-                                    key={day.toISOString()} 
-                                    className={`min-h-[60px] border-l first:border-l-0 p-1 relative ${
-                                      dayIdx === 0 ? '' : ''
-                                    }`}
-                                  >
-                                    {dayIdx === 0 && (
-                                      <span className="absolute -left-1 -top-2 text-[10px] text-muted-foreground bg-background px-1">
-                                        {time}
-                                      </span>
-                                    )}
-                                    {dayEvents.length === 0 ? (
-                                      <div 
-                                        className="h-full min-h-[50px] hover:bg-primary/5 transition-colors cursor-pointer rounded"
-                                        onClick={() => {
-                                          const clickDate = new Date(day);
-                                          const [hours] = time.split(':').map(Number);
-                                          clickDate.setHours(hours, 0, 0, 0);
-                                          handleEmptySlotClick(clickDate);
-                                        }}
-                                      />
-                                    ) : (
-                                      dayEvents.map(event => (
-                                        <div
-                                          key={event.id}
-                                          className={`text-[10px] p-1 rounded mb-1 truncate cursor-pointer hover:opacity-80 ${getEventColor(event.type, event.status)}`}
-                                          title={`${event.lead_name} - ${event.type}`}
-                                          onClick={() => handleEventClick(event)}
-                                        >
-                                          {event.time} {event.lead_name}
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                            {weekDays.map((day, dayIdx) => {
+                              const dayEvents = getEventsForDay(day).filter(
+                                e => e.time?.startsWith(time.split(':')[0])
+                              );
+                              return (
+                                <div 
+                                  key={day.toISOString()} 
+                                  className="min-h-[50px] border-l first:border-l-0 p-1 relative"
+                                >
+                                  {dayIdx === 0 && (
+                                    <span className="absolute -left-0.5 -top-2.5 text-[9px] text-muted-foreground bg-background px-1">
+                                      {time}
+                                    </span>
+                                  )}
+                                  {dayEvents.length === 0 ? (
+                                    <div 
+                                      className="h-full min-h-[40px] hover:bg-primary/5 transition-colors cursor-pointer rounded"
+                                      onClick={() => {
+                                        const clickDate = new Date(day);
+                                        const [hours] = time.split(':').map(Number);
+                                        clickDate.setHours(hours, 0, 0, 0);
+                                        handleEmptySlotClick(clickDate);
+                                      }}
+                                    />
+                                  ) : (
+                                    dayEvents.map(event => (
+                                      <div
+                                        key={event.id}
+                                        className={`text-[9px] p-1 rounded mb-1 truncate cursor-pointer hover:opacity-80 flex items-center gap-1 ${getEventColor(event.type, event.status)}`}
+                                        title={`${event.lead_name} - ${event.type}`}
+                                        onClick={() => handleEventClick(event)}
+                                      >
+                                        {getEventIcon(event.type)}
+                                        <span className="truncate">{event.lead_name}</span>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ))}
                       </div>
@@ -572,7 +661,7 @@ export default function ConsultantCalendar() {
                         );
                         return (
                           <div key={time} className="flex gap-4 border-b pb-2">
-                            <div className="w-16 text-sm text-muted-foreground font-medium">
+                            <div className="w-14 text-sm text-muted-foreground font-medium">
                               {time}
                             </div>
                             <div className="flex-1 min-h-[60px]">
@@ -611,49 +700,49 @@ export default function ConsultantCalendar() {
         <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Phone size={16} />
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Phone size={14} />
                 Needs Follow-up
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+            <CardContent className="space-y-2 max-h-[400px] overflow-y-auto">
               {leadsNeedingCalls.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  All leads have been contacted! 🎉
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  All leads contacted! 🎉
                 </p>
               ) : (
-                leadsNeedingCalls.slice(0, 8).map(lead => {
+                leadsNeedingCalls.slice(0, 6).map(lead => {
                   const isHighValue = (lead.monthly_bill || 0) >= 200;
                   return (
                   <motion.div
                     key={lead.id}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`p-3 rounded-lg border text-sm ${
+                    className={`p-2 rounded-lg border text-xs ${
                       lead.source === 'AI Analyser' 
                         ? 'bg-primary/5 border-primary/30' 
                         : getUrgencyColor(lead.urgency)
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <User size={12} />
-                      <span className="font-medium truncate">{lead.name}</span>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <User size={10} />
+                      <button 
+                        className="font-medium truncate text-left hover:text-primary"
+                        onClick={() => onViewLead?.(lead.id)}
+                      >
+                        {lead.name}
+                      </button>
                     </div>
                     {lead.monthly_bill && (
-                      <p className="text-xs text-muted-foreground">€{lead.monthly_bill}/month</p>
+                      <p className="text-[10px] text-muted-foreground">€{lead.monthly_bill}/mo</p>
                     )}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge variant="outline" className="text-[10px]">
+                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                      <Badge variant="outline" className="text-[9px] h-4 px-1">
                         {lead.days_since_contact}d ago
                       </Badge>
                       {lead.source === 'AI Analyser' && (
-                        <Badge className="text-[10px] bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-                          ⚡ AI Lead
-                        </Badge>
-                      )}
-                      {isHighValue && (
-                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600">
-                          High €
+                        <Badge className="text-[9px] h-4 px-1 bg-gradient-to-r from-primary to-primary/80">
+                          ⚡ AI
                         </Badge>
                       )}
                     </div>
@@ -663,13 +752,13 @@ export default function ConsultantCalendar() {
                       else setSelectedLead(null);
                     }}>
                       <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="w-full mt-2 text-xs h-7">
+                        <Button size="sm" variant="outline" className="w-full mt-2 text-[10px] h-6">
                           Schedule
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Schedule for {lead.name}</DialogTitle>
+                          <DialogTitle className="text-base">Schedule for {lead.name}</DialogTitle>
                         </DialogHeader>
                         <ScheduleForm 
                           scheduleForm={scheduleForm}
@@ -694,8 +783,22 @@ export default function ConsultantCalendar() {
 function EventCard({ event, detailed = false }: { event: ScheduledEvent; detailed?: boolean }) {
   const getEventColor = (type: string, status: string) => {
     if (status === 'completed') return 'bg-muted border-muted';
-    if (type === 'survey') return 'bg-primary/10 border-primary';
-    return 'bg-blue-500/10 border-blue-500';
+    if (status === 'cancelled') return 'bg-destructive/10 border-destructive/30';
+    switch (type) {
+      case 'survey': return 'bg-primary/10 border-primary';
+      case 'proposal': return 'bg-purple-500/10 border-purple-500';
+      case 'installation': return 'bg-emerald-500/10 border-emerald-500';
+      default: return 'bg-blue-500/10 border-blue-500';
+    }
+  };
+
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'survey': return <ClipboardList size={14} className="text-primary" />;
+      case 'proposal': return <FileText size={14} className="text-purple-500" />;
+      case 'installation': return <Truck size={14} className="text-emerald-500" />;
+      default: return <Phone size={14} className="text-blue-500" />;
+    }
   };
 
   return (
@@ -706,14 +809,10 @@ function EventCard({ event, detailed = false }: { event: ScheduledEvent; detaile
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {event.type === 'survey' ? (
-            <ClipboardList size={14} className="text-primary" />
-          ) : (
-            <Phone size={14} className="text-blue-500" />
-          )}
+          {getEventIcon(event.type)}
           <span className="font-medium text-sm">{event.lead_name}</span>
         </div>
-        <Badge variant={event.status === 'completed' ? 'secondary' : 'default'} className="text-[10px]">
+        <Badge variant={event.status === 'completed' ? 'secondary' : event.status === 'cancelled' ? 'destructive' : 'default'} className="text-[10px]">
           {event.status}
         </Badge>
       </div>

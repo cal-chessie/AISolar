@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Clock, Phone, Mail, AlertTriangle, Calendar, FileText, CreditCard } from 'lucide-react';
+import { Bell, Clock, Phone, Mail, Calendar, FileText, CreditCard, ChevronRight, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { differenceInDays } from 'date-fns';
 import { logActivity } from '@/lib/activityLog';
+import { PipelineProgress } from './PipelineProgress';
 
 interface StaleLead {
   id: string;
@@ -34,7 +35,9 @@ interface StageThreshold {
 
 interface FollowUpRemindersProps {
   onLeadClick?: (leadId: string) => void;
+  onStageClick?: (stage: string) => void;
   expanded?: boolean;
+  showPipeline?: boolean;
 }
 
 // Default thresholds if settings table is empty
@@ -90,7 +93,7 @@ const getSuggestedAction = (stage: string | null): SuggestedAction => {
   return actions[stage || 'new'] || actions['new'];
 };
 
-export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRemindersProps) {
+export function FollowUpReminders({ onLeadClick, onStageClick, expanded = false, showPipeline = true }: FollowUpRemindersProps) {
   const [staleLeads, setStaleLeads] = useState<StaleLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(!expanded);
@@ -281,43 +284,49 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
   };
 
   return (
-    <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Bell className="h-5 w-5 text-orange-500" />
-            Follow-up Actions
-            <Badge variant={isDemo ? "secondary" : "destructive"} className="ml-2">
-              {isDemo ? 'Demo' : displayLeads.length}
-            </Badge>
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {isDemo && (
+    <div className="space-y-4">
+      {/* Pipeline Progress View */}
+      {showPipeline && (
+        <PipelineProgress onStageClick={onStageClick} />
+      )}
+
+      <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Bell className="h-5 w-5 text-orange-500" />
+              Follow-up Actions
+              <Badge variant={isDemo ? "secondary" : "destructive"} className="ml-2">
+                {isDemo ? 'Demo' : displayLeads.length}
+              </Badge>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {isDemo && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDemoData(false)}
+                  className="text-xs"
+                >
+                  Hide Demo
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowDemoData(false)}
-                className="text-xs"
+                onClick={() => setIsCollapsed(!isCollapsed)}
               >
-                Hide Demo
+                {isCollapsed ? 'Expand' : 'Collapse'}
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              {isCollapsed ? 'Expand' : 'Collapse'}
-            </Button>
+            </div>
           </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {isDemo ? 'Sample data to learn the interface - real leads will appear here' : 'Sales actions needed to move these leads forward'}
-        </p>
-      </CardHeader>
-      
-      {!isCollapsed && (
-        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {isDemo ? 'Sample data to learn the interface - real leads will appear here' : 'Sales actions needed to move these leads forward'}
+          </p>
+        </CardHeader>
+        
+        {!isCollapsed && (
+          <CardContent className="space-y-3">
           {displayLeads.slice(0, expanded ? 20 : 5).map((lead) => {
             const daysPastThreshold = lead.days_stale - lead.threshold;
             const ActionIcon = lead.suggestedAction.icon;
@@ -400,5 +409,6 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
         </CardContent>
       )}
     </Card>
+    </div>
   );
 }

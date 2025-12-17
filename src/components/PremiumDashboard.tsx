@@ -302,14 +302,14 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
               <p className="text-muted-foreground text-xs sm:text-base">Consultant Portal</p>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
-              <button 
-                className="gradient-primary text-white px-2.5 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center gap-1.5 sm:gap-2 hover:shadow-lg transition-all text-xs sm:text-base h-9 sm:h-auto"
+              <Button 
+                className="gradient-primary text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center gap-1.5 sm:gap-2 hover:shadow-lg transition-all text-xs sm:text-base min-h-[44px] min-w-[44px]"
                 onClick={() => setShowAddLead(true)}
                 aria-label="Add new lead"
               >
-                <Plus size={18} />
+                <Plus size={18} className="flex-shrink-0" />
                 <span className="hidden sm:inline">New Lead</span>
-              </button>
+              </Button>
               <DarkModeToggle />
               {isAdmin && (
                 <Button
@@ -499,7 +499,16 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                     )
                   )}
                   {activeTab === 'installations' && <InstallationsPanel />}
-                  {activeTab === 'calendar' && <ConsultantCalendar />}
+                  {activeTab === 'calendar' && (
+                    <ConsultantCalendar 
+                      onViewLead={(id) => {
+                        setSelectedLeadId(id);
+                        setActiveTab('leads');
+                      }}
+                      onViewSurvey={() => setActiveTab('surveys')}
+                      onViewProposal={() => setActiveTab('proposals')}
+                    />
+                  )}
                   {activeTab === 'followups' && (
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Follow-ups</h2>
