@@ -23,14 +23,14 @@ export default function ProposalSummaryCard({ proposal }: ProposalSummaryCardPro
       icon: Sun,
       label: 'System Size',
       value: proposal.system_size_kw ? `${proposal.system_size_kw} kWp` : 'TBD',
-      color: 'text-amber-500'
+      color: 'text-amber-500 dark:text-amber-400'
     },
     {
       icon: Zap,
       label: 'Panels',
       value: proposal.panel_count ? `${proposal.panel_count} panels` : 'TBD',
       subtext: proposal.panel_type || undefined,
-      color: 'text-blue-500'
+      color: 'text-blue-500 dark:text-blue-400'
     },
     {
       icon: Battery,
@@ -38,7 +38,7 @@ export default function ProposalSummaryCard({ proposal }: ProposalSummaryCardPro
       value: proposal.battery_storage 
         ? `${proposal.battery_capacity_kwh || 0} kWh` 
         : 'Not included',
-      color: 'text-green-500'
+      color: 'text-green-500 dark:text-green-400'
     },
     {
       icon: TrendingUp,
@@ -46,7 +46,7 @@ export default function ProposalSummaryCard({ proposal }: ProposalSummaryCardPro
       value: proposal.estimated_annual_production_kwh 
         ? `${proposal.estimated_annual_production_kwh.toLocaleString()} kWh`
         : 'TBD',
-      color: 'text-purple-500'
+      color: 'text-purple-500 dark:text-purple-400'
     }
   ];
 
@@ -86,7 +86,7 @@ export default function ProposalSummaryCard({ proposal }: ProposalSummaryCardPro
               <span className="text-muted-foreground">System Cost</span>
               <span>€{(proposal.system_cost || 0).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between text-sm text-green-600">
+            <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
               <span>SEAI Grant</span>
               <span>-€{(proposal.seai_grant || 0).toLocaleString()}</span>
             </div>
@@ -100,18 +100,18 @@ export default function ProposalSummaryCard({ proposal }: ProposalSummaryCardPro
         {/* Savings */}
         <div className="grid grid-cols-2 gap-4 pt-2">
           <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-            <Leaf className="h-5 w-5 mx-auto mb-1 text-green-600" />
+            <Leaf className="h-5 w-5 mx-auto mb-1 text-green-600 dark:text-green-400" />
             <p className="text-lg font-bold text-green-700 dark:text-green-400">
               €{(proposal.monthly_savings || 0).toLocaleString()}/mo
             </p>
-            <p className="text-xs text-green-600">Estimated Savings</p>
+            <p className="text-xs text-green-600 dark:text-green-400">Estimated Savings</p>
           </div>
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-blue-600 dark:text-blue-400" />
             <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
               {proposal.payback_period_years || '?'} years
             </p>
-            <p className="text-xs text-blue-600">Payback Period</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">Payback Period</p>
           </div>
         </div>
       </CardContent>

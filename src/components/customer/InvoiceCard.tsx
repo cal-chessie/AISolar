@@ -122,7 +122,7 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
                 )}
               </div>
             </div>
-            <span className={`font-semibold ${invoice.deposit_paid ? 'text-green-600' : ''}`}>
+            <span className={`font-semibold ${invoice.deposit_paid ? 'text-green-600 dark:text-green-400' : ''}`}>
               €{depositAmount.toLocaleString()}
             </span>
           </div>
@@ -151,7 +151,7 @@ export default function InvoiceCard({ invoice, portalToken }: InvoiceCardProps) 
                 )}
               </div>
             </div>
-            <span className={`font-semibold ${invoice.final_paid ? 'text-green-600' : ''}`}>
+            <span className={`font-semibold ${invoice.final_paid ? 'text-green-600 dark:text-green-400' : ''}`}>
               €{finalAmount.toLocaleString()}
             </span>
           </div>

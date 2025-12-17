@@ -120,12 +120,39 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
   const [saving, setSaving] = useState(false);
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus | null>(null);
   const [seaiStatus, setSeaiStatus] = useState<SeaiStatus | null>(null);
+  const [proposalData, setProposalData] = useState<{
+    system_size_kw: number | null;
+    panel_count: number | null;
+    panel_type: string | null;
+    battery_storage: boolean | null;
+    battery_capacity_kwh: number | null;
+    inverter_type: string | null;
+    net_cost: number | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchChecklist();
     fetchInvoiceStatus();
     fetchSeaiStatus();
+    fetchProposalData();
   }, [proposalId]);
+
+  const fetchProposalData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('system_size_kw, panel_count, panel_type, battery_storage, battery_capacity_kwh, inverter_type, net_cost')
+        .eq('id', proposalId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setProposalData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching proposal data:', error);
+    }
+  };
 
   const fetchChecklist = async () => {
     try {
@@ -531,6 +558,51 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
                 Submitted on {new Date(seaiStatus.submitted_at).toLocaleDateString()}
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* System Specifications from Proposal */}
+      {proposalData && (
+        <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              System Specifications
+            </CardTitle>
+            <CardDescription>Pre-filled from accepted proposal</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">System Size</p>
+                <p className="font-semibold text-foreground">{proposalData.system_size_kw || 'N/A'} kW</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Panel Count</p>
+                <p className="font-semibold text-foreground">{proposalData.panel_count || 'N/A'} panels</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Panel Type</p>
+                <p className="font-semibold text-foreground">{proposalData.panel_type || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Inverter</p>
+                <p className="font-semibold text-foreground">{proposalData.inverter_type || 'N/A'}</p>
+              </div>
+              {proposalData.battery_storage && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Battery</p>
+                  <p className="font-semibold text-foreground">{proposalData.battery_capacity_kwh || 0} kWh</p>
+                </div>
+              )}
+              {proposalData.net_cost && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Net Cost</p>
+                  <p className="font-semibold text-primary">€{proposalData.net_cost.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

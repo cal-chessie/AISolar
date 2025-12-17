@@ -44,8 +44,8 @@ const workflowStages = [
     icon: User,
     date: '15 Nov 2024',
     status: 'completed',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-blue-500/10 dark:bg-blue-500/20',
     details: [
       'Customer submitted bill via AI Analyser',
       `Monthly bill: €${demoCustomer.monthlyBill}`,
@@ -59,8 +59,8 @@ const workflowStages = [
     icon: ClipboardList,
     date: '18 Nov 2024',
     status: 'completed',
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-purple-600 dark:text-purple-400',
+    bgColor: 'bg-purple-500/10 dark:bg-purple-500/20',
     details: [
       'Roof: South-facing pitched, slate tiles',
       'Condition: Excellent, no shading',
@@ -75,8 +75,8 @@ const workflowStages = [
     icon: FileText,
     date: '19 Nov 2024',
     status: 'completed',
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
+    color: 'text-orange-600 dark:text-orange-400',
+    bgColor: 'bg-orange-500/10 dark:bg-orange-500/20',
     details: [
       'System: 6.64kW (16x JA Solar 415W)',
       'Inverter: Huawei SUN2000-6KTL',
@@ -92,8 +92,8 @@ const workflowStages = [
     icon: CheckCircle,
     date: '22 Nov 2024',
     status: 'completed',
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-500/10 dark:bg-green-500/20',
     details: [
       'Customer reviewed proposal in portal',
       'Digital signature captured',
@@ -109,7 +109,7 @@ const workflowStages = [
     date: '5 Dec 2024',
     status: 'completed',
     color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    bgColor: 'bg-primary/10 dark:bg-primary/20',
     details: [
       '2-day installation completed',
       'All checklist items verified',
@@ -124,8 +124,8 @@ const workflowStages = [
     icon: CreditCard,
     date: '8 Dec 2024',
     status: 'completed',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
+    color: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-amber-500/10 dark:bg-amber-500/20',
     details: [
       'Final balance paid: €8,470',
       'SEAI application submitted',
@@ -273,28 +273,28 @@ export default function DemoWorkflowJourney() {
               Project Outcomes
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div className="text-center p-3 rounded-lg bg-background/50">
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
                 <div className="text-2xl font-bold text-primary">€{savingsData.monthlySavings}</div>
                 <div className="text-xs text-muted-foreground">Monthly Savings</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-green-600">{savingsData.paybackYears} yrs</div>
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{savingsData.paybackYears} yrs</div>
                 <div className="text-xs text-muted-foreground">Payback Period</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-blue-600">{savingsData.systemProduction.toLocaleString()}</div>
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{savingsData.systemProduction.toLocaleString()}</div>
                 <div className="text-xs text-muted-foreground">kWh/Year</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-amber-600">€{savingsData.annualSavings.toLocaleString()}</div>
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">€{savingsData.annualSavings.toLocaleString()}</div>
                 <div className="text-xs text-muted-foreground">Annual Savings</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-emerald-600">{savingsData.co2Saved}t</div>
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{savingsData.co2Saved}t</div>
                 <div className="text-xs text-muted-foreground">CO₂ Saved/Year</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-background/50">
-                <div className="text-2xl font-bold text-green-700">🌳 {savingsData.treesEquivalent}</div>
+              <div className="text-center p-3 rounded-lg bg-card border border-border">
+                <div className="text-2xl font-bold text-green-700 dark:text-green-400">🌳 {savingsData.treesEquivalent}</div>
                 <div className="text-xs text-muted-foreground">Trees Equivalent</div>
               </div>
             </div>
