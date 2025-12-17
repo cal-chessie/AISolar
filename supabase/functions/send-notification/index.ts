@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { ServerClient } from "npm:postmark@3.0.19";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const postmark = new ServerClient(Deno.env.get("POSTMARK_SERVER_TOKEN") || "");
+const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
+const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -350,23 +350,35 @@ serve(async (req) => {
         throw new Error(`Unknown email type: ${type}`);
     }
 
-    console.log(`Sending ${type} email to ${lead.email}`);
+    console.log(`Sending ${type} email to ${lead.email} via Postmark`);
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: `${BRAND_NAME} <${BRAND_EMAIL}>`,
-      to: [lead.email],
-      subject,
-      html,
+    // Send via Postmark API
+    const postmarkResponse = await fetch(POSTMARK_API_URL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
+      },
+      body: JSON.stringify({
+        From: `${BRAND_NAME} <${BRAND_EMAIL}>`,
+        To: lead.email,
+        Subject: subject,
+        HtmlBody: html,
+        MessageStream: "outbound",
+      }),
     });
 
-    if (emailError) {
-      console.error("Resend error:", emailError);
-      throw emailError;
+    const postmarkData = await postmarkResponse.json();
+
+    if (!postmarkResponse.ok) {
+      console.error("Postmark error:", postmarkData);
+      throw new Error(postmarkData.Message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", emailData);
+    console.log("Email sent successfully via Postmark:", postmarkData.MessageID);
 
-    return new Response(JSON.stringify({ success: true, emailId: emailData?.id }), {
+    return new Response(JSON.stringify({ success: true, messageId: postmarkData.MessageID }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
