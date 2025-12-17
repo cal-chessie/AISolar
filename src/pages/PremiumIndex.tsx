@@ -135,8 +135,8 @@ export default function PremiumIndex() {
           </motion.div>
 
           {/* Hero Visual - Live Product Preview */}
-          <div className="hero-visual self-start mt-0">
-            <div className="flex flex-col gap-4 w-full max-w-md">
+          <div className="hero-visual self-start mt-0 ml-6">
+            <div className="flex flex-col gap-5 w-full max-w-lg">
               {/* Card 1: Project Snapshot */}
               <motion.div initial={{
               opacity: 0,
@@ -152,7 +152,7 @@ export default function PremiumIndex() {
               transition: {
                 duration: 0.2
               }
-            }} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
+            }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Project Snapshot</h3>
                   <div className="flex items-center gap-1.5">
@@ -191,7 +191,7 @@ export default function PremiumIndex() {
               transition: {
                 duration: 0.2
               }
-            }} className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-5 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 cursor-pointer hover:shadow-xl hover:shadow-emerald-300/60 dark:hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-600/50 transition-all duration-300 hover:ring-2 hover:ring-emerald-400/30 dark:hover:ring-emerald-500/20">
+            }} className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-6 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 cursor-pointer hover:shadow-xl hover:shadow-emerald-300/60 dark:hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-600/50 transition-all duration-300 hover:ring-2 hover:ring-emerald-400/30 dark:hover:ring-emerald-500/20">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="p-1.5 bg-emerald-500 rounded-lg">
                     <Sparkles size={14} className="text-white" />
@@ -227,7 +227,7 @@ export default function PremiumIndex() {
               transition: {
                 duration: 0.2
               }
-            }} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
+            }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Next Steps</h3>
                 <div className="space-y-3">
                   {[{
@@ -284,33 +284,33 @@ export default function PremiumIndex() {
                     </motion.div>)}
                 </div>
               </motion.div>
-            </div>
 
-            {/* Bottom corner trust element */}
-            <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            delay: 1.6,
-            duration: 0.5
-          }} className="mt-6 flex items-center gap-3 p-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs">👤</div>
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-xs">👤</div>
-                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-xs">👤</div>
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  500+ Irish homes
+              {/* Trust element under cards */}
+              <motion.div initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: 1.6,
+              duration: 0.5
+            }} className="flex items-center gap-3 p-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="flex -space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs">👤</div>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-xs">👤</div>
+                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-xs">👤</div>
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  switched to solar this year
+                <div>
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    500+ Irish homes
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    switched to solar this year
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
