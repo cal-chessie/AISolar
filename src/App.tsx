@@ -9,6 +9,7 @@ import { AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from 'next-themes';
 import PageTransition from "@/components/layout/PageTransition";
 import GlobalSearchModal from "@/components/search/GlobalSearchModal";
+import PersistentAICoach from "@/components/ai/PersistentAICoach";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import Index from "./pages/Index";
 import PremiumIndex from "./pages/PremiumIndex";
@@ -32,12 +33,18 @@ function AppRoutes() {
     onEscape: () => setIsSearchOpen(false),
   });
 
+  // Only show AI Coach on internal dashboard pages
+  const showAICoach = ['/consultant', '/installer', '/admin'].some(path => 
+    location.pathname.startsWith(path)
+  );
+
   return (
     <>
       <GlobalSearchModal 
         open={isSearchOpen} 
         onOpenChange={setIsSearchOpen} 
       />
+      {showAICoach && <PersistentAICoach />}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><PremiumIndex /></PageTransition>} />

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Clock, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { Bell, Clock, Phone, Mail, AlertTriangle, Calendar, FileText, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { differenceInDays, formatDistanceToNow } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { logActivity } from '@/lib/activityLog';
 
 interface StaleLead {
@@ -17,6 +17,14 @@ interface StaleLead {
   updated_at: string;
   days_stale: number;
   threshold: number;
+  suggestedAction: SuggestedAction;
+}
+
+interface SuggestedAction {
+  label: string;
+  icon: typeof Phone;
+  action: string;
+  variant: 'default' | 'secondary' | 'outline';
 }
 
 interface StageThreshold {
@@ -37,6 +45,49 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
   'approved': 3,
   'scheduled': 7,
   'installed': 14
+};
+
+// Sales-focused actions based on workflow stage
+const getSuggestedAction = (stage: string | null): SuggestedAction => {
+  const actions: Record<string, SuggestedAction> = {
+    'new': { 
+      label: 'Schedule Survey', 
+      icon: Calendar, 
+      action: 'schedule_survey',
+      variant: 'default'
+    },
+    'survey': { 
+      label: 'Create Proposal', 
+      icon: FileText, 
+      action: 'create_proposal',
+      variant: 'default'
+    },
+    'proposal': { 
+      label: 'Follow Up Call', 
+      icon: Phone, 
+      action: 'follow_up_call',
+      variant: 'default'
+    },
+    'approved': { 
+      label: 'Request Deposit', 
+      icon: CreditCard, 
+      action: 'request_deposit',
+      variant: 'default'
+    },
+    'scheduled': { 
+      label: 'Confirm Install', 
+      icon: Calendar, 
+      action: 'confirm_installation',
+      variant: 'secondary'
+    },
+    'installed': { 
+      label: 'Request Payment', 
+      icon: CreditCard, 
+      action: 'request_final_payment',
+      variant: 'default'
+    }
+  };
+  return actions[stage || 'new'] || actions['new'];
 };
 
 export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRemindersProps) {
@@ -80,7 +131,8 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
           return {
             ...lead,
             days_stale: daysSinceUpdate,
-            threshold
+            threshold,
+            suggestedAction: getSuggestedAction(stage)
           };
         })
         .filter(lead => lead.days_stale >= lead.threshold)
@@ -95,23 +147,35 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
     }
   };
 
-  const markAsContacted = async (leadId: string, leadName: string) => {
+  const handleAction = async (lead: StaleLead, actionType: string) => {
     try {
+      // Update the lead's updated_at to reset the stale timer
       const { error } = await supabase
         .from('leads')
         .update({ updated_at: new Date().toISOString() })
-        .eq('id', leadId);
+        .eq('id', lead.id);
 
       if (error) throw error;
 
-      // Log the activity
+      // Log the activity with specific action
+      const actionDescriptions: Record<string, string> = {
+        'schedule_survey': `Scheduled survey call for ${lead.name}`,
+        'create_proposal': `Following up to create proposal for ${lead.name}`,
+        'follow_up_call': `Made follow-up call to ${lead.name} about proposal`,
+        'request_deposit': `Requested deposit payment from ${lead.name}`,
+        'confirm_installation': `Confirmed installation date with ${lead.name}`,
+        'request_final_payment': `Requested final payment from ${lead.name}`,
+        'contacted': `Contacted ${lead.name} via follow-up reminder`
+      };
+
       await logActivity({
-        leadId,
+        leadId: lead.id,
         actionType: 'lead_contacted',
-        description: `Marked ${leadName} as contacted via follow-up reminder`
+        description: actionDescriptions[actionType] || `Action taken on ${lead.name}`,
+        metadata: { followUpAction: actionType }
       });
 
-      toast.success('Lead marked as contacted');
+      toast.success(`Action logged: ${lead.suggestedAction.label}`);
       fetchThresholdsAndLeads();
     } catch (error) {
       console.error('Error updating lead:', error);
@@ -165,7 +229,7 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bell className="h-5 w-5 text-orange-500" />
-            Follow-up Reminders
+            Follow-up Actions
             <Badge variant="destructive" className="ml-2">
               {staleLeads.length}
             </Badge>
@@ -179,14 +243,16 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Leads exceeding their stage-specific follow-up threshold
+          Sales actions needed to move these leads forward
         </p>
       </CardHeader>
       
       {!isCollapsed && (
         <CardContent className="space-y-3">
-          {staleLeads.slice(0, 5).map((lead) => {
+          {staleLeads.slice(0, expanded ? 20 : 5).map((lead) => {
             const daysPastThreshold = lead.days_stale - lead.threshold;
+            const ActionIcon = lead.suggestedAction.icon;
+            
             return (
               <div
                 key={lead.id}
@@ -202,14 +268,14 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
                     </button>
                     <Badge variant={getUrgencyColor(daysPastThreshold)}>
                       <Clock className="h-3 w-3 mr-1" />
-                      {lead.days_stale}d / {lead.threshold}d
+                      {lead.days_stale}d
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                     <span className="truncate">{getStageLabel(lead.workflow_stage)}</span>
                     <span>•</span>
-                    <span className="truncate">
-                      {daysPastThreshold > 0 ? `${daysPastThreshold}d overdue` : 'Due now'}
+                    <span className="truncate text-orange-600 dark:text-orange-400 font-medium">
+                      {lead.suggestedAction.label}
                     </span>
                   </div>
                 </div>
@@ -221,6 +287,7 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => window.open(`tel:${lead.phone}`, '_blank')}
+                      title="Call"
                     >
                       <Phone className="h-4 w-4" />
                     </Button>
@@ -230,24 +297,28 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => window.open(`mailto:${lead.email}`, '_blank')}
+                    title="Email"
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
                   <Button
-                    variant="default"
+                    variant={lead.suggestedAction.variant}
                     size="sm"
-                    onClick={() => markAsContacted(lead.id, lead.name)}
+                    onClick={() => handleAction(lead, lead.suggestedAction.action)}
+                    className="gap-1"
                   >
-                    Mark Contacted
+                    <ActionIcon className="h-3 w-3" />
+                    <span className="hidden sm:inline">{lead.suggestedAction.label}</span>
+                    <span className="sm:hidden">Action</span>
                   </Button>
                 </div>
               </div>
             );
           })}
-          {staleLeads.length > 5 && (
+          {staleLeads.length > (expanded ? 20 : 5) && (
             <div className="text-center pt-2">
               <Button variant="link" className="text-orange-600">
-                View all {staleLeads.length} leads needing follow-up
+                View all {staleLeads.length} leads needing action
               </Button>
             </div>
           )}
