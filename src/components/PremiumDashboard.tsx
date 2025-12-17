@@ -608,11 +608,63 @@ interface LeadsPanelProps {
   refreshKey?: number;
 }
 
+const dummyLeads = [
+  {
+    id: 'dummy-lead-1',
+    name: 'Sean McCarthy',
+    email: 'sean.mccarthy@email.com',
+    phone: '087 123 4567',
+    address: '45 Green Valley, Dublin 12',
+    monthly_bill: 220,
+    workflow_stage: 'new',
+    score: 4,
+    notes: '[SOURCE: AI_ANALYSER] High usage household',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'dummy-lead-2',
+    name: 'Aoife Brennan',
+    email: 'aoife.brennan@email.com',
+    phone: '086 234 5678',
+    address: '12 Harbour View, Cork',
+    monthly_bill: 165,
+    workflow_stage: 'survey',
+    score: 3,
+    notes: 'Interested in battery storage',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: 'dummy-lead-3',
+    name: 'Conor O\'Reilly',
+    email: 'conor.oreilly@email.com',
+    phone: '085 345 6789',
+    address: '8 Castle Road, Limerick',
+    monthly_bill: 280,
+    workflow_stage: 'proposal',
+    score: 5,
+    notes: '[AI Analysis] Large detached property with excellent roof orientation',
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: 'dummy-lead-4',
+    name: 'Siobhan Murphy',
+    email: 'siobhan.murphy@email.com',
+    phone: '083 456 7890',
+    address: '22 River Lane, Galway',
+    monthly_bill: 145,
+    workflow_stage: 'approved',
+    score: 4,
+    notes: 'Ready to proceed with installation',
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+  },
+];
+
 const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: LeadsPanelProps) => {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterAILeads, setFilterAILeads] = useState(false);
+  const [showDummy, setShowDummy] = useState(false);
 
   // Check if lead is from AI Analyser
   const isAILead = (lead: any) => lead.notes?.includes('[SOURCE: AI_ANALYSER]') || lead.notes?.includes('[AI Analysis');
@@ -773,18 +825,30 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
         </div>
       </div>
 
-      {filteredLeads.length === 0 ? (
+      {filteredLeads.length === 0 && !showDummy ? (
         searchQuery || filterAILeads ? (
           <EmptySearchResultsState query={searchQuery || 'AI leads'} />
         ) : (
-          <EmptyLeadsState onAddLead={() => {
-            // Trigger the AddLeadDialog - this is handled by the button above
-          }} />
+          <div>
+            <EmptyLeadsState onAddLead={() => {}} />
+            <div className="text-center mt-4">
+              <Button variant="outline" size="sm" onClick={() => setShowDummy(true)}>
+                Show Demo Data
+              </Button>
+            </div>
+          </div>
         )
       ) : (
         <>
+          {showDummy && filteredLeads.length === 0 && (
+            <div className="flex justify-end mb-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowDummy(false)}>
+                Hide Demo Data
+              </Button>
+            </div>
+          )}
           <div className="space-y-3 sm:space-y-4">
-            {paginatedLeads.map((lead) => (
+            {((filteredLeads.length > 0 ? paginatedLeads : showDummy ? dummyLeads : []) as any[]).map((lead) => (
               <div 
                 key={lead.id}
                 className={`p-4 sm:p-5 rounded-xl border hover:shadow-md transition-all ${
@@ -880,12 +944,66 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
   );
 };
 
+const dummyProposals = [
+  {
+    id: 'dummy-prop-1',
+    lead_id: 'dummy-lead-1',
+    status: 'draft',
+    system_size_kw: 6.6,
+    net_cost: 12500,
+    monthly_savings: 145,
+    payback_period_years: 7.2,
+    requires_review: false,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    leads: { name: 'Sean McCarthy', email: 'sean.mccarthy@email.com', address: '45 Green Valley, Dublin 12' }
+  },
+  {
+    id: 'dummy-prop-2',
+    lead_id: 'dummy-lead-2',
+    status: 'presented',
+    system_size_kw: 4.4,
+    net_cost: 8900,
+    monthly_savings: 98,
+    payback_period_years: 7.5,
+    requires_review: false,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    leads: { name: 'Aoife Brennan', email: 'aoife.brennan@email.com', address: '12 Harbour View, Cork' }
+  },
+  {
+    id: 'dummy-prop-3',
+    lead_id: 'dummy-lead-3',
+    status: 'approved',
+    system_size_kw: 8.8,
+    net_cost: 16800,
+    monthly_savings: 210,
+    payback_period_years: 6.7,
+    requires_review: false,
+    reviewed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    leads: { name: 'Conor O\'Reilly', email: 'conor.oreilly@email.com', address: '8 Castle Road, Limerick' }
+  },
+  {
+    id: 'dummy-prop-4',
+    lead_id: 'dummy-lead-4',
+    status: 'draft',
+    system_size_kw: 55,
+    net_cost: 85000,
+    monthly_savings: 890,
+    payback_period_years: 8,
+    requires_review: true,
+    reviewed_at: null,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    leads: { name: 'Tech Solutions Ltd', email: 'info@techsolutions.ie', address: '15 Business Park, Galway' }
+  },
+];
+
 const ProposalsPanel = ({ onProposalSelect, onEditProposal }: { 
   onProposalSelect?: (proposal: any, lead: any) => void;
   onEditProposal?: (proposal: any) => void;
 }) => {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDummy, setShowDummy] = useState(false);
 
   useEffect(() => {
     fetchProposals();
@@ -935,12 +1053,26 @@ const ProposalsPanel = ({ onProposalSelect, onEditProposal }: {
         <h2 className="text-xl sm:text-2xl font-bold text-foreground">Proposals</h2>
         <span className="text-sm text-muted-foreground">{proposals.length} total</span>
       </div>
-      {proposals.length === 0 ? (
-        <EmptyProposalsState />
+      {proposals.length === 0 && !showDummy ? (
+        <div>
+          <EmptyProposalsState />
+          <div className="text-center mt-4">
+            <Button variant="outline" size="sm" onClick={() => setShowDummy(true)}>
+              Show Demo Data
+            </Button>
+          </div>
+        </div>
       ) : (
         <>
+          {showDummy && proposals.length === 0 && (
+            <div className="flex justify-end mb-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowDummy(false)}>
+                Hide Demo Data
+              </Button>
+            </div>
+          )}
           <div className="space-y-4">
-            {paginatedProposals.map((proposal) => (
+            {((proposals.length > 0 ? paginatedProposals : showDummy ? dummyProposals : []) as any[]).map((proposal) => (
               <div 
                 key={proposal.id} 
                 className="p-4 sm:p-5 bg-muted/50 rounded-xl border border-border hover:shadow-md transition-all"
