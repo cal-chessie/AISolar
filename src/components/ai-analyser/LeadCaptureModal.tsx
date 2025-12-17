@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Loader2, Check } from "lucide-react";
+import { FileText, Loader2, Check, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { brand } from "@/config/brand";
@@ -35,9 +36,14 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
     phone: "",
   });
 
+  // Pre-fill name from extracted data
+  const displayName = formData.name || analysisData?.accountName || "";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.county) {
+    const nameToUse = formData.name || analysisData?.accountName;
+    
+    if (!nameToUse || !formData.email || !formData.county) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -48,22 +54,48 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
 
     setLoading(true);
     try {
+      // Build address from county and extracted address
+      let address = `County ${formData.county}, ${brand.country}`;
+      if (analysisData?.extractedAddress) {
+        address = `${analysisData.extractedAddress}, County ${formData.county}`;
+      }
+
+      // Build comprehensive notes
+      const notes = [
+        `[SOURCE: AI_ANALYSER]`,
+        `[AI Analysis via ${brand.domain}]`,
+        analysisData?.mprn ? `[MPRN: ${analysisData.mprn}]` : null,
+        `Estimated System: ${analysisData?.estimatedSystemSize}kWp`,
+        `Annual Savings: €${analysisData?.annualSavings}`,
+        `Payback: ${analysisData?.paybackYears} years`,
+        `Annual Spend: €${analysisData?.annualSpend}`,
+        analysisData?.annualKwh ? `Annual Consumption: ${analysisData.annualKwh} kWh` : null,
+        `Solar Offset: ${analysisData?.solarOffset}%`,
+        analysisData?.confidence ? `AI Confidence: ${analysisData.confidence}` : null,
+        ``,
+        `High-intent lead from bill analysis tool.`,
+      ].filter(Boolean).join('\n');
+
       const { error } = await supabase.from("leads").insert({
-        name: formData.name,
+        name: nameToUse,
         email: formData.email,
         phone: formData.phone || null,
-        address: `County ${formData.county}, ${brand.country}`,
+        address,
         monthly_bill: analysisData?.monthlyBill || null,
+        mprn: analysisData?.mprn || null,
+        annual_consumption_kwh: analysisData?.annualKwh || null,
         status: "new",
         workflow_stage: "new",
-        notes: `[SOURCE: AI_ANALYSER]\n[AI Analysis via ${brand.domain}]\nEstimated System: ${analysisData?.estimatedSystemSize}kWp\nAnnual Savings: €${analysisData?.annualSavings}\nPayback: ${analysisData?.paybackYears} years\nAnnual Spend: €${analysisData?.annualSpend}\nSolar Offset: ${analysisData?.solarOffset}%\n\nHigh-intent lead from bill analysis tool.`,
+        notes,
       });
 
       if (error) throw error;
 
       toast({
         title: "Report Sent! 🎉",
-        description: "Check your email for your full solar report.",
+        description: analysisData?.mprn 
+          ? `Your property (MPRN: ${analysisData.mprn}) has been added to our system.`
+          : "Check your email for your full solar report.",
       });
       onSuccess();
     } catch (error) {
@@ -91,17 +123,37 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
           </DialogDescription>
         </DialogHeader>
 
+        {/* Show extracted MPRN if available */}
+        {analysisData?.mprn && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-green-500/10 border border-green-500/20"
+          >
+            <Zap className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700">MPRN Detected:</span>
+            <Badge variant="secondary" className="font-mono">
+              {analysisData.mprn}
+            </Badge>
+          </motion.div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4">
           <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="name" className="text-sm">Name *</Label>
             <Input
               id="name"
-              placeholder="Your name"
+              placeholder={analysisData?.accountName || "Your name"}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
+              required={!analysisData?.accountName}
               className="h-12 sm:h-10"
             />
+            {analysisData?.accountName && !formData.name && (
+              <p className="text-xs text-muted-foreground">
+                Pre-filled from your bill: {analysisData.accountName}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5 sm:space-y-2">

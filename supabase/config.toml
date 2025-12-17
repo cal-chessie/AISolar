@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-survey-notification]
 verify_jwt = false
+
+[functions.extract-bill-data]
+verify_jwt = false

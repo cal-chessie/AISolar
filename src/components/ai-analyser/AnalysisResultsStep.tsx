@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sun, TrendingUp, Clock, Zap, FileText, Check } from "lucide-react";
+import { Sun, TrendingUp, Clock, Zap, FileText, Check, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,14 +59,22 @@ export function AnalysisResultsStep({ data, onGetFullReport, leadCaptured }: Ana
         >
           <Check className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
         </motion.div>
-        <Badge variant="secondary" className="mx-auto mb-2 text-xs">
-          Analysis Complete
-        </Badge>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Badge variant="secondary" className="text-xs">
+            Analysis Complete
+          </Badge>
+          {data.mprn && (
+            <Badge variant="outline" className="text-xs font-mono bg-green-500/10 text-green-700 border-green-500/30">
+              <Hash className="w-3 h-3 mr-1" />
+              MPRN: {data.mprn}
+            </Badge>
+          )}
+        </div>
         <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
           Your Solar Savings
         </CardTitle>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
-          Based on €{data.monthlyBill}/month & {brand.country} data
+          Based on €{data.monthlyBill}/month{data.annualKwh ? ` (${data.annualKwh.toLocaleString()} kWh/yr)` : ''} & {brand.country} data
         </p>
       </CardHeader>
 

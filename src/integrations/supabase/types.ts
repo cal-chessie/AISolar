@@ -390,10 +390,12 @@ export type Database = {
         Row: {
           access_token: string | null
           address: string | null
+          annual_consumption_kwh: number | null
           created_at: string
           email: string
           id: string
           monthly_bill: number | null
+          mprn: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -406,10 +408,12 @@ export type Database = {
         Insert: {
           access_token?: string | null
           address?: string | null
+          annual_consumption_kwh?: number | null
           created_at?: string
           email: string
           id?: string
           monthly_bill?: number | null
+          mprn?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -422,10 +426,12 @@ export type Database = {
         Update: {
           access_token?: string | null
           address?: string | null
+          annual_consumption_kwh?: number | null
           created_at?: string
           email?: string
           id?: string
           monthly_bill?: number | null
+          mprn?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
