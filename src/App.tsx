@@ -18,6 +18,7 @@ import ValueUpsell from "./pages/ValueUpsell";
 import Auth from "./pages/Auth";
 import ConsultantDashboard from "./pages/ConsultantDashboard";
 import InstallerPortal from "./pages/InstallerPortal";
+import InstallerMobileApp from "./pages/InstallerMobileApp";
 import CustomerPortal from "./pages/CustomerPortal";
 import ClientPortal from "./pages/ClientPortal";
 import AdminSettings from "./pages/AdminSettings";
@@ -35,7 +36,7 @@ function AppRoutes() {
   });
 
   // Only show AI Coach on internal dashboard pages
-  const showAICoach = ['/consultant', '/installer', '/admin'].some(path => 
+  const showAICoach = ['/consultant', '/installer', '/admin', '/field'].some(path => 
     location.pathname.startsWith(path)
   );
 
@@ -54,6 +55,7 @@ function AppRoutes() {
           <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
           <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
+          <Route path="/field" element={<PageTransition><InstallerMobileApp /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
           <Route path="/portal" element={<PageTransition><ClientPortal /></PageTransition>} />
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
