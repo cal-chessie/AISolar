@@ -112,10 +112,19 @@ export default function ConsultantCalendar() {
         const createdDate = new Date(lead.created_at);
         const daysSince = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
         let urgency: 'high' | 'medium' | 'low' = 'low';
-        if (daysSince > 3) urgency = 'high';
-        else if (daysSince > 1) urgency = 'medium';
+        
+        // AI leads get higher urgency since they're high-intent
+        const isAILead = lead.notes?.includes('[SOURCE: AI_ANALYSER]') || lead.notes?.includes('[AI Analysis');
+        const isHighValue = (lead.monthly_bill || 0) >= 200;
+        
+        if (isAILead || isHighValue) {
+          urgency = daysSince > 1 ? 'high' : 'medium';
+        } else {
+          if (daysSince > 3) urgency = 'high';
+          else if (daysSince > 1) urgency = 'medium';
+        }
 
-        const source = lead.notes?.includes('AI Analysis') ? 'AI Analyser' : 'Manual';
+        const source = isAILead ? 'AI Analyser' : 'Manual';
 
         return {
           ...lead,
@@ -123,6 +132,15 @@ export default function ConsultantCalendar() {
           urgency,
           source
         };
+      });
+
+      // Sort by urgency (high first) and AI leads first
+      leadsWithUrgency.sort((a, b) => {
+        const urgencyOrder = { high: 0, medium: 1, low: 2 };
+        const aIsAI = a.source === 'AI Analyser' ? 0 : 1;
+        const bIsAI = b.source === 'AI Analyser' ? 0 : 1;
+        if (aIsAI !== bIsAI) return aIsAI - bIsAI;
+        return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
       });
 
       setLeadsNeedingCalls(leadsWithUrgency);
@@ -521,24 +539,38 @@ export default function ConsultantCalendar() {
                   All leads have been contacted! 🎉
                 </p>
               ) : (
-                leadsNeedingCalls.slice(0, 8).map(lead => (
+                leadsNeedingCalls.slice(0, 8).map(lead => {
+                  const isHighValue = (lead.monthly_bill || 0) >= 200;
+                  return (
                   <motion.div
                     key={lead.id}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`p-3 rounded-lg border text-sm ${getUrgencyColor(lead.urgency)}`}
+                    className={`p-3 rounded-lg border text-sm ${
+                      lead.source === 'AI Analyser' 
+                        ? 'bg-primary/5 border-primary/30' 
+                        : getUrgencyColor(lead.urgency)
+                    }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <User size={12} />
                       <span className="font-medium truncate">{lead.name}</span>
                     </div>
+                    {lead.monthly_bill && (
+                      <p className="text-xs text-muted-foreground">€{lead.monthly_bill}/month</p>
+                    )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <Badge variant="outline" className="text-[10px]">
                         {lead.days_since_contact}d ago
                       </Badge>
                       {lead.source === 'AI Analyser' && (
-                        <Badge className="text-[10px] bg-primary/20 text-primary">
-                          AI
+                        <Badge className="text-[10px] bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                          ⚡ AI Lead
+                        </Badge>
+                      )}
+                      {isHighValue && (
+                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600">
+                          High €
                         </Badge>
                       )}
                     </div>
@@ -564,7 +596,8 @@ export default function ConsultantCalendar() {
                       </DialogContent>
                     </Dialog>
                   </motion.div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>

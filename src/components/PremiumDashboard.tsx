@@ -587,6 +587,13 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterAILeads, setFilterAILeads] = useState(false);
+
+  // Check if lead is from AI Analyser
+  const isAILead = (lead: any) => lead.notes?.includes('[SOURCE: AI_ANALYSER]') || lead.notes?.includes('[AI Analysis');
+
+  // Check if lead is high value (monthly bill > €200)
+  const isHighValue = (lead: any) => (lead.monthly_bill || 0) >= 200;
 
   useEffect(() => {
     fetchLeads();
@@ -651,9 +658,16 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
     </div>
   );
 
-  // Filter leads by search query
+  // Count AI leads for badge
+  const aiLeadsCount = leads.filter(isAILead).length;
+
+  // Filter leads by search query and AI filter
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
+      // AI filter
+      if (filterAILeads && !isAILead(lead)) return false;
+      
+      // Search filter
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -663,7 +677,7 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
         lead.address?.toLowerCase().includes(query)
       );
     });
-  }, [leads, searchQuery]);
+  }, [leads, searchQuery, filterAILeads]);
 
   // Pagination
   const {
@@ -690,34 +704,53 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Active Leads</h2>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
-            <Input
-              placeholder="Search leads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full sm:w-64"
-            />
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Active Leads</h2>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input
+                placeholder="Search leads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full sm:w-64"
+              />
+            </div>
+            <AddLeadDialog onLeadAdded={() => {
+              fetchLeads();
+              onLeadAdded?.();
+            }} />
           </div>
-          <AddLeadDialog onLeadAdded={() => {
-            fetchLeads();
-            onLeadAdded?.();
-          }} />
+        </div>
+        
+        {/* Filter Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant={filterAILeads ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterAILeads(!filterAILeads)}
+            className="gap-2"
+          >
+            <Zap size={14} />
+            AI Leads
+            {aiLeadsCount > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                filterAILeads ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+              }`}>
+                {aiLeadsCount}
+              </span>
+            )}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {filteredLeads.length} of {leads.length} leads
+          </span>
         </div>
       </div>
 
-      {searchQuery && filteredLeads.length > 0 && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Found {filteredLeads.length} of {leads.length} leads
-        </p>
-      )}
-
       {filteredLeads.length === 0 ? (
-        searchQuery ? (
-          <EmptySearchResultsState query={searchQuery} />
+        searchQuery || filterAILeads ? (
+          <EmptySearchResultsState query={searchQuery || 'AI leads'} />
         ) : (
           <EmptyLeadsState onAddLead={() => {
             // Trigger the AddLeadDialog - this is handled by the button above
@@ -729,12 +762,30 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
             {paginatedLeads.map((lead) => (
               <div 
                 key={lead.id}
-                className="p-4 sm:p-5 bg-muted/50 rounded-xl border border-border hover:shadow-md transition-all"
+                className={`p-4 sm:p-5 rounded-xl border hover:shadow-md transition-all ${
+                  isAILead(lead) 
+                    ? 'bg-primary/5 border-primary/30 dark:bg-primary/10' 
+                    : 'bg-muted/50 border-border'
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
                       <h3 className="font-semibold text-foreground text-base sm:text-lg truncate">{lead.name}</h3>
+                      {/* AI Lead Badge */}
+                      {isAILead(lead) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                          <Zap size={10} />
+                          AI Lead
+                        </span>
+                      )}
+                      {/* High Value Badge */}
+                      {isHighValue(lead) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          <TrendingUp size={10} />
+                          High Value
+                        </span>
+                      )}
                       <StarRating score={lead.score || 0} leadId={lead.id} />
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
@@ -783,11 +834,6 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
                     />
                   </div>
                 </div>
-                {lead.notes && (
-                  <p className="text-sm text-muted-foreground mt-2 italic truncate">
-                    Note: {lead.notes}
-                  </p>
-                )}
               </div>
             ))}
           </div>
