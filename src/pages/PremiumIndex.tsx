@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -25,6 +25,7 @@ import LeadCaptureForm from '@/components/LeadCaptureForm';
 import SiteNavigation from '@/components/layout/SiteNavigation';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { MobileHomeNav } from '@/components/landing/MobileHomeNav';
+import { ScrollIndicator } from '@/components/ui/ScrollIndicator';
 import { brand } from '@/config/brand';
 
 export default function PremiumIndex() {
@@ -241,6 +242,8 @@ export default function PremiumIndex() {
 }
 
 function SocialProofSection() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   const testimonials = [
     {
       name: "Sarah M.",
@@ -281,7 +284,10 @@ function SocialProofSection() {
           <p>See what our customers are saying about their solar journey</p>
         </motion.div>
 
-        <div className="testimonials-grid">
+        <div 
+          ref={scrollContainerRef}
+          className="testimonials-grid"
+        >
           {testimonials.map((testimonial, index) => (
             <motion.div
               key={index}
@@ -317,6 +323,14 @@ function SocialProofSection() {
             </motion.div>
           ))}
         </div>
+        
+        {/* Scroll Indicator */}
+        <div className="md:hidden">
+          <ScrollIndicator 
+            containerRef={scrollContainerRef as React.RefObject<HTMLElement>} 
+            itemCount={testimonials.length} 
+          />
+        </div>
 
         <div className="trust-logos">
           <div className="logo-item">SEAI Approved</div>
@@ -330,6 +344,8 @@ function SocialProofSection() {
 }
 
 function HowItWorksSection() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   const steps = [
     {
       icon: Upload,
@@ -370,7 +386,10 @@ function HowItWorksSection() {
           <p>From upload to installation - we make going solar effortless</p>
         </motion.div>
 
-        <div className="steps-grid">
+        <div 
+          ref={scrollContainerRef}
+          className="steps-grid"
+        >
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -388,6 +407,14 @@ function HowItWorksSection() {
               <p>{step.description}</p>
             </motion.div>
           ))}
+        </div>
+        
+        {/* Scroll Indicator */}
+        <div className="md:hidden">
+          <ScrollIndicator 
+            containerRef={scrollContainerRef as React.RefObject<HTMLElement>} 
+            itemCount={steps.length} 
+          />
         </div>
       </div>
     </section>

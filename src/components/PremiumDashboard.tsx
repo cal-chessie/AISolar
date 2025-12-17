@@ -282,6 +282,17 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
 
   return (
     <div className="min-h-screen min-h-[100dvh] gradient-background pb-20 lg:pb-0">
+      {/* Add Lead Dialog - Fixed: Now properly rendered */}
+      <AddLeadDialog 
+        open={showAddLead}
+        onOpenChange={setShowAddLead}
+        onLeadAdded={() => {
+          setRefreshLeads(r => r + 1);
+          setShowAddLead(false);
+        }}
+        showTrigger={false}
+      />
+
       {/* Header - Mobile Optimized */}
       <header className="bg-card border-b border-border shadow-md safe-area-inset-top">
         <div className="max-w-7xl mx-auto px-3 sm:px-8 py-3 sm:py-6">

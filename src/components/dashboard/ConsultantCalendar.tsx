@@ -12,7 +12,8 @@ import {
   MapPin,
   LayoutGrid,
   List,
-  CalendarDays
+  CalendarDays,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { EventDetailDialog } from './EventDetailDialog';
+import { QuickAddEventDialog } from './QuickAddEventDialog';
 import { 
   format, 
   startOfMonth, 
@@ -83,6 +86,10 @@ export default function ConsultantCalendar() {
   const [loading, setLoading] = useState(true);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<LeadNeedingAction | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ScheduledEvent | null>(null);
+  const [showEventDetail, setShowEventDetail] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddDate, setQuickAddDate] = useState<Date | null>(null);
   const [scheduleForm, setScheduleForm] = useState({
     type: 'call' as 'call' | 'survey',
     date: '',
@@ -332,8 +339,35 @@ export default function ConsultantCalendar() {
     );
   }
 
+  // Handle event click
+  const handleEventClick = (event: ScheduledEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetail(true);
+  };
+
+  // Handle empty slot click for quick add
+  const handleEmptySlotClick = (date: Date) => {
+    setQuickAddDate(date);
+    setShowQuickAdd(true);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Event Detail Dialog */}
+      <EventDetailDialog
+        event={selectedEvent}
+        open={showEventDetail}
+        onOpenChange={setShowEventDetail}
+        onEventUpdated={fetchData}
+      />
+
+      {/* Quick Add Event Dialog */}
+      <QuickAddEventDialog
+        selectedDate={quickAddDate}
+        open={showQuickAdd}
+        onOpenChange={setShowQuickAdd}
+        onEventAdded={fetchData}
+      />
       {/* Header with View Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -367,6 +401,19 @@ export default function ConsultantCalendar() {
             <span className="hidden sm:inline">Month</span>
           </ToggleGroupItem>
         </ToggleGroup>
+
+        {/* Quick Add Button */}
+        <Button 
+          size="sm" 
+          onClick={() => {
+            setQuickAddDate(selectedDate);
+            setShowQuickAdd(true);
+          }}
+          className="gap-1"
+        >
+          <Plus size={14} />
+          <span className="hidden sm:inline">Add Event</span>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -400,15 +447,28 @@ export default function ConsultantCalendar() {
                     
                     {/* Selected day events */}
                     <div className="mt-4 pt-4 border-t">
-                      <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                        {format(selectedDate, 'EEEE, MMMM d')}
-                      </h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-sm text-muted-foreground">
+                          {format(selectedDate, 'EEEE, MMMM d')}
+                        </h4>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEmptySlotClick(selectedDate)}
+                          className="gap-1 h-7 text-xs"
+                        >
+                          <Plus size={12} />
+                          Add
+                        </Button>
+                      </div>
                       {getEventsForDay(selectedDate).length === 0 ? (
                         <p className="text-sm text-muted-foreground">No events scheduled</p>
                       ) : (
                         <div className="space-y-2">
                           {getEventsForDay(selectedDate).map(event => (
-                            <EventCard key={event.id} event={event} />
+                            <div key={event.id} onClick={() => handleEventClick(event)} className="cursor-pointer">
+                              <EventCard event={event} />
+                            </div>
                           ))}
                         </div>
                       )}
@@ -464,15 +524,28 @@ export default function ConsultantCalendar() {
                                         {time}
                                       </span>
                                     )}
-                                    {dayEvents.map(event => (
-                                      <div
-                                        key={event.id}
-                                        className={`text-[10px] p-1 rounded mb-1 truncate ${getEventColor(event.type, event.status)}`}
-                                        title={`${event.lead_name} - ${event.type}`}
-                                      >
-                                        {event.time} {event.lead_name}
-                                      </div>
-                                    ))}
+                                    {dayEvents.length === 0 ? (
+                                      <div 
+                                        className="h-full min-h-[50px] hover:bg-primary/5 transition-colors cursor-pointer rounded"
+                                        onClick={() => {
+                                          const clickDate = new Date(day);
+                                          const [hours] = time.split(':').map(Number);
+                                          clickDate.setHours(hours, 0, 0, 0);
+                                          handleEmptySlotClick(clickDate);
+                                        }}
+                                      />
+                                    ) : (
+                                      dayEvents.map(event => (
+                                        <div
+                                          key={event.id}
+                                          className={`text-[10px] p-1 rounded mb-1 truncate cursor-pointer hover:opacity-80 ${getEventColor(event.type, event.status)}`}
+                                          title={`${event.lead_name} - ${event.type}`}
+                                          onClick={() => handleEventClick(event)}
+                                        >
+                                          {event.time} {event.lead_name}
+                                        </div>
+                                      ))
+                                    )}
                                   </div>
                                 );
                               })}
@@ -504,11 +577,21 @@ export default function ConsultantCalendar() {
                             </div>
                             <div className="flex-1 min-h-[60px]">
                               {hourEvents.length === 0 ? (
-                                <div className="h-full bg-muted/30 rounded-lg border-2 border-dashed border-muted hover:border-primary/30 transition-colors cursor-pointer" />
+                                <div 
+                                  className="h-full bg-muted/30 rounded-lg border-2 border-dashed border-muted hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer"
+                                  onClick={() => {
+                                    const clickDate = new Date(currentDate);
+                                    const [hours] = time.split(':').map(Number);
+                                    clickDate.setHours(hours, 0, 0, 0);
+                                    handleEmptySlotClick(clickDate);
+                                  }}
+                                />
                               ) : (
                                 <div className="space-y-2">
                                   {hourEvents.map(event => (
-                                    <EventCard key={event.id} event={event} detailed />
+                                    <div key={event.id} onClick={() => handleEventClick(event)} className="cursor-pointer">
+                                      <EventCard event={event} detailed />
+                                    </div>
                                   ))}
                                 </div>
                               )}

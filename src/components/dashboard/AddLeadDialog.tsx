@@ -17,10 +17,13 @@ import {
 
 interface AddLeadDialogProps {
   onLeadAdded: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }
 
-export default function AddLeadDialog({ onLeadAdded }: AddLeadDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function AddLeadDialog({ onLeadAdded, open, onOpenChange, showTrigger = true }: AddLeadDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +33,10 @@ export default function AddLeadDialog({ onLeadAdded }: AddLeadDialogProps) {
     monthly_bill: '',
     notes: '',
   });
+
+  // Support both controlled and uncontrolled modes
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -109,12 +116,14 @@ export default function AddLeadDialog({ onLeadAdded }: AddLeadDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus size={18} />
-          Add Lead
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button className="gap-2">
+            <Plus size={18} />
+            Add Lead
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Lead</DialogTitle>

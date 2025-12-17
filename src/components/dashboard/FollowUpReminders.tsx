@@ -95,6 +95,44 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
   const [loading, setLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(!expanded);
   const [thresholds, setThresholds] = useState<Record<string, number>>(DEFAULT_THRESHOLDS);
+  const [showDemoData, setShowDemoData] = useState(false);
+
+  // Demo data for learning the interface
+  const DEMO_LEADS: StaleLead[] = [
+    {
+      id: 'demo-1',
+      name: 'Demo: Sarah Johnson',
+      email: 'sarah.demo@example.com',
+      phone: '+353 87 123 4567',
+      workflow_stage: 'new',
+      updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      days_stale: 3,
+      threshold: 2,
+      suggestedAction: getSuggestedAction('new')
+    },
+    {
+      id: 'demo-2',
+      name: 'Demo: John Murphy',
+      email: 'john.demo@example.com',
+      phone: '+353 86 234 5678',
+      workflow_stage: 'proposal',
+      updated_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+      days_stale: 6,
+      threshold: 5,
+      suggestedAction: getSuggestedAction('proposal')
+    },
+    {
+      id: 'demo-3',
+      name: 'Demo: Emma O\'Brien',
+      email: 'emma.demo@example.com',
+      phone: '+353 85 345 6789',
+      workflow_stage: 'approved',
+      updated_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      days_stale: 4,
+      threshold: 3,
+      suggestedAction: getSuggestedAction('approved')
+    }
+  ];
 
   useEffect(() => {
     fetchThresholdsAndLeads();
@@ -139,6 +177,11 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
         .sort((a, b) => (b.days_stale - b.threshold) - (a.days_stale - a.threshold));
 
       setStaleLeads(stale);
+      
+      // Auto-show demo data if no real leads
+      if (stale.length === 0) {
+        setShowDemoData(true);
+      }
     } catch (error) {
       console.error('Error fetching stale leads:', error);
       toast.error('Failed to fetch follow-up reminders');
@@ -200,6 +243,10 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
     return labels[stage || 'new'] || stage || 'New Lead';
   };
 
+  // Determine which leads to display
+  const displayLeads = staleLeads.length > 0 ? staleLeads : (showDemoData ? DEMO_LEADS : []);
+  const isDemo = staleLeads.length === 0 && showDemoData;
+
   if (loading) {
     return (
       <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20">
@@ -219,9 +266,19 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
     );
   }
 
-  if (staleLeads.length === 0) {
+  if (displayLeads.length === 0) {
     return null;
   }
+
+  const handleDemoAction = (lead: StaleLead, actionType: string) => {
+    if (lead.id.startsWith('demo-')) {
+      toast.success(`Demo: "${lead.suggestedAction.label}" would be logged for ${lead.name}`, {
+        description: 'This is sample data to help you learn the interface. Real leads will appear here when they need follow-up.'
+      });
+      return;
+    }
+    handleAction(lead, actionType);
+  };
 
   return (
     <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20">
@@ -230,42 +287,58 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bell className="h-5 w-5 text-orange-500" />
             Follow-up Actions
-            <Badge variant="destructive" className="ml-2">
-              {staleLeads.length}
+            <Badge variant={isDemo ? "secondary" : "destructive"} className="ml-2">
+              {isDemo ? 'Demo' : displayLeads.length}
             </Badge>
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            {isCollapsed ? 'Expand' : 'Collapse'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isDemo && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDemoData(false)}
+                className="text-xs"
+              >
+                Hide Demo
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              {isCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Sales actions needed to move these leads forward
+          {isDemo ? 'Sample data to learn the interface - real leads will appear here' : 'Sales actions needed to move these leads forward'}
         </p>
       </CardHeader>
       
       {!isCollapsed && (
         <CardContent className="space-y-3">
-          {staleLeads.slice(0, expanded ? 20 : 5).map((lead) => {
+          {displayLeads.slice(0, expanded ? 20 : 5).map((lead) => {
             const daysPastThreshold = lead.days_stale - lead.threshold;
             const ActionIcon = lead.suggestedAction.icon;
+            const isLeadDemo = lead.id.startsWith('demo-');
             
             return (
               <div
                 key={lead.id}
-                className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                className={`flex items-center justify-between p-3 bg-background rounded-lg border ${isLeadDemo ? 'border-dashed border-muted-foreground/30' : ''}`}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onLeadClick?.(lead.id)}
-                      className="font-medium text-foreground hover:text-primary truncate text-left"
+                      onClick={() => !isLeadDemo && onLeadClick?.(lead.id)}
+                      className={`font-medium truncate text-left ${isLeadDemo ? 'text-muted-foreground cursor-default' : 'text-foreground hover:text-primary'}`}
                     >
                       {lead.name}
                     </button>
+                    {isLeadDemo && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">DEMO</Badge>
+                    )}
                     <Badge variant={getUrgencyColor(daysPastThreshold)}>
                       <Clock className="h-3 w-3 mr-1" />
                       {lead.days_stale}d
@@ -286,8 +359,9 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => window.open(`tel:${lead.phone}`, '_blank')}
+                      onClick={() => !isLeadDemo && window.open(`tel:${lead.phone}`, '_blank')}
                       title="Call"
+                      disabled={isLeadDemo}
                     >
                       <Phone className="h-4 w-4" />
                     </Button>
@@ -296,15 +370,16 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => window.open(`mailto:${lead.email}`, '_blank')}
+                    onClick={() => !isLeadDemo && window.open(`mailto:${lead.email}`, '_blank')}
                     title="Email"
+                    disabled={isLeadDemo}
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
                   <Button
                     variant={lead.suggestedAction.variant}
                     size="sm"
-                    onClick={() => handleAction(lead, lead.suggestedAction.action)}
+                    onClick={() => handleDemoAction(lead, lead.suggestedAction.action)}
                     className="gap-1"
                   >
                     <ActionIcon className="h-3 w-3" />
@@ -315,10 +390,10 @@ export function FollowUpReminders({ onLeadClick, expanded = false }: FollowUpRem
               </div>
             );
           })}
-          {staleLeads.length > (expanded ? 20 : 5) && (
+          {displayLeads.length > (expanded ? 20 : 5) && (
             <div className="text-center pt-2">
               <Button variant="link" className="text-orange-600">
-                View all {staleLeads.length} leads needing action
+                View all {displayLeads.length} leads needing action
               </Button>
             </div>
           )}
