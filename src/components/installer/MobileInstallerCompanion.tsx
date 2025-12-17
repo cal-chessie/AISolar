@@ -335,33 +335,33 @@ export default function MobileInstallerCompanion() {
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Quick Actions */}
-          <div className="grid grid-cols-4 gap-2">
+          {/* Quick Actions - Larger Touch Targets */}
+          <div className="grid grid-cols-4 gap-3">
             {lead?.phone && (
               <>
-                <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => callCustomer(lead.phone!)}>
-                  <PhoneCall className="h-5 w-5 text-green-600" />
-                  <span className="text-xs">Call</span>
+                <Button variant="outline" className="h-20 flex-col gap-1.5 touch-manipulation" onClick={() => callCustomer(lead.phone!)}>
+                  <PhoneCall className="h-6 w-6 text-green-600" />
+                  <span className="text-xs font-medium">Call</span>
                 </Button>
-                <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => sendSMS(lead.phone!)}>
-                  <MessageSquare className="h-5 w-5 text-blue-600" />
-                  <span className="text-xs">SMS</span>
+                <Button variant="outline" className="h-20 flex-col gap-1.5 touch-manipulation" onClick={() => sendSMS(lead.phone!)}>
+                  <MessageSquare className="h-6 w-6 text-blue-600" />
+                  <span className="text-xs font-medium">SMS</span>
                 </Button>
               </>
             )}
             {lead?.address && (
-              <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => openInMaps(lead.address!)}>
-                <Navigation className="h-5 w-5 text-primary" />
-                <span className="text-xs">Navigate</span>
+              <Button variant="outline" className="h-20 flex-col gap-1.5 touch-manipulation" onClick={() => openInMaps(lead.address!)}>
+                <Navigation className="h-6 w-6 text-primary" />
+                <span className="text-xs font-medium">Navigate</span>
               </Button>
             )}
             <Button 
               variant="outline" 
-              className="h-16 flex-col gap-1" 
+              className="h-20 flex-col gap-1.5 touch-manipulation" 
               onClick={() => setShowChecklist(true)}
             >
-              <ClipboardCheck className="h-5 w-5 text-orange-600" />
-              <span className="text-xs">Checklist</span>
+              <ClipboardCheck className="h-6 w-6 text-orange-600" />
+              <span className="text-xs font-medium">Checklist</span>
             </Button>
           </div>
 
@@ -567,7 +567,7 @@ export default function MobileInstallerCompanion() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen min-h-[100dvh] bg-background pb-24">
       {/* Offline Banner */}
       <AnimatePresence>
         {offlineMode && (
@@ -575,7 +575,7 @@ export default function MobileInstallerCompanion() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-yellow-500 text-yellow-950 px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2"
+            className="bg-yellow-500 text-yellow-950 px-4 py-3 text-center text-sm font-medium flex items-center justify-center gap-2 safe-area-inset-top"
           >
             <WifiOff className="h-4 w-4" />
             Offline Mode - {pendingSync > 0 ? `${pendingSync} changes pending sync` : 'Using cached data'}
@@ -584,24 +584,33 @@ export default function MobileInstallerCompanion() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b z-10 px-4 py-3 safe-area-inset-top">
+      <div className={`sticky ${offlineMode ? 'top-0' : 'top-0'} bg-background/95 backdrop-blur-sm border-b z-10 px-4 py-4 ${!offlineMode ? 'safe-area-inset-top pt-safe' : ''}`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Wrench className="h-5 w-5 text-primary" />
+            </div>
             <div>
               <h1 className="text-xl font-bold">Field Companion</h1>
-              <p className="text-xs text-muted-foreground">{assignments.length} active jobs</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                {assignments.length} active jobs
+                {online ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <Wifi className="h-3 w-3" /> Online
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-yellow-600">
+                    <CloudOff className="h-3 w-3" /> Offline
+                  </span>
+                )}
+              </p>
             </div>
-            {online ? (
-              <Wifi className="h-4 w-4 text-green-500" />
-            ) : (
-              <CloudOff className="h-4 w-4 text-yellow-500" />
-            )}
           </div>
           <Button 
-            variant="ghost" 
+            variant="outline" 
             size="icon" 
             onClick={() => { setRefreshing(true); loadAssignments(); }}
-            className={refreshing ? 'animate-spin' : ''}
+            className={`h-11 w-11 ${refreshing ? 'animate-spin' : ''}`}
             disabled={!online}
           >
             <RefreshCw className="h-5 w-5" />
@@ -649,19 +658,31 @@ export default function MobileInstallerCompanion() {
         {selectedAssignment && <JobDetailView />}
       </AnimatePresence>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t safe-area-inset-bottom">
-        <div className="flex justify-around py-2">
-          <Button variant="ghost" className="flex-col h-14 gap-0.5" onClick={() => setActiveTab('jobs')}>
-            <List className={`h-5 w-5 ${activeTab === 'jobs' ? 'text-primary' : 'text-muted-foreground'}`} />
+      {/* Bottom Navigation - Enhanced Touch Targets */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t pb-safe z-20">
+        <div className="flex justify-around py-1">
+          <Button 
+            variant="ghost" 
+            className={`flex-col h-16 w-full gap-0.5 rounded-none ${activeTab === 'jobs' ? 'bg-primary/10' : ''}`} 
+            onClick={() => setActiveTab('jobs')}
+          >
+            <List className={`h-6 w-6 ${activeTab === 'jobs' ? 'text-primary' : 'text-muted-foreground'}`} />
             <span className={`text-xs ${activeTab === 'jobs' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Jobs</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-14 gap-0.5" onClick={() => setActiveTab('today')}>
-            <Calendar className={`h-5 w-5 ${activeTab === 'today' ? 'text-primary' : 'text-muted-foreground'}`} />
+          <Button 
+            variant="ghost" 
+            className={`flex-col h-16 w-full gap-0.5 rounded-none ${activeTab === 'today' ? 'bg-primary/10' : ''}`} 
+            onClick={() => setActiveTab('today')}
+          >
+            <Calendar className={`h-6 w-6 ${activeTab === 'today' ? 'text-primary' : 'text-muted-foreground'}`} />
             <span className={`text-xs ${activeTab === 'today' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Today</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-14 gap-0.5">
-            <HelpCircle className="h-5 w-5 text-muted-foreground" />
+          <Button 
+            variant="ghost" 
+            className="flex-col h-16 w-full gap-0.5 rounded-none"
+            onClick={() => window.open('tel:+353851234567')}
+          >
+            <HelpCircle className="h-6 w-6 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Help</span>
           </Button>
         </div>

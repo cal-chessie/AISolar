@@ -59,19 +59,19 @@ interface StatCardProps {
 
 const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
   <motion.div 
-    className="bg-card p-6 rounded-2xl border border-border shadow-lg hover:shadow-xl transition-all cursor-pointer"
+    className="bg-card p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-lg hover:shadow-xl transition-all cursor-pointer"
     whileHover={{ scale: 1.02, y: -2 }}
     transition={{ type: "spring", stiffness: 300 }}
   >
-    <div className="flex items-center gap-4">
-      <div className={`p-3 rounded-xl bg-muted ${color}`}>
+    <div className="flex items-center gap-2 sm:gap-4">
+      <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-muted ${color}`}>
         {icon}
       </div>
-      <div className="flex-1">
-        <div className="text-3xl font-bold text-foreground">{value}</div>
-        <div className="text-sm text-muted-foreground mt-1">{label}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xl sm:text-3xl font-bold text-foreground truncate">{value}</div>
+        <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">{label}</div>
       </div>
-      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+      <div className={`hidden sm:flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
         trend.positive ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-destructive/10 text-destructive dark:bg-destructive/20'
       }`}>
         {trend.positive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
@@ -281,22 +281,22 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
   const isAdminTab = (tabId: TabType) => adminTabs.some(t => t.id === tabId);
 
   return (
-    <div className="min-h-screen gradient-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{brand.name}</h1>
-              <p className="text-muted-foreground mt-1 text-sm sm:text-base">Consultant Portal</p>
+    <div className="min-h-screen min-h-[100dvh] gradient-background pb-20 lg:pb-0">
+      {/* Header - Mobile Optimized */}
+      <header className="bg-card border-b border-border shadow-md safe-area-inset-top">
+        <div className="max-w-7xl mx-auto px-3 sm:px-8 py-3 sm:py-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground truncate">{brand.name}</h1>
+              <p className="text-muted-foreground text-xs sm:text-base">Consultant Portal</p>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
               <button 
-                className="gradient-primary text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all text-sm sm:text-base"
+                className="gradient-primary text-white px-2.5 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center gap-1.5 sm:gap-2 hover:shadow-lg transition-all text-xs sm:text-base h-9 sm:h-auto"
                 onClick={() => setShowAddLead(true)}
                 aria-label="Add new lead"
               >
-                <Plus size={20} />
+                <Plus size={18} />
                 <span className="hidden sm:inline">New Lead</span>
               </button>
               <DarkModeToggle />
@@ -305,7 +305,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate('/admin/settings')}
-                  className="hidden sm:flex"
+                  className="hidden sm:flex h-9 w-9 sm:h-10 sm:w-10"
                 >
                   <Settings size={18} />
                 </Button>
@@ -313,13 +313,13 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2 sm:px-4"
                 size="sm"
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full gradient-primary flex items-center justify-center text-white font-semibold text-sm sm:text-lg cursor-pointer hover:shadow-lg transition-all">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full gradient-primary flex items-center justify-center text-white font-semibold text-xs sm:text-lg cursor-pointer hover:shadow-lg transition-all">
                 JD
               </div>
             </div>
@@ -328,12 +328,12 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
       </header>
 
       {/* Stats Grid - Collapsible */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-8 py-4 sm:py-8">
         <CollapsibleStats defaultExpanded={false}>
           {statsLoading ? (
             <DashboardStatsSkeleton count={4} />
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
               {statCards.map((stat, idx) => (
                 <StatCard key={idx} {...stat} />
               ))}
@@ -352,16 +352,16 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-8 pb-24 lg:pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Panel - Tabs & Content */}
           <div className="lg:col-span-2">
-            {/* Navigation Tabs - Horizontal scroll on mobile with Admin separator */}
-            <nav className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide items-center">
+            {/* Navigation Tabs - Mobile Optimized Horizontal Scroll */}
+            <nav className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide items-center">
               {consultantTabs.map(tab => (
                 <button
                   key={tab.id}
-                  className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm sm:text-base ${
+                  className={`px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all whitespace-nowrap text-xs sm:text-base touch-manipulation ${
                     activeTab === tab.id
                       ? 'gradient-primary text-white shadow-lg'
                       : 'bg-card text-muted-foreground hover:bg-muted border border-border'
@@ -375,15 +375,15 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
               {/* Admin tabs separator and tabs */}
               {isAdmin && (
                 <>
-                  <div className="flex items-center gap-2 px-2">
-                    <div className="h-6 w-px bg-border"></div>
-                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Admin</span>
-                    <div className="h-6 w-px bg-border"></div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-1 sm:px-2">
+                    <div className="h-5 sm:h-6 w-px bg-border"></div>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wide">Admin</span>
+                    <div className="h-5 sm:h-6 w-px bg-border"></div>
                   </div>
                   {adminTabs.map(tab => (
                     <button
                       key={tab.id}
-                      className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm sm:text-base ${
+                      className={`px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all whitespace-nowrap text-xs sm:text-base touch-manipulation ${
                         activeTab === tab.id
                           ? 'bg-orange-500 text-white shadow-lg'
                           : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 border border-orange-500/20'
@@ -405,7 +405,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
-                className="bg-card rounded-2xl border border-border shadow-lg p-4 sm:p-6 min-h-[500px] sm:min-h-[600px]"
+                className="bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg p-3 sm:p-6 min-h-[400px] sm:min-h-[600px]"
               >
                 <ErrorBoundary>
                   {activeTab === 'leads' && (

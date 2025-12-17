@@ -156,9 +156,30 @@ All colors MUST be HSL.
     background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)));
   }
 
-  /* Mobile safe area for bottom navigation */
+  /* Mobile safe area utilities */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Dynamic viewport height for mobile */
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+
+  .h-dvh {
+    height: 100dvh;
   }
 
   /* Hide scrollbar but keep functionality */
@@ -176,10 +197,24 @@ All colors MUST be HSL.
     min-width: 44px;
   }
 
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
   /* Mobile input sizing to prevent zoom */
   @media (max-width: 768px) {
     input, select, textarea {
       font-size: 16px !important;
+    }
+  }
+
+  /* XS breakpoint helper */
+  @media (min-width: 400px) {
+    .xs\:inline {
+      display: inline;
+    }
+    .xs\:hidden {
+      display: none;
     }
   }
 }

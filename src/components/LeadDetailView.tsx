@@ -130,84 +130,92 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
   const canSendToCustomer = proposal && ['ready', 'presented'].includes(proposal.status || '');
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-background border rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="border-b p-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onClose}>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4">
+      <div className="bg-background border-0 sm:border rounded-none sm:rounded-lg shadow-lg w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] overflow-hidden">
+        {/* Header - Mobile Optimized */}
+        <div className="border-b p-3 sm:p-6 flex items-center justify-between gap-2 safe-area-inset-top">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-10 w-10 flex-shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h2 className="text-2xl font-bold">{lead.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                Lead #{lead.id.slice(0, 8)}
-              </p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-2xl font-bold truncate">{lead.name}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  #{lead.id.slice(0, 8)}
+                </p>
+                <Badge className={`${getStatusColor(lead.status)} text-xs`}>
+                  {lead.status || 'new'}
+                </Badge>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {canSendToCustomer && (
-              <Button onClick={() => setSendDialogOpen(true)}>
+              <Button onClick={() => setSendDialogOpen(true)} size="sm" className="hidden sm:flex">
                 <Send className="h-4 w-4 mr-2" />
                 Send to Customer
               </Button>
             )}
-            <Badge className={getStatusColor(lead.status)}>
-              {lead.status || 'new'}
-            </Badge>
+            {canSendToCustomer && (
+              <Button onClick={() => setSendDialogOpen(true)} size="icon" className="sm:hidden h-10 w-10">
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive h-10 w-10"
               onClick={() => setDeleteDialogOpen(true)}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-10 w-10 hidden sm:flex">
               <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+        <div className="overflow-y-auto h-[calc(100vh-80px)] sm:max-h-[calc(90vh-100px)]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="border-b px-6">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="overview" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  Overview
+            <div className="border-b px-2 sm:px-6 overflow-x-auto scrollbar-hide">
+              <TabsList className="w-max min-w-full sm:w-full justify-start gap-0 sm:gap-1 h-auto p-1">
+                <TabsTrigger value="overview" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Overview</span>
+                  <span className="xs:hidden">Info</span>
                 </TabsTrigger>
-                <TabsTrigger value="survey" className="gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Site Survey
+                <TabsTrigger value="survey" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Survey
                 </TabsTrigger>
-                <TabsTrigger value="proposal" className="gap-2">
-                  <FileText className="h-4 w-4" />
+                <TabsTrigger value="proposal" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Proposal
                 </TabsTrigger>
-                <TabsTrigger value="invoice" className="gap-2">
-                  <Euro className="h-4 w-4" />
+                <TabsTrigger value="invoice" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <Euro className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Invoice
                 </TabsTrigger>
-                <TabsTrigger value="installation" className="gap-2">
-                  <Wrench className="h-4 w-4" />
-                  Installation
+                <TabsTrigger value="installation" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <Wrench className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Install
                 </TabsTrigger>
-                <TabsTrigger value="seai" className="gap-2">
-                  <Award className="h-4 w-4" />
-                  SEAI Grant
+                <TabsTrigger value="seai" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  SEAI
                 </TabsTrigger>
-                <TabsTrigger value="timeline" className="gap-2">
-                  <Clock className="h-4 w-4" />
+                <TabsTrigger value="timeline" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Activity
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="p-6">
+            <div className="p-3 sm:p-6 pb-safe">
               <TabsContent value="overview" className="mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* Contact Information */}
                   <Card>
                     <CardHeader>

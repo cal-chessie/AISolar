@@ -822,9 +822,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         </CardContent>
       </Card>
 
-      {/* Sticky Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border z-50">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-3">
+      {/* Sticky Action Buttons - Mobile Safe Area */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Button 
             onClick={handleSubmit((data) => onSubmit(data, false))} 
             disabled={loading} 

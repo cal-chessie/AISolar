@@ -273,52 +273,51 @@ export default function CustomerPortal() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-        {/* Header with Back Button */}
-        <header className="bg-background border-b sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+      <div className="min-h-screen min-h-[100dvh] bg-gradient-to-b from-background to-muted/30">
+        {/* Header with Back Button - Mobile Optimized */}
+        <header className="bg-background border-b sticky top-0 z-10 safe-area-inset-top">
+          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <Button 
                   variant="ghost" 
-                  size="sm"
+                  size="icon"
                   onClick={() => navigate(-1)}
-                  className="mr-2"
+                  className="h-10 w-10 flex-shrink-0"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back
+                  <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-2">
-                  <Sun className="h-8 w-8 text-primary" />
-                  <span className="font-bold text-xl">{brand.name}</span>
+                  <Sun className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                  <span className="font-bold text-lg sm:text-xl truncate">{brand.name}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-medium">{lead.name}</p>
-                <p className="text-sm text-muted-foreground">{lead.email}</p>
+              <div className="text-right min-w-0 flex-shrink-0">
+                <p className="font-medium text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{lead.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[120px] sm:max-w-none">{lead.email}</p>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl pb-safe">
           {/* Welcome Message */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
               Welcome, {lead.name.split(' ')[0]}!
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Track your solar installation journey below
             </p>
           </div>
 
           {/* Status Timeline */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Project Status</CardTitle>
-              <CardDescription>Your installation progress</CardDescription>
+          <Card className="mb-6 sm:mb-8">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Project Status</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Your installation progress</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <StatusTimeline
                 currentStage={lead.workflow_stage || 'proposal'}
                 proposalStatus={proposal?.status || undefined}
@@ -330,19 +329,19 @@ export default function CustomerPortal() {
           </Card>
 
           {/* Main Content - Tabs for larger screens */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="proposal">Proposal</TabsTrigger>
-              <TabsTrigger value="payment">Payment</TabsTrigger>
-              <TabsTrigger value="grant">
-                <FileCheck className="h-4 w-4 mr-1" />
-                SEAI Grant
+          <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1 gap-1">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm py-2.5">Overview</TabsTrigger>
+              <TabsTrigger value="proposal" className="text-xs sm:text-sm py-2.5">Proposal</TabsTrigger>
+              <TabsTrigger value="payment" className="text-xs sm:text-sm py-2.5">Payment</TabsTrigger>
+              <TabsTrigger value="grant" className="text-xs sm:text-sm py-2.5 flex items-center gap-1">
+                <FileCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">SEAI</span> Grant
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
+            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Proposal Summary */}
                 {proposal && (
                   <ProposalSummaryCard proposal={proposal} />
@@ -385,23 +384,23 @@ export default function CustomerPortal() {
                       <CardTitle className="text-lg">Need Help?</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Our team is here to answer any questions about your solar installation.
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button variant="outline" className="flex-1" asChild>
-                          <a href="tel:+353851234567">
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call Us
-                          </a>
-                        </Button>
-                        <Button variant="outline" className="flex-1" asChild>
-                          <a href="mailto:support@solardublin.ie">
-                            <Mail className="h-4 w-4 mr-2" />
-                            Email
-                          </a>
-                        </Button>
-                      </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          Our team is here to answer any questions about your solar installation.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button variant="outline" className="flex-1 h-11" asChild>
+                            <a href="tel:+353851234567">
+                              <Phone className="h-4 w-4 mr-2" />
+                              Call Us
+                            </a>
+                          </Button>
+                          <Button variant="outline" className="flex-1 h-11" asChild>
+                            <a href="mailto:support@solardublin.ie">
+                              <Mail className="h-4 w-4 mr-2" />
+                              Email
+                            </a>
+                          </Button>
+                        </div>
                     </CardContent>
                   </Card>
                 </div>
