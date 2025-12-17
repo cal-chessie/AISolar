@@ -352,7 +352,7 @@ function SocialProofSection() {
   
   const testimonials = [
     {
-      name: "Siobhán Ní Chathasaigh",
+      name: "Sarah Murphy",
       location: "Dublin",
       systemInfo: "System installed · 4.2 kW · SEAI grant applied",
       savings: "€1,450",
@@ -361,7 +361,7 @@ function SocialProofSection() {
       image: "👩‍💼"
     },
     {
-      name: "Seán Ó Dónaill",
+      name: "John O'Brien",
       location: "Cork",
       systemInfo: "Bill uploaded → proposal → install in 21 days",
       savings: "€1,280",
@@ -370,7 +370,7 @@ function SocialProofSection() {
       image: "👨‍💻"
     },
     {
-      name: "Niamh and Cian Ó Conchúir Family",
+      name: "The Kelly Family",
       location: "Galway",
       systemInfo: "SEAI paperwork handled in full",
       savings: "€1,650", 
