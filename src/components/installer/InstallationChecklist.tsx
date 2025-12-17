@@ -286,11 +286,7 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
         .update({ installation_status: 'completed' })
         .eq('id', proposalId);
 
-      // Update lead workflow
-      await supabase
-        .from('leads')
-        .update({ workflow_stage: 'installed' })
-        .eq('id', leadId);
+      // workflow_stage is automatically updated by database trigger when checklist is signed
 
       // Fetch proposal to get pricing for invoice
       const { data: proposal } = await supabase

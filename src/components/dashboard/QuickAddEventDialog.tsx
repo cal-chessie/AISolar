@@ -81,16 +81,12 @@ export function QuickAddEventDialog({ selectedDate, open, onOpenChange, onEventA
           access_notes: form.notes
         });
 
-        await supabase
-          .from('leads')
-          .update({ workflow_stage: 'survey' })
-          .eq('id', form.leadId);
+        // workflow_stage is automatically updated by database trigger when survey is created
       } else {
         const lead = leads.find(l => l.id === form.leadId);
         await supabase
           .from('leads')
           .update({ 
-            workflow_stage: 'survey',
             notes: `Call scheduled: ${format(eventDate, 'PPP')} at ${form.time}\n${form.notes || ''}`
           })
           .eq('id', form.leadId);

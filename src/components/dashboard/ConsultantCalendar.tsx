@@ -77,7 +77,7 @@ interface LeadNeedingAction {
   email: string;
   phone?: string;
   address?: string;
-  status: string;
+  workflow_stage?: string;
   created_at: string;
   monthly_bill?: number;
   days_since_contact: number;
@@ -393,10 +393,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
 
         if (error) throw error;
 
-        await supabase
-          .from('leads')
-          .update({ workflow_stage: 'survey' })
-          .eq('id', selectedLead.id);
+        // workflow_stage is automatically updated by database trigger when survey is created
 
         try {
           await supabase.functions.invoke('send-survey-notification', {
@@ -423,7 +420,6 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
         await supabase
           .from('leads')
           .update({ 
-            workflow_stage: 'survey',
             notes: `${existingNotes}\n\nCall scheduled: ${scheduleForm.date} ${scheduleForm.time || ''}\n${scheduleForm.notes || ''}`
           })
           .eq('id', selectedLead.id);

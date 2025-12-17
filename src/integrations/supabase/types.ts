@@ -394,6 +394,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          last_contacted_at: string | null
           monthly_bill: number | null
           mprn: string | null
           name: string
@@ -411,6 +412,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          last_contacted_at?: string | null
           monthly_bill?: number | null
           mprn?: string | null
           name: string
@@ -428,6 +430,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          last_contacted_at?: string | null
           monthly_bill?: number | null
           mprn?: string | null
           name?: string

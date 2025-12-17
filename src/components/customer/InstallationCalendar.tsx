@@ -91,14 +91,7 @@ export default function InstallationCalendar({
 
       if (proposalError) throw proposalError;
 
-      // Update lead workflow stage
-      await supabase
-        .from('leads')
-        .update({ workflow_stage: 'installation_pending' })
-        .eq('id', leadId);
-
-      // Send stage change notification
-      await sendStageChangeNotification(leadId, 'approved', 'installation_pending');
+      // workflow_stage is automatically updated by database trigger when proposal dates are set
 
       // Send notification email
       try {

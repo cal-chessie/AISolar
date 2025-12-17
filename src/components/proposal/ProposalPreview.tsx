@@ -171,11 +171,7 @@ export default function ProposalPreview({ proposal, lead, onBack, onComplete }: 
 
       if (error) throw error;
 
-      // Update lead workflow stage
-      await supabase
-        .from('leads')
-        .update({ workflow_stage: 'approved' })
-        .eq('id', lead.id);
+      // workflow_stage is automatically updated by database trigger when contract is created
       
       setCurrentStep('payment');
     } catch (error: any) {
