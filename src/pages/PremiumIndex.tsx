@@ -647,7 +647,6 @@ function SavingsCalculatorSection({
 
   // Calculate additional metrics
   const twentyFiveYearSavings = annualSavings * 25;
-  const co2Savings = Math.round(annualSavings * 0.4); // kg CO2 per euro saved (rough estimate)
   
   return (
     <section className="savings-calculator-section" ref={sectionRef}>
@@ -783,18 +782,6 @@ function SavingsCalculatorSection({
                 </div>
               </Card3D>
 
-              <Card3D className="result-card-3d" intensity={8}>
-                <div className="result-card glass eco">
-                  <div className="result-icon-mini">
-                    <Leaf size={18} />
-                  </div>
-                  <div className="result-label">CO₂ Reduction</div>
-                  <div className="result-value">
-                    <AnimatedCounter value={co2Savings} isInView={isInView} suffix=" kg" />
-                    <span className="result-subtext">/year</span>
-                  </div>
-                </div>
-              </Card3D>
             </div>
           </div>
         </motion.div>
