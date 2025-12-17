@@ -69,12 +69,12 @@ const DOCUMENT_TYPES = [
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
-  draft: { label: 'Draft', color: 'bg-gray-500', icon: Clock },
-  ready: { label: 'Ready to Submit', color: 'bg-blue-500', icon: FileText },
-  submitted: { label: 'Submitted', color: 'bg-yellow-500', icon: Clock },
-  under_review: { label: 'Under Review', color: 'bg-orange-500', icon: AlertCircle },
-  approved: { label: 'Approved', color: 'bg-green-500', icon: CheckCircle },
-  rejected: { label: 'Rejected', color: 'bg-red-500', icon: AlertCircle },
+  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground', icon: Clock },
+  ready: { label: 'Ready to Submit', color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400', icon: FileText },
+  submitted: { label: 'Submitted', color: 'bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400', icon: Clock },
+  under_review: { label: 'Under Review', color: 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400', icon: AlertCircle },
+  approved: { label: 'Approved', color: 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400', icon: CheckCircle },
+  rejected: { label: 'Rejected', color: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400', icon: AlertCircle },
 };
 
 export default function SEAIGrantTracker({ 

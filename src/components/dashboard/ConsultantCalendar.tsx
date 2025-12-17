@@ -661,46 +661,54 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
         </div>
       )}
 
-      {/* Header with View Toggle */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navigatePrevious} className="h-8 w-8">
-            <ChevronLeft size={16} />
-          </Button>
-          <Button variant="outline" onClick={goToToday} className="text-xs h-8 px-3">
-            Today
-          </Button>
-          <Button variant="outline" size="icon" onClick={navigateNext} className="h-8 w-8">
-            <ChevronRight size={16} />
-          </Button>
-          <h2 className="text-base sm:text-lg font-semibold ml-2">
-            {viewMode === 'day' && format(currentDate, 'EEE, MMM d, yyyy')}
-            {viewMode === 'week' && `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`}
-            {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
-          </h2>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)} className="h-8">
-            <ToggleGroupItem value="day" aria-label="Day view" className="gap-1 h-8 px-2 text-xs">
-              <CalendarDays size={12} />
-              <span className="hidden sm:inline">Day</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="week" aria-label="Week view" className="gap-1 h-8 px-2 text-xs">
-              <List size={12} />
-              <span className="hidden sm:inline">Week</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="month" aria-label="Month view" className="gap-1 h-8 px-2 text-xs">
-              <LayoutGrid size={12} />
-              <span className="hidden sm:inline">Month</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
+      {/* Header with View Toggle - Compact & Clean */}
+      <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+              <Button variant="ghost" size="icon" onClick={navigatePrevious} className="h-7 w-7 hover:bg-background">
+                <ChevronLeft size={14} />
+              </Button>
+              <Button variant="ghost" onClick={goToToday} className="text-xs h-7 px-2 hover:bg-background font-medium">
+                Today
+              </Button>
+              <Button variant="ghost" size="icon" onClick={navigateNext} className="h-7 w-7 hover:bg-background">
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+            <h2 className="text-sm sm:text-base font-semibold text-foreground ml-1">
+              {viewMode === 'day' && format(currentDate, 'EEE, MMM d, yyyy')}
+              {viewMode === 'week' && `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`}
+              {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(v) => v && setViewMode(v as ViewMode)} 
+              className="bg-muted/50 rounded-lg p-0.5"
+            >
+              <ToggleGroupItem value="day" aria-label="Day view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
+                <CalendarDays size={12} />
+                <span className="hidden sm:inline">Day</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="week" aria-label="Week view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
+                <List size={12} />
+                <span className="hidden sm:inline">Week</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="month" aria-label="Month view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
+                <LayoutGrid size={12} />
+                <span className="hidden sm:inline">Month</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
 
-          <Button 
-            variant="outline"
+            <Button 
+            variant="ghost"
             size="icon"
             onClick={fetchData}
-            className="h-8 w-8"
+            className="h-7 w-7 hover:bg-muted"
             title="Refresh"
           >
             <RefreshCw size={14} />
@@ -712,13 +720,14 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
               setQuickAddDate(selectedDate);
               setShowQuickAdd(true);
             }}
-            className="gap-1 h-8"
+            className="gap-1 h-7 text-xs"
           >
-            <Plus size={14} />
+            <Plus size={12} />
             <span className="hidden sm:inline">Add Event</span>
           </Button>
         </div>
-      </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Main Calendar Area with Touch Swipe Support */}

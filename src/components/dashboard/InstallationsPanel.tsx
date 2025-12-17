@@ -181,23 +181,23 @@ export default function InstallationsPanel() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      accepted: 'bg-blue-100 text-blue-700',
-      in_progress: 'bg-purple-100 text-purple-700',
-      completed: 'bg-green-100 text-green-700',
-      cancelled: 'bg-red-100 text-red-700',
+      pending: 'bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400',
+      accepted: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400',
+      in_progress: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400',
+      completed: 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400',
+      cancelled: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     };
-    return styles[status] || 'bg-slate-100 text-slate-700';
+    return styles[status] || 'bg-muted text-muted-foreground';
   };
 
   const getPriorityBadge = (priority: string) => {
     const styles: Record<string, string> = {
-      urgent: 'bg-red-100 text-red-700',
-      high: 'bg-orange-100 text-orange-700',
-      normal: 'bg-slate-100 text-slate-700',
-      low: 'bg-gray-100 text-gray-500',
+      urgent: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400',
+      high: 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400',
+      normal: 'bg-muted text-muted-foreground',
+      low: 'bg-muted/50 text-muted-foreground/70',
     };
-    return styles[priority] || 'bg-slate-100 text-slate-700';
+    return styles[priority] || 'bg-muted text-muted-foreground';
   };
 
   if (loading) {

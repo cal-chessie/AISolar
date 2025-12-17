@@ -69,20 +69,33 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
     system_size_kw?: number;
     seai_grant?: number;
     property_type?: string;
+    net_cost?: number;
+    panel_count?: number;
+    battery_storage?: boolean;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [loadingProposal, setLoadingProposal] = useState(true);
 
   useEffect(() => {
     const fetchProposal = async () => {
-      const { data } = await supabase
-        .from('proposals')
-        .select('id, status, system_size_kw, seai_grant, property_type')
-        .eq('lead_id', lead.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      if (data?.[0]) {
-        setProposal(data[0]);
+      setLoadingProposal(true);
+      try {
+        const { data, error } = await supabase
+          .from('proposals')
+          .select('id, status, system_size_kw, seai_grant, property_type, net_cost, panel_count, battery_storage')
+          .eq('lead_id', lead.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (error) {
+          console.error('Error fetching proposal:', error);
+        } else if (data?.[0]) {
+          setProposal(data[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching proposal:', err);
+      } finally {
+        setLoadingProposal(false);
       }
     };
     fetchProposal();
@@ -335,7 +348,13 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
               </TabsContent>
 
               <TabsContent value="seai" className="mt-0">
-                {proposal ? (
+                {loadingProposal ? (
+                  <Card>
+                    <CardContent className="py-12 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </CardContent>
+                  </Card>
+                ) : proposal ? (
                   <SEAIGrantTracker
                     proposalId={proposal.id}
                     leadId={lead.id}
@@ -345,8 +364,20 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                   />
                 ) : (
                   <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      Create a proposal first to track SEAI grant applications.
+                    <CardContent className="py-12 text-center">
+                      <Award className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                      <h3 className="font-semibold text-foreground mb-2">No Proposal Yet</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Create a proposal first to track SEAI grant applications.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setActiveTab('proposal')}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Create Proposal
+                      </Button>
                     </CardContent>
                   </Card>
                 )}

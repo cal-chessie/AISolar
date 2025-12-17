@@ -109,11 +109,11 @@ export default function SurveysPanel({ onStartSurvey, onCreateProposal }: Survey
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      draft: 'bg-orange-100 text-orange-700',
-      in_progress: 'bg-blue-100 text-blue-700',
-      completed: 'bg-green-100 text-green-700',
+      draft: 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400',
+      in_progress: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400',
+      completed: 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400',
     };
-    return styles[status] || 'bg-slate-100 text-slate-700';
+    return styles[status] || 'bg-muted text-muted-foreground';
   };
 
   const handleCreateProposalFromSurvey = (survey: any) => {
