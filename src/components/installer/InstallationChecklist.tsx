@@ -19,13 +19,26 @@ import {
   Home, 
   CheckCircle, 
   PenLine,
-  Save
+  Save,
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
 
 interface InstallationChecklistProps {
   proposalId: string;
   leadId: string;
   leadName: string;
+}
+
+interface InvoiceStatus {
+  id: string;
+  invoice_number: string;
+  total_amount: number;
+  deposit_amount: number | null;
+  final_amount: number | null;
+  deposit_paid: boolean;
+  final_paid: boolean;
+  status: string;
 }
 
 interface ChecklistData {
@@ -85,9 +98,11 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
   const [checklist, setChecklist] = useState<ChecklistData>(defaultChecklist);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus | null>(null);
 
   useEffect(() => {
     fetchChecklist();
+    fetchInvoiceStatus();
   }, [proposalId]);
 
   const fetchChecklist = async () => {
@@ -106,6 +121,23 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
       console.error('Error fetching checklist:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInvoiceStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total_amount, deposit_amount, final_amount, deposit_paid, final_paid, status')
+        .eq('proposal_id', proposalId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setInvoiceStatus(data as InvoiceStatus);
+      }
+    } catch (error) {
+      console.error('Error fetching invoice status:', error);
     }
   };
 
@@ -299,6 +331,50 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
 
   return (
     <div className="space-y-6">
+      {/* Payment Status Indicator */}
+      {invoiceStatus && (
+        <Card className={invoiceStatus.final_paid ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {invoiceStatus.final_paid ? (
+                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
+                    <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900">
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-sm">
+                    {invoiceStatus.final_paid ? 'Final Payment Received' : 'Final Payment Pending'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Invoice #{invoiceStatus.invoice_number} • Total: €{invoiceStatus.total_amount?.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-2">
+                  <Badge variant={invoiceStatus.deposit_paid ? 'default' : 'secondary'} className={invoiceStatus.deposit_paid ? 'bg-green-500' : ''}>
+                    Deposit {invoiceStatus.deposit_paid ? '✓' : 'Pending'}
+                  </Badge>
+                  <Badge variant={invoiceStatus.final_paid ? 'default' : 'secondary'} className={invoiceStatus.final_paid ? 'bg-green-500' : ''}>
+                    Final {invoiceStatus.final_paid ? '✓' : 'Pending'}
+                  </Badge>
+                </div>
+                {!invoiceStatus.final_paid && invoiceStatus.final_amount && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Balance due: €{invoiceStatus.final_amount.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <Card>
         <CardHeader>

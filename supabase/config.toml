@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.expert-chat]
 verify_jwt = false
+
+[functions.send-payment-reminder]
+verify_jwt = false

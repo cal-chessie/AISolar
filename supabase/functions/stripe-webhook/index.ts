@@ -124,6 +124,42 @@ serve(async (req) => {
             .update({ workflow_stage: "completed" })
             .eq("id", invoiceData.lead_id);
 
+          // Get proposal for SEAI application
+          const { data: proposalData } = await supabase
+            .from("proposals")
+            .select("id, system_size_kw, property_type, seai_grant")
+            .eq("lead_id", invoiceData.lead_id)
+            .single();
+
+          // Auto-initiate SEAI grant application
+          if (proposalData) {
+            const { data: existingSeai } = await supabase
+              .from("seai_applications")
+              .select("id")
+              .eq("proposal_id", proposalData.id)
+              .maybeSingle();
+
+            if (!existingSeai) {
+              const { error: seaiError } = await supabase
+                .from("seai_applications")
+                .insert({
+                  proposal_id: proposalData.id,
+                  lead_id: invoiceData.lead_id,
+                  system_size_kw: proposalData.system_size_kw,
+                  property_type: proposalData.property_type,
+                  grant_amount: proposalData.seai_grant,
+                  status: "draft",
+                  requires_engineer_review: (proposalData.system_size_kw || 0) > 50,
+                });
+
+              if (seaiError) {
+                console.error("Failed to create SEAI application:", seaiError);
+              } else {
+                console.log("SEAI application auto-initiated for proposal:", proposalData.id);
+              }
+            }
+          }
+
           // Send final payment confirmation email
           try {
             const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
