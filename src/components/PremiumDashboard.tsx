@@ -300,14 +300,16 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                 <span className="hidden sm:inline">New Lead</span>
               </button>
               <DarkModeToggle />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/admin/settings')}
-                className="hidden sm:flex"
-              >
-                <Settings size={18} />
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/admin/settings')}
+                  className="hidden sm:flex"
+                >
+                  <Settings size={18} />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={handleLogout}
@@ -570,6 +572,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
         activeTab={activeTab} 
         onTabChange={(tab) => setActiveTab(tab as TabType)} 
         variant="dashboard"
+        isAdmin={isAdmin}
       />
     </div>
   );

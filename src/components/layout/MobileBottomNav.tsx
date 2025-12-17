@@ -5,13 +5,23 @@ import {
   Users, 
   ClipboardList, 
   FileText, 
-  Wrench, 
   MoreHorizontal,
   Home,
-  Calendar
+  Calendar,
+  Settings,
+  BarChart3,
+  FolderOpen,
+  Package
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 interface NavItem {
   id: string;
@@ -19,24 +29,28 @@ interface NavItem {
   label: string;
   path?: string;
   onClick?: () => void;
+  isAdmin?: boolean;
 }
 
 interface MobileBottomNavProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   variant?: 'dashboard' | 'public';
+  isAdmin?: boolean;
 }
 
 export default function MobileBottomNav({ 
   activeTab, 
   onTabChange,
-  variant = 'dashboard'
+  variant = 'dashboard',
+  isAdmin = false
 }: MobileBottomNavProps) {
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
 
   // Hide/show on scroll
   useEffect(() => {
@@ -56,12 +70,26 @@ export default function MobileBottomNav({
 
   if (!isMobile) return null;
 
+  // Main bottom nav items (consultant tabs)
   const dashboardItems: NavItem[] = [
     { id: 'leads', icon: <Users size={22} />, label: 'Leads' },
     { id: 'surveys', icon: <ClipboardList size={22} />, label: 'Surveys' },
     { id: 'proposals', icon: <FileText size={22} />, label: 'Proposals' },
     { id: 'calendar', icon: <Calendar size={22} />, label: 'Calendar' },
-    { id: 'more', icon: <MoreHorizontal size={22} />, label: 'More' },
+  ];
+
+  // More menu items - always available consultant tabs
+  const moreConsultantItems: NavItem[] = [
+    { id: 'installations', icon: <Package size={20} />, label: 'Installations' },
+    { id: 'followups', icon: <Users size={20} />, label: 'Follow-ups' },
+  ];
+
+  // Admin-only items in More menu
+  const moreAdminItems: NavItem[] = [
+    { id: 'products', icon: <Package size={20} />, label: 'Products', isAdmin: true },
+    { id: 'documents', icon: <FolderOpen size={20} />, label: 'Documents', isAdmin: true },
+    { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Analytics', isAdmin: true },
+    { id: 'settings', icon: <Settings size={20} />, label: 'Settings', isAdmin: true },
   ];
 
   const publicItems: NavItem[] = [
@@ -78,6 +106,16 @@ export default function MobileBottomNav({
     } else if (onTabChange) {
       onTabChange(item.id);
     }
+    setMoreSheetOpen(false);
+  };
+
+  const handleMoreItemClick = (item: NavItem) => {
+    if (item.id === 'settings') {
+      navigate('/admin/settings');
+    } else if (onTabChange) {
+      onTabChange(item.id);
+    }
+    setMoreSheetOpen(false);
   };
 
   const isActive = (item: NavItem) => {
@@ -126,15 +164,68 @@ export default function MobileBottomNav({
                 )}>
                   {item.label}
                 </span>
-                {isActive(item) && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute bottom-1 w-1 h-1 rounded-full bg-primary"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
               </motion.button>
             ))}
+
+            {/* More Button with Sheet */}
+            {variant === 'dashboard' && (
+              <Sheet open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
+                <SheetTrigger asChild>
+                  <motion.button
+                    className={cn(
+                      "flex flex-col items-center justify-center min-w-[64px] min-h-[56px] px-3 py-2 rounded-xl transition-all",
+                      "text-muted-foreground hover:text-foreground"
+                    )}
+                    whileTap={{ scale: 0.92 }}
+                  >
+                    <motion.div className="p-1.5 rounded-xl">
+                      <MoreHorizontal size={22} />
+                    </motion.div>
+                    <span className="text-[10px] font-medium mt-0.5">More</span>
+                  </motion.button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="rounded-t-2xl">
+                  <SheetHeader>
+                    <SheetTitle>More Options</SheetTitle>
+                  </SheetHeader>
+                  <div className="grid grid-cols-4 gap-4 py-6">
+                    {/* Consultant items */}
+                    {moreConsultantItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleMoreItemClick(item)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
+                          activeTab === item.id 
+                            ? "bg-primary/10 text-primary" 
+                            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {item.icon}
+                        <span className="text-xs font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                    
+                    {/* Admin items - only show if isAdmin */}
+                    {isAdmin && moreAdminItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleMoreItemClick(item)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
+                          activeTab === item.id 
+                            ? "bg-orange-500/10 text-orange-500" 
+                            : "hover:bg-orange-500/5 text-orange-500/70 hover:text-orange-500"
+                        )}
+                      >
+                        {item.icon}
+                        <span className="text-xs font-medium">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </motion.nav>
       )}
