@@ -228,7 +228,7 @@ export default function PremiumIndex() {
                   </motion.div>
                 </div>
                 <p className="text-sm text-emerald-900/80 dark:text-emerald-100/80 leading-relaxed">
-                  Based on your electricity usage of 4,200 kWh annually, a south-facing roof orientation provides optimal solar generation. Estimated payback period is 7.2 years with current energy prices.
+                  Based on your electricity usage of 4,200 kWh annually, a south-facing roof orientation provides optimal solar generation. Estimated payback period is 4.5 years with current energy prices.
                 </p>
               </motion.div>
 
