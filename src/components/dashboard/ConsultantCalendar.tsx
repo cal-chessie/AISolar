@@ -154,6 +154,10 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
     notes: ''
   });
 
+  // Touch swipe handling refs
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -471,6 +475,50 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
     setSelectedDate(today);
   };
 
+  // Touch swipe handlers for mobile navigation
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    const deltaTime = Date.now() - touchStartRef.current.time;
+
+    // Minimum swipe distance and maximum time for swipe detection
+    const minSwipeDistance = 60;
+    const maxSwipeTime = 400;
+
+    // Check if it's a horizontal swipe (not vertical scroll)
+    if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && Math.abs(deltaX) > minSwipeDistance && deltaTime < maxSwipeTime) {
+      if (deltaX > 0) {
+        // Swipe right = go to previous
+        navigatePrevious();
+        toast({
+          title: viewMode === 'day' ? '← Previous Day' : viewMode === 'week' ? '← Previous Week' : '← Previous Month',
+          duration: 1500
+        });
+      } else {
+        // Swipe left = go to next
+        navigateNext();
+        toast({
+          title: viewMode === 'day' ? 'Next Day →' : viewMode === 'week' ? 'Next Week →' : 'Next Month →',
+          duration: 1500
+        });
+      }
+    }
+
+    touchStartRef.current = null;
+  }, [viewMode, navigatePrevious, navigateNext]);
+
   // Handle date selection from calendar
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -663,9 +711,14 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Main Calendar Area */}
+        {/* Main Calendar Area with Touch Swipe Support */}
         <div className="lg:col-span-3">
-          <Card>
+          <Card
+            ref={calendarContainerRef}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="touch-pan-y"
+          >
             <CardContent className="p-2 sm:p-4">
               <AnimatePresence mode="wait">
                 {/* Month View */}
