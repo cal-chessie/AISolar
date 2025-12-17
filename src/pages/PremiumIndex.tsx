@@ -422,7 +422,20 @@ function SocialProofSection() {
 
               <div className="testimonial-rating">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} size={16} fill="currentColor" />
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ 
+                      delay: index * 0.1 + 0.3 + i * 0.1,
+                      duration: 0.2,
+                      type: 'spring',
+                      stiffness: 500
+                    }}
+                  >
+                    <Star size={16} fill="currentColor" />
+                  </motion.div>
                 ))}
               </div>
 
