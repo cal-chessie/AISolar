@@ -300,21 +300,16 @@ export default function PremiumIndex() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.6, duration: 0.5 }}
-              className="hidden lg:flex items-center gap-2 px-3 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm"
+              className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm"
             >
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs">👤</div>
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-xs">👤</div>
-                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-xs">👤</div>
+              <div className="flex -space-x-1.5">
+                <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-[10px]">👤</div>
+                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-[10px]">👤</div>
+                <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-[10px]">👤</div>
               </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  500+ Irish homes
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  switched to solar this year
-                </div>
-              </div>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                500+ switched this year
+              </span>
             </motion.div>
           </div>
         </section>
