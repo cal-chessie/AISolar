@@ -8,12 +8,13 @@ import {
   MapPin, Navigation, Phone, Calendar, CheckCircle, Clock, AlertCircle,
   FileText, Wrench, User, ChevronRight, PhoneCall,
   MessageSquare, Zap, Battery, Sun, ClipboardCheck, ArrowLeft,
-  List, HelpCircle, RefreshCw, WifiOff, Wifi, CloudOff
+  List, HelpCircle, RefreshCw, WifiOff, Wifi, CloudOff, Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import InstallationChecklist from './InstallationChecklist';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { 
   cacheAssignmentsOffline, 
   getCachedAssignments, 
@@ -566,8 +567,60 @@ export default function MobileInstallerCompanion() {
     return new Date(a.scheduled_date) > new Date();
   });
 
+  // Pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    await loadAssignments();
+  }, []);
+
+  const {
+    containerRef,
+    pullDistance,
+    isRefreshing: isPullRefreshing,
+    progress: pullProgress,
+    shouldTrigger,
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+  });
+
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background pb-24">
+    <div 
+      ref={containerRef}
+      className="min-h-screen min-h-[100dvh] bg-background pb-24 overflow-y-auto"
+    >
+      {/* Pull-to-Refresh Indicator */}
+      <AnimatePresence>
+        {(pullDistance > 0 || isPullRefreshing) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center py-4 bg-primary/5"
+            style={{ 
+              height: Math.max(pullDistance, isPullRefreshing ? 60 : 0),
+              transition: isPullRefreshing ? 'height 0.2s ease' : 'none'
+            }}
+          >
+            {isPullRefreshing ? (
+              <Loader2 className="h-6 w-6 text-primary animate-spin" />
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                <RefreshCw 
+                  className={`h-6 w-6 text-primary transition-transform ${shouldTrigger ? 'rotate-180' : ''}`}
+                  style={{ 
+                    transform: `rotate(${pullProgress * 1.8}deg)`,
+                    opacity: Math.min(pullProgress / 100, 1)
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {shouldTrigger ? 'Release to refresh' : 'Pull to refresh'}
+                </span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Offline Banner */}
       <AnimatePresence>
         {offlineMode && (
@@ -644,7 +697,7 @@ export default function MobileInstallerCompanion() {
           <div className="text-center py-12">
             <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="font-medium">No active jobs</p>
-            <p className="text-sm text-muted-foreground">Check back later for new assignments</p>
+            <p className="text-sm text-muted-foreground">Pull down to refresh or check back later</p>
           </div>
         ) : (
           assignments.map((assignment) => (
