@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { brand } from "@/config/brand";
 
 interface BillInputStepProps {
@@ -70,47 +69,70 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
   };
 
   return (
-    <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm">
-      <CardHeader className="text-center pb-2 px-4 sm:px-6">
-        <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
-          <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+    <div className="p-4 xs:p-5 sm:p-6 md:p-8">
+      {/* Header */}
+      <div className="text-center mb-4 xs:mb-5 sm:mb-6">
+        <div className="mx-auto w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 xs:mb-4">
+          <Sparkles className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-primary" />
         </div>
-        <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
+        <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-foreground mb-1">
           {brand.copy.heroTitle}
-        </CardTitle>
-        <CardDescription className="text-muted-foreground text-sm sm:text-base">
+        </h2>
+        <p className="text-muted-foreground text-xs xs:text-sm sm:text-base max-w-md mx-auto">
           {brand.copy.valueProposition}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <CardContent className="pt-4 px-4 sm:px-6">
-        {isAnalysing ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="py-10 sm:py-12 text-center"
-          >
-            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
-              </motion.div>
-            </div>
-            <p className="text-base sm:text-lg font-medium text-foreground">Analysing your bill...</p>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-              Using {brand.country} sunlight data & SEAI grants
+      {isAnalysing ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="py-8 xs:py-10 sm:py-12 text-center"
+        >
+          <div className="w-14 h-14 xs:w-16 xs:h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Zap className="w-7 h-7 xs:w-8 xs:h-8 text-primary" />
+            </motion.div>
+          </div>
+          <p className="text-base xs:text-lg font-medium text-foreground">Analysing your bill...</p>
+          <p className="text-xs xs:text-sm text-muted-foreground mt-2">
+            Using {brand.country} sunlight data & SEAI grants
+          </p>
+        </motion.div>
+      ) : (
+        <>
+          {/* Primary CTA - Camera Button (Mobile First) */}
+          <div className="mb-4 xs:mb-5 sm:mb-6 sm:hidden">
+            <Button
+              type="button"
+              className="w-full h-14 xs:h-16 gap-3 text-base xs:text-lg font-semibold"
+              onClick={handleCameraCapture}
+            >
+              <Camera className="w-5 h-5 xs:w-6 xs:h-6" />
+              📷 Take Photo of Your Bill
+            </Button>
+            <p className="text-[10px] xs:text-xs text-muted-foreground text-center mt-2">
+              🔒 Secure • Instant results • No signup required
             </p>
-          </motion.div>
-        ) : (
+          </div>
+
+          {/* Divider - Mobile Only */}
+          <div className="flex items-center gap-3 text-muted-foreground text-xs xs:text-sm mb-4 xs:mb-5 sm:hidden">
+            <div className="flex-1 h-px bg-border"></div>
+            <span>or enter manually</span>
+            <div className="flex-1 h-px bg-border"></div>
+          </div>
+
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 h-11 sm:h-10">
-              <TabsTrigger value="manual" className="gap-1.5 sm:gap-2 text-sm">
+            <TabsList className="grid w-full grid-cols-2 mb-4 xs:mb-5 sm:mb-6 h-12 xs:h-11 sm:h-10">
+              <TabsTrigger value="manual" className="gap-1.5 xs:gap-2 text-xs xs:text-sm h-10 xs:h-9">
                 <Euro className="w-4 h-4" />
                 <span>Enter Bill</span>
               </TabsTrigger>
-              <TabsTrigger value="upload" className="gap-1.5 sm:gap-2 text-sm">
+              <TabsTrigger value="upload" className="gap-1.5 xs:gap-2 text-xs xs:text-sm h-10 xs:h-9">
                 <Upload className="w-4 h-4" />
                 <span>Upload</span>
               </TabsTrigger>
@@ -119,9 +141,9 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
             <TabsContent value="manual">
               <form onSubmit={handleManualSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyBill" className="text-sm sm:text-base">Your last electricity bill (€)</Label>
+                  <Label htmlFor="monthlyBill" className="text-sm xs:text-base">Your last electricity bill (€)</Label>
                   <div className="relative">
-                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="monthlyBill"
                       type="number"
@@ -129,43 +151,45 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
                       placeholder="e.g. 150"
                       value={manualBill}
                       onChange={(e) => setManualBill(e.target.value)}
-                      className="pl-10 text-lg h-14 sm:h-12"
+                      className="pl-10 text-base xs:text-lg h-14 xs:h-12"
                       min="1"
                       step="1"
+                      style={{ fontSize: '16px' }} // Prevent iOS zoom
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] xs:text-xs text-muted-foreground">
                     Enter your monthly or bi-monthly bill amount
                   </p>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-14 sm:h-12 text-base font-semibold"
+                  className="w-full h-14 xs:h-12 text-base font-semibold"
                   disabled={!manualBill || parseFloat(manualBill) <= 0}
                 >
                   <Zap className="w-5 h-5 mr-2" />
                   {brand.copy.heroCta}
                 </Button>
               </form>
-              <p className="text-xs text-muted-foreground text-center mt-4">
+              <p className="text-[10px] xs:text-xs text-muted-foreground text-center mt-4">
                 ✨ {brand.copy.trustMessage}
               </p>
             </TabsContent>
 
             <TabsContent value="upload" className="space-y-4">
-              {/* Camera Button - visible on all devices */}
+              {/* Camera Button - Desktop/Tablet */}
               <Button
                 type="button"
-                variant="outline"
-                className="w-full h-14 gap-2 text-base border-primary/30 hover:bg-primary/5"
+                variant="default"
+                className="w-full h-14 xs:h-12 gap-2 text-base hidden sm:flex"
                 onClick={handleCameraCapture}
               >
-                <Camera className="w-5 h-5 text-primary" />
+                <Camera className="w-5 h-5" />
                 📷 Take Photo of Your Bill
               </Button>
 
-              <div className="flex items-center gap-3 text-muted-foreground text-sm">
+              {/* Divider - Desktop */}
+              <div className="hidden sm:flex items-center gap-3 text-muted-foreground text-sm">
                 <div className="flex-1 h-px bg-border"></div>
                 <span>or</span>
                 <div className="flex-1 h-px bg-border"></div>
@@ -174,8 +198,9 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
               <div
                 {...getRootProps()}
                 className={`
-                  border-2 border-dashed rounded-xl p-6 sm:p-8 text-center cursor-pointer
-                  transition-all duration-200 min-h-[140px] sm:min-h-[160px] flex flex-col items-center justify-center
+                  border-2 border-dashed rounded-xl p-5 xs:p-6 sm:p-8 text-center cursor-pointer
+                  transition-all duration-200 min-h-[120px] xs:min-h-[140px] sm:min-h-[160px] flex flex-col items-center justify-center
+                  active:scale-[0.98] touch-manipulation
                   ${isDragActive 
                     ? 'border-primary bg-primary/5' 
                     : 'border-border hover:border-primary/50 hover:bg-muted/50'
@@ -183,33 +208,30 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
                 `}
               >
                 <input {...getInputProps()} />
-                <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 rounded-full bg-muted flex items-center justify-center">
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
+                <div className="w-10 h-10 xs:w-12 xs:h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                  <FileText className="w-5 h-5 xs:w-6 xs:h-6 text-muted-foreground" />
                 </div>
                 {isDragActive ? (
                   <p className="text-primary font-medium">Drop your bill here...</p>
                 ) : (
                   <>
-                    <p className="font-medium text-foreground mb-1 text-sm sm:text-base">
+                    <p className="font-medium text-foreground mb-1 text-sm xs:text-base">
                       <span className="hidden sm:inline">Drag & drop your electricity bill</span>
                       <span className="sm:hidden">Tap to select your bill</span>
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                    <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground">
                       PDF, JPG, or PNG
                     </p>
-                    <Button variant="outline" size="sm" className="hidden sm:flex">
-                      Choose File
-                    </Button>
                   </>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-[10px] xs:text-xs text-muted-foreground text-center">
                 🔒 Your bill is analysed securely and never stored
               </p>
             </TabsContent>
           </Tabs>
-        )}
-      </CardContent>
-    </Card>
+        </>
+      )}
+    </div>
   );
 }
