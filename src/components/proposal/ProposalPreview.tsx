@@ -209,6 +209,25 @@ export default function ProposalPreview({ proposal, lead, onBack, onComplete }: 
         });
 
       if (error) throw error;
+
+      // Send proposal accepted email notification
+      try {
+        await supabase.functions.invoke('send-proposal-accepted', {
+          body: {
+            customerName: lead.name,
+            customerEmail: lead.email,
+            systemSizeKw: proposal.system_size_kw,
+            netCost: proposal.net_cost,
+            seaiGrant: proposal.seai_grant,
+            preferredDates: preferredDates.map(d => d.toISOString()),
+            paymentOption: paymentSchedule,
+            depositAmount: paymentSchedule === 'deposit' ? depositAmount : undefined,
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't block the flow if email fails
+      }
       
       setCurrentStep('complete');
       
