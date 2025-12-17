@@ -22,12 +22,13 @@ import {
 import { 
   ArrowLeft, Settings, Clock, Save, RotateCcw, Users, Link2, 
   Palette, Mail, Shield, CreditCard, CheckCircle2, AlertCircle,
-  Plus, Trash2, Edit2, Send, UserPlus, Copy, ExternalLink
+  Plus, Trash2, Edit2, Send, UserPlus, Copy, ExternalLink, Bell
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
+import NotificationPreferences from '@/components/settings/NotificationPreferences';
 
 interface InviteUser {
   email: string;
@@ -411,10 +412,14 @@ export default function AdminSettings() {
 
         <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1">
+            <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-2 h-auto p-1">
               <TabsTrigger value="followups" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 <span className="hidden sm:inline">Follow-ups</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notifications</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -430,7 +435,7 @@ export default function AdminSettings() {
               </TabsTrigger>
               <TabsTrigger value="emails" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span className="hidden sm:inline">Email Templates</span>
+                <span className="hidden sm:inline">Emails</span>
               </TabsTrigger>
             </TabsList>
 
@@ -517,6 +522,11 @@ export default function AdminSettings() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Notification Preferences Tab */}
+            <TabsContent value="notifications" className="space-y-6">
+              <NotificationPreferences />
             </TabsContent>
 
             {/* User Management Tab */}

@@ -443,6 +443,63 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_contract_signed: boolean | null
+          email_installation_scheduled: boolean | null
+          email_payment_received: boolean | null
+          email_proposal_approved: boolean | null
+          email_stage_changes: boolean | null
+          email_survey_completed: boolean | null
+          id: string
+          inapp_contract_signed: boolean | null
+          inapp_installation_scheduled: boolean | null
+          inapp_payment_received: boolean | null
+          inapp_proposal_approved: boolean | null
+          inapp_stage_changes: boolean | null
+          inapp_survey_completed: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_contract_signed?: boolean | null
+          email_installation_scheduled?: boolean | null
+          email_payment_received?: boolean | null
+          email_proposal_approved?: boolean | null
+          email_stage_changes?: boolean | null
+          email_survey_completed?: boolean | null
+          id?: string
+          inapp_contract_signed?: boolean | null
+          inapp_installation_scheduled?: boolean | null
+          inapp_payment_received?: boolean | null
+          inapp_proposal_approved?: boolean | null
+          inapp_stage_changes?: boolean | null
+          inapp_survey_completed?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_contract_signed?: boolean | null
+          email_installation_scheduled?: boolean | null
+          email_payment_received?: boolean | null
+          email_proposal_approved?: boolean | null
+          email_stage_changes?: boolean | null
+          email_survey_completed?: boolean | null
+          id?: string
+          inapp_contract_signed?: boolean | null
+          inapp_installation_scheduled?: boolean | null
+          inapp_payment_received?: boolean | null
+          inapp_proposal_approved?: boolean | null
+          inapp_stage_changes?: boolean | null
+          inapp_survey_completed?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
