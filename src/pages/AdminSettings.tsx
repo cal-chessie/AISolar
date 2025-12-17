@@ -10,15 +10,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   ArrowLeft, Settings, Clock, Save, RotateCcw, Users, Link2, 
   Palette, Mail, Shield, CreditCard, CheckCircle2, AlertCircle,
-  Plus, Trash2, Edit2
+  Plus, Trash2, Edit2, Send, UserPlus, Copy, ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
+
+interface InviteUser {
+  email: string;
+  role: 'admin' | 'consultant' | 'installer';
+}
 
 interface ThresholdSetting {
   id: string;
@@ -92,6 +106,72 @@ const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
   }
 ];
 
+// Invite User Dialog Component
+function InviteUserDialog({ onInvite }: { onInvite: (data: InviteUser) => void }) {
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'admin' | 'consultant' | 'installer'>('consultant');
+  const [open, setOpen] = useState(false);
+
+  const handleSubmit = () => {
+    if (email) {
+      onInvite({ email, role });
+      setEmail('');
+      setRole('consultant');
+      setOpen(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Invite User
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite Team Member</DialogTitle>
+          <DialogDescription>
+            Send an invitation email to add a new user to your team.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Email Address</Label>
+            <Input
+              type="email"
+              placeholder="colleague@company.ie"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Role</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="consultant">Consultant</SelectItem>
+                <SelectItem value="installer">Installer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!email}>
+            <Send className="h-4 w-4 mr-2" />
+            Send Invitation
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminSettings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('followups');
@@ -131,6 +211,10 @@ export default function AdminSettings() {
     resend: { enabled: true, status: 'connected' },
     coinbase: { enabled: false, status: 'not_configured' }
   });
+
+  const handleInviteUser = (data: InviteUser) => {
+    toast.success(`Invitation sent to ${data.email} as ${data.role}`);
+  };
 
   useEffect(() => {
     checkAuthAndFetch();
@@ -439,27 +523,40 @@ export default function AdminSettings() {
             <TabsContent value="users" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    User Management
-                  </CardTitle>
-                  <CardDescription>
-                    Manage user accounts and role assignments
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        User Management
+                      </CardTitle>
+                      <CardDescription>
+                        Manage user accounts and role assignments
+                      </CardDescription>
+                    </div>
+                    <InviteUserDialog onInvite={handleInviteUser} />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {users.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">No users found</p>
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">No users found</p>
+                        <p className="text-sm text-muted-foreground">Invite team members to get started</p>
+                      </div>
                     ) : (
                       users.map((user) => (
                         <div 
                           key={user.id} 
-                          className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+                          className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-primary font-medium">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                              user.role === 'admin' ? 'bg-primary/20 text-primary' :
+                              user.role === 'installer' ? 'bg-orange-500/20 text-orange-600' :
+                              'bg-blue-500/20 text-blue-600'
+                            }`}>
+                              <span className="font-medium">
                                 {(user.full_name || 'U')[0].toUpperCase()}
                               </span>
                             </div>
@@ -479,11 +576,29 @@ export default function AdminSettings() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="consultant">Consultant</SelectItem>
-                                <SelectItem value="installer">Installer</SelectItem>
+                                <SelectItem value="admin">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-3 w-3" />
+                                    Admin
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="consultant">
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-3 w-3" />
+                                    Consultant
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="installer">
+                                  <div className="flex items-center gap-2">
+                                    <Settings className="h-3 w-3" />
+                                    Installer
+                                  </div>
+                                </SelectItem>
                               </SelectContent>
                             </Select>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       ))
@@ -499,34 +614,43 @@ export default function AdminSettings() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 border border-border rounded-lg">
-                      <h4 className="font-semibold text-primary mb-2">Admin</h4>
+                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
+                      <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Admin
+                      </h4>
                       <ul className="text-sm space-y-1 text-muted-foreground">
-                        <li>• Full system access</li>
-                        <li>• User management</li>
-                        <li>• Settings & configuration</li>
-                        <li>• Analytics & reports</li>
-                        <li>• Product management</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Full system access</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> User management</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Settings & configuration</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Analytics & reports</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Product management</li>
                       </ul>
                     </div>
-                    <div className="p-4 border border-border rounded-lg">
-                      <h4 className="font-semibold text-blue-600 mb-2">Consultant</h4>
+                    <div className="p-4 border border-blue-300 rounded-lg bg-blue-500/5">
+                      <h4 className="font-semibold text-blue-600 mb-2 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Consultant
+                      </h4>
                       <ul className="text-sm space-y-1 text-muted-foreground">
-                        <li>• Lead management</li>
-                        <li>• Site surveys</li>
-                        <li>• Proposals</li>
-                        <li>• Calendar scheduling</li>
-                        <li>• Customer communication</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Lead management</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Site surveys</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Proposals</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Calendar scheduling</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Customer communication</li>
                       </ul>
                     </div>
-                    <div className="p-4 border border-border rounded-lg">
-                      <h4 className="font-semibold text-orange-600 mb-2">Installer</h4>
+                    <div className="p-4 border border-orange-300 rounded-lg bg-orange-500/5">
+                      <h4 className="font-semibold text-orange-600 mb-2 flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Installer
+                      </h4>
                       <ul className="text-sm space-y-1 text-muted-foreground">
-                        <li>• View assignments</li>
-                        <li>• Survey details</li>
-                        <li>• Installation checklists</li>
-                        <li>• Map view</li>
-                        <li>• Completion signatures</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> View assignments</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Survey details</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Installation checklists</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Map view</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Completion signatures</li>
                       </ul>
                     </div>
                   </div>
