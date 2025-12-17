@@ -48,7 +48,7 @@ interface Lead {
   address?: string;
   monthly_bill?: number;
   score?: number;
-  status?: string;
+  workflow_stage?: string;
   notes?: string;
   created_at: string;
 }
@@ -116,13 +116,15 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
     }
   };
 
-  const getStatusColor = (status?: string) => {
-    switch (status) {
+  const getStatusColor = (stage?: string) => {
+    switch (stage) {
       case 'new': return 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400';
-      case 'contacted': return 'bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400';
-      case 'qualified': return 'bg-primary/10 text-primary dark:bg-primary/20';
-      case 'proposal_sent': return 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400';
-      case 'closed': return 'bg-muted text-muted-foreground';
+      case 'survey': return 'bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400';
+      case 'proposal': return 'bg-primary/10 text-primary dark:bg-primary/20';
+      case 'approved': return 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400';
+      case 'scheduled': return 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400';
+      case 'installed': return 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400';
+      case 'completed': return 'bg-primary/10 text-primary dark:bg-primary/20';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -144,8 +146,8 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   #{lead.id.slice(0, 8)}
                 </p>
-                <Badge className={`${getStatusColor(lead.status)} text-xs`}>
-                  {lead.status || 'new'}
+                <Badge className={`${getStatusColor(lead.workflow_stage)} text-xs`}>
+                  {lead.workflow_stage || 'new'}
                 </Badge>
               </div>
             </div>

@@ -133,11 +133,11 @@ export default function LeadSelectorDialog({
                       </p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
-                      lead.status === 'new' ? 'bg-primary/10 text-primary' :
-                      lead.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
+                      lead.workflow_stage === 'new' ? 'bg-primary/10 text-primary' :
+                      lead.workflow_stage === 'survey' ? 'bg-blue-100 text-blue-700' :
                       'bg-muted text-muted-foreground'
                     }`}>
-                      {lead.status || 'new'}
+                      {lead.workflow_stage || 'new'}
                     </span>
                   </button>
                 ))}

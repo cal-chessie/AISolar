@@ -67,7 +67,7 @@ export default function AddLeadDialog({ onLeadAdded, open, onOpenChange, showTri
           address: formData.address || null,
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
           notes: formData.notes || null,
-          status: 'new',
+          workflow_stage: 'new',
         })
         .select()
         .single();

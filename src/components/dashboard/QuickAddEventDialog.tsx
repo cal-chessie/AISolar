@@ -50,7 +50,7 @@ export function QuickAddEventDialog({ selectedDate, open, onOpenChange, onEventA
     const { data } = await supabase
       .from('leads')
       .select('id, name, email, phone')
-      .in('status', ['new', 'contacted'])
+      .in('workflow_stage', ['new', 'survey'])
       .order('created_at', { ascending: false })
       .limit(50);
     
@@ -83,14 +83,14 @@ export function QuickAddEventDialog({ selectedDate, open, onOpenChange, onEventA
 
         await supabase
           .from('leads')
-          .update({ status: 'contacted', workflow_stage: 'survey' })
+          .update({ workflow_stage: 'survey' })
           .eq('id', form.leadId);
       } else {
         const lead = leads.find(l => l.id === form.leadId);
         await supabase
           .from('leads')
           .update({ 
-            status: 'contacted',
+            workflow_stage: 'survey',
             notes: `Call scheduled: ${format(eventDate, 'PPP')} at ${form.time}\n${form.notes || ''}`
           })
           .eq('id', form.leadId);

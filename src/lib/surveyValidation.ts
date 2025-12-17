@@ -192,9 +192,8 @@ export function getWorkflowStage(lead: any, survey: any, proposal: any): string 
     if (survey.status === 'draft') return 'survey_draft';
   }
   
-  // Lead-only stages
-  if (lead.status === 'contacted') return 'contacted';
-  if (lead.status === 'qualified') return 'qualified';
+  // Use workflow_stage directly
+  if (lead.workflow_stage) return lead.workflow_stage;
   
   return 'new';
 }
