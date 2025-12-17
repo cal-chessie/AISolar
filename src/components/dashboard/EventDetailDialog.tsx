@@ -76,22 +76,13 @@ export function EventDetailDialog({
           .from('site_surveys')
           .update({ status: 'completed', completed_at: new Date().toISOString() })
           .eq('id', event.id);
-        
-        // Also update lead workflow stage
-        await supabase
-          .from('leads')
-          .update({ workflow_stage: 'proposal' })
-          .eq('id', event.lead_id);
+        // workflow_stage is automatically updated by database trigger
       } else if (event.type === 'installation') {
         await supabase
           .from('proposals')
           .update({ installation_status: 'completed' })
           .eq('id', event.proposal_id);
-        
-        await supabase
-          .from('leads')
-          .update({ workflow_stage: 'installed' })
-          .eq('id', event.lead_id);
+        // workflow_stage is automatically updated by database trigger
       }
       toast({ title: 'Event marked as complete' });
       onEventUpdated();
