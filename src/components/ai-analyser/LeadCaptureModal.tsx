@@ -34,6 +34,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
     email: "",
     county: "",
     phone: "",
+    mprn: "",
   });
 
   // Pre-fill name from extracted data
@@ -76,13 +77,16 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         `High-intent lead from bill analysis tool.`,
       ].filter(Boolean).join('\n');
 
+      // Use manually entered MPRN if provided, otherwise use extracted
+      const finalMprn = formData.mprn || analysisData?.mprn || null;
+
       const { data: leadData, error } = await supabase.from("leads").insert({
         name: nameToUse,
         email: formData.email,
         phone: formData.phone || null,
         address,
         monthly_bill: analysisData?.monthlyBill || null,
-        mprn: analysisData?.mprn || null,
+        mprn: finalMprn,
         annual_consumption_kwh: analysisData?.annualKwh || null,
         workflow_stage: "new",
         notes,
@@ -91,7 +95,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
       if (error) throw error;
 
       // Auto-create draft survey if we have MPRN (high-quality lead)
-      if (leadData && analysisData?.mprn) {
+      if (leadData && finalMprn) {
         const { data: { user } } = await supabase.auth.getUser();
         
         // Create survey with pre-populated data from bill
@@ -140,22 +144,8 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
           </DialogDescription>
         </DialogHeader>
 
-        {/* Show extracted MPRN if available */}
-        {analysisData?.mprn && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-green-500/10 border border-green-500/20"
-          >
-            <Zap className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-green-700">MPRN Detected:</span>
-            <Badge variant="secondary" className="font-mono">
-              {analysisData.mprn}
-            </Badge>
-          </motion.div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4">
+          {/* Client Info Section */}
           <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="name" className="text-sm">Name *</Label>
             <Input
@@ -219,6 +209,30 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="h-12 sm:h-10"
             />
+          </div>
+
+          {/* MPRN Field - in Client Info section */}
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="mprn" className="text-sm">
+              MPRN <span className="text-muted-foreground text-xs">(if not auto-detected)</span>
+            </Label>
+            {analysisData?.mprn ? (
+              <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <Zap className="w-4 h-4 text-green-600 shrink-0" />
+                <span className="text-sm text-green-700">Auto-detected:</span>
+                <Badge variant="secondary" className="font-mono">
+                  {analysisData.mprn}
+                </Badge>
+              </div>
+            ) : (
+              <Input
+                id="mprn"
+                placeholder="10XXXXXXXXX (found on your bill)"
+                value={formData.mprn}
+                onChange={(e) => setFormData({ ...formData, mprn: e.target.value })}
+                className="h-12 sm:h-10 font-mono"
+              />
+            )}
           </div>
 
           <Button type="submit" className="w-full h-12 sm:h-11 text-base" disabled={loading}>

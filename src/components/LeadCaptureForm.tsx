@@ -19,6 +19,7 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
     email: '',
     phone: '',
     address: '',
+    mprn: '',
     monthly_bill: '',
   });
 
@@ -41,6 +42,7 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
           email: formData.email,
           phone: formData.phone || null,
           address: formData.address || null,
+          mprn: formData.mprn || null,
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
           workflow_stage: 'new',
         });
@@ -139,6 +141,19 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
             placeholder="123 Main St, Dublin"
             className="mt-1"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="mprn">MPRN (Meter Point Reference Number)</Label>
+          <Input
+            id="mprn"
+            name="mprn"
+            value={formData.mprn}
+            onChange={handleChange}
+            placeholder="10XXXXXXXXX"
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">Found on your electricity bill</p>
         </div>
 
         <div>
