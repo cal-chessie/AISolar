@@ -16,12 +16,15 @@ import {
   Sparkles,
   Euro,
   Quote,
-  MessageCircle
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import SiteNavigation from '@/components/layout/SiteNavigation';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import { MobileHomeNav } from '@/components/landing/MobileHomeNav';
 import { brand } from '@/config/brand';
 
 export default function PremiumIndex() {
@@ -228,6 +231,9 @@ export default function PremiumIndex() {
           setEstimatedBill={setEstimatedBill}
           annualSavings={annualSavings}
         />
+        
+        {/* Mobile Bottom Navigation */}
+        <MobileHomeNav />
         <FinalCTASection navigate={navigate} />
       </div>
     </>
