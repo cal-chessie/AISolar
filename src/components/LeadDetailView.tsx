@@ -18,7 +18,8 @@ import {
   Euro,
   Wrench,
   Award,
-  Clock
+  Clock,
+  Route
 } from 'lucide-react';
 import SiteSurveyForm from './SiteSurveyForm';
 import ProposalQuestionnaire from './ProposalQuestionnaire';
@@ -27,6 +28,7 @@ import InvoiceManagement from './dashboard/InvoiceManagement';
 import InstallationChecklist from './installer/InstallationChecklist';
 import SEAIGrantTracker from './seai/SEAIGrantTracker';
 import { ActivityTimeline } from './dashboard/ActivityTimeline';
+import LeadWorkflowJourney from './dashboard/LeadWorkflowJourney';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -166,6 +168,7 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <LeadWorkflowJourney lead={lead} />
             {canSendToCustomer && (
               <Button onClick={() => setSendDialogOpen(true)} size="sm" className="hidden sm:flex">
                 <Send className="h-4 w-4 mr-2" />
