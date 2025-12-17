@@ -37,28 +37,63 @@ interface SurveyStepProgressProps {
   completedSteps: string[];
   onStepChange?: (step: number) => void;
   className?: string;
+  showNavigation?: boolean;
+}
+
+// Export separate navigation component for bottom placement
+export function SurveyStepNavigation({ 
+  currentStep, 
+  totalSteps,
+  onStepChange 
+}: { 
+  currentStep: number; 
+  totalSteps: number;
+  onStepChange: (step: number) => void;
+}) {
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      onStepChange(currentStep - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      onStepChange(currentStep + 1);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Button
+        variant="outline"
+        onClick={handlePrevious}
+        disabled={currentStep <= 1}
+        className="flex-1 h-12 text-base"
+      >
+        <ChevronLeft className="mr-2 h-5 w-5" />
+        Previous
+      </Button>
+      <Button
+        onClick={handleNext}
+        disabled={currentStep >= totalSteps}
+        className="flex-1 h-12 text-base"
+      >
+        Next
+        <ChevronRight className="ml-2 h-5 w-5" />
+      </Button>
+    </div>
+  );
 }
 
 export default function SurveyStepProgress({ 
   currentStep, 
   completedSteps,
   onStepChange,
-  className 
+  className,
+  showNavigation = false
 }: SurveyStepProgressProps) {
   const completionPercentage = (completedSteps.length / SURVEY_STEPS.length) * 100;
   const currentStepData = SURVEY_STEPS[currentStep - 1];
-
-  const handlePrevious = () => {
-    if (currentStep > 1 && onStepChange) {
-      onStepChange(currentStep - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep < SURVEY_STEPS.length && onStepChange) {
-      onStepChange(currentStep + 1);
-    }
-  };
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -180,27 +215,13 @@ export default function SurveyStepProgress({
         </div>
       </div>
 
-      {/* Navigation Buttons */}
-      {onStepChange && (
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep <= 1}
-            className="flex-1 h-12 text-base"
-          >
-            <ChevronLeft className="mr-2 h-5 w-5" />
-            Previous
-          </Button>
-          <Button
-            onClick={handleNext}
-            disabled={currentStep >= SURVEY_STEPS.length}
-            className="flex-1 h-12 text-base"
-          >
-            Next
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
+      {/* Navigation Buttons - Only if showNavigation is true */}
+      {showNavigation && onStepChange && (
+        <SurveyStepNavigation 
+          currentStep={currentStep} 
+          totalSteps={SURVEY_STEPS.length}
+          onStepChange={onStepChange}
+        />
       )}
     </div>
   );
