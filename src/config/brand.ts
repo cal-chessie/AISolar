@@ -9,8 +9,8 @@
 
 export const brand = {
   // ===== COMPANY INFO =====
-  name: "AI Solar",
-  tagline: "AI-Powered Solar Analysis",
+  name: "AISOLAR",
+  tagline: "AI-Powered Savings Analysis",
   domain: "aisolar.ie",
   country: "Ireland",
   countryEmoji: "🇮🇪",

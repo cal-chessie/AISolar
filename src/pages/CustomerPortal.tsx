@@ -269,7 +269,7 @@ export default function CustomerPortal() {
   return (
     <>
       <Helmet>
-        <title>Your Solar Proposal | Solar Dublin</title>
+        <title>Your Solar Proposal | {brand.name}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -479,8 +479,8 @@ export default function CustomerPortal() {
         {/* Footer */}
         <footer className="border-t bg-background mt-12">
           <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Solar Dublin. All rights reserved.</p>
-            <p className="mt-1">SEAI Registered Installer | BER Approved</p>
+            <p>© {new Date().getFullYear()} {brand.name}. All rights reserved.</p>
+            <p className="mt-1">SEAI Registered Installer | RECI Certified</p>
           </div>
         </footer>
       </div>

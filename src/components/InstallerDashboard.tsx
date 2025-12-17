@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Phone, Mail, CheckCircle, Clock, AlertCircle, LogOut } from 'lucide-react';
+import { Calendar, MapPin, Phone, Mail, CheckCircle, Clock, AlertCircle, LogOut, Map } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import SurveyDetailsCard from './installer/SurveyDetailsCard';
+import InstallerMapView from './installer/InstallerMapView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import { brand } from '@/config/brand';
 
 export default function InstallerDashboard() {
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -259,7 +261,7 @@ export default function InstallerDashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Installer Dashboard</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{brand.name} Installer</h1>
             <p className="text-muted-foreground">Manage your installation assignments</p>
           </div>
           <div className="flex items-center gap-2">
@@ -310,8 +312,12 @@ export default function InstallerDashboard() {
 
         {/* Assignments */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="all">All ({assignments.length})</TabsTrigger>
+            <TabsTrigger value="map" className="gap-1">
+              <Map className="h-4 w-4" />
+              Map
+            </TabsTrigger>
             <TabsTrigger value="pending">Pending ({pendingCount})</TabsTrigger>
             <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
@@ -330,6 +336,10 @@ export default function InstallerDashboard() {
                 <AssignmentCard key={assignment.id} assignment={assignment} />
               ))
             )}
+          </TabsContent>
+
+          <TabsContent value="map" className="mt-6">
+            <InstallerMapView />
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4 mt-6">

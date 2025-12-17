@@ -10,6 +10,7 @@ import { ArrowLeft, Settings, Clock, Save, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SEOHead from '@/components/SEOHead';
+import { brand } from '@/config/brand';
 
 interface ThresholdSetting {
   id: string;
@@ -146,7 +147,7 @@ export default function AdminSettings() {
   return (
     <>
       <SEOHead 
-        title="Admin Settings - Solar CRM"
+        title={`Admin Settings - ${brand.name}`}
         description="Configure follow-up reminders and system settings"
       />
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">

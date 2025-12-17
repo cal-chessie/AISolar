@@ -9,6 +9,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const BRAND_NAME = "AISOLAR";
+
 // Default thresholds per stage
 const DEFAULT_THRESHOLDS: Record<string, number> = {
   'new': 2,
@@ -18,8 +20,6 @@ const DEFAULT_THRESHOLDS: Record<string, number> = {
   'scheduled': 7,
   'installed': 14
 };
-
-const STALE_THRESHOLD_DAYS = 3;
 
 interface StaleLead {
   id: string;
@@ -210,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <div class="footer">
-            <p>This is an automated follow-up reminder from your Solar CRM</p>
+            <p>This is an automated follow-up reminder from ${BRAND_NAME}</p>
           </div>
         </div>
       </body>
@@ -219,7 +219,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email to all consultants
     const emailResponse = await resend.emails.send({
-      from: "Solar CRM <onboarding@resend.dev>",
+      from: `${BRAND_NAME} <onboarding@resend.dev>`,
       to: consultantEmails,
       subject: `📋 Follow-up Reminder: ${staleLeads.length} leads need attention`,
       html: emailHtml,

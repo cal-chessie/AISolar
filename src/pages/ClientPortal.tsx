@@ -9,6 +9,7 @@ import { Loader2, Sun, Mail, ArrowRight, FileText, Clock, CheckCircle2 } from 'l
 import { toast } from '@/components/ui/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
+import { brand } from '@/config/brand';
 
 interface Project {
   id: string;
@@ -118,7 +119,7 @@ export default function ClientPortal() {
   return (
     <>
       <Helmet>
-        <title>Client Portal | Solar Dublin</title>
+        <title>Client Portal | {brand.name}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -129,7 +130,7 @@ export default function ClientPortal() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sun className="h-8 w-8 text-primary" />
-                <span className="font-bold text-xl">Solar Dublin</span>
+                <span className="font-bold text-xl">{brand.name}</span>
               </div>
               <Button variant="ghost" onClick={() => navigate('/')}>
                 Back to Home
@@ -277,7 +278,7 @@ export default function ClientPortal() {
         {/* Footer */}
         <footer className="border-t bg-background mt-12">
           <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Solar Dublin. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} {brand.name}. All rights reserved.</p>
           </div>
         </footer>
       </div>

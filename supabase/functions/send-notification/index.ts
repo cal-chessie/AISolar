@@ -9,6 +9,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const BRAND_NAME = "AISOLAR";
+const BRAND_EMAIL = "onboarding@resend.dev";
+
 interface EmailRequest {
   type: "invoice_created" | "deposit_paid" | "final_paid" | "installation_scheduled" | "stage_change";
   leadId: string;
@@ -64,12 +67,12 @@ serve(async (req) => {
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${BRAND_NAME}</h1>
             </div>
             <div style="padding: 32px; background: #f9fafb;">
               <h2 style="color: #111827; margin-top: 0;">Hi ${lead.name},</h2>
               <p style="color: #4b5563; line-height: 1.6;">
-                Thank you for choosing Solar Dublin! Your invoice has been generated and is ready for review.
+                Thank you for choosing ${BRAND_NAME}! Your invoice has been generated and is ready for review.
               </p>
               <div style="background: white; border-radius: 12px; padding: 24px; margin: 24px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <h3 style="margin-top: 0; color: #111827;">Invoice Summary</h3>
@@ -96,11 +99,11 @@ serve(async (req) => {
               </div>
               ` : ""}
               <p style="color: #6b7280; font-size: 14px;">
-                If you have any questions, please don't hesitate to contact us at support@solardublin.ie or call +353 85 123 4567.
+                If you have any questions, please don't hesitate to contact us.
               </p>
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND_NAME}. SEAI Registered | RECI Certified.</p>
             </div>
           </div>
         `;
@@ -111,7 +114,7 @@ serve(async (req) => {
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${BRAND_NAME}</h1>
             </div>
             <div style="padding: 32px; background: #f9fafb;">
               <h2 style="color: #111827; margin-top: 0;">Great news, ${lead.name}!</h2>
@@ -140,7 +143,7 @@ serve(async (req) => {
               ` : ""}
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND_NAME}. SEAI Registered | RECI Certified.</p>
             </div>
           </div>
         `;
@@ -151,7 +154,7 @@ serve(async (req) => {
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${BRAND_NAME}</h1>
             </div>
             <div style="padding: 32px; background: #f9fafb;">
               <h2 style="color: #111827; margin-top: 0;">Thank you, ${lead.name}! 🎉</h2>
@@ -169,7 +172,7 @@ serve(async (req) => {
               </p>
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND_NAME}. SEAI Registered | RECI Certified.</p>
             </div>
           </div>
         `;
@@ -188,7 +191,7 @@ serve(async (req) => {
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${BRAND_NAME}</h1>
             </div>
             <div style="padding: 32px; background: #f9fafb;">
               <h2 style="color: #111827; margin-top: 0;">Installation Confirmed!</h2>
@@ -212,7 +215,7 @@ serve(async (req) => {
               </p>
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND_NAME}. SEAI Registered | RECI Certified.</p>
             </div>
           </div>
         `;
@@ -236,7 +239,7 @@ serve(async (req) => {
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ Solar Dublin</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${BRAND_NAME}</h1>
             </div>
             <div style="padding: 32px; background: #f9fafb;">
               <h2 style="color: #111827; margin-top: 0;">Hi ${lead.name},</h2>
@@ -264,11 +267,11 @@ serve(async (req) => {
               </div>
               ` : ""}
               <p style="color: #6b7280; font-size: 14px;">
-                If you have any questions about your project status, please contact us at support@solardublin.ie
+                If you have any questions about your project status, please contact us.
               </p>
             </div>
             <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
-              <p style="margin: 0;">© ${new Date().getFullYear()} Solar Dublin. SEAI Registered Installer.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND_NAME}. SEAI Registered | RECI Certified.</p>
             </div>
           </div>
         `;
@@ -281,7 +284,7 @@ serve(async (req) => {
     console.log(`Sending ${type} email to ${lead.email}`);
 
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "Solar Dublin <onboarding@resend.dev>",
+      from: `${BRAND_NAME} <${BRAND_EMAIL}>`,
       to: [lead.email],
       subject,
       html,

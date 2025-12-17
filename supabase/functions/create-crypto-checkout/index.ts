@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const BRAND_NAME = "AISOLAR";
+
 interface CryptoCheckoutRequest {
   invoiceId: string;
   paymentType: "deposit" | "final";
@@ -44,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
         "X-CC-Version": "2018-03-22",
       },
       body: JSON.stringify({
-        name: `Solar Dublin - ${paymentType === "deposit" ? "Deposit" : "Final Payment"}`,
+        name: `${BRAND_NAME} - ${paymentType === "deposit" ? "Deposit" : "Final Payment"}`,
         description: `Invoice ${invoiceId} - ${paymentType} payment`,
         pricing_type: "fixed_price",
         local_price: {

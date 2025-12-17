@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import InstallerDashboard from '@/components/InstallerDashboard';
 import SEOHead from '@/components/SEOHead';
+import { brand } from '@/config/brand';
 
 export default function InstallerPortal() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function InstallerPortal() {
   return (
     <>
       <SEOHead
-        title="Installer Portal - Solar Automation Platform"
+        title={`Installer Portal - ${brand.name}`}
         description="Manage your solar installation assignments and track your work."
         ogType="website"
       />

@@ -104,7 +104,7 @@ export function BillInputStep({ onAnalyse }: BillInputStepProps) {
             </p>
           </motion.div>
         ) : (
-          <Tabs defaultValue="manual" className="w-full">
+          <Tabs defaultValue="upload" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 h-11 sm:h-10">
               <TabsTrigger value="manual" className="gap-1.5 sm:gap-2 text-sm">
                 <Euro className="w-4 h-4" />

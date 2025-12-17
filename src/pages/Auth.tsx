@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
 import { Zap } from 'lucide-react';
+import { brand } from '@/config/brand';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters').max(100);
@@ -301,8 +302,8 @@ export default function Auth() {
               <Zap className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Solar Portal</CardTitle>
-          <CardDescription>Sign in to manage your solar business</CardDescription>
+          <CardTitle className="text-2xl">{brand.name}</CardTitle>
+          <CardDescription>{brand.tagline}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
