@@ -446,6 +446,9 @@ export type Database = {
       notification_preferences: {
         Row: {
           created_at: string
+          digest_enabled: boolean | null
+          digest_frequency: string | null
+          digest_time: string | null
           email_contract_signed: boolean | null
           email_installation_scheduled: boolean | null
           email_payment_received: boolean | null
@@ -459,11 +462,15 @@ export type Database = {
           inapp_proposal_approved: boolean | null
           inapp_stage_changes: boolean | null
           inapp_survey_completed: boolean | null
+          last_digest_sent_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          digest_enabled?: boolean | null
+          digest_frequency?: string | null
+          digest_time?: string | null
           email_contract_signed?: boolean | null
           email_installation_scheduled?: boolean | null
           email_payment_received?: boolean | null
@@ -477,11 +484,15 @@ export type Database = {
           inapp_proposal_approved?: boolean | null
           inapp_stage_changes?: boolean | null
           inapp_survey_completed?: boolean | null
+          last_digest_sent_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          digest_enabled?: boolean | null
+          digest_frequency?: string | null
+          digest_time?: string | null
           email_contract_signed?: boolean | null
           email_installation_scheduled?: boolean | null
           email_payment_received?: boolean | null
@@ -495,6 +506,7 @@ export type Database = {
           inapp_proposal_approved?: boolean | null
           inapp_stage_changes?: boolean | null
           inapp_survey_completed?: boolean | null
+          last_digest_sent_at?: string | null
           updated_at?: string
           user_id?: string
         }
