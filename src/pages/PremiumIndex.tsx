@@ -209,9 +209,23 @@ export default function PremiumIndex() {
                     <Sparkles size={14} className="text-white" />
                   </div>
                   <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">AI Analysis</h3>
-                  <div className="ml-auto px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full">
+                  <motion.div 
+                    className="ml-auto px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full ring-1 ring-emerald-400/30 dark:ring-emerald-500/30"
+                    animate={{ 
+                      boxShadow: [
+                        '0 0 0 0 rgba(16, 185, 129, 0)',
+                        '0 0 8px 2px rgba(16, 185, 129, 0.3)',
+                        '0 0 0 0 rgba(16, 185, 129, 0)'
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut'
+                    }}
+                  >
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">94% confidence</span>
-                  </div>
+                  </motion.div>
                 </div>
                 <p className="text-sm text-emerald-900/80 dark:text-emerald-100/80 leading-relaxed">
                   Based on your electricity usage of 4,200 kWh annually, a south-facing roof orientation provides optimal solar generation. Estimated payback period is 7.2 years with current energy prices.
