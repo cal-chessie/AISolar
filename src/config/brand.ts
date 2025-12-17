@@ -66,7 +66,7 @@ export const brand = {
   // ===== SEO & META =====
   seo: {
     title: "AI Solar Bill Analysis | Free Solar Savings Calculator Ireland",
-    description: "Upload your electricity bill and get instant solar savings estimates. Free AI-powered analysis for Irish homes. SEAI grants included.",
+    description: "Upload your electricity bill and get instant solar savings estimates. Free AI-powered analysis for Irish homes. Claim up to €1,800 SEAI grant.",
     keywords: "solar panels Ireland, solar calculator, electricity bill analysis, solar savings, SEAI grants, solar installation Ireland",
   },
   
