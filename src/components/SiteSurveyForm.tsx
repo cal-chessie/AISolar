@@ -22,8 +22,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const surveySchema = z.object({
-  // Customer goals (moved to top)
+  // Property & energy info (key fields for proposals)
+  property_type: z.string().optional().default('residential'),
   annual_consumption_kwh: z.string().optional(),
+  current_tariff: z.string().optional(),
+  // Customer goals (moved to top)
   battery_storage: z.boolean().optional(),
   hot_water_diverter: z.boolean().optional(),
   ev_charger: z.boolean().optional(),
@@ -76,6 +79,8 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     resolver: zodResolver(surveySchema),
     defaultValues: {
       status: 'draft',
+      property_type: 'residential',
+      current_tariff: '0.35',
       existing_solar: false,
       battery_storage: false,
       hot_water_diverter: false,
@@ -92,8 +97,8 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     const completed: string[] = [];
     // Customer info is always "complete" since it comes from lead data
     if (leadData?.name && leadData?.email) completed.push('customer');
-    // Goals complete if any option selected or consumption entered
-    if (formValues.annual_consumption_kwh || formValues.battery_storage || formValues.hot_water_diverter || formValues.ev_charger) {
+    // Goals complete if property type set and consumption entered
+    if (formValues.property_type && formValues.annual_consumption_kwh) {
       completed.push('goals');
     }
     if (completionStatus.sections.roof.complete) completed.push('roof');
@@ -370,15 +375,44 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         return (
           <Card>
             <CardContent className="pt-6 space-y-4">
+              {/* Property Type - Key field for SEAI grant calculations */}
               <div>
-                <Label htmlFor="annual_consumption_kwh">Annual Electricity Consumption (kWh)</Label>
-                <Input 
-                  {...register('annual_consumption_kwh')} 
-                  type="number" 
-                  placeholder="e.g., 4500" 
-                  className="w-full mt-1.5" 
-                />
-                <p className="text-xs text-muted-foreground mt-1">Found on your electricity bill or smart meter</p>
+                <Label htmlFor="property_type" className="font-medium">Property Type *</Label>
+                <Select onValueChange={(value) => setValue('property_type', value)} value={watch('property_type') || 'residential'}>
+                  <SelectTrigger className="w-full mt-1.5 h-12">
+                    <SelectValue placeholder="Select property type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="residential">Residential</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="industrial">Industrial</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Determines SEAI grant eligibility</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="annual_consumption_kwh">Annual Consumption (kWh) *</Label>
+                  <Input 
+                    {...register('annual_consumption_kwh')} 
+                    type="number" 
+                    placeholder="e.g., 4500" 
+                    className="w-full mt-1.5 h-12" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">From electricity bill</p>
+                </div>
+                <div>
+                  <Label htmlFor="current_tariff">Current Tariff (€/kWh)</Label>
+                  <Input 
+                    {...register('current_tariff')} 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.35" 
+                    className="w-full mt-1.5 h-12" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Avg €0.35/kWh in Ireland</p>
+                </div>
               </div>
 
               <div className="p-4 bg-muted/50 rounded-lg space-y-4">

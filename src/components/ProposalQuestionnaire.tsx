@@ -20,13 +20,20 @@ interface ProposalQuestionnaireProps {
   onBack?: () => void;
 }
 
-// Consolidated from 26 to 15 steps
-const TOTAL_STEPS = 15;
+// When survey data is pre-filled, we skip step 1 (property/energy) since it's already captured
+const BASE_STEPS = 15;
 
 export default function ProposalQuestionnaire({ leadId, proposalId, initialData, onBack }: ProposalQuestionnaireProps) {
-  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
+  
+  // Determine if survey data pre-filled key fields (skip step 1 if so)
+  const hasPrefilledEnergyData = initialData?._prefilledFromSurvey && 
+    initialData?.propertyType && 
+    initialData?.annualConsumption;
+  
+  const TOTAL_STEPS = hasPrefilledEnergyData ? BASE_STEPS - 1 : BASE_STEPS;
+  const [currentStep, setCurrentStep] = useState(hasPrefilledEnergyData ? 2 : 1);
 
   useEffect(() => {
     if (proposalId) {
@@ -34,10 +41,17 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
     } else if (initialData) {
       // Pre-fill from survey data
       setFormData(prev => ({ ...prev, ...initialData }));
-      toast({
-        title: 'Survey data loaded',
-        description: 'Form pre-filled with survey information. Review and adjust as needed.',
-      });
+      if (hasPrefilledEnergyData) {
+        toast({
+          title: 'Survey data loaded',
+          description: 'Property & energy info pre-filled from survey. Starting from roof details.',
+        });
+      } else {
+        toast({
+          title: 'Survey data loaded',
+          description: 'Form pre-filled with survey information. Review and adjust as needed.',
+        });
+      }
     }
   }, [proposalId, initialData]);
 

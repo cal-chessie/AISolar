@@ -118,14 +118,22 @@ export function mapSurveyToProposal(surveyData: any, leadData: any) {
   const systemSize = parseFloat(surveyData.recommended_system_size) || 0;
   const panelCount = parseInt(surveyData.recommended_panel_count) || 0;
   
-  // Calculate annual consumption from monthly bill (rough estimate)
+  // Use survey's annual consumption if available, otherwise estimate from lead's monthly bill
+  const surveyConsumption = parseFloat(surveyData.annual_consumption_kwh) || 0;
   const monthlyBill = leadData?.monthly_bill || 0;
-  const avgTariff = 0.35;
-  const estimatedAnnualConsumption = monthlyBill > 0 
-    ? Math.round((monthlyBill / avgTariff) * 12) 
-    : systemSize * 900;
+  const avgTariff = parseFloat(surveyData.current_tariff) || 0.35;
+  const estimatedAnnualConsumption = surveyConsumption > 0 
+    ? surveyConsumption 
+    : monthlyBill > 0 
+      ? Math.round((monthlyBill / avgTariff) * 12) 
+      : systemSize * 900;
 
   return {
+    // KEY FIELDS - Now captured in survey (eliminates step 1 in proposal)
+    propertyType: surveyData.property_type || leadData?.property_type || 'residential',
+    annualConsumption: estimatedAnnualConsumption.toString(),
+    currentTariff: surveyData.current_tariff?.toString() || '0.35',
+    
     // From survey - roof details (auto-populated)
     roofType: surveyData.roof_type || '',
     roofCondition: surveyData.roof_condition || '',
@@ -159,13 +167,6 @@ export function mapSurveyToProposal(surveyData: any, leadData: any) {
     scaffoldingRequired: surveyData.scaffolding_required || '',
     atticAccess: surveyData.attic_access || '',
     existingSolar: surveyData.existing_solar || false,
-    
-    // Calculated/derived from lead data
-    annualConsumption: estimatedAnnualConsumption.toString(),
-    
-    // Defaults that can be adjusted in proposal
-    currentTariff: '0.35',
-    propertyType: leadData?.property_type || 'residential',
     
     // Flag to show this data came from survey
     _prefilledFromSurvey: true,
