@@ -162,31 +162,93 @@ export default function PremiumIndex() {
             </div>
           </motion.div>
 
-          {/* Hero Visual */}
+          {/* Hero Visual - Live Product Preview */}
           <div className="hero-visual">
-            <div className="floating-card bill-upload">
-              <FileText size={24} />
-              <span>Upload Bill</span>
-            </div>
-            <div className="floating-card ai-analysis">
-              <Zap size={24} />
-              <span>AI Analysis</span>
-            </div>
-            <div className="floating-card proposal">
-              <Calculator size={24} />
-              <span>Get Proposal</span>
-            </div>
-            <div className="main-visual">
-              <div className="mockup-dashboard">
-                <div className="mockup-header"></div>
-                <div className="mockup-content">
-                  <div className="savings-graph"></div>
-                  <div className="proposal-card">
-                    <div className="proposal-amount">€1,247</div>
-                    <div className="proposal-label">Annual Savings</div>
+            <div className="flex flex-col gap-4 w-full max-w-md">
+              {/* Card 1: Project Snapshot */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Project Snapshot</h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Active</span>
                   </div>
                 </div>
-              </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">System Size</span>
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">6.4 kWp</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Annual Production</span>
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">5,890 kWh</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">SEAI Grant</span>
+                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">€1,800</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 2: AI Insight (Emphasized) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-5 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-emerald-500 rounded-lg">
+                    <Sparkles size={14} className="text-white" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">AI Analysis</h3>
+                  <div className="ml-auto px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full">
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">94% confidence</span>
+                  </div>
+                </div>
+                <p className="text-sm text-emerald-900/80 dark:text-emerald-100/80 leading-relaxed">
+                  Based on your electricity usage of 4,200 kWh annually, a south-facing roof orientation provides optimal solar generation. Estimated payback period is 7.2 years with current energy prices.
+                </p>
+              </motion.div>
+
+              {/* Card 3: Next Actions */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800"
+              >
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Next Steps</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 line-through">Upload electricity bill</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 line-through">AI analysis complete</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    </div>
+                    <span className="text-sm text-slate-800 dark:text-slate-100 font-medium">Review savings proposal</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-slate-200 dark:border-slate-700" />
+                    <span className="text-sm text-slate-400 dark:text-slate-500">Schedule site survey</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
