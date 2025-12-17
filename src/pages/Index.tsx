@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import SiteNavigation from '@/components/layout/SiteNavigation';
 import { brand } from '@/config/brand';
 import { StickyCTA } from '@/components/landing';
+import { ExpertChat } from '@/components/landing/ExpertChat';
 
 const Index = () => {
   const analyserRef = useRef<HTMLDivElement>(null);
@@ -135,6 +136,9 @@ const Index = () => {
 
         {/* Sticky Mobile CTA */}
         <StickyCTA onClick={scrollToAnalyser} />
+        
+        {/* Expert AI Chat */}
+        <ExpertChat />
       </div>
     </>
   );

@@ -76,7 +76,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         `High-intent lead from bill analysis tool.`,
       ].filter(Boolean).join('\n');
 
-      const { error } = await supabase.from("leads").insert({
+      const { data: leadData, error } = await supabase.from("leads").insert({
         name: nameToUse,
         email: formData.email,
         phone: formData.phone || null,
@@ -87,9 +87,27 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         status: "new",
         workflow_stage: "new",
         notes,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Auto-create draft survey if we have MPRN (high-quality lead)
+      if (leadData && analysisData?.mprn) {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Create survey with pre-populated data from bill
+        await supabase.from("site_surveys").insert({
+          lead_id: leadData.id,
+          surveyor_id: user?.id || leadData.id, // Use user if logged in, otherwise lead id placeholder
+          status: "draft",
+          // Pre-populate from bill analysis
+          installation_notes: `Auto-created from AI Bill Analysis.\nMPRN: ${analysisData.mprn}\nAnnual Consumption: ${analysisData.annualKwh || 'Unknown'} kWh\nMonthly Bill: €${analysisData.monthlyBill || 'Unknown'}`,
+          recommended_system_size: analysisData.estimatedSystemSize || null,
+          customer_availability: `Lead captured via ${brand.domain} bill analyser`,
+        });
+        
+        console.log("Draft survey auto-created for lead with MPRN:", analysisData.mprn);
+      }
 
       toast({
         title: "Report Sent! 🎉",
