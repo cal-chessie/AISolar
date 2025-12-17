@@ -62,25 +62,50 @@ export function SurveyStepNavigation({
     }
   };
 
+  const currentStepData = SURVEY_STEPS[currentStep - 1];
+  const nextStepData = SURVEY_STEPS[currentStep];
+
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Button
-        variant="outline"
-        onClick={handlePrevious}
-        disabled={currentStep <= 1}
-        className="flex-1 h-12 text-base"
-      >
-        <ChevronLeft className="mr-2 h-5 w-5" />
-        Previous
-      </Button>
-      <Button
-        onClick={handleNext}
-        disabled={currentStep >= totalSteps}
-        className="flex-1 h-12 text-base"
-      >
-        Next
-        <ChevronRight className="ml-2 h-5 w-5" />
-      </Button>
+    <div className="space-y-2">
+      {/* Step indicator for mobile */}
+      <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+        <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+          Step {currentStep} of {totalSteps}
+        </span>
+        <span>{currentStepData?.label}</span>
+      </div>
+      
+      {/* Navigation buttons - Extra prominent on mobile */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          onClick={handlePrevious}
+          disabled={currentStep <= 1}
+          size="lg"
+          className="flex-1 h-14 text-base font-semibold shadow-md border-2"
+        >
+          <ChevronLeft className="mr-2 h-6 w-6" />
+          Back
+        </Button>
+        <Button
+          onClick={handleNext}
+          disabled={currentStep >= totalSteps}
+          size="lg"
+          className="flex-1 h-14 text-base font-semibold shadow-lg bg-primary hover:bg-primary/90"
+        >
+          {currentStep < totalSteps ? (
+            <>
+              Next: {nextStepData?.shortLabel}
+              <ChevronRight className="ml-2 h-6 w-6" />
+            </>
+          ) : (
+            <>
+              Review
+              <ChevronRight className="ml-2 h-6 w-6" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
