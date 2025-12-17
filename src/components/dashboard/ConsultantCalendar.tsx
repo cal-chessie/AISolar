@@ -519,13 +519,18 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
     touchStartRef.current = null;
   }, [viewMode, navigatePrevious, navigateNext]);
 
-  // Handle date selection from calendar
+  // Handle date selection from calendar - switches to day view
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-      // If clicking a date in a different month, navigate to that month
-      if (date.getMonth() !== currentDate.getMonth() || date.getFullYear() !== currentDate.getFullYear()) {
-        setCurrentDate(date);
+      setCurrentDate(date);
+      // Switch to day view when clicking a date in month view
+      if (viewMode === 'month') {
+        setViewMode('day');
+        toast({
+          title: `Viewing ${format(date, 'EEEE, MMMM d')}`,
+          duration: 1500
+        });
       }
     }
   };
@@ -607,8 +612,17 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
 
   return (
     <div className="space-y-4">
-      {/* Pipeline Overview */}
-      <PipelineProgress compact />
+      {/* Pipeline Overview - Click to filter by stage */}
+      <PipelineProgress 
+        compact 
+        onStageClick={(stage) => {
+          toast({
+            title: `${stage.charAt(0).toUpperCase() + stage.slice(1)} Leads`,
+            description: 'View these leads in the Leads tab',
+            duration: 2000
+          });
+        }}
+      />
 
       {/* Event Detail Dialog */}
       <EventDetailDialog

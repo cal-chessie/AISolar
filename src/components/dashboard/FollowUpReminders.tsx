@@ -285,10 +285,7 @@ export function FollowUpReminders({ onLeadClick, onStageClick, expanded = false,
 
   return (
     <div className="space-y-4">
-      {/* Pipeline Progress View */}
-      {showPipeline && (
-        <PipelineProgress onStageClick={onStageClick} />
-      )}
+      {/* Follow-up Reminders - Pipeline removed, now separate component */}
 
       <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20">
         <CardHeader className="pb-2 px-3 sm:px-6">
