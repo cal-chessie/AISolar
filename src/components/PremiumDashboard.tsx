@@ -48,6 +48,7 @@ import ErrorBoundary from './ui/ErrorBoundary';
 import { PaginationControls, usePagination } from './ui/PaginationControls';
 import { EmptyLeadsState, EmptyProposalsState, EmptySearchResultsState } from './ui/EmptyState';
 import { NotificationBell } from './notifications/NotificationBell';
+import LeadWorkflowJourney from './dashboard/LeadWorkflowJourney';
 
 
 interface StatCardProps {
@@ -906,6 +907,7 @@ const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: Le
                         <span className="hidden sm:inline">Survey</span>
                       </Button>
                     )}
+                    <LeadWorkflowJourney lead={lead} />
                     <Button
                       variant="outline"
                       size="sm"
