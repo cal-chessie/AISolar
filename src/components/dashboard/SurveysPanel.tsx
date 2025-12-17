@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Eye, Image as ImageIcon, FileText, ArrowRight } from 'lucide-react';
 import SiteSurveyForm from '@/components/SiteSurveyForm';
+import { mapSurveyToProposal } from '@/lib/surveyValidation';
 
 interface SurveysPanelProps {
   onStartSurvey?: (leadId: string) => void;
@@ -118,26 +119,8 @@ export default function SurveysPanel({ onStartSurvey, onCreateProposal }: Survey
 
   const handleCreateProposalFromSurvey = (survey: any) => {
     if (onCreateProposal && survey.leads) {
-      // Map survey data to proposal format
-      const proposalData = {
-        roofType: survey.roof_type,
-        roofCondition: survey.roof_condition,
-        roofOrientation: survey.roof_orientation,
-        roofPitch: survey.roof_pitch?.toString() || '',
-        roofMaterial: survey.roof_material,
-        shadingLevel: survey.shading_analysis || '',
-        systemSize: survey.recommended_system_size?.toString() || '',
-        panelCapacity: survey.electrical_panel_capacity,
-        specialRequirements: survey.special_requirements,
-        installationNotes: survey.installation_notes,
-        // Calculate annual consumption from monthly bill
-        annualConsumption: survey.leads.monthly_bill 
-          ? Math.round((survey.leads.monthly_bill / 0.35) * 12).toString()
-          : '',
-        currentTariff: '0.35',
-        batteryInterest: 'no',
-      };
-      
+      // Use comprehensive mapping from surveyValidation
+      const proposalData = mapSurveyToProposal(survey, survey.leads);
       onCreateProposal(proposalData, survey.leads);
     }
   };
