@@ -3,6 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+// Sender email - must be a verified sender signature in Postmark
+const POSTMARK_SENDER_EMAIL = Deno.env.get("POSTMARK_SENDER_EMAIL") || "notifications@aisolar.ie";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +12,7 @@ const corsHeaders = {
 };
 
 const BRAND_NAME = "AISOLAR";
-const BRAND_EMAIL = "onboarding@resend.dev";
+const BRAND_EMAIL = POSTMARK_SENDER_EMAIL;
 
 interface EmailRequest {
   type: "invoice_created" | "deposit_paid" | "final_paid" | "installation_scheduled" | "installation_completed" | "stage_change";
