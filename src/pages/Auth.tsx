@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
-import { Zap } from 'lucide-react';
+import { Zap, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { brand } from '@/config/brand';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
@@ -295,7 +296,15 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md">
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Link>
+        <Card>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -447,7 +456,8 @@ export default function Auth() {
             </TabsContent>
           </Tabs>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
