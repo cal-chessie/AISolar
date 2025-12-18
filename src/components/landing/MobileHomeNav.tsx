@@ -18,22 +18,22 @@ export function MobileHomeNav() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Collapsed mini view - just the Analyse button
+  // Collapsed mini view - just the expand button
   if (!isExpanded) {
     return (
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-lg border-t border-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <button
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-foreground/80 text-background shadow-md text-xs font-medium"
+          className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground"
         >
-          <Zap className="h-3 w-3" />
-          Menu
-          <ChevronUp className="h-2.5 w-2.5" />
+          <Zap className="h-4 w-4" />
+          Show Menu
+          <ChevronUp className="h-4 w-4" />
         </button>
       </motion.div>
     );
@@ -44,10 +44,10 @@ export function MobileHomeNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ delay: 0.5, type: 'spring', stiffness: 100 }}
-      className="fixed bottom-2 left-1/2 -translate-x-1/2 z-50 md:hidden bg-background/95 backdrop-blur-lg border border-border rounded-full shadow-lg px-1"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-lg border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex items-center gap-0.5 py-1">
+      <div className="flex items-center justify-around py-2 px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -57,9 +57,10 @@ export function MobileHomeNav() {
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center mx-0.5"
+                className="flex flex-col items-center justify-center min-w-[64px] min-h-[48px] rounded-xl bg-primary text-primary-foreground"
               >
-                <Icon className="h-4 w-4 text-primary-foreground" />
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium mt-0.5">{item.label}</span>
               </button>
             );
           }
@@ -68,13 +69,14 @@ export function MobileHomeNav() {
             <button
               key={item.label}
               onClick={() => navigate(item.path)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] rounded-xl transition-colors ${
                 active 
                   ? 'text-primary bg-primary/10' 
                   : 'text-muted-foreground hover:bg-muted'
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium mt-0.5">{item.label}</span>
             </button>
           );
         })}

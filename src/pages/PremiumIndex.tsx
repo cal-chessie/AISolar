@@ -51,7 +51,9 @@ export default function PremiumIndex() {
                   <span>Get Your Instant Solar Proposal - Save Up To 70% On Electricity</span>
                 </div>
                 <div className="sticky-actions flex items-center gap-2">
-                  <DarkModeToggle />
+                  <div className="hidden md:block">
+                    <DarkModeToggle />
+                  </div>
                   <button className="sticky-cta" onClick={() => navigate('/upload')}>
                     Upload Bill Now <ArrowRight size={16} />
                   </button>
