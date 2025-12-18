@@ -665,6 +665,19 @@ function SavingsCalculatorSection({
               Monthly Electricity Bill
             </label>
             <div className="slider-container enhanced">
+              {/* Value bubble that follows the thumb */}
+              <motion.div 
+                className="slider-bubble"
+                style={{ left: `${((estimatedBill - 50) / 450) * 100}%` }}
+                animate={{ 
+                  scale: sliderActive ? 1.15 : 1,
+                  y: sliderActive ? -8 : 0
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
+                €{estimatedBill}
+              </motion.div>
+              
               <div className="slider-track">
                 <motion.div 
                   className="slider-fill"
@@ -676,10 +689,23 @@ function SavingsCalculatorSection({
                   }}
                 />
               </div>
+              
+              {/* Tick marks */}
+              <div className="slider-ticks">
+                {[50, 100, 200, 300, 400, 500].map((tick) => (
+                  <div 
+                    key={tick} 
+                    className={`slider-tick ${estimatedBill >= tick ? 'active' : ''}`}
+                    style={{ left: `${((tick - 50) / 450) * 100}%` }}
+                  />
+                ))}
+              </div>
+              
               <input 
                 type="range" 
                 min="50" 
                 max="500" 
+                step="10"
                 value={estimatedBill} 
                 onChange={e => setEstimatedBill(Number(e.target.value))} 
                 onMouseDown={() => setSliderActive(true)}
@@ -688,18 +714,12 @@ function SavingsCalculatorSection({
                 onTouchEnd={() => setSliderActive(false)}
                 className="savings-slider enhanced" 
               />
-              <motion.div 
-                className="slider-value enhanced"
-                animate={{ 
-                  scale: sliderActive ? 1.1 : 1,
-                  y: sliderActive ? -5 : 0
-                }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              >
-                <span className="currency">€</span>
-                <AnimatedCounter value={estimatedBill} isInView={isInView} />
-                <span className="period">/month</span>
-              </motion.div>
+              
+              {/* Min/Max labels */}
+              <div className="slider-labels">
+                <span>€50</span>
+                <span>€500</span>
+              </div>
             </div>
           </div>
 
