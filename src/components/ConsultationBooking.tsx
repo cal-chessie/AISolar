@@ -74,19 +74,19 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Schedule Your Free Consultation</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl sm:text-2xl">Schedule Your Free Consultation</DialogTitle>
+          <DialogDescription className="text-sm">
             Choose a date and time that works best for you. Our solar expert will contact you to discuss your personalized proposal.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4">
           {/* Calendar Selection */}
           <div>
-            <Label className="text-base font-semibold mb-3 block">Select Date</Label>
-            <div className="flex justify-center border border-border rounded-lg p-4 bg-slate-50">
+            <Label className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 block">Select Date</Label>
+            <div className="flex justify-center border border-border rounded-lg p-2 sm:p-4 bg-muted">
               <Calendar
                 mode="single"
                 selected={date}
@@ -98,7 +98,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
               />
             </div>
             {date && (
-              <p className="text-sm text-slate-600 mt-2 flex items-center gap-2">
+              <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
                 <CalendarIcon size={16} />
                 Selected: {format(date, 'PPPP')}
               </p>
@@ -108,21 +108,21 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
           {/* Time Slot Selection */}
           {date && (
             <div>
-              <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+              <Label className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 block flex items-center gap-2">
                 <Clock size={18} />
                 Select Time
               </Label>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {timeSlots.map((time) => (
                   <button
                     key={time}
                     type="button"
                     onClick={() => setSelectedTime(time)}
                     className={cn(
-                      "py-3 px-4 rounded-lg border-2 font-medium transition-all",
+                      "py-3 px-3 sm:px-4 rounded-lg border-2 font-medium transition-all min-h-[48px]",
                       selectedTime === time
-                        ? "border-primary bg-primary text-white"
-                        : "border-slate-300 hover:border-primary hover:bg-slate-50"
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary hover:bg-muted"
                     )}
                   >
                     {time}
@@ -134,8 +134,8 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
 
           {/* Contact Information */}
           {date && selectedTime && (
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-lg">Your Contact Information</h3>
+            <div className="space-y-3 sm:space-y-4 pt-4 border-t border-border">
+              <h3 className="font-semibold text-base sm:text-lg">Your Contact Information</h3>
               
               <div>
                 <Label htmlFor="name">Full Name *</Label>
@@ -145,7 +145,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Smith"
                   required
-                  className="mt-1"
+                  className="mt-1 h-12 sm:h-10"
                 />
               </div>
 
@@ -158,7 +158,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="john@example.com"
                   required
-                  className="mt-1"
+                  className="mt-1 h-12 sm:h-10"
                 />
               </div>
 
@@ -171,7 +171,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+353 1 234 5678"
                   required
-                  className="mt-1"
+                  className="mt-1 h-12 sm:h-10"
                 />
               </div>
             </div>
@@ -179,10 +179,10 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
 
           {/* Submit Button */}
           {date && selectedTime && (
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-4">
               <Button
                 type="submit"
-                className="flex-1 gradient-primary text-white py-6 text-lg font-semibold"
+                className="w-full sm:flex-1 gradient-primary text-white py-5 sm:py-6 text-base sm:text-lg font-semibold"
                 size="lg"
               >
                 Confirm Booking
@@ -191,7 +191,7 @@ export default function ConsultationBooking({ open, onOpenChange }: Consultation
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="py-6 text-lg"
+                className="w-full sm:w-auto py-5 sm:py-6 text-base sm:text-lg"
                 size="lg"
               >
                 Cancel
