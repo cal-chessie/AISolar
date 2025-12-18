@@ -63,6 +63,7 @@ export type Database = {
           lead_id: string
           notes: string | null
           priority: string | null
+          proposal_id: string | null
           scheduled_date: string | null
           status: string | null
           updated_at: string
@@ -77,6 +78,7 @@ export type Database = {
           lead_id: string
           notes?: string | null
           priority?: string | null
+          proposal_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           updated_at?: string
@@ -91,6 +93,7 @@ export type Database = {
           lead_id?: string
           notes?: string | null
           priority?: string | null
+          proposal_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           updated_at?: string
@@ -108,6 +111,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
