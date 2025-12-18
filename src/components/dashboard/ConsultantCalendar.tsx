@@ -18,7 +18,9 @@ import {
   Truck,
   RefreshCw,
   GripVertical,
-  Zap
+  Zap,
+  Users,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,12 +32,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EventDetailDialog } from './EventDetailDialog';
 import { QuickAddEventDialog } from './QuickAddEventDialog';
 import { PipelineProgress } from './PipelineProgress';
 import { useSurveysRealtime, useProposalsRealtime } from '@/hooks/useRealtimeUpdates';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   format, 
   startOfMonth, 
@@ -133,9 +137,10 @@ const DEMO_EVENTS: ScheduledEvent[] = [
 ];
 
 export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewProposal }: ConsultantCalendarProps) {
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('day'); // Default to day, will update based on mobile
   const [leadsNeedingCalls, setLeadsNeedingCalls] = useState<LeadNeedingAction[]>([]);
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,6 +152,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
   const [quickAddDate, setQuickAddDate] = useState<Date | null>(null);
   const [draggedEvent, setDraggedEvent] = useState<ScheduledEvent | null>(null);
   const [showDemoData, setShowDemoData] = useState(false);
+  const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
   const [scheduleForm, setScheduleForm] = useState({
     type: 'call' as 'call' | 'survey',
     date: '',
@@ -157,6 +163,13 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
   // Touch swipe handling refs
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
+
+  // Set default view based on device
+  useEffect(() => {
+    if (isMobile !== undefined) {
+      setViewMode(isMobile ? 'day' : 'week');
+    }
+  }, [isMobile]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -606,8 +619,14 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
     );
   }
 
+  // Generate horizontal day picker dates (7 days centered on current)
+  const horizontalDays = eachDayOfInterval({
+    start: subDays(currentDate, 3),
+    end: addDays(currentDate, 3)
+  });
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative pb-20 lg:pb-0">
       {/* Pipeline Overview - Click to filter by stage */}
       <PipelineProgress 
         compact 
@@ -644,7 +663,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
         <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-muted-foreground">Showing demo events. Schedule your first survey to see real data!</span>
+            <span className="text-muted-foreground text-xs sm:text-sm">Showing demo events. Schedule your first survey!</span>
           </div>
           <Button 
             variant="outline" 
@@ -653,7 +672,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
               setQuickAddDate(new Date());
               setShowQuickAdd(true);
             }}
-            className="gap-1 text-xs"
+            className="gap-1 text-xs hidden sm:flex"
           >
             <Plus size={12} />
             Add Event
@@ -661,71 +680,147 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
         </div>
       )}
 
-      {/* Header with View Toggle - Compact & Clean */}
+      {/* Mobile Horizontal Day Picker */}
+      {isMobile && (
+        <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            {horizontalDays.map((day) => {
+              const dayEvents = getEventsForDay(day);
+              const isSelected = isSameDay(day, currentDate);
+              const hasEvents = dayEvents.length > 0;
+              
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() => {
+                    setCurrentDate(day);
+                    setSelectedDate(day);
+                  }}
+                  className={`flex flex-col items-center min-w-[56px] py-3 px-3 rounded-xl transition-all ${
+                    isSelected 
+                      ? 'bg-primary text-primary-foreground shadow-lg scale-105' 
+                      : isToday(day)
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted/50 hover:bg-muted'
+                  }`}
+                >
+                  <span className="text-[10px] font-medium uppercase opacity-70">
+                    {format(day, 'EEE')}
+                  </span>
+                  <span className="text-lg font-bold mt-0.5">
+                    {format(day, 'd')}
+                  </span>
+                  {hasEvents && (
+                    <div className={`flex gap-0.5 mt-1 ${isSelected ? 'opacity-80' : ''}`}>
+                      {dayEvents.slice(0, 3).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Header with View Toggle - Responsive */}
       <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-              <Button variant="ghost" size="icon" onClick={navigatePrevious} className="h-7 w-7 hover:bg-background">
-                <ChevronLeft size={14} />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={navigatePrevious} 
+                className="h-10 w-10 sm:h-7 sm:w-7 hover:bg-background"
+              >
+                <ChevronLeft size={isMobile ? 18 : 14} />
               </Button>
-              <Button variant="ghost" onClick={goToToday} className="text-xs h-7 px-2 hover:bg-background font-medium">
+              <Button 
+                variant="ghost" 
+                onClick={goToToday} 
+                className="text-xs h-10 sm:h-7 px-3 sm:px-2 hover:bg-background font-medium"
+              >
                 Today
               </Button>
-              <Button variant="ghost" size="icon" onClick={navigateNext} className="h-7 w-7 hover:bg-background">
-                <ChevronRight size={14} />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={navigateNext} 
+                className="h-10 w-10 sm:h-7 sm:w-7 hover:bg-background"
+              >
+                <ChevronRight size={isMobile ? 18 : 14} />
               </Button>
             </div>
-            <h2 className="text-sm sm:text-base font-semibold text-foreground ml-1">
-              {viewMode === 'day' && format(currentDate, 'EEE, MMM d, yyyy')}
-              {viewMode === 'week' && `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`}
+            <h2 className="text-sm sm:text-base font-semibold text-foreground ml-1 truncate">
+              {viewMode === 'day' && format(currentDate, isMobile ? 'EEE, MMM d' : 'EEE, MMM d, yyyy')}
+              {viewMode === 'week' && `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d')}`}
               {viewMode === 'month' && format(currentDate, 'MMMM yyyy')}
             </h2>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
             <ToggleGroup 
               type="single" 
               value={viewMode} 
               onValueChange={(v) => v && setViewMode(v as ViewMode)} 
               className="bg-muted/50 rounded-lg p-0.5"
             >
-              <ToggleGroupItem value="day" aria-label="Day view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
-                <CalendarDays size={12} />
+              <ToggleGroupItem 
+                value="day" 
+                aria-label="Day view" 
+                className="gap-1 h-9 sm:h-7 px-3 sm:px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              >
+                <CalendarDays size={14} />
                 <span className="hidden sm:inline">Day</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="week" aria-label="Week view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
-                <List size={12} />
+              <ToggleGroupItem 
+                value="week" 
+                aria-label="Week view" 
+                className="gap-1 h-9 sm:h-7 px-3 sm:px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm hidden sm:flex"
+              >
+                <List size={14} />
                 <span className="hidden sm:inline">Week</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="month" aria-label="Month view" className="gap-1 h-7 px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm">
-                <LayoutGrid size={12} />
+              <ToggleGroupItem 
+                value="month" 
+                aria-label="Month view" 
+                className="gap-1 h-9 sm:h-7 px-3 sm:px-2 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              >
+                <LayoutGrid size={14} />
                 <span className="hidden sm:inline">Month</span>
               </ToggleGroupItem>
             </ToggleGroup>
 
             <Button 
-            variant="ghost"
-            size="icon"
-            onClick={fetchData}
-            className="h-7 w-7 hover:bg-muted"
-            title="Refresh"
-          >
-            <RefreshCw size={14} />
-          </Button>
+              variant="ghost"
+              size="icon"
+              onClick={fetchData}
+              className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-muted"
+              title="Refresh"
+            >
+              <RefreshCw size={14} />
+            </Button>
 
-          <Button 
-            size="sm" 
-            onClick={() => {
-              setQuickAddDate(selectedDate);
-              setShowQuickAdd(true);
-            }}
-            className="gap-1 h-7 text-xs"
-          >
-            <Plus size={12} />
-            <span className="hidden sm:inline">Add Event</span>
-          </Button>
-        </div>
+            {/* Desktop Add Event Button */}
+            <Button 
+              size="sm" 
+              onClick={() => {
+                setQuickAddDate(selectedDate);
+                setShowQuickAdd(true);
+              }}
+              className="gap-1 h-9 sm:h-7 text-xs hidden sm:flex"
+            >
+              <Plus size={12} />
+              <span className="hidden sm:inline">Add Event</span>
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -894,7 +989,7 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
                   </motion.div>
                 )}
 
-                {/* Day View */}
+                {/* Day View - Mobile Optimized */}
                 {viewMode === 'day' && (
                   <motion.div
                     key="day"
@@ -914,20 +1009,20 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
                         return (
                           <div 
                             key={time} 
-                            className="flex gap-4 border-b pb-2"
+                            className="flex gap-3 sm:gap-4 border-b pb-2"
                             onDragOver={handleDragOver}
                             onDrop={(e) => {
                               e.preventDefault();
                               handleDrop(dropDate, time);
                             }}
                           >
-                            <div className="w-14 text-sm text-muted-foreground font-medium">
+                            <div className="w-12 sm:w-14 text-sm text-muted-foreground font-medium shrink-0">
                               {time}
                             </div>
-                            <div className={`flex-1 min-h-[60px] transition-colors ${draggedEvent ? 'bg-primary/5 rounded-lg' : ''}`}>
+                            <div className={`flex-1 min-h-[64px] sm:min-h-[60px] transition-colors ${draggedEvent ? 'bg-primary/5 rounded-lg' : ''}`}>
                               {hourEvents.length === 0 ? (
                                 <div 
-                                  className={`h-full min-h-[60px] rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+                                  className={`h-full min-h-[64px] sm:min-h-[60px] rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
                                     draggedEvent 
                                       ? 'border-primary/50 bg-primary/10' 
                                       : 'border-muted bg-muted/30 hover:border-primary/30 hover:bg-primary/5'
@@ -941,12 +1036,12 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
                                     return (
                                       <div 
                                         key={event.id} 
-                                        draggable={!isDemo}
+                                        draggable={!isDemo && !isMobile}
                                         onDragStart={(e) => handleDragStart(event, e)}
                                         onClick={() => handleEventClick(event)} 
-                                        className={`cursor-pointer ${!isDemo ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                        className={`cursor-pointer ${!isDemo && !isMobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
                                       >
-                                        <EventCard event={event} detailed isDemo={isDemo} />
+                                        <EventCard event={event} detailed isDemo={isDemo} isMobile={isMobile} />
                                       </div>
                                     );
                                   })}
@@ -964,8 +1059,8 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
           </Card>
         </div>
 
-        {/* Sidebar - Leads Needing Follow-up */}
-        <div className="lg:col-span-1">
+        {/* Sidebar - Leads Needing Follow-up (Desktop Only) */}
+        <div className="hidden lg:block lg:col-span-1">
           <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -1043,12 +1138,144 @@ export default function ConsultantCalendar({ onViewLead, onViewSurvey, onViewPro
           </Card>
         </div>
       </div>
+
+      {/* Mobile FAB - Add Event */}
+      <div className="fixed bottom-20 right-4 z-50 lg:hidden flex flex-col gap-3">
+        {/* Follow-up Sheet Trigger */}
+        <Sheet open={showFollowUpSheet} onOpenChange={setShowFollowUpSheet}>
+          <SheetTrigger asChild>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 w-14 rounded-full shadow-lg bg-background border-2 relative"
+            >
+              <Users size={20} />
+              {leadsNeedingCalls.length > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center font-bold">
+                  {leadsNeedingCalls.length > 9 ? '9+' : leadsNeedingCalls.length}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
+            <SheetHeader className="pb-4">
+              <SheetTitle className="flex items-center gap-2">
+                <Phone size={18} />
+                Needs Follow-up ({leadsNeedingCalls.length})
+              </SheetTitle>
+            </SheetHeader>
+            <div className="space-y-3 overflow-y-auto max-h-[calc(70vh-100px)] pb-safe">
+              {leadsNeedingCalls.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  All leads contacted! 🎉
+                </p>
+              ) : (
+                leadsNeedingCalls.map(lead => (
+                  <MobileLeadCard 
+                    key={lead.id} 
+                    lead={lead} 
+                    onViewLead={onViewLead}
+                    onSchedule={() => {
+                      setSelectedLead(lead);
+                      setShowScheduleDialog(true);
+                      setShowFollowUpSheet(false);
+                    }}
+                    getUrgencyColor={getUrgencyColor}
+                  />
+                ))
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Add Event FAB */}
+        <Button
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => {
+            setQuickAddDate(selectedDate);
+            setShowQuickAdd(true);
+          }}
+        >
+          <Plus size={24} />
+        </Button>
+      </div>
+
+      {/* Schedule Dialog for Mobile */}
+      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Schedule for {selectedLead?.name}</DialogTitle>
+          </DialogHeader>
+          <ScheduleForm 
+            scheduleForm={scheduleForm}
+            setScheduleForm={setScheduleForm}
+            onSubmit={handleSchedule}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
+// Mobile Lead Card Component
+function MobileLeadCard({ 
+  lead, 
+  onViewLead, 
+  onSchedule,
+  getUrgencyColor 
+}: { 
+  lead: LeadNeedingAction; 
+  onViewLead?: (id: string) => void;
+  onSchedule: () => void;
+  getUrgencyColor: (urgency: string) => string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`p-4 rounded-xl border ${
+        lead.source === 'AI Analyser' 
+          ? 'bg-primary/5 border-primary/30' 
+          : getUrgencyColor(lead.urgency)
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <button 
+            className="font-semibold text-base truncate text-left hover:text-primary block"
+            onClick={() => onViewLead?.(lead.id)}
+          >
+            {lead.name}
+          </button>
+          {lead.monthly_bill && (
+            <p className="text-sm text-muted-foreground mt-0.5">€{lead.monthly_bill}/mo</p>
+          )}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <Badge variant="outline" className="text-xs h-6 px-2">
+              {lead.days_since_contact}d ago
+            </Badge>
+            {lead.source === 'AI Analyser' && (
+              <Badge className="text-xs h-6 px-2 bg-gradient-to-r from-primary to-primary/80">
+                ⚡ AI Lead
+              </Badge>
+            )}
+          </div>
+        </div>
+        <Button 
+          size="sm" 
+          onClick={onSchedule}
+          className="h-10 px-4"
+        >
+          Schedule
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 // Event Card Component
-function EventCard({ event, detailed = false, isDemo = false }: { event: ScheduledEvent; detailed?: boolean; isDemo?: boolean }) {
+function EventCard({ event, detailed = false, isDemo = false, isMobile = false }: { event: ScheduledEvent; detailed?: boolean; isDemo?: boolean; isMobile?: boolean }) {
   const getEventColor = (type: string, status: string) => {
     if (status === 'completed') return 'bg-muted border-muted';
     if (status === 'cancelled') return 'bg-destructive/10 border-destructive/30';
@@ -1061,11 +1288,12 @@ function EventCard({ event, detailed = false, isDemo = false }: { event: Schedul
   };
 
   const getEventIcon = (type: string) => {
+    const size = isMobile ? 16 : 14;
     switch (type) {
-      case 'survey': return <ClipboardList size={14} className="text-primary" />;
-      case 'proposal': return <FileText size={14} className="text-purple-500" />;
-      case 'installation': return <Truck size={14} className="text-emerald-500" />;
-      default: return <Phone size={14} className="text-blue-500" />;
+      case 'survey': return <ClipboardList size={size} className="text-primary" />;
+      case 'proposal': return <FileText size={size} className="text-purple-500" />;
+      case 'installation': return <Truck size={size} className="text-emerald-500" />;
+      default: return <Phone size={size} className="text-blue-500" />;
     }
   };
 
@@ -1075,44 +1303,47 @@ function EventCard({ event, detailed = false, isDemo = false }: { event: Schedul
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-3 rounded-lg border-l-4 ${getEventColor(event.type, event.status)} ${isDemoEvent ? 'opacity-75 border-dashed' : ''}`}
+      className={`p-3 sm:p-3 rounded-lg border-l-4 min-h-[56px] ${getEventColor(event.type, event.status)} ${isDemoEvent ? 'opacity-75 border-dashed' : ''}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {!isDemoEvent && <GripVertical size={12} className="text-muted-foreground cursor-grab" />}
+          {!isDemoEvent && !isMobile && <GripVertical size={12} className="text-muted-foreground cursor-grab" />}
           {getEventIcon(event.type)}
-          <span className="font-medium text-sm">{event.lead_name}</span>
+          <span className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>{event.lead_name}</span>
           {isDemoEvent && (
             <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">DEMO</Badge>
           )}
         </div>
-        <Badge variant={event.status === 'completed' ? 'secondary' : event.status === 'cancelled' ? 'destructive' : 'default'} className="text-[10px]">
+        <Badge 
+          variant={event.status === 'completed' ? 'secondary' : event.status === 'cancelled' ? 'destructive' : 'default'} 
+          className={isMobile ? 'text-xs h-6' : 'text-[10px]'}
+        >
           {event.status}
         </Badge>
       </div>
       {event.time && (
-        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-          <Clock size={10} />
+        <p className={`text-muted-foreground mt-1 flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-xs'}`}>
+          <Clock size={isMobile ? 12 : 10} />
           {event.time}
         </p>
       )}
       {detailed && (
         <>
           {event.lead_address && (
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <MapPin size={10} />
+            <p className={`text-muted-foreground mt-1 flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-xs'}`}>
+              <MapPin size={isMobile ? 12 : 10} />
               {event.lead_address}
             </p>
           )}
           {event.lead_email && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Mail size={10} />
+            <p className={`text-muted-foreground flex items-center gap-1 ${isMobile ? 'text-sm' : 'text-xs'}`}>
+              <Mail size={isMobile ? 12 : 10} />
               {event.lead_email}
             </p>
           )}
         </>
       )}
-      {!isDemoEvent && !detailed && (
+      {!isDemoEvent && !detailed && !isMobile && (
         <p className="text-[10px] text-muted-foreground/70 mt-1 italic">Drag to reschedule</p>
       )}
     </motion.div>
