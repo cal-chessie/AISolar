@@ -27,6 +27,7 @@ interface Assignment {
 interface InstallerMapViewProps {
   assignments?: Assignment[];
   showDemo?: boolean;
+  onSelectJob?: (assignment: Assignment, isDemo: boolean) => void;
 }
 
 // Demo installation with training walkthrough
@@ -115,7 +116,8 @@ const TRAINING_STEPS = [
 
 export default function InstallerMapView({ 
   assignments: propAssignments, 
-  showDemo: propShowDemo 
+  showDemo: propShowDemo,
+  onSelectJob
 }: InstallerMapViewProps) {
   const [localAssignments, setLocalAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(!propAssignments);
@@ -512,25 +514,35 @@ export default function InstallerMapView({
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {assignment.leads?.address && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           openInMaps(assignment.leads!.address!);
                         }}
                       >
                         <Navigation className="h-4 w-4 mr-2" />
-                        Open in Maps
+                        Navigate
                       </Button>
                     )}
-                    {isDemo && !trainingMode && (
+                    {onSelectJob && (
                       <Button
                         size="sm"
-                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectJob(assignment, isDemo || isSample);
+                        }}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    )}
+                    {isDemo && !trainingMode && !onSelectJob && (
+                      <Button
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           startTraining();

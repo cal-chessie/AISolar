@@ -149,6 +149,94 @@ export default function MobileInstallerCompanion() {
   const [pendingSync, setPendingSync] = useState(0);
   const [hasInstallerProfile, setHasInstallerProfile] = useState<boolean | null>(null);
   const [showDemo, setShowDemo] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
+
+  // Create a real test assignment with linked proposal
+  const createTestAssignment = async () => {
+    if (!isOnline()) {
+      toast.error('Cannot create test assignment while offline');
+      return;
+    }
+    
+    setCreatingTest(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: installer } = await supabase
+        .from('installers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!installer) throw new Error('No installer profile found');
+
+      // Create a test lead
+      const testLeadName = `Test Customer ${Date.now().toString(36).toUpperCase()}`;
+      const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .insert({
+          name: testLeadName,
+          email: `test-${Date.now()}@example.com`,
+          phone: '+353 87 999 8888',
+          address: '42 Test Street, Dublin 4, Ireland',
+          property_type: 'residential',
+          workflow_stage: 'scheduled',
+          monthly_bill: 200,
+        })
+        .select()
+        .single();
+
+      if (leadError) throw leadError;
+
+      // Create a test proposal
+      const { data: proposal, error: proposalError } = await supabase
+        .from('proposals')
+        .insert({
+          lead_id: lead.id,
+          consultant_id: user.id,
+          system_size_kw: 6.6,
+          panel_count: 15,
+          panel_type: 'Trina Solar 440W Vertex S+',
+          inverter_type: 'SolarEdge SE6000H',
+          battery_storage: true,
+          battery_capacity_kwh: 10,
+          net_cost: 12500,
+          seai_grant: 1800,
+          status: 'approved',
+          installation_notes: 'Test installation - side gate access code 1234',
+        })
+        .select()
+        .single();
+
+      if (proposalError) throw proposalError;
+
+      // Create assignment linked to proposal
+      const { error: assignmentError } = await supabase
+        .from('assignments')
+        .insert({
+          lead_id: lead.id,
+          installer_id: installer.id,
+          assigned_by: user.id,
+          assignment_type: 'installation',
+          status: 'scheduled',
+          scheduled_date: new Date().toISOString(),
+          priority: 'high',
+          notes: 'Auto-generated test assignment for end-to-end testing',
+          proposal_id: proposal.id,
+        });
+
+      if (assignmentError) throw assignmentError;
+
+      toast.success('Test assignment created successfully!');
+      loadAssignments();
+    } catch (error: any) {
+      console.error('Failed to create test assignment:', error);
+      toast.error(error.message || 'Failed to create test assignment');
+    } finally {
+      setCreatingTest(false);
+    }
+  };
 
   // Sync offline queue when back online
   const syncOfflineQueue = useCallback(async () => {
@@ -878,15 +966,27 @@ export default function MobileInstallerCompanion() {
               </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => { setRefreshing(true); loadAssignments(); }}
-            className={`h-11 w-11 ${refreshing ? 'animate-spin' : ''}`}
-            disabled={!online}
-          >
-            <RefreshCw className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={createTestAssignment}
+              disabled={!online || creatingTest}
+              className="h-9 text-xs"
+            >
+              {creatingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 mr-1" />}
+              Test Job
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => { setRefreshing(true); loadAssignments(); }}
+              className={`h-9 w-9 ${refreshing ? 'animate-spin' : ''}`}
+              disabled={!online}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -943,7 +1043,32 @@ export default function MobileInstallerCompanion() {
         <div className="pb-20">
           <InstallerMapView 
             assignments={displayAssignments} 
-            showDemo={showDemo} 
+            showDemo={showDemo}
+            onSelectJob={(assignment, isDemo) => {
+              // Cast to local Assignment type with all required fields
+              const fullAssignment: Assignment = {
+                id: assignment.id,
+                status: assignment.status,
+                scheduled_date: assignment.scheduled_date,
+                assignment_type: assignment.assignment_type,
+                priority: assignment.priority,
+                notes: (assignment as any).notes || null,
+                leads: assignment.leads ? {
+                  id: assignment.leads.id,
+                  name: assignment.leads.name,
+                  email: (assignment.leads as any).email || 'demo@example.com',
+                  address: assignment.leads.address,
+                  phone: assignment.leads.phone,
+                } : null,
+              };
+              setSelectedAssignment(fullAssignment);
+              if (isDemo) {
+                setProposal(DEMO_PROPOSAL);
+                setSurvey(DEMO_SURVEY);
+              } else if (assignment.leads?.id) {
+                loadJobDetails(assignment.leads.id, (assignment as any).proposal_id);
+              }
+            }}
           />
         </div>
       )}

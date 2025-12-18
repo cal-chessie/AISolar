@@ -303,6 +303,44 @@ export type Database = {
           },
         ]
       }
+      installation_photos: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          description: string | null
+          id: string
+          photo_type: string
+          photo_url: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_type: string
+          photo_url: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_type?: string
+          photo_url?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_photos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "installation_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installers: {
         Row: {
           availability_status: string | null
