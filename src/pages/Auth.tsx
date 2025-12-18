@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
-import { Zap, ArrowLeft, Sun, Sparkles } from 'lucide-react';
+import { Zap, ArrowLeft } from 'lucide-react';
 import { brand } from '@/config/brand';
 import { motion } from 'framer-motion';
 
@@ -239,40 +239,10 @@ export default function Auth() {
     }
   };
 
-  // Floating decorative elements
-  const FloatingElements = () => (
-    <>
-      <motion.div
-        className="absolute top-20 left-10 w-20 h-20 rounded-full bg-primary/10 blur-xl"
-        animate={{ y: [0, -20, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-32 right-10 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl"
-        animate={{ y: [0, 20, 0], scale: [1, 0.9, 1] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute top-1/3 right-20 text-primary/20"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      >
-        <Sun className="w-16 h-16" />
-      </motion.div>
-      <motion.div
-        className="absolute bottom-1/4 left-20 text-emerald-400/20"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Sparkles className="w-12 h-12" />
-      </motion.div>
-    </>
-  );
 
   if (isPasswordRecovery) {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 flex items-center justify-center p-4">
-        <FloatingElements />
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,29 +251,29 @@ export default function Auth() {
         >
           <Link 
             to="/" 
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Link>
-          <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
+          <Card className="shadow-xl border-border/50">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
                 <motion.div 
-                  className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow-lg shadow-primary/30"
+                  className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow-lg shadow-primary/20"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <Zap className="h-7 w-7 text-white" />
                 </motion.div>
               </div>
-              <CardTitle className="text-2xl text-white">Set New Password</CardTitle>
-              <CardDescription className="text-white/60">Enter your new password below</CardDescription>
+              <CardTitle className="text-2xl">Set New Password</CardTitle>
+              <CardDescription>Enter your new password below</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div>
-                  <Label htmlFor="new-password" className="text-white/80">New Password</Label>
+                  <Label htmlFor="new-password">New Password</Label>
                   <Input
                     id="new-password"
                     type="password"
@@ -311,15 +281,15 @@ export default function Auth() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                    className="mt-1"
                   />
-                  <p className="text-xs text-white/50 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Minimum 8 characters
                   </p>
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/30"
+                  className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/20"
                   disabled={loading}
                 >
                   {loading ? 'Updating...' : 'Update Password'}
@@ -333,8 +303,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 flex items-center justify-center p-4">
-      <FloatingElements />
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -343,46 +312,36 @@ export default function Auth() {
       >
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </Link>
-        <Card className="backdrop-blur-xl bg-white/10 border-white/20 shadow-2xl">
+        <Card className="shadow-xl border-border/50">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <motion.div 
-                className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow-lg shadow-primary/30"
+                className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow-lg shadow-primary/20"
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <Zap className="h-7 w-7 text-white" />
               </motion.div>
             </div>
-            <CardTitle className="text-2xl text-white">{brand.name}</CardTitle>
-            <CardDescription className="text-white/60">{brand.tagline}</CardDescription>
+            <CardTitle className="text-2xl">{brand.name}</CardTitle>
+            <CardDescription>{brand.tagline}</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10 border border-white/10">
-                <TabsTrigger 
-                  value="signin" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/70"
-                >
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="signup"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/70"
-                >
-                  Sign Up
-                </TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div>
-                    <Label htmlFor="signin-email" className="text-white/80">Email</Label>
+                    <Label htmlFor="signin-email">Email</Label>
                     <Input
                       id="signin-email"
                       type="email"
@@ -390,11 +349,11 @@ export default function Auth() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signin-password" className="text-white/80">Password</Label>
+                    <Label htmlFor="signin-password">Password</Label>
                     <Input
                       id="signin-password"
                       type="password"
@@ -402,12 +361,12 @@ export default function Auth() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                      className="mt-1"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/30"
+                    className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/20"
                     disabled={loading}
                   >
                     {loading ? 'Signing in...' : 'Sign In'}
@@ -417,20 +376,20 @@ export default function Auth() {
                 <div className="mt-4 text-center">
                   <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="link" className="text-sm text-white/60 hover:text-white">
+                      <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
                         Forgot your password?
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-slate-900 border-white/20">
+                    <DialogContent>
                       <DialogHeader>
-                        <DialogTitle className="text-white">Reset Password</DialogTitle>
-                        <DialogDescription className="text-white/60">
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
                           Enter your email address and we'll send you a link to reset your password.
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handlePasswordReset} className="space-y-4">
                         <div>
-                          <Label htmlFor="reset-email" className="text-white/80">Email</Label>
+                          <Label htmlFor="reset-email">Email</Label>
                           <Input
                             id="reset-email"
                             type="email"
@@ -438,7 +397,7 @@ export default function Auth() {
                             onChange={(e) => setResetEmail(e.target.value)}
                             placeholder="you@example.com"
                             required
-                            className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                            className="mt-1"
                           />
                         </div>
                         <Button
@@ -457,7 +416,7 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div>
-                    <Label htmlFor="signup-email" className="text-white/80">Email</Label>
+                    <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
@@ -465,11 +424,11 @@ export default function Auth() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signup-password" className="text-white/80">Password</Label>
+                    <Label htmlFor="signup-password">Password</Label>
                     <Input
                       id="signup-password"
                       type="password"
@@ -477,25 +436,25 @@ export default function Auth() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:ring-primary"
+                      className="mt-1"
                     />
-                    <p className="text-xs text-white/50 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Minimum 8 characters
                     </p>
                   </div>
                   <div>
-                    <Label htmlFor="role" className="text-white/80">I am a</Label>
+                    <Label htmlFor="role">I am a</Label>
                     <select
                       id="role"
                       value={role}
                       onChange={(e) => setRole(e.target.value as RoleType)}
-                      className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                     >
-                      <option value="owner" className="bg-slate-800 text-white">Owner / Solo Operator (full access)</option>
-                      <option value="consultant" className="bg-slate-800 text-white">Consultant</option>
-                      <option value="installer" className="bg-slate-800 text-white">Installer</option>
+                      <option value="owner">Owner / Solo Operator (full access)</option>
+                      <option value="consultant">Consultant</option>
+                      <option value="installer">Installer</option>
                     </select>
-                    <p className="text-xs text-white/50 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {role === 'owner' 
                         ? 'Full access to leads, surveys, proposals, and installations' 
                         : role === 'consultant'
@@ -505,7 +464,7 @@ export default function Auth() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/30"
+                    className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 text-white font-semibold shadow-lg shadow-primary/20"
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
