@@ -838,7 +838,7 @@ All colors MUST be HSL.
 .trust-logos {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 1rem;
   flex-wrap: wrap;
   margin-top: 3rem;
 }
@@ -851,6 +851,26 @@ All colors MUST be HSL.
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
   box-shadow: 0 2px 4px hsl(var(--foreground) / 0.05);
+}
+
+.certification-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: hsl(var(--card));
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.certification-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .how-it-works-section {
