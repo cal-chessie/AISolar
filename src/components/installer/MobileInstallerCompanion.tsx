@@ -849,7 +849,10 @@ export default function MobileInstallerCompanion() {
       {/* Map View */}
       {activeTab === 'map' && (
         <div className="pb-20">
-          <InstallerMapView />
+          <InstallerMapView 
+            assignments={displayAssignments} 
+            showDemo={showDemo} 
+          />
         </div>
       )}
 
