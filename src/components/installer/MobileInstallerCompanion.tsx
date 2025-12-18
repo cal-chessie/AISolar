@@ -65,6 +65,28 @@ interface Survey {
 }
 
 // Demo data for testing/onboarding
+const DEMO_PROPOSAL: Proposal = {
+  id: 'demo-proposal-1',
+  system_size_kw: 6.6,
+  panel_count: 15,
+  panel_type: 'Trina Solar 440W Vertex S+',
+  inverter_type: 'SolarEdge SE6000H',
+  battery_storage: true,
+  battery_capacity_kwh: 10,
+  installation_notes: 'Customer requested battery backup for power cuts. Access via side gate - code 1234.'
+};
+
+const DEMO_SURVEY: Survey = {
+  roof_type: 'pitched',
+  roof_condition: 'good',
+  roof_orientation: 'south',
+  electrical_panel_capacity: '63A',
+  scaffolding_required: 'yes',
+  parking_situation: 'Driveway available',
+  access_notes: 'Side gate access, code 1234. Dog in garden - call ahead.',
+  special_requirements: 'Customer works from home - minimize noise before 9am'
+};
+
 const DEMO_ASSIGNMENTS: Assignment[] = [
   {
     id: 'demo-1',
@@ -253,9 +275,29 @@ export default function MobileInstallerCompanion() {
     }
   };
 
-  const loadJobDetails = async (leadId: string) => {
+  const loadJobDetails = async (leadId: string, proposalId?: string) => {
+    // If we have a direct proposal_id, use it; otherwise find by lead_id
+    let proposalQuery;
+    if (proposalId) {
+      proposalQuery = supabase.from('proposals').select('*').eq('id', proposalId).maybeSingle();
+    } else {
+      // Try to find a proposal that has an existing checklist for this lead
+      const { data: checklistProposal } = await supabase
+        .from('installation_checklists')
+        .select('proposal_id')
+        .eq('lead_id', leadId)
+        .maybeSingle();
+      
+      if (checklistProposal?.proposal_id) {
+        proposalQuery = supabase.from('proposals').select('*').eq('id', checklistProposal.proposal_id).maybeSingle();
+      } else {
+        // Fall back to most recent proposal for the lead
+        proposalQuery = supabase.from('proposals').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      }
+    }
+    
     const [proposalRes, surveyRes] = await Promise.all([
-      supabase.from('proposals').select('*').eq('lead_id', leadId).maybeSingle(),
+      proposalQuery,
       supabase.from('site_surveys').select('*').eq('lead_id', leadId).maybeSingle()
     ]);
     setProposal(proposalRes.data);
@@ -288,10 +330,45 @@ export default function MobileInstallerCompanion() {
     const { error } = await supabase.from('assignments').update(updateData).eq('id', id);
     if (error) {
       toast.error('Failed to update status');
-    } else {
-      toast.success(`Status updated to ${status}`);
-      loadAssignments();
-      if (selectedAssignment) setSelectedAssignment({ ...selectedAssignment, status });
+      return;
+    }
+    
+    toast.success(`Status updated to ${status}`);
+    loadAssignments();
+    if (selectedAssignment) setSelectedAssignment({ ...selectedAssignment, status });
+    
+    // Auto-create checklist when starting installation
+    if (status === 'in_progress' && proposal && selectedAssignment?.leads?.id) {
+      try {
+        // Check if checklist already exists
+        const { data: existingChecklist } = await supabase
+          .from('installation_checklists')
+          .select('id')
+          .eq('proposal_id', proposal.id)
+          .maybeSingle();
+        
+        if (!existingChecklist) {
+          // Get installer profile
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: installer } = await supabase
+            .from('installers')
+            .select('id')
+            .eq('user_id', user?.id)
+            .maybeSingle();
+            
+          // Create new checklist pre-populated with proposal data
+          await supabase.from('installation_checklists').insert({
+            proposal_id: proposal.id,
+            lead_id: selectedAssignment.leads.id,
+            installer_id: installer?.id,
+            status: 'in_progress',
+            battery_installed: proposal.battery_storage ? false : null,
+          });
+          toast.success('Installation checklist created!');
+        }
+      } catch (err) {
+        console.error('Failed to create checklist:', err);
+      }
     }
   };
 
@@ -333,7 +410,12 @@ export default function MobileInstallerCompanion() {
           className={`relative overflow-hidden active:scale-[0.98] transition-transform ${isUrgent ? 'border-l-4 border-l-red-500' : ''}`}
           onClick={() => {
             setSelectedAssignment(assignment);
-            if (assignment.leads?.id) loadJobDetails(assignment.leads.id);
+            if (showDemo) {
+              setProposal(DEMO_PROPOSAL);
+              setSurvey(DEMO_SURVEY);
+            } else if (assignment.leads?.id) {
+              loadJobDetails(assignment.leads.id, (assignment as any).proposal_id);
+            }
           }}
         >
           <CardContent className="p-4">
@@ -594,13 +676,23 @@ export default function MobileInstallerCompanion() {
             <SheetHeader className="pb-4">
               <SheetTitle>Installation Checklist</SheetTitle>
             </SheetHeader>
-            {proposal && lead && (
+            {proposal && lead ? (
               <div className="overflow-y-auto h-full pb-20">
                 <InstallationChecklist 
                   proposalId={proposal.id} 
                   leadId={lead.id} 
                   leadName={lead.name} 
                 />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No Proposal Found</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Create a proposal for this lead before starting the installation checklist.
+                </p>
               </div>
             )}
           </SheetContent>
