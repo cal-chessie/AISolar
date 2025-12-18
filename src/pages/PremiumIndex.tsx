@@ -633,9 +633,8 @@ function SavingsCalculatorSection({
 }) {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-  const [sliderActive, setSliderActive] = useState(false);
-
-  // Calculate additional metrics
+  
+  const billPresets = [100, 150, 200, 250, 300, 400, 500];
   const twentyFiveYearSavings = annualSavings * 25;
   
   return (
@@ -648,7 +647,7 @@ function SavingsCalculatorSection({
           className="section-header"
         >
           <h2>Calculate Your Potential Savings</h2>
-          <p>Drag the slider to see your personalized solar savings</p>
+          <p>Select your monthly electricity bill to see savings</p>
         </motion.div>
 
         <motion.div 
@@ -658,72 +657,27 @@ function SavingsCalculatorSection({
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
         >
-          {/* Interactive Slider Section */}
-          <div className="calculator-input enhanced">
-            <label>
-              <Euro size={20} />
+          {/* Preset Buttons */}
+          <div className="bill-presets-container">
+            <label className="presets-label">
+              <Euro size={18} />
               Monthly Electricity Bill
             </label>
-            <div className="slider-container enhanced">
-              {/* Value bubble that follows the thumb */}
-              <motion.div 
-                className="slider-bubble"
-                style={{ left: `${((estimatedBill - 50) / 450) * 100}%` }}
-                animate={{ 
-                  scale: sliderActive ? 1.15 : 1,
-                  y: sliderActive ? -8 : 0
-                }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              >
-                €{estimatedBill}
-              </motion.div>
-              
-              <div className="slider-track">
-                <motion.div 
-                  className="slider-fill"
-                  style={{ width: `${((estimatedBill - 50) / 450) * 100}%` }}
-                  animate={{ 
-                    boxShadow: sliderActive 
-                      ? '0 0 20px hsl(var(--primary) / 0.5)' 
-                      : '0 0 10px hsl(var(--primary) / 0.3)'
-                  }}
-                />
-              </div>
-              
-              {/* Tick marks */}
-              <div className="slider-ticks">
-                {[50, 100, 200, 300, 400, 500].map((tick) => (
-                  <div 
-                    key={tick} 
-                    className={`slider-tick ${estimatedBill >= tick ? 'active' : ''}`}
-                    style={{ left: `${((tick - 50) / 450) * 100}%` }}
-                  />
-                ))}
-              </div>
-              
-              <input 
-                type="range" 
-                min="50" 
-                max="500" 
-                step="10"
-                value={estimatedBill} 
-                onChange={e => setEstimatedBill(Number(e.target.value))} 
-                onMouseDown={() => setSliderActive(true)}
-                onMouseUp={() => setSliderActive(false)}
-                onTouchStart={() => setSliderActive(true)}
-                onTouchEnd={() => setSliderActive(false)}
-                className="savings-slider enhanced" 
-              />
-              
-              {/* Min/Max labels */}
-              <div className="slider-labels">
-                <span>€50</span>
-                <span>€500</span>
-              </div>
+            <div className="bill-presets">
+              {billPresets.map(amount => (
+                <motion.button
+                  key={amount}
+                  className={`preset-btn ${estimatedBill === amount ? 'active' : ''}`}
+                  onClick={() => setEstimatedBill(amount)}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  €{amount}
+                </motion.button>
+              ))}
             </div>
           </div>
 
-          {/* Results Grid - 3 cards side by side */}
+          {/* Results Grid - 3 cards */}
           <div className="calculator-results-row">
             <Card3D className="result-card-3d" intensity={8}>
               <div className="result-card glass">
