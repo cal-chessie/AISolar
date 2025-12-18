@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, Check, Play, Star, TrendingUp, Shield, Calculator, FileText, Calendar, Upload, Sparkles, Euro, Quote, MessageCircle, ChevronLeft, ChevronRight, Leaf, Clock } from 'lucide-react';
+import { Zap, ArrowRight, Check, Play, Star, TrendingUp, Shield, Calculator, FileText, Calendar, Upload, Sparkles, Euro, Quote, MessageCircle, ChevronLeft, ChevronRight, Leaf, Clock, ShieldCheck, Award } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import SiteNavigation from '@/components/layout/SiteNavigation';
@@ -297,9 +297,9 @@ export default function PremiumIndex() {
               duration: 0.5
             }} className="flex items-center gap-3 p-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex -space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-xs">👤</div>
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-xs">👤</div>
-                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-xs">👤</div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">SM</div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">JO</div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">KF</div>
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -363,7 +363,8 @@ function SocialProofSection() {
     savings: "€1,450",
     rating: 5,
     text: "The AI proposal matched our actual bills almost exactly. We're saving about €1,450 a year, and the installation just… happened.",
-    image: "👩‍💼"
+    initials: "SM",
+    gradient: "from-emerald-400 to-teal-500"
   }, {
     name: "John O'Brien",
     location: "Cork",
@@ -371,7 +372,8 @@ function SocialProofSection() {
     savings: "€1,280",
     rating: 5,
     text: "I uploaded my bill at 8 PM and had a clear proposal by the next morning. No back-and-forth. No pressure.",
-    image: "👨‍💻"
+    initials: "JO",
+    gradient: "from-blue-400 to-indigo-500"
   }, {
     name: "The Kelly Family",
     location: "Galway",
@@ -379,7 +381,8 @@ function SocialProofSection() {
     savings: "€1,650",
     rating: 5,
     text: "The SEAI grant was handled for us from start to finish. Between that and solar, our electricity costs are close to zero.",
-    image: "👨‍👩‍👧‍👦"
+    initials: "KF",
+    gradient: "from-purple-400 to-pink-500"
   }];
   return <section className="social-proof-section">
       <div className="container">
@@ -409,8 +412,8 @@ function SocialProofSection() {
           delay: index * 0.1
         }} className="testimonial-card">
               <div className="testimonial-header">
-                <div className="customer-avatar">
-                  {testimonial.image}
+                <div className={`customer-avatar bg-gradient-to-br ${testimonial.gradient} text-white font-semibold text-lg shadow-lg`}>
+                  {testimonial.initials}
                 </div>
                 <div className="customer-info">
                   <div className="customer-name">{testimonial.name}</div>
@@ -491,10 +494,22 @@ function SocialProofSection() {
         </motion.div>
 
         <div className="trust-logos">
-          <div className="logo-item">SEAI Approved</div>
-          <div className="logo-item">RECI Certified</div>
-          <div className="logo-item">SEAI Grants</div>
-          <div className="logo-item">5-Star Reviews</div>
+          <div className="certification-badge">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>SEAI Registered</span>
+          </div>
+          <div className="certification-badge">
+            <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <span>RECI Certified</span>
+          </div>
+          <div className="certification-badge">
+            <Euro className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>€1,800 Grant</span>
+          </div>
+          <div className="certification-badge">
+            <Star className="w-5 h-5 text-yellow-500" fill="currentColor" />
+            <span>4.9★ Rating</span>
+          </div>
         </div>
       </div>
     </section>;
