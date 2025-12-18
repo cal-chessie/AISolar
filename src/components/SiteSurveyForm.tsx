@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -74,6 +74,40 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   const [fetchingData, setFetchingData] = useState(true);
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; type: string; description: string }>>([]);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Ref for scrolling to survey top
+  const surveyContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Swipe gesture state
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0 && currentStep < SURVEY_STEPS.length) {
+        // Swipe left = next step
+        setCurrentStep(prev => prev + 1);
+      } else if (swipeDistance < 0 && currentStep > 1) {
+        // Swipe right = previous step
+        setCurrentStep(prev => prev - 1);
+      }
+    }
+    
+    // Reset
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  }, [currentStep]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, getValues } = useForm<SurveyFormData>({
     resolver: zodResolver(surveySchema),
@@ -113,9 +147,11 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     fetchExistingSurvey();
   }, [leadId]);
 
-  // Scroll to top when step changes
+  // Scroll to survey top when step changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (surveyContainerRef.current) {
+      surveyContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, [currentStep]);
 
   const fetchExistingSurvey = async () => {
@@ -778,7 +814,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   };
 
   return (
-    <div className="space-y-4 pb-40">
+    <div ref={surveyContainerRef} className="space-y-4 pb-40">
       {/* Progress Indicator - Sticky on mobile */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <SurveyStepProgress 
@@ -789,7 +825,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         />
       </div>
 
-      {/* Step Content with Animation */}
+      {/* Step Content with Animation and Swipe Gestures */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
@@ -797,6 +833,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.2 }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {renderStepContent()}
         </motion.div>
