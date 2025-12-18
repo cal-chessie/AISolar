@@ -53,12 +53,14 @@ export function SurveyStepNavigation({
   const handlePrevious = () => {
     if (currentStep > 1) {
       onStepChange(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
       onStepChange(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

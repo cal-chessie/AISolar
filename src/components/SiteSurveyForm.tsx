@@ -113,6 +113,11 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     fetchExistingSurvey();
   }, [leadId]);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   const fetchExistingSurvey = async () => {
     try {
       // Fetch lead data
