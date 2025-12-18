@@ -133,7 +133,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md mx-4 rounded-xl">
+      <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto mx-auto rounded-xl">
         <DialogHeader className="text-center">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
             <FileText className="w-6 h-6 text-primary" />
@@ -144,7 +144,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 mt-4 pb-2">
           {/* Client Info Section */}
           <div className="space-y-1.5 sm:space-y-2">
             <Label htmlFor="name" className="text-sm">Name *</Label>
@@ -186,9 +186,9 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
               <SelectTrigger className="h-12 sm:h-10">
                 <SelectValue placeholder="Select your county" />
               </SelectTrigger>
-              <SelectContent className="max-h-60 bg-popover">
+              <SelectContent className="max-h-[50vh] bg-popover z-[100]">
                 {IRISH_COUNTIES.map((county) => (
-                  <SelectItem key={county} value={county}>
+                  <SelectItem key={county} value={county} className="py-3 text-base cursor-pointer">
                     {county}
                   </SelectItem>
                 ))}
