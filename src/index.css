@@ -1207,105 +1207,125 @@ All colors MUST be HSL.
   margin-top: 0.5rem;
 }
 
-/* Bill Preset Buttons */
-.bill-presets-container {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.presets-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 1rem;
-  color: hsl(var(--foreground));
-  margin-bottom: 1rem;
-}
-
-.bill-presets {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.preset-btn {
-  min-width: 64px;
-  min-height: 44px;
-  padding: 0.625rem 1rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  border: 2px solid hsl(var(--border));
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.preset-btn:hover {
-  border-color: hsl(var(--primary) / 0.5);
-  background: hsl(var(--primary) / 0.1);
-}
-
-.preset-btn.active {
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(160 84% 39%));
-  border-color: transparent;
-  color: white;
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.4);
-}
-
-/* Mobile preset buttons */
+/* Mobile slider enhancements */
 @media (max-width: 768px) {
-  .bill-presets {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.375rem;
+  .slider-container.enhanced {
+    padding: 3rem 0.25rem 0.25rem;
   }
   
-  .preset-btn {
-    min-width: unset;
-    min-height: 40px;
-    padding: 0.5rem 0.5rem;
-    font-size: 0.8125rem;
+  .slider-bubble {
+    font-size: 1.125rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 10px;
+  }
+  
+  .slider-bubble::after {
+    border-left-width: 6px;
+    border-right-width: 6px;
+    border-top-width: 6px;
+    bottom: -6px;
+  }
+  
+  .slider-track {
+    height: 10px;
+    top: calc(3rem + 6px);
+  }
+  
+  .slider-ticks {
+    top: calc(3rem + 22px);
+    height: 6px;
+  }
+  
+  .slider-tick {
+    height: 6px;
+  }
+  
+  .savings-slider.enhanced {
+    height: 36px;
+  }
+  
+  .savings-slider.enhanced::-webkit-slider-thumb {
+    width: 36px;
+    height: 36px;
+    border-width: 4px;
+    box-shadow: 
+      0 4px 12px hsl(var(--primary) / 0.5),
+      0 0 0 4px hsl(var(--primary) / 0.2);
+  }
+  
+  .savings-slider.enhanced::-moz-range-thumb {
+    width: 36px;
+    height: 36px;
+    border-width: 4px;
+    box-shadow: 
+      0 4px 12px hsl(var(--primary) / 0.5),
+      0 0 0 4px hsl(var(--primary) / 0.2);
+  }
+  
+  .slider-labels {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0 0;
+    margin-top: 0.25rem;
   }
 }
 
-/* Mobile: stack results vertically so all 3 visible */
+.calculator-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.calculator-results-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* Mobile: horizontal scroll for results */
 @media (max-width: 768px) {
   .calculator-results-row {
     display: flex;
-    flex-direction: column;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     gap: 0.75rem;
-    margin-top: 1.5rem;
+    margin: 1rem -0.5rem 0;
+    padding: 0.5rem;
+  }
+  
+  .calculator-results-row::-webkit-scrollbar {
+    display: none;
   }
   
   .calculator-results-row .result-card-3d {
-    width: 100%;
+    flex: 0 0 auto;
+    min-width: 140px;
+    scroll-snap-align: start;
   }
   
   .calculator-results-row .result-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
     padding: 1rem;
   }
   
-  .calculator-results-row .result-card .result-icon-mini {
-    flex-shrink: 0;
-  }
-  
   .calculator-results-row .result-card .result-label {
-    font-size: 0.8125rem;
-    flex: 1;
+    font-size: 0.6875rem;
   }
   
   .calculator-results-row .result-card .result-value {
     font-size: 1.25rem;
-    margin-left: auto;
+  }
+  
+  .calculator-results-row .result-card .result-icon-mini {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .calculator-results-row .result-card .result-icon-mini svg {
+    width: 14px;
+    height: 14px;
   }
 }
 
