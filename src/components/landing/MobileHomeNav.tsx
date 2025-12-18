@@ -29,11 +29,11 @@ export function MobileHomeNav() {
       >
         <button
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-foreground/80 text-background shadow-md text-xs font-medium"
         >
-          <Zap className="h-3.5 w-3.5" />
-          <span className="text-xs font-medium">Analyse</span>
-          <ChevronUp className="h-3 w-3" />
+          <Zap className="h-3 w-3" />
+          Menu
+          <ChevronUp className="h-2.5 w-2.5" />
         </button>
       </motion.div>
     );
@@ -66,12 +66,12 @@ export function MobileHomeNav() {
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
-                className="flex flex-col items-center justify-center -mt-3"
+                className="flex flex-col items-center justify-center -mt-2"
               >
-                <div className="w-9 h-9 rounded-full bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
-                  <Icon className="h-4 w-4 text-primary-foreground" />
+                <div className="w-8 h-8 rounded-full bg-primary shadow-md flex items-center justify-center">
+                  <Icon className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
-                <span className="text-[9px] font-medium text-primary mt-0.5">
+                <span className="text-[8px] font-medium text-primary mt-0.5">
                   {item.label}
                 </span>
               </button>
