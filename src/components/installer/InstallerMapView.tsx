@@ -185,6 +185,7 @@ export default function InstallerMapView({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500';
+      case 'scheduled': return 'bg-cyan-500';
       case 'accepted': return 'bg-blue-500';
       case 'in_progress': return 'bg-purple-500';
       case 'completed': return 'bg-green-500';
@@ -195,6 +196,7 @@ export default function InstallerMapView({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4" />;
+      case 'scheduled': return <Calendar className="h-4 w-4" />;
       case 'accepted': return <CheckCircle className="h-4 w-4" />;
       case 'in_progress': return <Zap className="h-4 w-4" />;
       default: return <MapPin className="h-4 w-4" />;
@@ -413,6 +415,10 @@ export default function InstallerMapView({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <span>Pending</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                  <span>Scheduled</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
