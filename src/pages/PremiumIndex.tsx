@@ -633,7 +633,7 @@ function SavingsCalculatorSection({
 }) {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-  const [sliderActive, setSliderActive] = useState(false);
+  
 
   // Calculate additional metrics
   const twentyFiveYearSavings = annualSavings * 25;
@@ -659,46 +659,18 @@ function SavingsCalculatorSection({
           transition={{ delay: 0.2 }}
         >
           {/* Interactive Slider Section */}
-          <div className="calculator-input enhanced">
+          <div className="calculator-input minimal">
             <label>
               <Euro size={20} />
               Monthly Electricity Bill
             </label>
-            <div className="slider-container enhanced">
-              {/* Value bubble that follows the thumb */}
-              <motion.div 
-                className="slider-bubble"
-                style={{ left: `${((estimatedBill - 50) / 450) * 100}%` }}
-                animate={{ 
-                  scale: sliderActive ? 1.15 : 1,
-                  y: sliderActive ? -8 : 0
-                }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            <div className="slider-container minimal">
+              {/* Value bubble - accurately positioned above thumb */}
+              <div 
+                className="slider-value-bubble"
+                style={{ left: `calc(${((estimatedBill - 50) / 450) * 100}% * 0.92 + 4%)` }}
               >
                 €{estimatedBill}
-              </motion.div>
-              
-              <div className="slider-track">
-                <motion.div 
-                  className="slider-fill"
-                  style={{ width: `${((estimatedBill - 50) / 450) * 100}%` }}
-                  animate={{ 
-                    boxShadow: sliderActive 
-                      ? '0 0 20px hsl(var(--primary) / 0.5)' 
-                      : '0 0 10px hsl(var(--primary) / 0.3)'
-                  }}
-                />
-              </div>
-              
-              {/* Tick marks */}
-              <div className="slider-ticks">
-                {[50, 100, 200, 300, 400, 500].map((tick) => (
-                  <div 
-                    key={tick} 
-                    className={`slider-tick ${estimatedBill >= tick ? 'active' : ''}`}
-                    style={{ left: `${((tick - 50) / 450) * 100}%` }}
-                  />
-                ))}
               </div>
               
               <input 
@@ -708,15 +680,10 @@ function SavingsCalculatorSection({
                 step="10"
                 value={estimatedBill} 
                 onChange={e => setEstimatedBill(Number(e.target.value))} 
-                onMouseDown={() => setSliderActive(true)}
-                onMouseUp={() => setSliderActive(false)}
-                onTouchStart={() => setSliderActive(true)}
-                onTouchEnd={() => setSliderActive(false)}
-                className="savings-slider enhanced" 
+                className="minimal-slider" 
               />
               
-              {/* Min/Max labels */}
-              <div className="slider-labels">
+              <div className="slider-range-labels">
                 <span>€50</span>
                 <span>€500</span>
               </div>
