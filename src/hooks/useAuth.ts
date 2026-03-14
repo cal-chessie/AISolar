@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-export type AppRole = 'admin' | 'consultant' | 'installer';
+export type AppRole = 'admin' | 'consultant' | 'installer' | 'customer';
 
 interface AuthState {
   user: User | null;
