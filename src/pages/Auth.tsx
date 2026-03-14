@@ -52,6 +52,8 @@ export default function Auth() {
     
     if (userRoles.length === 1 && userRoles.includes('installer')) {
       navigate('/installer');
+    } else if (userRoles.length === 1 && userRoles.includes('customer')) {
+      navigate('/my-projects');
     } else {
       navigate('/consultant');
     }
