@@ -273,11 +273,13 @@ function ProjectDetail({ project, onBack }: { project: ProjectData; onBack: () =
       <div className="mb-6">
         <StatusTimeline
           currentStage={stage}
-          hasSurvey={['survey_complete', 'proposal', 'proposal_sent', 'approved', 'scheduled', 'installing', 'installed', 'completed'].includes(stage)}
-          hasProposal={!!project.proposal}
-          hasContract={!!project.contract}
-          hasInstallation={['installing', 'installed', 'completed'].includes(stage)}
-          isComplete={stage === 'completed'}
+          proposalStatus={project.proposal?.status}
+          contractSigned={!!project.contract}
+          depositPaid={project.invoice?.deposit_paid || false}
+          installationScheduled={!!project.proposal?.confirmed_install_date}
+          installationInProgress={stage === 'installing'}
+          installationComplete={['installed', 'completed'].includes(stage)}
+          finalPaymentPaid={project.invoice?.final_paid || false}
         />
       </div>
 
