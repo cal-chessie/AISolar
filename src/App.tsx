@@ -24,6 +24,7 @@ import ClientPortal from "./pages/ClientPortal";
 import AdminSettings from "./pages/AdminSettings";
 import AboutUs from "./pages/AboutUs";
 import AuditDashboard from "./pages/AuditDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
 
 const queryClient = new QueryClient();
 
