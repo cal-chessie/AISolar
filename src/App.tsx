@@ -24,6 +24,7 @@ import ClientPortal from "./pages/ClientPortal";
 import AdminSettings from "./pages/AdminSettings";
 import AboutUs from "./pages/AboutUs";
 import AuditDashboard from "./pages/AuditDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ function AppRoutes() {
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
           <Route path="/admin/audit" element={<PageTransition><AuditDashboard /></PageTransition>} />
           <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
+          <Route path="/my-projects" element={<PageTransition><CustomerDashboard /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
