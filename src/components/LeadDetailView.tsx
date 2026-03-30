@@ -26,7 +26,7 @@ import ProposalQuestionnaire from './ProposalQuestionnaire';
 import SendToCustomerDialog from './dashboard/SendToCustomerDialog';
 import InvoiceManagement from './dashboard/InvoiceManagement';
 import InstallationChecklist from './installer/InstallationChecklist';
-import SEAIGrantTracker from './seai/SEAIGrantTracker';
+import GrantsTab from './grants/GrantsTab';
 import { ActivityTimeline } from './dashboard/ActivityTimeline';
 import LeadWorkflowJourney from './dashboard/LeadWorkflowJourney';
 import { supabase } from '@/integrations/supabase/client';
@@ -220,9 +220,9 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                   <Wrench className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Install
                 </TabsTrigger>
-                <TabsTrigger value="seai" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                <TabsTrigger value="grants" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
                   <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  SEAI
+                  Grants
                 </TabsTrigger>
                 <TabsTrigger value="timeline" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
                   <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -350,40 +350,18 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                 )}
               </TabsContent>
 
-              <TabsContent value="seai" className="mt-0">
-                {loadingProposal ? (
-                  <Card>
-                    <CardContent className="py-12 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </CardContent>
-                  </Card>
-                ) : proposal ? (
-                  <SEAIGrantTracker
-                    proposalId={proposal.id}
-                    leadId={lead.id}
-                    systemSizeKw={proposal.system_size_kw}
-                    grantAmount={proposal.seai_grant}
-                    propertyType={proposal.property_type}
-                  />
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Award className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <h3 className="font-semibold text-foreground mb-2">No Proposal Yet</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Create a proposal first to track SEAI grant applications.
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        className="mt-4"
-                        onClick={() => setActiveTab('proposal')}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Create Proposal
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+              <TabsContent value="grants" className="mt-0">
+                <GrantsTab
+                  leadId={lead.id}
+                  leadData={{
+                    name: lead.name,
+                    email: lead.email,
+                    phone: lead.phone,
+                    address: lead.address,
+                    mprn: (lead as any).mprn,
+                  }}
+                  proposalId={proposal?.id}
+                />
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-0">
