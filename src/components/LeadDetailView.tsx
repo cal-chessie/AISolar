@@ -26,7 +26,7 @@ import ProposalQuestionnaire from './ProposalQuestionnaire';
 import SendToCustomerDialog from './dashboard/SendToCustomerDialog';
 import InvoiceManagement from './dashboard/InvoiceManagement';
 import InstallationChecklist from './installer/InstallationChecklist';
-import SEAIGrantTracker from './seai/SEAIGrantTracker';
+import GrantsTab from './grants/GrantsTab';
 import { ActivityTimeline } from './dashboard/ActivityTimeline';
 import LeadWorkflowJourney from './dashboard/LeadWorkflowJourney';
 import { supabase } from '@/integrations/supabase/client';
