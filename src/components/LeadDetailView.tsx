@@ -220,9 +220,9 @@ export default function LeadDetailView({ lead, onClose, onDelete }: LeadDetailVi
                   <Wrench className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Install
                 </TabsTrigger>
-                <TabsTrigger value="seai" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
+                <TabsTrigger value="grants" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
                   <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  SEAI
+                  Grants
                 </TabsTrigger>
                 <TabsTrigger value="timeline" className="gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm">
                   <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
