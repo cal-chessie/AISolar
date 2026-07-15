@@ -16,7 +16,7 @@ import { motion } from 'framer-motion';
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters').max(100);
 
-type RoleType = 'owner' | 'consultant' | 'installer';
+type RoleType = 'owner' | 'consultant' | 'installer' | 'customer';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -52,6 +52,8 @@ export default function Auth() {
     
     if (userRoles.length === 1 && userRoles.includes('installer')) {
       navigate('/installer');
+    } else if (userRoles.length === 1 && userRoles.includes('customer')) {
+      navigate('/my-projects');
     } else {
       navigate('/consultant');
     }
@@ -453,13 +455,16 @@ export default function Auth() {
                       <option value="owner">Owner / Solo Operator (full access)</option>
                       <option value="consultant">Consultant</option>
                       <option value="installer">Installer</option>
+                      <option value="customer">Customer</option>
                     </select>
                     <p className="text-xs text-muted-foreground mt-1">
                       {role === 'owner' 
                         ? 'Full access to leads, surveys, proposals, and installations' 
                         : role === 'consultant'
                         ? 'Manage leads, surveys, and proposals'
-                        : 'View assigned installations and surveys'}
+                        : role === 'installer'
+                        ? 'View assigned installations and surveys'
+                        : 'View your solar projects, proposals, and invoices'}
                     </p>
                   </div>
                   <Button
