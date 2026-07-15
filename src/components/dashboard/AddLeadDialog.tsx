@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Loader2 } from 'lucide-react';
 import { logActivity } from '@/lib/activityLog';
+import { getTenantId } from '@/lib/tenant';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,12 @@ export default function AddLeadDialog({ onLeadAdded, open, onOpenChange, showTri
 
     setLoading(true);
     try {
+      // CUSTODY: the logged-in user's tenant, from the JWT claim stamped by
+      // custom_access_token_hook. Throws if missing — a lead in the wrong
+      // chain cannot be moved. When the Tyrone installer logs in, his leads
+      // get his tenant automatically. No env var, no code change.
+      const tenant_id = await getTenantId();
+
       const { data: newLead, error } = await supabase
         .from('leads')
         .insert({
@@ -68,6 +75,10 @@ export default function AddLeadDialog({ onLeadAdded, open, onOpenChange, showTri
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
           notes: formData.notes || null,
           workflow_stage: 'new',
+          // THE THREE AXES (AIOS_ARCHITECTURE Part V):
+          tenant_id,             // custody — the logged-in user's tenant
+          brand: null,           // no storefront — this lead was typed in by staff
+          source: 'crm-manual',  // channel
         })
         .select()
         .single();
