@@ -33,6 +33,7 @@ import ProductsManagement from './ProductsManagement';
 import SurveysPanel from './dashboard/SurveysPanel';
 import InstallationsPanel from './dashboard/InstallationsPanel';
 import AnalyticsPanel from './dashboard/AnalyticsPanel';
+import LaunchHeatmaps from './dashboard/LaunchHeatmaps';
 import AddLeadDialog from './dashboard/AddLeadDialog';
 import LeadSelectorDialog from './dashboard/LeadSelectorDialog';
 import DeleteLeadDialog from './dashboard/DeleteLeadDialog';
@@ -529,6 +530,7 @@ export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: 
                   {activeTab === 'products' && isAdmin && <ProductsManagement />}
                   {activeTab === 'documents' && isAdmin && <DocumentManager />}
                   {activeTab === 'analytics' && isAdmin && <AnalyticsPanel />}
+                  {activeTab === 'analytics' && isAdmin && <LaunchHeatmaps />}
                 </ErrorBoundary>
               </motion.div>
             </AnimatePresence>
