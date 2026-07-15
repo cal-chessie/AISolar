@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,11 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  HelpCircle
+  HelpCircle,
+  Camera,
+  Image,
+  Trash2,
+  Upload
 } from 'lucide-react';
 
 interface InstallationChecklistProps {
@@ -88,6 +92,14 @@ interface ChecklistData {
   status: string;
 }
 
+interface InstallationPhoto {
+  id: string;
+  photo_url: string;
+  photo_type: 'before' | 'after' | 'progress' | 'issue';
+  description: string | null;
+  created_at: string;
+}
+
 const defaultChecklist: ChecklistData = {
   main_fuse_size: null,
   network_provider: null,
@@ -120,6 +132,9 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
   const [saving, setSaving] = useState(false);
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus | null>(null);
   const [seaiStatus, setSeaiStatus] = useState<SeaiStatus | null>(null);
+  const [photos, setPhotos] = useState<InstallationPhoto[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [selectedPhotoType, setSelectedPhotoType] = useState<'before' | 'after' | 'progress' | 'issue'>('before');
   const [proposalData, setProposalData] = useState<{
     system_size_kw: number | null;
     panel_count: number | null;
@@ -136,6 +151,107 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
     fetchSeaiStatus();
     fetchProposalData();
   }, [proposalId]);
+
+  useEffect(() => {
+    if (checklist.id) {
+      fetchPhotos();
+    }
+  }, [checklist.id]);
+
+  const fetchPhotos = async () => {
+    if (!checklist.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('installation_photos')
+        .select('*')
+        .eq('checklist_id', checklist.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setPhotos((data || []) as InstallationPhoto[]);
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+    }
+  };
+
+  const uploadPhoto = useCallback(async (file: File) => {
+    if (!checklist.id) {
+      // Save checklist first to get ID
+      await saveChecklist();
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${checklist.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('installation-photos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('installation-photos')
+        .getPublicUrl(fileName);
+
+      // Save to database
+      const { data, error } = await supabase
+        .from('installation_photos')
+        .insert({
+          checklist_id: checklist.id,
+          photo_url: publicUrl,
+          photo_type: selectedPhotoType,
+          uploaded_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setPhotos(prev => [data as InstallationPhoto, ...prev]);
+      toast({ title: 'Photo uploaded', description: `${selectedPhotoType} photo added successfully.` });
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }, [checklist.id, selectedPhotoType]);
+
+  const deletePhoto = async (photoId: string, photoUrl: string) => {
+    try {
+      // Extract file path from URL
+      const urlParts = photoUrl.split('/installation-photos/');
+      if (urlParts.length > 1) {
+        await supabase.storage.from('installation-photos').remove([urlParts[1]]);
+      }
+
+      const { error } = await supabase
+        .from('installation_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (error) throw error;
+
+      setPhotos(prev => prev.filter(p => p.id !== photoId));
+      toast({ title: 'Photo deleted' });
+    } catch (error: any) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadPhoto(file);
+    }
+  };
 
   const fetchProposalData = async () => {
     try {
@@ -766,6 +882,130 @@ export default function InstallationChecklist({ proposalId, leadId, leadName }: 
                   />
                 </div>
               ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Installation Photos */}
+        <AccordionItem value="photos" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-purple-500" />
+              <span className="font-semibold">Installation Photos</span>
+              {photos.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{photos.length}</Badge>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              {/* Upload Section */}
+              {!isComplete && (
+                <div className="border-2 border-dashed rounded-lg p-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <Select
+                      value={selectedPhotoType}
+                      onValueChange={(v) => setSelectedPhotoType(v as any)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Photo type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="before">Before</SelectItem>
+                        <SelectItem value="progress">Progress</SelectItem>
+                        <SelectItem value="after">After</SelectItem>
+                        <SelectItem value="issue">Issue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        disabled={uploadingPhoto}
+                        onClick={() => document.getElementById('photo-upload')?.click()}
+                      >
+                        {uploadingPhoto ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        Upload Photo
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={uploadingPhoto}
+                        onClick={() => document.getElementById('camera-capture')?.click()}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take Photo
+                      </Button>
+                    </div>
+                    
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileInput}
+                    />
+                    <input
+                      id="camera-capture"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileInput}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Photo Grid */}
+              {photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <img
+                        src={photo.photo_url}
+                        alt={`${photo.photo_type} photo`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs capitalize ${
+                            photo.photo_type === 'before' ? 'bg-blue-500 text-white' :
+                            photo.photo_type === 'after' ? 'bg-green-500 text-white' :
+                            photo.photo_type === 'progress' ? 'bg-yellow-500 text-white' :
+                            'bg-red-500 text-white'
+                          }`}
+                        >
+                          {photo.photo_type}
+                        </Badge>
+                      </div>
+                      {!isComplete && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deletePhoto(photo.id, photo.photo_url)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1 text-center">
+                        {new Date(photo.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Image className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No photos uploaded yet</p>
+                  <p className="text-sm">Capture before, progress, and after photos</p>
+                </div>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>

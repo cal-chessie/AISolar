@@ -8,8 +8,9 @@ import {
   MapPin, Navigation, Phone, Calendar, CheckCircle, Clock, AlertCircle,
   FileText, Wrench, User, ChevronRight, PhoneCall,
   MessageSquare, Zap, Battery, Sun, ClipboardCheck, ArrowLeft,
-  List, HelpCircle, RefreshCw, WifiOff, Wifi, CloudOff, Loader2
+  List, HelpCircle, RefreshCw, WifiOff, Wifi, CloudOff, Loader2, Map
 } from 'lucide-react';
+import InstallerMapView from './InstallerMapView';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,6 +64,77 @@ interface Survey {
   special_requirements: string | null;
 }
 
+// Demo data for testing/onboarding
+const DEMO_PROPOSAL: Proposal = {
+  id: 'demo-proposal-1',
+  system_size_kw: 6.6,
+  panel_count: 15,
+  panel_type: 'Trina Solar 440W Vertex S+',
+  inverter_type: 'SolarEdge SE6000H',
+  battery_storage: true,
+  battery_capacity_kwh: 10,
+  installation_notes: 'Customer requested battery backup for power cuts. Access via side gate - code 1234.'
+};
+
+const DEMO_SURVEY: Survey = {
+  roof_type: 'pitched',
+  roof_condition: 'good',
+  roof_orientation: 'south',
+  electrical_panel_capacity: '63A',
+  scaffolding_required: 'yes',
+  parking_situation: 'Driveway available',
+  access_notes: 'Side gate access, code 1234. Dog in garden - call ahead.',
+  special_requirements: 'Customer works from home - minimize noise before 9am'
+};
+
+const DEMO_ASSIGNMENTS: Assignment[] = [
+  {
+    id: 'demo-1',
+    status: 'scheduled',
+    scheduled_date: new Date().toISOString(),
+    assignment_type: 'installation',
+    priority: 'high',
+    notes: 'Demo installation - 6.6kW system with battery',
+    leads: {
+      id: 'demo-lead-1',
+      name: 'John Murphy',
+      email: 'john.murphy@example.com',
+      address: '123 Main Street, Blackrock, Dublin',
+      phone: '+353 87 123 4567'
+    }
+  },
+  {
+    id: 'demo-2',
+    status: 'pending',
+    scheduled_date: new Date(Date.now() + 86400000).toISOString(),
+    assignment_type: 'installation',
+    priority: 'normal',
+    notes: 'Demo job - Standard residential installation',
+    leads: {
+      id: 'demo-lead-2',
+      name: 'Mary O\'Brien',
+      email: 'mary.obrien@example.com',
+      address: '45 Oak Avenue, Dalkey, Dublin',
+      phone: '+353 86 234 5678'
+    }
+  },
+  {
+    id: 'demo-3',
+    status: 'in_progress',
+    scheduled_date: new Date(Date.now() - 3600000).toISOString(),
+    assignment_type: 'installation',
+    priority: 'urgent',
+    notes: 'Demo - Currently in progress',
+    leads: {
+      id: 'demo-lead-3',
+      name: 'Patrick Kelly',
+      email: 'patrick.kelly@example.com',
+      address: '78 Church Road, Dun Laoghaire, Dublin',
+      phone: '+353 85 345 6789'
+    }
+  }
+];
+
 export default function MobileInstallerCompanion() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
@@ -75,6 +147,96 @@ export default function MobileInstallerCompanion() {
   const [online, setOnline] = useState(isOnline());
   const [offlineMode, setOfflineMode] = useState(false);
   const [pendingSync, setPendingSync] = useState(0);
+  const [hasInstallerProfile, setHasInstallerProfile] = useState<boolean | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
+
+  // Create a real test assignment with linked proposal
+  const createTestAssignment = async () => {
+    if (!isOnline()) {
+      toast.error('Cannot create test assignment while offline');
+      return;
+    }
+    
+    setCreatingTest(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: installer } = await supabase
+        .from('installers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!installer) throw new Error('No installer profile found');
+
+      // Create a test lead
+      const testLeadName = `Test Customer ${Date.now().toString(36).toUpperCase()}`;
+      const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .insert({
+          name: testLeadName,
+          email: `test-${Date.now()}@example.com`,
+          phone: '+353 87 999 8888',
+          address: '42 Test Street, Dublin 4, Ireland',
+          property_type: 'residential',
+          workflow_stage: 'scheduled',
+          monthly_bill: 200,
+        })
+        .select()
+        .single();
+
+      if (leadError) throw leadError;
+
+      // Create a test proposal
+      const { data: proposal, error: proposalError } = await supabase
+        .from('proposals')
+        .insert({
+          lead_id: lead.id,
+          consultant_id: user.id,
+          system_size_kw: 6.6,
+          panel_count: 15,
+          panel_type: 'Trina Solar 440W Vertex S+',
+          inverter_type: 'SolarEdge SE6000H',
+          battery_storage: true,
+          battery_capacity_kwh: 10,
+          net_cost: 12500,
+          seai_grant: 1800,
+          status: 'approved',
+          installation_notes: 'Test installation - side gate access code 1234',
+        })
+        .select()
+        .single();
+
+      if (proposalError) throw proposalError;
+
+      // Create assignment linked to proposal
+      const { error: assignmentError } = await supabase
+        .from('assignments')
+        .insert({
+          lead_id: lead.id,
+          installer_id: installer.id,
+          assigned_by: user.id,
+          assignment_type: 'installation',
+          status: 'scheduled',
+          scheduled_date: new Date().toISOString(),
+          priority: 'high',
+          notes: 'Auto-generated test assignment for end-to-end testing',
+          proposal_id: proposal.id,
+        });
+
+      if (assignmentError) throw assignmentError;
+
+      toast.success('Test assignment created successfully!');
+      loadAssignments();
+    } catch (error: any) {
+      console.error('Failed to create test assignment:', error);
+      toast.error(error.message || 'Failed to create test assignment');
+    } finally {
+      setCreatingTest(false);
+    }
+  };
 
   // Sync offline queue when back online
   const syncOfflineQueue = useCallback(async () => {
@@ -152,7 +314,12 @@ export default function MobileInstallerCompanion() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        setRefreshing(false);
+        setHasInstallerProfile(false);
+        return;
+      }
 
       const { data: installer } = await supabase
         .from('installers')
@@ -160,13 +327,20 @@ export default function MobileInstallerCompanion() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!installer) return;
+      if (!installer) {
+        setHasInstallerProfile(false);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      setHasInstallerProfile(true);
 
       const { data } = await supabase
         .from('assignments')
         .select(`*, leads (id, name, email, address, phone)`)
         .eq('installer_id', installer.id)
-        .in('status', ['pending', 'accepted', 'in_progress'])
+        .in('status', ['pending', 'accepted', 'in_progress', 'scheduled'])
         .order('scheduled_date', { ascending: true });
 
       const assignmentData = data || [];
@@ -189,9 +363,29 @@ export default function MobileInstallerCompanion() {
     }
   };
 
-  const loadJobDetails = async (leadId: string) => {
+  const loadJobDetails = async (leadId: string, proposalId?: string) => {
+    // If we have a direct proposal_id, use it; otherwise find by lead_id
+    let proposalQuery;
+    if (proposalId) {
+      proposalQuery = supabase.from('proposals').select('*').eq('id', proposalId).maybeSingle();
+    } else {
+      // Try to find a proposal that has an existing checklist for this lead
+      const { data: checklistProposal } = await supabase
+        .from('installation_checklists')
+        .select('proposal_id')
+        .eq('lead_id', leadId)
+        .maybeSingle();
+      
+      if (checklistProposal?.proposal_id) {
+        proposalQuery = supabase.from('proposals').select('*').eq('id', checklistProposal.proposal_id).maybeSingle();
+      } else {
+        // Fall back to most recent proposal for the lead
+        proposalQuery = supabase.from('proposals').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      }
+    }
+    
     const [proposalRes, surveyRes] = await Promise.all([
-      supabase.from('proposals').select('*').eq('lead_id', leadId).maybeSingle(),
+      proposalQuery,
       supabase.from('site_surveys').select('*').eq('lead_id', leadId).maybeSingle()
     ]);
     setProposal(proposalRes.data);
@@ -224,10 +418,45 @@ export default function MobileInstallerCompanion() {
     const { error } = await supabase.from('assignments').update(updateData).eq('id', id);
     if (error) {
       toast.error('Failed to update status');
-    } else {
-      toast.success(`Status updated to ${status}`);
-      loadAssignments();
-      if (selectedAssignment) setSelectedAssignment({ ...selectedAssignment, status });
+      return;
+    }
+    
+    toast.success(`Status updated to ${status}`);
+    loadAssignments();
+    if (selectedAssignment) setSelectedAssignment({ ...selectedAssignment, status });
+    
+    // Auto-create checklist when starting installation
+    if (status === 'in_progress' && proposal && selectedAssignment?.leads?.id) {
+      try {
+        // Check if checklist already exists
+        const { data: existingChecklist } = await supabase
+          .from('installation_checklists')
+          .select('id')
+          .eq('proposal_id', proposal.id)
+          .maybeSingle();
+        
+        if (!existingChecklist) {
+          // Get installer profile
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: installer } = await supabase
+            .from('installers')
+            .select('id')
+            .eq('user_id', user?.id)
+            .maybeSingle();
+            
+          // Create new checklist pre-populated with proposal data
+          await supabase.from('installation_checklists').insert({
+            proposal_id: proposal.id,
+            lead_id: selectedAssignment.leads.id,
+            installer_id: installer?.id,
+            status: 'in_progress',
+            battery_installed: proposal.battery_storage ? false : null,
+          });
+          toast.success('Installation checklist created!');
+        }
+      } catch (err) {
+        console.error('Failed to create checklist:', err);
+      }
     }
   };
 
@@ -246,6 +475,7 @@ export default function MobileInstallerCompanion() {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { bg: string; icon: React.ReactNode; label: string }> = {
       pending: { bg: 'bg-yellow-500', icon: <Clock className="h-4 w-4" />, label: 'Pending' },
+      scheduled: { bg: 'bg-cyan-500', icon: <Calendar className="h-4 w-4" />, label: 'Scheduled' },
       accepted: { bg: 'bg-blue-500', icon: <CheckCircle className="h-4 w-4" />, label: 'Accepted' },
       in_progress: { bg: 'bg-purple-500', icon: <Zap className="h-4 w-4" />, label: 'In Progress' },
       completed: { bg: 'bg-green-500', icon: <CheckCircle className="h-4 w-4" />, label: 'Completed' },
@@ -268,7 +498,12 @@ export default function MobileInstallerCompanion() {
           className={`relative overflow-hidden active:scale-[0.98] transition-transform ${isUrgent ? 'border-l-4 border-l-red-500' : ''}`}
           onClick={() => {
             setSelectedAssignment(assignment);
-            if (assignment.leads?.id) loadJobDetails(assignment.leads.id);
+            if (showDemo) {
+              setProposal(DEMO_PROPOSAL);
+              setSurvey(DEMO_SURVEY);
+            } else if (assignment.leads?.id) {
+              loadJobDetails(assignment.leads.id, (assignment as any).proposal_id);
+            }
           }}
         >
           <CardContent className="p-4">
@@ -529,13 +764,23 @@ export default function MobileInstallerCompanion() {
             <SheetHeader className="pb-4">
               <SheetTitle>Installation Checklist</SheetTitle>
             </SheetHeader>
-            {proposal && lead && (
+            {proposal && lead ? (
               <div className="overflow-y-auto h-full pb-20">
                 <InstallationChecklist 
                   proposalId={proposal.id} 
                   leadId={lead.id} 
                   leadName={lead.name} 
                 />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No Proposal Found</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Create a proposal for this lead before starting the installation checklist.
+                </p>
               </div>
             )}
           </SheetContent>
@@ -560,13 +805,16 @@ export default function MobileInstallerCompanion() {
     threshold: 80,
   });
 
-  const todayJobs = assignments.filter(a => {
+  // Use demo data when in demo mode, otherwise use real assignments
+  const displayAssignments = showDemo ? DEMO_ASSIGNMENTS : assignments;
+
+  const todayJobs = displayAssignments.filter(a => {
     if (!a.scheduled_date) return false;
     const today = new Date().toDateString();
     return new Date(a.scheduled_date).toDateString() === today;
   });
 
-  const upcomingJobs = assignments.filter(a => {
+  const upcomingJobs = displayAssignments.filter(a => {
     if (!a.scheduled_date) return true;
     return new Date(a.scheduled_date) > new Date();
   });
@@ -583,11 +831,70 @@ export default function MobileInstallerCompanion() {
     );
   }
 
+  // No installer profile state
+  if (hasInstallerProfile === false && !showDemo) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <Wrench className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Installer Profile Required</h2>
+            <p className="text-muted-foreground mb-6">
+              Your account doesn't have an installer profile linked. Contact an admin to set up your installer access.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                className="w-full" 
+                onClick={() => setShowDemo(true)}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                View Demo Mode
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.history.back()}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={containerRef}
       className="min-h-screen min-h-[100dvh] bg-background pb-24 overflow-y-auto"
     >
+      {/* Demo Mode Banner */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-primary text-primary-foreground px-4 py-3 text-center text-sm font-medium flex items-center justify-center gap-2 safe-area-inset-top"
+          >
+            <Zap className="h-4 w-4" />
+            Demo Mode - Sample data for testing
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="ml-2 h-7"
+              onClick={() => setShowDemo(false)}
+            >
+              Exit Demo
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Pull-to-Refresh Indicator */}
       <AnimatePresence>
         {(pullDistance > 0 || isPullRefreshing) && (
@@ -646,7 +953,7 @@ export default function MobileInstallerCompanion() {
             <div>
               <h1 className="text-xl font-bold">Field Companion</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                {assignments.length} active jobs
+                {displayAssignments.length} active jobs {showDemo && <Badge variant="secondary" className="text-[10px] px-1 py-0">Demo</Badge>}
                 {online ? (
                   <span className="flex items-center gap-1 text-green-600">
                     <Wifi className="h-3 w-3" /> Online
@@ -659,20 +966,32 @@ export default function MobileInstallerCompanion() {
               </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => { setRefreshing(true); loadAssignments(); }}
-            className={`h-11 w-11 ${refreshing ? 'animate-spin' : ''}`}
-            disabled={!online}
-          >
-            <RefreshCw className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={createTestAssignment}
+              disabled={!online || creatingTest}
+              className="h-9 text-xs"
+            >
+              {creatingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 mr-1" />}
+              Test Job
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => { setRefreshing(true); loadAssignments(); }}
+              className={`h-9 w-9 ${refreshing ? 'animate-spin' : ''}`}
+              disabled={!online}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Today Summary */}
-      {todayJobs.length > 0 && (
+      {activeTab !== 'map' && todayJobs.length > 0 && (
         <div className="px-4 py-3 bg-primary/5 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -692,24 +1011,67 @@ export default function MobileInstallerCompanion() {
       )}
 
       {/* Job List */}
-      <div className="p-4 space-y-3">
-        {assignments.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium">No active jobs</p>
-            <p className="text-sm text-muted-foreground">Pull down to refresh or check back later</p>
-          </div>
-        ) : (
-          assignments.map((assignment) => (
-            <JobCard key={assignment.id} assignment={assignment} />
-          ))
-        )}
-      </div>
+      {activeTab !== 'map' && (
+        <div className="p-4 space-y-3">
+          {displayAssignments.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="font-medium">No active jobs</p>
+              <p className="text-sm text-muted-foreground mb-4">Pull down to refresh or check back later</p>
+              {!showDemo && (
+                <Button variant="outline" onClick={() => setShowDemo(true)}>
+                  <Zap className="h-4 w-4 mr-2" />
+                  View Demo Data
+                </Button>
+              )}
+            </div>
+          ) : (
+            displayAssignments.map((assignment) => (
+              <JobCard key={assignment.id} assignment={assignment} />
+            ))
+          )}
+        </div>
+      )}
 
       {/* Job Detail View */}
       <AnimatePresence>
         {selectedAssignment && <JobDetailView />}
       </AnimatePresence>
+
+      {/* Map View */}
+      {activeTab === 'map' && (
+        <div className="pb-20">
+          <InstallerMapView 
+            assignments={displayAssignments} 
+            showDemo={showDemo}
+            onSelectJob={(assignment, isDemo) => {
+              // Cast to local Assignment type with all required fields
+              const fullAssignment: Assignment = {
+                id: assignment.id,
+                status: assignment.status,
+                scheduled_date: assignment.scheduled_date,
+                assignment_type: assignment.assignment_type,
+                priority: assignment.priority,
+                notes: (assignment as any).notes || null,
+                leads: assignment.leads ? {
+                  id: assignment.leads.id,
+                  name: assignment.leads.name,
+                  email: (assignment.leads as any).email || 'demo@example.com',
+                  address: assignment.leads.address,
+                  phone: assignment.leads.phone,
+                } : null,
+              };
+              setSelectedAssignment(fullAssignment);
+              if (isDemo) {
+                setProposal(DEMO_PROPOSAL);
+                setSurvey(DEMO_SURVEY);
+              } else if (assignment.leads?.id) {
+                loadJobDetails(assignment.leads.id, (assignment as any).proposal_id);
+              }
+            }}
+          />
+        </div>
+      )}
 
       {/* Bottom Navigation - Enhanced Touch Targets */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t pb-safe z-20">
@@ -721,6 +1083,14 @@ export default function MobileInstallerCompanion() {
           >
             <List className={`h-6 w-6 ${activeTab === 'jobs' ? 'text-primary' : 'text-muted-foreground'}`} />
             <span className={`text-xs ${activeTab === 'jobs' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Jobs</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={`flex-col h-16 w-full gap-0.5 rounded-none ${activeTab === 'map' ? 'bg-primary/10' : ''}`} 
+            onClick={() => setActiveTab('map')}
+          >
+            <Map className={`h-6 w-6 ${activeTab === 'map' ? 'text-primary' : 'text-muted-foreground'}`} />
+            <span className={`text-xs ${activeTab === 'map' ? 'text-primary font-medium' : 'text-muted-foreground'}`}>Map</span>
           </Button>
           <Button 
             variant="ghost" 

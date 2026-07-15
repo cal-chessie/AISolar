@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, User, Clock } from 'lucide-react';
+import { Calendar, MapPin, Plus, User, Clock, Phone, Mail, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import {
   Select,
   SelectContent,
@@ -69,6 +75,7 @@ export default function InstallationsPanel() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showDummy, setShowDummy] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [newAssignment, setNewAssignment] = useState({
     lead_id: '',
     installer_id: '',
@@ -77,6 +84,32 @@ export default function InstallationsPanel() {
     notes: '',
     priority: 'normal',
   });
+
+  const handleViewInstallation = (assignment: any) => {
+    setSelectedAssignment(assignment);
+  };
+
+  const updateAssignmentStatus = async (newStatus: string) => {
+    if (!selectedAssignment || selectedAssignment.id.startsWith('dummy')) {
+      toast({ title: 'Demo mode', description: 'Cannot update demo data' });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .update({ status: newStatus })
+        .eq('id', selectedAssignment.id);
+      
+      if (error) throw error;
+      
+      setSelectedAssignment({ ...selectedAssignment, status: newStatus });
+      fetchData();
+      toast({ title: 'Status updated', description: `Installation marked as ${newStatus}` });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -345,7 +378,11 @@ export default function InstallationsPanel() {
             </div>
           )}
           {(assignments.length > 0 ? assignments : showDummy ? dummyInstallations : []).map((assignment) => (
-            <div key={assignment.id} className="p-5 bg-muted/50 rounded-xl border hover:shadow-md transition-all">
+            <div 
+              key={assignment.id} 
+              className="p-5 bg-muted/50 rounded-xl border hover:shadow-md transition-all cursor-pointer"
+              onClick={() => handleViewInstallation(assignment)}
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -383,6 +420,136 @@ export default function InstallationsPanel() {
           ))}
         </div>
       )}
+
+      {/* Installation Detail Sheet */}
+      <Sheet open={!!selectedAssignment} onOpenChange={() => setSelectedAssignment(null)}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-xl">Installation Details</SheetTitle>
+          </SheetHeader>
+          {selectedAssignment && (
+            <div className="space-y-6 mt-6">
+              {/* Lead Info */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  <User size={16} />
+                  Customer Information
+                </h4>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <p className="font-medium text-foreground">{selectedAssignment.leads?.name || 'Unknown'}</p>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin size={14} />
+                    {selectedAssignment.leads?.address || 'No address'}
+                  </div>
+                  {selectedAssignment.leads?.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail size={14} />
+                      {selectedAssignment.leads.email}
+                    </div>
+                  )}
+                  {selectedAssignment.leads?.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone size={14} />
+                      {selectedAssignment.leads.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Priority */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  Status & Priority
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={getStatusBadge(selectedAssignment.status)}>
+                    Status: {selectedAssignment.status}
+                  </Badge>
+                  <Badge className={getPriorityBadge(selectedAssignment.priority)}>
+                    Priority: {selectedAssignment.priority}
+                  </Badge>
+                  <Badge variant="outline">{selectedAssignment.assignment_type}</Badge>
+                </div>
+              </div>
+
+              {/* Schedule */}
+              {selectedAssignment.scheduled_date && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <Calendar size={16} />
+                    Scheduled Date
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-foreground font-medium">
+                      {new Date(selectedAssignment.scheduled_date).toLocaleDateString('en-IE', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(selectedAssignment.scheduled_date).toLocaleTimeString('en-IE', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedAssignment.notes && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-foreground flex items-center gap-2">
+                    <FileText size={16} />
+                    Notes
+                  </h4>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground">{selectedAssignment.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  Quick Actions
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => updateAssignmentStatus('accepted')}
+                    disabled={selectedAssignment.status === 'accepted'}
+                  >
+                    Accept
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => updateAssignmentStatus('in_progress')}
+                    disabled={selectedAssignment.status === 'in_progress'}
+                  >
+                    Start Work
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => updateAssignmentStatus('completed')}
+                    disabled={selectedAssignment.status === 'completed'}
+                    className="col-span-2"
+                  >
+                    Mark Completed
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

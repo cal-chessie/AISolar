@@ -23,7 +23,7 @@ export default function SiteNavigation() {
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/upload', label: 'Upload Bill', icon: Upload },
-    { href: '/portal', label: 'Client Portal', icon: Users },
+    { href: '/my-projects', label: 'My Projects', icon: Users },
     { href: '/about', label: 'About Us', icon: Info },
   ];
 

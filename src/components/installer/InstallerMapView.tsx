@@ -24,6 +24,12 @@ interface Assignment {
   } | null;
 }
 
+interface InstallerMapViewProps {
+  assignments?: Assignment[];
+  showDemo?: boolean;
+  onSelectJob?: (assignment: Assignment, isDemo: boolean) => void;
+}
+
 // Demo installation with training walkthrough
 const DEMO_INSTALLATION: Assignment = {
   id: 'demo-training',
@@ -108,17 +114,29 @@ const TRAINING_STEPS = [
   },
 ];
 
-export default function InstallerMapView() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function InstallerMapView({ 
+  assignments: propAssignments, 
+  showDemo: propShowDemo,
+  onSelectJob
+}: InstallerMapViewProps) {
+  const [localAssignments, setLocalAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(!propAssignments);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [showDemo, setShowDemo] = useState(true);
+  const [showDemoState, setShowDemoState] = useState(propShowDemo ?? true);
   const [trainingMode, setTrainingMode] = useState(false);
   const [currentTrainingStep, setCurrentTrainingStep] = useState(0);
 
+  // Use props if provided, otherwise use local state
+  const assignments = propAssignments ?? localAssignments;
+  const showDemo = propShowDemo !== undefined ? propShowDemo : showDemoState;
+  const setShowDemo = propShowDemo !== undefined ? () => {} : setShowDemoState;
+
   useEffect(() => {
-    loadAssignments();
-  }, []);
+    // Only fetch locally if no props provided
+    if (!propAssignments) {
+      loadAssignments();
+    }
+  }, [propAssignments]);
 
   const loadAssignments = async () => {
     try {
@@ -155,10 +173,10 @@ export default function InstallerMapView() {
           )
         `)
         .eq('installer_id', installer.id)
-        .in('status', ['pending', 'accepted', 'in_progress']);
+        .in('status', ['pending', 'accepted', 'in_progress', 'scheduled']);
 
       if (error) throw error;
-      setAssignments(data || []);
+      setLocalAssignments(data || []);
     } catch (error) {
       console.error('Error loading assignments:', error);
     } finally {
@@ -169,6 +187,7 @@ export default function InstallerMapView() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500';
+      case 'scheduled': return 'bg-cyan-500';
       case 'accepted': return 'bg-blue-500';
       case 'in_progress': return 'bg-purple-500';
       case 'completed': return 'bg-green-500';
@@ -179,6 +198,7 @@ export default function InstallerMapView() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4" />;
+      case 'scheduled': return <Calendar className="h-4 w-4" />;
       case 'accepted': return <CheckCircle className="h-4 w-4" />;
       case 'in_progress': return <Zap className="h-4 w-4" />;
       default: return <MapPin className="h-4 w-4" />;
@@ -399,6 +419,10 @@ export default function InstallerMapView() {
                   <span>Pending</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                  <span>Scheduled</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                   <span>Accepted</span>
                 </div>
@@ -490,25 +514,35 @@ export default function InstallerMapView() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {assignment.leads?.address && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           openInMaps(assignment.leads!.address!);
                         }}
                       >
                         <Navigation className="h-4 w-4 mr-2" />
-                        Open in Maps
+                        Navigate
                       </Button>
                     )}
-                    {isDemo && !trainingMode && (
+                    {onSelectJob && (
                       <Button
                         size="sm"
-                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectJob(assignment, isDemo || isSample);
+                        }}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    )}
+                    {isDemo && !trainingMode && !onSelectJob && (
+                      <Button
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           startTraining();

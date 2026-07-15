@@ -479,13 +479,15 @@ export default function ProposalResultsView({ proposalId, leadId, onBack }: Prop
                 <div className="space-y-3">
                   <h4 className="font-semibold">What's Included</h4>
                   {[
-                    'Premium solar panels with 25-year warranty',
-                    'Professional installation by certified team',
-                    'SEAI grant application assistance',
-                    'Smart monitoring system',
-                    'Post-installation support',
-                    'Electrical certification',
-                    '2-year workmanship warranty'
+                    `${panelCount} x premium 400W panels (25-year performance warranty)`,
+                    `${proposal.system_size_kw} kW ${proposal.inverter_type || 'hybrid'} inverter system`,
+                    proposal.battery_storage
+                      ? `Battery storage - ${proposal.battery_capacity_kwh} kWh for backup & energy independence`
+                      : 'Option to add battery storage for backup & energy independence',
+                    `SEAI grant handled for you - EUR${proposal.seai_grant?.toLocaleString()} claimed`,
+                    `Smart monitoring - track generation & savings live`,
+                    `Electrical certification & ${proposal.workmanship_warranty_years || 2}-year workmanship warranty`,
+                    `Payback in ${roiYears ? roiYears.toFixed(1) : '~'} years, then ~free electricity`,
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <CheckCircle className="text-primary flex-shrink-0 mt-1" size={18} />

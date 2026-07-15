@@ -63,6 +63,7 @@ export type Database = {
           lead_id: string
           notes: string | null
           priority: string | null
+          proposal_id: string | null
           scheduled_date: string | null
           status: string | null
           updated_at: string
@@ -77,6 +78,7 @@ export type Database = {
           lead_id: string
           notes?: string | null
           priority?: string | null
+          proposal_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           updated_at?: string
@@ -91,6 +93,7 @@ export type Database = {
           lead_id?: string
           notes?: string | null
           priority?: string | null
+          proposal_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           updated_at?: string
@@ -108,6 +111,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -289,6 +299,44 @@ export type Database = {
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_photos: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          description: string | null
+          id: string
+          photo_type: string
+          photo_url: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_type: string
+          photo_url: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_type?: string
+          photo_url?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_photos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "installation_checklists"
             referencedColumns: ["id"]
           },
         ]
@@ -1166,7 +1214,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "consultant" | "installer"
+      app_role: "admin" | "consultant" | "installer" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1294,7 +1342,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "consultant", "installer"],
+      app_role: ["admin", "consultant", "installer", "customer"],
     },
   },
 } as const
