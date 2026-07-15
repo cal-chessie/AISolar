@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { brand } from "@/config/brand";
+import { getPublicTenantContext } from "@/lib/tenant";
 import type { AnalysisData } from "./AIBillAnalyser";
 
 const IRISH_COUNTIES = [
@@ -55,6 +56,12 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
 
     setLoading(true);
     try {
+      // WHOSE LEAD IS THIS?
+      // Handoff params (a brand site opened this analyser) win; otherwise
+      // this deployment's config/brand. The lead's custody starts with the
+      // storefront that generated it — the routing agent may transfer later.
+      const tenantCtx = getPublicTenantContext();
+
       // Build address from county and extracted address
       let address = `County ${formData.county}, ${brand.country}`;
       if (analysisData?.extractedAddress) {
@@ -63,7 +70,6 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
 
       // Build comprehensive notes
       const notes = [
-        `[SOURCE: AI_ANALYSER]`,
         `[AI Analysis via ${brand.domain}]`,
         analysisData?.mprn ? `[MPRN: ${analysisData.mprn}]` : null,
         `Estimated System: ${analysisData?.estimatedSystemSize}kWp`,
@@ -90,6 +96,10 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
         annual_consumption_kwh: analysisData?.annualKwh || null,
         workflow_stage: "new",
         notes,
+        // THE THREE AXES (AIOS_ARCHITECTURE Part V):
+        tenant_id: tenantCtx.tenantId,  // custody — who services it now
+        brand: tenantCtx.brand,          // storefront — fee axis, never changes
+        source: "ai-analyser",           // channel
       }).select().single();
 
       if (error) throw error;
