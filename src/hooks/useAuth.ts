@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-export type AppRole = 'admin' | 'consultant' | 'installer';
+export type AppRole = 'admin' | 'consultant' | 'installer' | 'customer';
 
 interface AuthState {
   user: User | null;
@@ -95,6 +95,9 @@ export function useAuth() {
     // If only installer role, go to installer portal
     if (authState.roles.length === 1 && authState.roles.includes('installer')) {
       return '/installer';
+    }
+    if (authState.roles.length === 1 && authState.roles.includes('customer')) {
+      return '/my-projects';
     }
     // Otherwise go to consultant dashboard (unified for owners and consultants)
     return '/consultant';
