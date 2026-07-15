@@ -8,6 +8,18 @@
  */
 
 export const brand = {
+  // ===== TENANT BINDING (AIOS kernel) =====
+  // id       = this storefront's brand slug. Stamped on every lead as `brand`
+  //            (the fee-attribution axis — NEVER changes after creation).
+  // tenantId = which kernel tenant holds CUSTODY of leads born on this
+  //            deployment (the routing agent may transfer custody later).
+  //            Default: Renewable Ireland (national) — per the pool rule,
+  //            "nobody holds it → national picks it up".
+  // Every white-label deployment MUST set both. There is no fallback —
+  // a lead with no owner refuses to save.
+  id: "aisolar",
+  tenantId: "b05a5672-822b-48f2-b0e4-be88f724dfd7", // Renewable Ireland (national)
+
   // ===== COMPANY INFO =====
   name: "AISOLAR",
   tagline: "AI-Powered Savings Analysis",
@@ -40,6 +52,9 @@ export const brand = {
   },
   
   // ===== TRUST BADGES & STATS =====
+  // ⚠️ TODO (Task 4 polish): these stats are placeholder marketing numbers.
+  // Same legal risk as the fake reviews removed from the RI site — replace
+  // with real figures or remove before serious traffic.
   stats: {
     customers: "2,500+",
     savingsGenerated: "€3.2M",
