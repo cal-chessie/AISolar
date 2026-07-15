@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2 } from 'lucide-react';
+import { getPublicTenantContext } from '@/lib/tenant';
 
 interface LeadCaptureFormProps {
   onSuccess?: () => void;
@@ -35,6 +36,9 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
     setLoading(true);
 
     try {
+      // WHOSE LEAD IS THIS? Handoff params win; else this deployment's brand.
+      const tenantCtx = getPublicTenantContext();
+
       const { error } = await supabase
         .from('leads')
         .insert({
@@ -45,6 +49,10 @@ export default function LeadCaptureForm({ onSuccess }: LeadCaptureFormProps) {
           mprn: formData.mprn || null,
           monthly_bill: formData.monthly_bill ? parseFloat(formData.monthly_bill) : null,
           workflow_stage: 'new',
+          // THE THREE AXES (AIOS_ARCHITECTURE Part V):
+          tenant_id: tenantCtx.tenantId,  // custody — who services it now
+          brand: tenantCtx.brand,          // storefront — fee axis, never changes
+          source: 'website-form',          // channel
         });
 
       if (error) throw error;
