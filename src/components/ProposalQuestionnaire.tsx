@@ -11,12 +11,52 @@ import { toast } from '@/hooks/use-toast';
 import { ChevronRight, ChevronLeft, Save, FileText, CheckCircle, Zap, Battery, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activityLog';
+import { calculateEstimate } from '@/lib/estimate-engine';
 import EquipmentLibrary from '@/components/equipment/EquipmentLibrary';
+
+export interface ProposalFormData {
+  propertyType?: string;
+  annualConsumption?: string;
+  currentTariff?: string;
+  county?: string;
+  systemSize?: string;
+  roofType?: string;
+  roofMaterial?: string;
+  roofOrientation?: string;
+  roofPitch?: string;
+  roofCondition?: string;
+  shadingLevel?: string;
+  shadingAnalysis?: string;
+  batteryStorage?: 'yes' | 'no';
+  batteryCapacity?: string;
+  panelType?: string;
+  inverterType?: string;
+  selectedPanelId?: string | null;
+  selectedInverterId?: string | null;
+  selectedBatteryId?: string | null;
+  budget?: string;
+  financing?: string;
+  timeline?: string;
+  peakUsage?: string;
+  primaryGoal?: string;
+  evCharger?: string;
+  smartHome?: string;
+  monitoring?: string;
+  extendedWarranty?: string;
+  concerns?: string[];
+  customerQuestions?: string;
+  customerNotes?: string;
+  specialRequirements?: string;
+  installationNotes?: string;
+  consultantNotes?: string;
+  followUp?: string;
+  _prefilledFromSurvey?: boolean;
+}
 
 interface ProposalQuestionnaireProps {
   leadId: string;
   proposalId?: string;
-  initialData?: Record<string, any> | null;
+  initialData?: ProposalFormData | null;
   onBack?: () => void;
 }
 
@@ -24,7 +64,7 @@ interface ProposalQuestionnaireProps {
 const BASE_STEPS = 15;
 
 export default function ProposalQuestionnaire({ leadId, proposalId, initialData, onBack }: ProposalQuestionnaireProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<ProposalFormData>({});
   const [loading, setLoading] = useState(false);
   
   // Determine if survey data pre-filled key fields (skip step 1 if so)
@@ -88,10 +128,10 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
           specialRequirements: data.special_requirements || '',
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error loading proposal',
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: 'destructive',
       });
     } finally {
@@ -99,7 +139,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
     }
   };
 
-  const updateFormData = (key: string, value: any) => {
+  const updateFormData = (key: keyof ProposalFormData, value: ProposalFormData[keyof ProposalFormData]) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -139,39 +179,38 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       const annualConsumption = parseFloat(formData.annualConsumption || '0');
       const currentTariff = parseFloat(formData.currentTariff || '0.35');
       const systemSizeKw = parseFloat(formData.systemSize || (annualConsumption ? (annualConsumption / 900).toFixed(1) : '0'));
-      const estimatedProduction = systemSizeKw * 900;
-      const monthlySavings = estimatedProduction && currentTariff ? (estimatedProduction * currentTariff) / 12 : null;
-      const systemCost = systemSizeKw ? systemSizeKw * 1400 : null;
-      
-      // Updated SEAI Grant Logic (2024): €1,800 max for domestic systems ≥2kWp
+      const includeBattery = formData.batteryStorage === 'yes';
+
+      // --- REAL ESTIMATE ENGINE (no hand-rolled slop) ---
+      // Uses SEAI tiers, 32-county PVGIS yields, 25yr cashflow (degradation +
+      // inflation + inverter replacement). County optional; falls back to default.
+      const est = calculateEstimate({
+        annualKwh: annualConsumption > 0 ? annualConsumption : null,
+        county: formData.county || null,
+        includeBattery,
+        roofCapKwp: systemSizeKw > 0 ? systemSizeKw : null,
+        config: { retailRate: currentTariff },
+      });
+
+      const estimatedProduction = est.annualProductionKwh;
+      const monthlySavings = est.annualSavings ? Math.round(est.annualSavings / 12) : 0;
+      const systemCost = est.systemCostGross;
+      const seaiGrant = est.seaiGrant;
+      const netCost = est.systemCostNet;
+      const annualSavings = est.annualSavings;
+      const paybackYears = est.paybackYears;
+      const lifetimeSavings = est.lifetimeSavings;
+      const co2SavedTonnesPerYear = est.co2SavedTonnesPerYear;
+      const solarOffsetPct = est.solarOffsetPct;
+      const yieldSource = est.assumptions.yieldSource;
+
+      // SEAI grant logic retained for non-residential review flagging only
       const propertyType = formData.propertyType || 'residential';
-      let seaiGrant = 0;
       let requiresReview = false;
-      
-      if (propertyType === 'residential') {
-        seaiGrant = systemSizeKw >= 2 ? 1800 : Math.round(systemSizeKw * 900);
-      } else if (propertyType === 'commercial') {
-        if (systemSizeKw < 6) {
-          seaiGrant = Math.min(2700, Math.round(systemSizeKw * 900));
-        } else if (systemSizeKw <= 50) {
-          seaiGrant = 2700 + Math.round((systemSizeKw - 6) * 300);
-          seaiGrant = Math.min(16200, seaiGrant);
-          requiresReview = systemSizeKw > 20;
-        } else {
-          seaiGrant = 16200;
-          requiresReview = true;
-        }
-      } else if (propertyType === 'industrial') {
-        seaiGrant = 0;
-        requiresReview = true;
-      }
-      
-      const netCost = systemCost !== null ? systemCost - seaiGrant : null;
-      const annualSavings = monthlySavings !== null ? monthlySavings * 12 : null;
-      const paybackYears = netCost !== null && annualSavings ? netCost / annualSavings : null;
+      if (propertyType !== 'residential') requiresReview = true;
 
       // Calculate panel count based on system size
-      const panelCount = Math.ceil(systemSizeKw / 0.4); // Assuming 400W panels
+      const panelCount = Math.ceil(est.systemSizeKwp / 0.4); // Assuming 400W panels
 
       const proposalData = {
         lead_id: leadId,
@@ -184,6 +223,10 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
         seai_grant: seaiGrant || null,
         net_cost: netCost || null,
         payback_period_years: paybackYears || null,
+        lifetime_savings: lifetimeSavings ?? null,
+        co2_saved_tonnes_per_year: co2SavedTonnesPerYear || null,
+        solar_offset_pct: solarOffsetPct || null,
+        yield_source: yieldSource || null,
         property_type: propertyType,
         requires_review: requiresReview,
         roof_type: formData.roofType || null,
@@ -240,10 +283,10 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       if (onBack) {
         onBack();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error saving proposal',
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: 'destructive',
       });
     } finally {
@@ -550,7 +593,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
         );
 
       // Step 6: Equipment Selection - Using Equipment Library
-      case 6:
+      case 6: {
         const systemSize = parseFloat(formData.systemSize || '5');
         return (
           <div className="space-y-4">
@@ -579,6 +622,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
             </p>
           </div>
         );
+      }
 
       // Step 7: Budget & Financing
       case 7:
@@ -680,8 +724,52 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
           </div>
         );
 
-      // Step 9: Additional Features (EV, Smart Home)
+      // Step 9: Environmental Goals (ask BEFORE features so the proposal narrative is framed)
       case 9:
+        return (
+          <div className="space-y-6">
+            <div>
+              <Label className="mb-2 block">What matters most to you?</Label>
+              <RadioGroup 
+                value={formData.primaryGoal || ''} 
+                onValueChange={(value) => updateFormData('primaryGoal', value)}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="savings" id="goal-savings" />
+                  <Label htmlFor="goal-savings" className="cursor-pointer flex-1">
+                    <span className="font-medium">Maximum savings</span>
+                    <p className="text-xs text-muted-foreground">Reduce electricity bills as much as possible</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="independence" id="goal-independence" />
+                  <Label htmlFor="goal-independence" className="cursor-pointer flex-1">
+                    <span className="font-medium">Energy independence</span>
+                    <p className="text-xs text-muted-foreground">Reduce reliance on the grid</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="environment" id="goal-environment" />
+                  <Label htmlFor="goal-environment" className="cursor-pointer flex-1">
+                    <span className="font-medium">Environmental impact</span>
+                    <p className="text-xs text-muted-foreground">Reduce carbon footprint</p>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value="property" id="goal-property" />
+                  <Label htmlFor="goal-property" className="cursor-pointer flex-1">
+                    <span className="font-medium">Property value</span>
+                    <p className="text-xs text-muted-foreground">Increase home value with green upgrade</p>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        );
+
+      // Step 10: Additional Features (EV, Smart Home)
+      case 10:
         return (
           <div className="space-y-6">
             <p className="text-sm text-muted-foreground">Select any additional features you're interested in:</p>
@@ -731,50 +819,6 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
                   onCheckedChange={(checked) => updateFormData('extendedWarranty', checked ? 'yes' : 'no')}
                 />
               </div>
-            </div>
-          </div>
-        );
-
-      // Step 10: Environmental Goals
-      case 10:
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label className="mb-2 block">What matters most to you?</Label>
-              <RadioGroup 
-                value={formData.primaryGoal || ''} 
-                onValueChange={(value) => updateFormData('primaryGoal', value)}
-                className="space-y-3"
-              >
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="savings" id="goal-savings" />
-                  <Label htmlFor="goal-savings" className="cursor-pointer flex-1">
-                    <span className="font-medium">Maximum savings</span>
-                    <p className="text-xs text-muted-foreground">Reduce electricity bills as much as possible</p>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="independence" id="goal-independence" />
-                  <Label htmlFor="goal-independence" className="cursor-pointer flex-1">
-                    <span className="font-medium">Energy independence</span>
-                    <p className="text-xs text-muted-foreground">Reduce reliance on the grid</p>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="environment" id="goal-environment" />
-                  <Label htmlFor="goal-environment" className="cursor-pointer flex-1">
-                    <span className="font-medium">Environmental impact</span>
-                    <p className="text-xs text-muted-foreground">Reduce carbon footprint</p>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="property" id="goal-property" />
-                  <Label htmlFor="goal-property" className="cursor-pointer flex-1">
-                    <span className="font-medium">Property value</span>
-                    <p className="text-xs text-muted-foreground">Increase home value with green upgrade</p>
-                  </Label>
-                </div>
-              </RadioGroup>
             </div>
           </div>
         );
@@ -980,8 +1024,8 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
       6: 'Equipment Package',
       7: 'Budget & Financing',
       8: 'Installation Timeline',
-      9: 'Additional Features',
-      10: 'Your Goals',
+      9: 'Your Goals',
+      10: 'Additional Features',
       11: 'Customer Questions',
       12: 'Special Requirements',
       13: 'Internal Notes',
@@ -992,7 +1036,7 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
   };
 
   return (
-    <div className="max-w-2xl mx-auto pb-24">
+    <div className="max-w-2xl mx-auto pb-20">
       {/* Progress Bar - Sticky */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4">
         <div className="flex justify-between items-center mb-2">
@@ -1033,38 +1077,40 @@ export default function ProposalQuestionnaire({ leadId, proposalId, initialData,
         </CardContent>
       </Card>
 
-      {/* Fixed Navigation at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border z-50">
-        <div className="max-w-2xl mx-auto flex justify-between gap-3">
+      {/* Fixed Navigation at Bottom - slim bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border z-50">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2 px-4 py-2">
           <Button
             variant="outline"
+            size="sm"
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="gap-2 flex-1 sm:flex-none"
+            className="gap-1 flex-none"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={16} />
             <span className="hidden sm:inline">Previous</span>
           </Button>
 
-          <div className="flex gap-2 flex-1 sm:flex-none">
-            <Button variant="outline" onClick={handleSave} className="gap-2">
-              <Save size={18} />
+          <div className="flex gap-2 flex-none">
+            <Button variant="outline" size="sm" onClick={handleSave} className="gap-1">
+              <Save size={16} />
               <span className="hidden sm:inline">Save</span>
             </Button>
 
             {currentStep === TOTAL_STEPS ? (
               <Button 
+                size="sm"
                 onClick={handleSubmit} 
                 disabled={loading}
-                className="gap-2 flex-1 sm:flex-none"
+                className="gap-1"
               >
-                <FileText size={18} />
-                {loading ? 'Generating...' : 'Generate Proposal'}
+                <FileText size={16} />
+                {loading ? 'Generating...' : 'Generate'}
               </Button>
             ) : (
-              <Button onClick={handleNext} className="gap-2 flex-1 sm:flex-none">
+              <Button size="sm" onClick={handleNext} className="gap-1">
                 <span className="hidden sm:inline">Next</span>
-                <ChevronRight size={18} />
+                <ChevronRight size={16} />
               </Button>
             )}
           </div>
