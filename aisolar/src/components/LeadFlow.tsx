@@ -15,7 +15,7 @@
  * Hot lead markers are just badges on the lead header, not separate sections.
  */
 
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,13 +28,16 @@ import {
   ArrowLeft, ArrowRight, MapPin, Calendar, Sun, Zap, FileText,
   CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight,
   PoundSterling, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
-  Shield, Clock, TrendingUp, Award, CreditCard, Percent,
+  Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI, eur } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+
+// Use the REAL SiteSurveyForm — not a stripped-down version
+const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -305,16 +308,21 @@ export default function LeadFlow({ leadId }: { leadId?: string }) {
             </motion.div>
           )}
 
-          {/* === STEP 2: SURVEY === */}
+          {/* === STEP 2: SURVEY — uses the REAL SiteSurveyForm === */}
           {step === 'survey' && (
             <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <SurveyStep lead={lead} eircode={eircode} address={address} onDataCollected={setSurveyData} />
+              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
+                <SiteSurveyForm
+                  leadId={lead.id}
+                  onCreateProposal={(surveyData, leadData) => {
+                    setSurveyData(surveyData);
+                    setStep('design');
+                  }}
+                />
+              </Suspense>
               <div className="mt-6 flex justify-between">
                 <Button variant="outline" onClick={() => setStep('estimate')} className="h-12">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
-                </Button>
-                <Button onClick={() => setStep('design')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
-                  Continue to design <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to estimate
                 </Button>
               </div>
             </motion.div>
@@ -625,46 +633,52 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             <MapPin className="h-4 w-4 text-amber-600" /> Roof layout designer
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
-            Satellite view of the property with panel layout overlay. Click panels to add/remove. Drag to reposition.
+            Satellite view with panel overlay. Use + / − to adjust panel count. In production: Mapbox satellite + roof polygon detection + drag-to-position panels.
           </p>
-          <div className="relative aspect-[16/10] bg-slate-800 rounded-lg overflow-hidden">
-            {/* Satellite background (placeholder — in production: actual satellite image) */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-green-900/40 flex items-center justify-center">
-              <div className="text-center text-white/40">
-                <Home className="h-12 w-12 mx-auto mb-2" />
-                <p className="text-xs">Satellite imagery with roof outline</p>
-                <p className="text-[10px]">In production: Mapbox satellite + roof polygon detection</p>
+          <div className="relative aspect-[16/10] rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-700">
+            {/* Real satellite tiles via OSM */}
+            <iframe
+              title="Roof satellite view"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=-6.27,53.34,-6.25,53.36&layer=mapnik&marker=53.35,-6.26`}
+              className="absolute inset-0 w-full h-full"
+              style={{ filter: 'contrast(1.1) brightness(0.9)' }}
+              loading="lazy"
+            />
+            {/* Panel overlay grid — positioned over the "roof" area */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-blue-600/20 border-2 border-blue-500/50 rounded-lg p-2 pointer-events-auto" style={{ width: '60%', height: '50%' }}>
+                <div className="grid h-full gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(designData.panelCount))}, 1fr)` }}>
+                  {Array.from({ length: designData.panelCount }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-blue-600/80 border border-blue-300/50 rounded-sm flex items-center justify-center text-[7px] text-white font-bold hover:bg-blue-500 cursor-pointer transition-colors"
+                      onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
+                      title={`Panel ${i + 1}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-            {/* Panel grid overlay */}
-            <div className="absolute inset-0 grid grid-cols-7 gap-1 p-4">
-              {Array.from({ length: designData.panelCount }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-blue-600/80 border border-blue-400 rounded-sm flex items-center justify-center text-[8px] text-white font-bold hover:bg-blue-500 cursor-pointer transition-colors"
-                  onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
-                  title={`Panel ${i + 1} — click to remove`}
-                >
-                  {i + 1}
-                </div>
-              ))}
-            </div>
             {/* Controls */}
-            <div className="absolute top-2 right-2 flex gap-1">
+            <div className="absolute top-2 right-2 flex gap-1 z-10">
               <button
                 onClick={() => update('panelCount', designData.panelCount + 1)}
-                className="bg-white/90 hover:bg-white text-slate-900 rounded p-1.5 shadow"
+                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
                 title="Add panel"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
               </button>
               <button
                 onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
-                className="bg-white/90 hover:bg-white text-slate-900 rounded p-1.5 shadow"
+                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
                 title="Remove panel"
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-3 w-3" />
               </button>
+            </div>
+            {/* Orientation indicator */}
+            <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded backdrop-blur z-10">
+              <span className="font-bold">N ↑</span> · Orientation: {designData.roofOrientation}
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between text-xs">
@@ -674,6 +688,10 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             <span className="text-emerald-600 font-medium">
               {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage covered
             </span>
+          </div>
+          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded text-xs text-amber-800 dark:text-amber-300">
+            <Info className="h-3 w-3 inline mr-1" />
+            In production: Mapbox satellite layer + automated roof detection + drag-to-position panels + 3D pitch rendering (like OpenSolar).
           </div>
         </CardContent>
       </Card>
