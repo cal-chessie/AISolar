@@ -43,14 +43,22 @@ export function disableDemoMode(): void {
 /** Routes that exist in App.tsx, grouped for the demo navigation hub. */
 export const ALL_ROUTES = [
   {
+    group: 'NEW — Installer-First Build',
+    routes: [
+      { path: '/installer', label: 'Installer Cockpit (NEW)', desc: 'Today\'s jobs, surveys, materials, agents, handovers — installer-first build with role-aware AI coach' },
+      { path: '/pipeline', label: 'Unified Pipeline (NEW)', desc: 'Kanban of all leads with touchpoints + next automation that will fire — what you asked for' },
+      { path: '/agents', label: 'Agent Foundation (NEW)', desc: 'All 10 autonomous agents with status, last run, queue depth, manual trigger' },
+    ],
+  },
+  {
     group: 'Public / Customer-Facing',
     routes: [
       { path: '/', label: 'Landing Page', desc: 'Marketing home — AI bill analyser CTA, savings calc, FAQ' },
-      { path: '/upload', label: 'Bill Upload', desc: 'AIBillAnalyser flow — lead capture from bill photo' },
+      { path: '/upload', label: 'Bill Upload', desc: 'AIBillAnalyser flow — lead capture from bill photo (front door of the pipeline)' },
       { path: '/upsell', label: 'Value Upsell', desc: 'Post-lead value-add upsell page' },
       { path: '/about', label: 'About Us', desc: 'Company info page' },
       { path: '/auth', label: 'Auth (Sign In / Sign Up)', desc: 'Login form with role picker (owner/consultant/installer/customer)' },
-      { path: '/portal', label: 'Client Portal Lookup', desc: 'Email-based portal link finder (BROKEN: leaks access_token to anyone)' },
+      { path: '/portal', label: 'Client Portal Lookup', desc: 'Email-based portal link finder (BROKEN: leaks access_token to anyone — see audit #10)' },
       { path: '/customer/demo-token', label: 'Customer Portal (token)', desc: 'Token-gated customer view of one lead — proposal, contract, invoice, SEAI' },
     ],
   },
@@ -62,16 +70,16 @@ export const ALL_ROUTES = [
     ],
   },
   {
-    group: 'Internal — Installer',
+    group: 'Internal — Installer (legacy)',
     routes: [
-      { path: '/installer', label: 'Installer Portal', desc: 'InstallerDashboard — assignments, map view, availability, mobile companion' },
+      { path: '/installer-v2', label: 'Legacy Installer Dashboard', desc: 'Old thin-shell installer view (kept for comparison; /installer now uses the new cockpit in demo mode)' },
     ],
   },
   {
     group: 'Internal — Admin',
     routes: [
-      { path: '/admin/settings', label: 'Admin Settings', desc: 'User management, follow-up thresholds, email templates (broken: not persisted), products' },
-      { path: '/admin/audit', label: 'Audit Dashboard', desc: 'Data integrity checks, workflow stats, entity counts (BROKEN: no auth check)' },
+      { path: '/admin/settings', label: 'Admin Settings', desc: 'User management, follow-up thresholds, email templates (was broken — now persists to email_templates table per 20260718 migration), products' },
+      { path: '/admin/audit', label: 'Audit Dashboard', desc: 'Data integrity checks, workflow stats, entity counts' },
     ],
   },
 ];

@@ -26,6 +26,11 @@ import AuditDashboard from "./pages/AuditDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import DemoIndex from "./pages/DemoIndex";
 import DemoBanner from "./components/DemoBanner";
+import InstallerFirstDashboard from "./components/InstallerFirstDashboard";
+import PipelineView from "./components/PipelineView";
+import AgentFoundation from "./components/AgentFoundation";
+import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
+import { isDemoMode } from "./lib/demoMode";
 
 const queryClient = new QueryClient();
 
@@ -39,9 +44,12 @@ function AppRoutes() {
   });
 
   // Only show AI Coach on internal dashboard pages
-  const showAICoach = ['/consultant', '/installer', '/admin', '/field'].some(path => 
+  const showAICoach = ['/consultant', '/installer', '/admin', '/field', '/pipeline', '/agents'].some(path =>
     location.pathname.startsWith(path)
   );
+
+  // Show role-based coach in demo mode, otherwise old coach (until full cutover)
+  const useRoleCoach = isDemoMode();
 
   return (
     <>
@@ -50,7 +58,7 @@ function AppRoutes() {
         open={isSearchOpen}
         onOpenChange={setIsSearchOpen}
       />
-      {showAICoach && <PersistentAICoach />}
+      {showAICoach && (useRoleCoach ? <RoleBasedAICoach /> : <PersistentAICoach />)}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><PremiumIndex /></PageTransition>} />
@@ -60,6 +68,9 @@ function AppRoutes() {
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
           <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
+          <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
+          <Route path="/pipeline" element={<PageTransition><PipelinePage /></PageTransition>} />
+          <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
           <Route path="/portal" element={<PageTransition><ClientPortal /></PageTransition>} />
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
@@ -71,6 +82,27 @@ function AppRoutes() {
         </Routes>
       </AnimatePresence>
     </>
+  );
+}
+
+// Lightweight wrapper pages for the new components
+function PipelinePage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <PipelineView />
+      </div>
+    </div>
+  );
+}
+
+function AgentsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <AgentFoundation />
+      </div>
+    </div>
   );
 }
 

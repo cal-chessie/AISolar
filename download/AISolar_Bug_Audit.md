@@ -308,3 +308,63 @@ Your instinct is correct. The way the codebase is structured, the consultant das
 The bug list is also browsable in the running app at `/demo` — visit the preview URL and click "Browse Views" in the top nav or the floating bottom-right button to navigate between every view in demo mode (auth bypassed for review).
 
 When you've made your shortlist of which bugs to tackle first, send me the numbers and I'll fix them in priority order.
+
+---
+
+# v2 Update — 2026-07-17
+
+After the v1 audit, the user requested a major rebuild with installer-first reframing,
+autonomous agent foundation, connected pipeline, role-aware AI coach, and professional
+proposal. v2 is now deployed to the demo.
+
+## Bugs fixed in v2 (9 of 14 criticals)
+
+| v1 Bug | Category | Fix in v2 |
+|--------|----------|-----------|
+| #2 — `app_role` enum missing 'customer' | DB | ✅ Added in `20260718_agent_foundation.sql` |
+| #3 — `handle_new_user` assigns 'consultant' to all | DB | ✅ Trigger rewritten to assign 'customer' |
+| #5 — `leads` anon RLS PII leak | Security | ✅ Token comparison restored in migration |
+| Cat 4 #2 — Missing `tenant_id`/`brand`/`source` columns | DB | ✅ Added in migration |
+| Cat 2 #7 — 3 digest edge functions never scheduled | Cross-view | ✅ `pg_cron` schedules added |
+| Cat 2 #8 — Email templates not persisted | Cross-view | ✅ `email_templates` table + 7 seeded templates |
+| Cat 2 #10 — Three different stage vocabularies | Cross-view | ✅ `PIPELINE_STAGES` in `leadIntake.ts` is single source |
+| Cat 3 #29 — pdfExport invalid `<value>` + broken print | Component | ✅ Replaced with `proposalTemplate.ts` |
+| Cat 3 #16 — Two parallel grant calc paths | Component | ✅ `calculateSystemEstimate()` is single source |
+
+## New architecture (v2 additions)
+
+- `src/lib/leadIntake.ts` — single source of truth for bill-extracted + survey + proposal data
+- `src/lib/agents.ts` — 10 autonomous agent definitions with guardrails
+- `src/lib/aiCoach.ts` — role-specific tips (installer/consultant/admin/owner/customer)
+- `src/lib/dummyData.ts` — 12 realistic Irish leads spanning every pipeline stage
+- `src/lib/proposalTemplate.ts` — professional paginated HTML proposal (4 pages, A4)
+- `src/components/AgentFoundation.tsx` — agent status panel with manual trigger
+- `src/components/PipelineView.tsx` — kanban + touchpoints + next-automation display
+- `src/components/InstallerFirstDashboard.tsx` — full installer cockpit (6 tabs)
+- `src/components/ai/RoleBasedAICoach.tsx` — replaces generic PersistentAICoach
+- `supabase/migrations/20260718_agent_foundation.sql` — 200-line migration (6 tables + 4 bug fixes + 3 cron schedules)
+
+## New routes
+
+- `/installer` — Installer Cockpit (NEW, demo mode)
+- `/pipeline` — Unified Pipeline (NEW)
+- `/agents` — Agent Foundation (NEW)
+- `/installer-v2` — Legacy installer dashboard (kept for comparison)
+
+## Deferred to next sprint
+
+- Client-side role inserts in Auth.tsx (need RPC migration)
+- SendToCustomerDialog marking proposal 'presented'
+- InstallationsPanel.createAssignment notification
+- Customer portal RLS for proposals/invoices/contracts
+- Coinbase webhook signature verification
+- `verify_jwt = true` in config.toml
+- Service worker / PWA
+- Owner view-switcher UI
+- Lead reassignment UI
+- 38 component-level bugs (useCountUp, useKeyboardShortcuts, CameraCapture, etc.)
+- React Query migration
+- Toast library consolidation
+- Supabase types generation
+
+See `AISolar_v2_Rebuild_Documentation.md` for the full v2 architecture writeup.

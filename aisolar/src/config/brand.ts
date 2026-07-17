@@ -22,7 +22,7 @@ export const brand = {
 
   // ===== COMPANY INFO =====
   name: "AISOLAR",
-  tagline: "AI-Powered Savings Analysis",
+  tagline: "The solar installer operating system",
   domain: "aisolar.ie",
   country: "Ireland",
   countryEmoji: "🇮🇪",
@@ -80,9 +80,9 @@ export const brand = {
   
   // ===== SEO & META =====
   seo: {
-    title: "AI Solar Bill Analysis | Free Solar Savings Calculator Ireland",
-    description: "Upload your electricity bill and get instant solar savings estimates. Free AI-powered analysis for Irish homes. Claim up to €1,800 SEAI grant.",
-    keywords: "solar panels Ireland, solar calculator, electricity bill analysis, solar savings, SEAI grants, solar installation Ireland",
+    title: "AISOLAR — The Solar Installer Operating System | Ireland",
+    description: "Run your solar business on autopilot. Bill extract at the front door, autonomous agents handle survey scheduling, proposal drafting, SEAI grants, install coordination, and follow-ups. Built for Irish solar installers, consultants, and owners.",
+    keywords: "solar installer software, solar CRM, SEAI grant automation, solar pipeline management, installer cockpit, Irish solar business",
   },
   
   // ===== FEATURE FLAGS =====
@@ -96,14 +96,14 @@ export const brand = {
   
   // ===== COPY/MESSAGING =====
   copy: {
-    heroTitle: "AI Solar Bill Analysis",
-    heroSubtitle: "for Irish Homes",
-    heroCta: "Analyse My Bill (Free)",
-    valueProposition: "Upload your electricity bill and get instant savings estimates.",
-    trustMessage: "No obligation, free analysis",
-    noSpamMessage: "🔒 No spam, ever. Your data is secure.",
-    reportCtaTitle: "Get Your Full Solar Report",
-    reportCtaDescription: "We'll email you a detailed breakdown of your solar savings potential",
+    heroTitle: "The solar installer operating system",
+    heroSubtitle: "Bill extract → autonomous pipeline → installed systems",
+    heroCta: "Open the installer cockpit",
+    valueProposition: "Bill extract at the front door. Agents handle survey scheduling, proposal drafting, SEAI grants, install coordination, and follow-ups. Your crews install. The platform does the rest.",
+    trustMessage: "Built for installers, consultants, and owners — not consumers",
+    noSpamMessage: "10 autonomous agents · RECI sign-off built in · SEAI auto-filed",
+    reportCtaTitle: "See the live pipeline",
+    reportCtaDescription: "Every lead, every stage, every touchpoint — and the next automation that will fire",
   },
 } as const;
 

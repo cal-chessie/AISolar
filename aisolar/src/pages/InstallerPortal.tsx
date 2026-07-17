@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import InstallerDashboard from '@/components/InstallerDashboard';
+import InstallerFirstDashboard from '@/components/InstallerFirstDashboard';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
 import { isDemoMode } from '@/lib/demoMode';
@@ -11,7 +12,7 @@ export default function InstallerPortal() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Demo mode bypass
+    // Demo mode bypass — render the new installer-first dashboard
     if (isDemoMode()) {
       setLoading(false);
       return;
@@ -54,7 +55,8 @@ export default function InstallerPortal() {
         description="Manage your solar installation assignments and track your work."
         ogType="website"
       />
-      <InstallerDashboard />
+      {/* In demo mode, render the new installer-first cockpit. Otherwise, the legacy InstallerDashboard. */}
+      {isDemoMode() ? <InstallerFirstDashboard /> : <InstallerDashboard />}
     </>
   );
 }

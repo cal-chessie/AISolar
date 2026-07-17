@@ -27,7 +27,7 @@ export default function Auth() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
-  const [role, setRole] = useState<RoleType>('consultant');
+  const [role, setRole] = useState<RoleType>('owner');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -452,19 +452,19 @@ export default function Auth() {
                       onChange={(e) => setRole(e.target.value as RoleType)}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                     >
-                      <option value="owner">Owner / Solo Operator (full access)</option>
-                      <option value="consultant">Consultant</option>
-                      <option value="installer">Installer</option>
-                      <option value="customer">Customer</option>
+                      <option value="owner">Owner / Solo Operator — installer + consultant + admin (full access)</option>
+                      <option value="installer">Installer — today's jobs, surveys, materials, handovers</option>
+                      <option value="consultant">Consultant — leads, proposals, follow-ups</option>
+                      <option value="customer">Customer — view your solar project</option>
                     </select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {role === 'owner' 
-                        ? 'Full access to leads, surveys, proposals, and installations' 
-                        : role === 'consultant'
-                        ? 'Manage leads, surveys, and proposals'
+                      {role === 'owner'
+                        ? 'You run the show. See everything: installer cockpit, consultant pipeline, admin, agents, audit.'
                         : role === 'installer'
-                        ? 'View assigned installations and surveys'
-                        : 'View your solar projects, proposals, and invoices'}
+                        ? 'Cockpit view: today\'s jobs, materials checklist, site surveys, post-install handovers, weather + route.'
+                        : role === 'consultant'
+                        ? 'Pipeline view: hot leads, auto-drafted proposals, follow-up scripts, conversion analytics.'
+                        : 'Customer portal: your project status, proposal, contract, invoices, SEAI grant tracking.'}
                     </p>
                   </div>
                   <Button

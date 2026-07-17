@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sun, Menu, X, Sparkles, LogIn, Users, Info, Upload, Home, Compass } from 'lucide-react';
+import { Sun, Menu, X, Sparkles, LogIn, Users, Info, Upload, Home, Compass, Wrench, TrendingUp, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { brand } from '@/config/brand';
@@ -22,9 +22,10 @@ export default function SiteNavigation() {
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/upload', label: 'Upload Bill', icon: Upload },
-    { href: '/my-projects', label: 'My Projects', icon: Users },
-    { href: '/about', label: 'About Us', icon: Info },
+    { href: '/installer', label: 'Installer Cockpit', icon: Wrench },
+    { href: '/pipeline', label: 'Pipeline', icon: TrendingUp },
+    { href: '/agents', label: 'Agents', icon: Bot },
+    { href: '/about', label: 'About', icon: Info },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -104,13 +105,23 @@ export default function SiteNavigation() {
             </Button>
 
             <Button
+              onClick={() => navigate('/installer')}
+              variant="default"
+              size="sm"
+              className="hidden sm:flex h-10 px-4 text-sm bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <Wrench className="h-4 w-4 mr-2" />
+              Open Cockpit
+            </Button>
+
+            <Button
               onClick={() => navigate('/auth')}
               variant="outline"
               size="sm"
               className="hidden sm:flex h-10 px-4 text-sm"
             >
               <LogIn className="h-4 w-4 mr-2" />
-              Consultant Login
+              Sign in
             </Button>
 
             {/* Mobile menu button - 48px touch target */}

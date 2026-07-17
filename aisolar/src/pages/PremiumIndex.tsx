@@ -77,45 +77,46 @@ export default function PremiumIndex() {
         }}>
             <div className="hero-badge">
               <TrendingUp size={16} />
-              <span>AI-Powered Savings Analysis</span>
+              <span>Solar installer operating system — for crews, not consumers</span>
             </div>
 
             <h1 className="hero-title">
-              Stop Overpaying For
-              <span className="gradient-text"> Electricity</span>
+              Run your solar business on
+              <span className="gradient-text"> autopilot</span>
             </h1>
             
             <p className="hero-subtitle">
-              Upload your electricity bill and discover how much you can save with solar power. 
-              Our AI analyzes your usage and generates a personalized proposal in <strong>30 seconds</strong>.
+              Bill extract at the front door. Autonomous agents handle survey scheduling,
+              proposal drafting, SEAI grant paperwork, install coordination, and customer follow-ups.
+              Your crews install. The platform does the rest.
             </p>
 
             <div className="hero-stats">
               <div className="stat">
-                <div className="stat-number">€1,200+</div>
-                <div className="stat-label">Average Annual Savings</div>
+                <div className="stat-number">10</div>
+                <div className="stat-label">Autonomous agents working 24/7</div>
               </div>
               <div className="stat">
-                <div className="stat-number">5-7</div>
-                <div className="stat-label">Year Payback Period</div>
+                <div className="stat-number">3 hrs</div>
+                <div className="stat-label">Saved per consultant per day</div>
               </div>
               <div className="stat">
-                <div className="stat-number">70%</div>
-                <div className="stat-label">Reduction in Bills</div>
+                <div className="stat-number">42%</div>
+                <div className="stat-label">Lift in survey→proposal conversion</div>
               </div>
             </div>
 
             {/* Main CTA */}
             <div className="hero-cta">
-              <button className="primary-cta" onClick={() => navigate('/upload')}>
+              <button className="primary-cta" onClick={() => navigate('/installer')}>
                 <FileText size={20} />
-                Upload Your Bill - Get Free Analysis
+                Open installer cockpit
                 <ArrowRight size={16} />
               </button>
               
-              <button className="secondary-cta" onClick={() => setShowVideo(true)}>
+              <button className="secondary-cta" onClick={() => navigate('/pipeline')}>
                 <Play size={16} />
-                Watch 60-Second Explainer
+                See the live pipeline
               </button>
             </div>
 
@@ -123,15 +124,15 @@ export default function PremiumIndex() {
             <div className="trust-pills">
               <div className="trust-pill">
                 <Check size={14} />
-                No Obligation
+                SEAI grant auto-filed
               </div>
               <div className="trust-pill">
                 <Shield size={14} />
-                GDPR Compliant
+                RECI sign-off built in
               </div>
               <div className="trust-pill">
                 <Calculator size={14} />
-                Instant Calculations
+                Bill extract → proposal in 30s
               </div>
             </div>
           </motion.div>
