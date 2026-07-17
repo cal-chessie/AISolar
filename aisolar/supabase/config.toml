@@ -51,3 +51,7 @@ verify_jwt = true
 
 [functions.send-payment-reminder]
 verify_jwt = true
+
+# --- AGENT RUNTIME (verify_jwt=true, invoked by pg_cron + manual UI) ---
+[functions.agent-drain]
+verify_jwt = true

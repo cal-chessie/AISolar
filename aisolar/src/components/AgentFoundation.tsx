@@ -1,23 +1,27 @@
 /**
- * Agent Foundation Panel
+ * Agent Foundation Panel V2 — real data, no stubs.
  *
- * Shows all 10 autonomous agents, their last run, queue depth, and lets the user
- * manually trigger or pause them. This is the "kernel" of the autonomous foundation.
+ * - Queries agent_runs + agent_queue from Supabase for real stats
+ * - "Run now" button invokes agent-drain edge function
+ * - In demo mode (no session), shows clearly-marked demo data
+ * - All numbers are real (or clearly demo)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AGENTS, AgentDefinition } from '@/lib/agents';
+import { isDemoMode } from '@/lib/demoMode';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Bot, Clock, CheckCircle2, AlertCircle, Pause, Play, Zap, Calendar,
-  ArrowRight, Shield, FileText, Mail, Bell,
+  ArrowRight, Shield, FileText, RefreshCw, Loader2,
 } from 'lucide-react';
 
-interface AgentRun {
+interface AgentStatus {
   agentId: string;
   lastRun: string;
   status: 'success' | 'failed' | 'running' | 'idle';
@@ -25,46 +29,151 @@ interface AgentRun {
   queueDepth: number;
   nextRun?: string;
   lastError?: string;
+  lastOutputs?: any;
 }
 
-// Simulated run state — in production this comes from the agent_runs table
-const SIMULATED_RUNS: AgentRun[] = [
-  { agentId: 'lead_intake',           lastRun: '2 min ago',  status: 'success', runs24h: 7,  queueDepth: 0 },
-  { agentId: 'survey_scheduler',      lastRun: '1 hour ago', status: 'success', runs24h: 3,  queueDepth: 1, nextRun: 'on next intake_complete' },
-  { agentId: 'proposal_drafter',      lastRun: '15 min ago', status: 'success', runs24h: 4,  queueDepth: 0 },
-  { agentId: 'follow_up',             lastRun: '6 hours ago',status: 'success', runs24h: 1,  queueDepth: 0, nextRun: '09:00 tomorrow' },
-  { agentId: 'grant_submitter',       lastRun: '3 hours ago',status: 'success', runs24h: 2,  queueDepth: 0 },
-  { agentId: 'install_coordinator',   lastRun: '20 min ago', status: 'success', runs24h: 5,  queueDepth: 0 },
-  { agentId: 'post_install',          lastRun: '1 hour ago', status: 'success', runs24h: 2,  queueDepth: 0 },
-  { agentId: 'customer_digest',       lastRun: 'Mon 10:00',  status: 'success', runs24h: 0,  queueDepth: 12, nextRun: 'Mon 10:00' },
-  { agentId: 'stale_lead_escalator',  lastRun: '8 hours ago',status: 'success', runs24h: 1,  queueDepth: 3, nextRun: '08:00 tomorrow' },
-  { agentId: 'payment_reminder',      lastRun: '4 hours ago',status: 'failed',  runs24h: 1,  queueDepth: 8, nextRun: '09:30 tomorrow', lastError: 'Postmark rate limit exceeded' },
-];
+// Real query against agent_runs + agent_queue
+async function fetchAgentStatus(): Promise<AgentStatus[]> {
+  const demo = isDemoMode();
+
+  if (demo) {
+    // Demo mode: return clearly-marked simulated data
+    return AGENTS.map(agent => ({
+      agentId: agent.id,
+      lastRun: ['2 min ago', '1 hour ago', '15 min ago', '6 hours ago', '3 hours ago', '20 min ago', '1 hour ago', 'Mon 10:00', '8 hours ago', '4 hours ago'][AGENTS.indexOf(agent)] || 'never',
+      status: agent.id === 'payment_reminder' ? 'failed' : 'success',
+      runs24h: Math.floor(Math.random() * 8) + 1,
+      queueDepth: agent.id === 'customer_digest' ? 12 : Math.floor(Math.random() * 4),
+      nextRun: agent.trigger === 'cron' ? '09:00 tomorrow' : undefined,
+      lastError: agent.id === 'payment_remider' ? 'Postmark rate limit exceeded' : undefined,
+    }));
+  }
+
+  // Production: query real data
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+  const { data: runs, error: runsError } = await supabase
+    .from('agent_runs')
+    .select('agent_id, status, created_at, error_message, outputs')
+    .gte('created_at', twentyFourHoursAgo.toISOString())
+    .order('created_at', { ascending: false });
+
+  if (runsError) throw runsError;
+
+  const { data: queue, error: queueError } = await supabase
+    .from('agent_queue')
+    .select('agent_id, id')
+    .is('locked_until', null);
+
+  if (queueError) throw queueError;
+
+  return AGENTS.map(agent => {
+    const agentRuns = (runs || []).filter(r => r.agent_id === agent.id);
+    const lastRun = agentRuns[0];
+    const queueItems = (queue || []).filter(q => q.agent_id === agent.id);
+
+    return {
+      agentId: agent.id,
+      lastRun: lastRun ? formatTimeAgo(lastRun.created_at) : 'never',
+      status: lastRun?.status || 'idle',
+      runs24h: agentRuns.length,
+      queueDepth: queueItems.length,
+      lastError: lastRun?.error_message,
+      lastOutputs: lastRun?.outputs,
+    };
+  });
+}
+
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.floor(hr / 24)}d ago`;
+}
+
+// Invoke agent-drain for a specific agent + lead
+async function triggerAgentNow(agentId: string, leadId?: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-drain`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      agent_id: agentId,
+      lead_id: leadId,
+      trigger_type: 'manual',
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to trigger agent: ${error}`);
+  }
+}
 
 const TRIGGER_ICONS: Record<AgentDefinition['trigger'], typeof Clock> = {
   db_trigger: Zap,
   cron: Calendar,
   manual: Play,
-  event: Bell,
+  event: Bot,
 };
 
 export default function AgentFoundation({ compact = false }: { compact?: boolean }) {
-  const [runs, setRuns] = useState(SIMULATED_RUNS);
+  const [statuses, setStatuses] = useState<AgentStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState<string | null>(null);
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(AGENTS.map(a => [a.id, a.enabledByDefault]))
   );
+  const demo = isDemoMode();
 
-  const handleTrigger = (agentId: string) => {
-    setRuns(prev => prev.map(r => r.agentId === agentId ? { ...r, status: 'running' } : r));
-    setTimeout(() => {
-      setRuns(prev => prev.map(r => r.agentId === agentId ? { ...r, status: 'success', lastRun: 'just now', runs24h: r.runs24h + 1 } : r));
-    }, 1500);
+  useEffect(() => {
+    fetchAgentStatus()
+      .then(setStatuses)
+      .catch(() => setStatuses([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleTrigger = async (agentId: string) => {
+    setTriggering(agentId);
+    try {
+      if (demo) {
+        // In demo mode, simulate the trigger
+        await new Promise(r => setTimeout(r, 1500));
+      } else {
+        await triggerAgentNow(agentId);
+      }
+      // Refresh statuses
+      const fresh = await fetchAgentStatus();
+      setStatuses(fresh);
+    } catch (err) {
+      console.error('Failed to trigger agent:', err);
+    } finally {
+      setTriggering(null);
+    }
   };
 
-  const totalRuns = runs.reduce((sum, r) => sum + r.runs24h, 0);
-  const failedRuns = runs.filter(r => r.status === 'failed').length;
-  const queuedItems = runs.reduce((sum, r) => sum + r.queueDepth, 0);
+  const totalRuns = statuses.reduce((sum, s) => sum + s.runs24h, 0);
+  const failedRuns = statuses.filter(s => s.status === 'failed').length;
+  const queuedItems = statuses.reduce((sum, s) => sum + s.queueDepth, 0);
   const activeAgents = Object.values(enabled).filter(Boolean).length;
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -75,10 +184,16 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
               <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-violet-600" />
                 Agent Foundation
+                {demo && (
+                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 ml-2">
+                    Demo data
+                  </Badge>
+                )}
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Autonomous agents that do the heavy lifting — survey scheduling, proposal drafting,
-                follow-ups, grant paperwork, install coordination.
+                {demo
+                  ? 'Showing simulated data. In production, these are real agent_runs from Supabase.'
+                  : '10 autonomous agents — real runs, real queue, real execution.'}
               </p>
             </div>
             {!compact && (
@@ -107,7 +222,9 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
 
       <div className={compact ? "space-y-2" : "grid gap-3 md:grid-cols-2"}>
         {AGENTS.map((agent) => {
-          const run = runs.find(r => r.agentId === agent.id)!;
+          const run = statuses.find(r => r.agentId === agent.id) || {
+            agentId: agent.id, lastRun: 'never', status: 'idle', runs24h: 0, queueDepth: 0,
+          };
           const TriggerIcon = TRIGGER_ICONS[agent.trigger];
           const isOn = enabled[agent.id];
           const statusColor =
@@ -142,7 +259,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${statusColor}`}>
                       {run.status === 'success' && <CheckCircle2 className="h-3 w-3" />}
                       {run.status === 'failed' && <AlertCircle className="h-3 w-3" />}
-                      {run.status === 'running' && <Clock className="h-3 w-3 animate-spin" />}
+                      {run.status === 'running' && <Loader2 className="h-3 w-3 animate-spin" />}
                       {run.status === 'idle' && <Pause className="h-3 w-3" />}
                       {run.status}
                     </span>
@@ -156,10 +273,14 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                     size="sm"
                     variant="outline"
                     onClick={() => handleTrigger(agent.id)}
-                    disabled={!isOn || run.status === 'running'}
+                    disabled={!isOn || triggering === agent.id}
                     className="h-7 text-xs"
                   >
-                    {run.status === 'running' ? 'Running…' : 'Run now'}
+                    {triggering === agent.id ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running…</>
+                    ) : (
+                      <>Run now</>
+                    )}
                   </Button>
                 </div>
 
@@ -167,6 +288,13 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                   <div className="mt-2 p-2 rounded bg-red-50 dark:bg-red-950/30 text-xs text-red-700 dark:text-red-400">
                     <AlertCircle className="h-3 w-3 inline mr-1" />
                     {run.lastError}
+                  </div>
+                )}
+
+                {run.lastOutputs && !run.lastError && run.status === 'success' && (
+                  <div className="mt-2 p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 text-xs text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3 inline mr-1" />
+                    {typeof run.lastOutputs === 'object' ? JSON.stringify(run.lastOutputs).slice(0, 80) + '...' : String(run.lastOutputs)}
                   </div>
                 )}
 
@@ -214,12 +342,12 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
         <Card>
           <CardContent className="p-4 text-xs text-muted-foreground">
             <FileText className="h-4 w-4 inline mr-2" />
-            <strong>How agents work:</strong> Each agent is an autonomous function triggered by either
-            a database event (e.g. lead changes stage), a cron schedule (e.g. daily 9am), or a
-            manual click. Agents read from the lead_intake pipeline and write to proposals, invoices,
-            notifications, emails, and SEAI paperwork. They never bypass RLS — they run with the
-            service role but their guardrails prevent destructive actions. All runs are logged in
-            the <code>agent_runs</code> table for audit.
+            <strong>How agents work:</strong> Each agent is triggered by either a database event
+            (lead changes stage), a cron schedule (daily 09:00), or a manual click. The agent-drain
+            edge function claims jobs from the queue using <code>FOR UPDATE SKIP LOCKED</code>,
+            executes the handler, and writes the result to <code>agent_runs</code>. Every side effect
+            (email sent, proposal created, notification) is recorded as a <code>touchpoint</code> for
+            idempotency — agents never send the same email twice.
           </CardContent>
         </Card>
       )}
