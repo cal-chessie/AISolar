@@ -63,11 +63,13 @@ export const ALL_ROUTES = [
   {
     group: 'NEW — v3 Integration Build',
     routes: [
-      { path: '/consultant', label: 'Consultant Cockpit V2 (NEW)', desc: 'Today\'s priorities, hot leads, auto-drafted proposals, stale leads, all tools — professional upgrade' },
-      { path: '/comms', label: 'Communication Hub (NEW)', desc: 'Unified inbox: every customer touchpoint (email, SMS, calls, AI chat history) in one place' },
-      { path: '/installer-bom', label: 'Installer BOM (NEW)', desc: 'Bill of Materials per job — auto-generated packing list with van-loading checklist' },
-      { path: '/intelligence', label: 'Intelligence Builder (NEW)', desc: 'Installer drops in their own products, pricing, rules, labour rates. CSV import.' },
-      { path: '/auth', label: 'Prestigious Auth (NEW)', desc: 'Split-screen premium login — two paths: customer (book consultation) vs staff (sign in)' },
+      { path: '/installer-v4', label: 'Installer Portal V4 (NEWEST — smooth)', desc: 'Simplified: today\'s jobs as cards → click → ONE scrollable JobView with BOM + site notes + install steps + handover signature. No more tab-hopping.' },
+      { path: '/job', label: 'JobView (NEWEST)', desc: 'The single scrollable job page: BOM checklist + survey notes + 6-phase install steps (pre-install, roof, inverter, electrical, commissioning, handover) + photo capture + customer signature. Everything in the right order.' },
+      { path: '/consultant', label: 'Consultant Cockpit V2', desc: 'Today\'s priorities, hot leads, auto-drafted proposals, stale leads, all tools' },
+      { path: '/comms', label: 'Communication Hub', desc: 'Unified inbox: every customer touchpoint (email, SMS, calls, AI chat history) in one place' },
+      { path: '/installer-bom', label: 'Installer BOM (legacy)', desc: 'Standalone BOM page — superseded by JobView which has BOM built in' },
+      { path: '/intelligence', label: 'Intelligence Builder', desc: 'Installer drops in their own products, pricing, rules, labour rates. CSV import.' },
+      { path: '/auth', label: 'Prestigious Auth', desc: 'Split-screen premium login — two paths: customer (book consultation) vs staff (sign in)' },
     ],
   },
   {
