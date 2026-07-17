@@ -31,6 +31,7 @@ import InstallerPortalV2 from "./components/installer/InstallerPortalV2";
 import InstallerBOM from "./components/installer/InstallerBOM";
 import InstallerPortalV3 from "./components/installer/InstallerPortalV3";
 import JobView from "./components/installer/JobView";
+import JobViewV2 from "./components/installer/JobViewV2";
 import PipelineView from "./components/PipelineView";
 import AgentFoundation from "./components/AgentFoundation";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
@@ -91,8 +92,9 @@ function AppRoutes() {
           <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
           <Route path="/installer-v3" element={<PageTransition><InstallerPortalV2 /></PageTransition>} />
           <Route path="/installer-v4" element={<PageTransition><InstallerPortalV3 /></PageTransition>} />
-          <Route path="/job/:leadId" element={<PageTransition><JobView /></PageTransition>} />
-          <Route path="/job" element={<PageTransition><JobView /></PageTransition>} />
+          <Route path="/job/:leadId" element={<PageTransition><JobViewV2 /></PageTransition>} />
+          <Route path="/job" element={<PageTransition><JobViewV2 /></PageTransition>} />
+          <Route path="/job-v1" element={<PageTransition><JobView /></PageTransition>} />
           <Route path="/installer-bom" element={<PageTransition><BOMPage /></PageTransition>} />
           <Route path="/pipeline" element={<PageTransition><PipelinePage /></PageTransition>} />
           <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />

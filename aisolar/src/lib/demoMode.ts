@@ -63,8 +63,9 @@ export const ALL_ROUTES = [
   {
     group: 'NEW — v3 Integration Build',
     routes: [
-      { path: '/installer-v4', label: 'Installer Portal V4 (NEWEST — smooth)', desc: 'Simplified: today\'s jobs as cards → click → ONE scrollable JobView with BOM + site notes + install steps + handover signature. No more tab-hopping.' },
-      { path: '/job', label: 'JobView (NEWEST)', desc: 'The single scrollable job page: BOM checklist + survey notes + 6-phase install steps (pre-install, roof, inverter, electrical, commissioning, handover) + photo capture + customer signature. Everything in the right order.' },
+      { path: '/installer-v4', label: 'Installer Portal V4 (NEWEST — smooth)', desc: 'Simplified: today\'s jobs as cards → click → tabbed JobView with phase-by-phase install checklist.' },
+      { path: '/job', label: 'JobView V2 (NEWEST)', desc: 'Tabbed, not scrolling. 6 tabs: Overview (customer snapshot + site notes + system + weather) · Pre-install (toggles: Isolator, Export Limiter, RCD, Earth Bond) · Roof (Panels, Tiles Secure, Flashing, Cable Routing, Weatherproofing) · Electrical (Inverter, Battery, cabling, isolators, SPD, labelling) · Commissioning (Monitoring Online, Customer App, MyEnergi, serials) · Handover (walkthrough, signature, final photo). Named photos. Clear completion status.' },
+      { path: '/job-v1', label: 'JobView V1 (legacy scroll)', desc: 'The old single-scroll version — kept for comparison' },
       { path: '/consultant', label: 'Consultant Cockpit V2', desc: 'Today\'s priorities, hot leads, auto-drafted proposals, stale leads, all tools' },
       { path: '/comms', label: 'Communication Hub', desc: 'Unified inbox: every customer touchpoint (email, SMS, calls, AI chat history) in one place' },
       { path: '/installer-bom', label: 'Installer BOM (legacy)', desc: 'Standalone BOM page — superseded by JobView which has BOM built in' },
