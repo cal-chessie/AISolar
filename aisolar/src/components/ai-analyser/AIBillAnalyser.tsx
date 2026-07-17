@@ -5,6 +5,7 @@ import { AnalysisResultsStep } from "./AnalysisResultsStep";
 import { LeadCaptureModal } from "./LeadCaptureModal";
 import { SoftCTAStep } from "./SoftCTAStep";
 import CalendarBooking from "@/components/CalendarBooking";
+import EstimateProposalComparison from "./EstimateProposalComparison";
 import { brand } from "@/config/brand";
 
 export interface AnalysisData {
@@ -23,12 +24,13 @@ export interface AnalysisData {
   confidence?: 'high' | 'medium' | 'low';
 }
 
-type Step = "input" | "results" | "complete" | "booking";
+type Step = "input" | "results" | "comparison" | "complete" | "booking";
 
 export function AIBillAnalyser() {
   const [currentStep, setCurrentStep] = useState<Step>("input");
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [customerEmail, setCustomerEmail] = useState<string>("");
   const [customerName, setCustomerName] = useState<string | undefined>(undefined);
@@ -45,16 +47,13 @@ export function AIBillAnalyser() {
 
     // Calculate analysis based on Irish data
     const annualSpend = monthlyBill * 12;
-
-    // Use extracted kWh if available, otherwise estimate from bill
     const estimatedAnnualKwh = annualKwh || (annualSpend / 0.35);
-
     const estimatedSystemSize = Math.max(3, Math.min(12, Math.round(estimatedAnnualKwh / 950)));
-    const annualProduction = estimatedSystemSize * 950; // kWh per kWp in Ireland
-    const electricityRate = 0.35; // €/kWh average
-    const annualSavings = Math.round(annualProduction * electricityRate * 0.7); // 70% self-consumption
+    const annualProduction = estimatedSystemSize * 950;
+    const electricityRate = 0.35;
+    const annualSavings = Math.round(annualProduction * electricityRate * 0.7);
     const solarOffset = Math.min(85, Math.round((annualProduction / estimatedAnnualKwh) * 100));
-    const systemCost = estimatedSystemSize * 1800 - brand.grants.maxDomestic; // After SEAI grant
+    const systemCost = estimatedSystemSize * 1800 - brand.grants.maxDomestic;
     const paybackYears = Math.round((systemCost / annualSavings) * 10) / 10;
     const twentyYearSavings = annualSavings * 20;
 
@@ -84,12 +83,21 @@ export function AIBillAnalyser() {
     setLeadCaptured(true);
     setCustomerEmail(email);
     setCustomerName(name);
-    // v3: After lead capture, jump straight to calendar booking
+    // v3: After lead capture, pop up the comparison modal to incentivize booking
+    setShowComparison(true);
+  };
+
+  const handleBookFromComparison = () => {
+    setShowComparison(false);
     setCurrentStep("booking");
   };
 
+  const handleSkipComparison = () => {
+    setShowComparison(false);
+    setCurrentStep("complete");
+  };
+
   const handleBookingConfirmed = () => {
-    // After booking, show the soft CTA (account creation / next steps)
     setCurrentStep("complete");
   };
 
@@ -164,6 +172,15 @@ export function AIBillAnalyser() {
         onOpenChange={setShowLeadCapture}
         analysisData={analysisData}
         onSuccess={(email, name) => handleLeadCaptured(email, name)}
+      />
+
+      {/* Estimate vs Proposal comparison modal — pops up after lead capture */}
+      <EstimateProposalComparison
+        open={showComparison}
+        onClose={() => setShowComparison(false)}
+        analysisData={analysisData}
+        onBookConsultation={handleBookFromComparison}
+        onContinue={handleSkipComparison}
       />
     </div>
   );

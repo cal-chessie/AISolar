@@ -61,19 +61,29 @@ export function isDemoAvailable(): boolean {
 /** Routes that exist in App.tsx, grouped for the demo navigation hub. */
 export const ALL_ROUTES = [
   {
+    group: 'NEW — v3 Integration Build',
+    routes: [
+      { path: '/consultant', label: 'Consultant Cockpit V2 (NEW)', desc: 'Today\'s priorities, hot leads, auto-drafted proposals, stale leads, all tools — professional upgrade' },
+      { path: '/comms', label: 'Communication Hub (NEW)', desc: 'Unified inbox: every customer touchpoint (email, SMS, calls, AI chat history) in one place' },
+      { path: '/installer-bom', label: 'Installer BOM (NEW)', desc: 'Bill of Materials per job — auto-generated packing list with van-loading checklist' },
+      { path: '/intelligence', label: 'Intelligence Builder (NEW)', desc: 'Installer drops in their own products, pricing, rules, labour rates. CSV import.' },
+      { path: '/auth', label: 'Prestigious Auth (NEW)', desc: 'Split-screen premium login — two paths: customer (book consultation) vs staff (sign in)' },
+    ],
+  },
+  {
     group: 'NEW — v3 Customer + Installer Build',
     routes: [
-      { path: '/installer-v3', label: 'Installer Portal V3 (NEW)', desc: 'Best-in-class field installer app: OSM map, route optimisation, materials, weather, mobile-first' },
-      { path: '/customer-mobile', label: 'Customer Mobile Portal (NEW)', desc: 'Mobile-first customer experience: timeline, paperwork, AI chat — what customers see on their phone' },
-      { path: '/products', label: 'Professional Products (NEW)', desc: 'Categorised product catalogue with bundles, margins, stock, "add to proposal" integration' },
-      { path: '/analytics', label: 'Analytics Dashboard (NEW)', desc: 'BI overhaul: revenue funnel, conversion rates, team performance, agent impact, SEAI pipeline' },
-      { path: '/system-settings', label: 'System Settings (NEW)', desc: 'The bedrock: email/SMS channels, kernel/Supabase, Vault secrets, pg_cron, integrations, audit log' },
+      { path: '/installer-v3', label: 'Installer Portal V3', desc: 'Best-in-class field installer app: OSM map, route optimisation, materials, weather, mobile-first' },
+      { path: '/customer-mobile', label: 'Customer Mobile Portal', desc: 'Mobile-first customer experience: timeline, paperwork, AI chat — what customers see on their phone' },
+      { path: '/products', label: 'Professional Products', desc: 'Categorised product catalogue with bundles, margins, stock, "add to proposal" integration' },
+      { path: '/analytics', label: 'Analytics Dashboard', desc: 'BI overhaul: revenue funnel, conversion rates, team performance, agent impact, SEAI pipeline' },
+      { path: '/system-settings', label: 'System Settings', desc: 'The bedrock: email/SMS channels, kernel/Supabase, Vault secrets, pg_cron, integrations, audit log' },
     ],
   },
   {
     group: 'NEW — Installer-First Build (v2)',
     routes: [
-      { path: '/installer', label: 'Installer Cockpit', desc: 'Today\'s jobs, surveys, materials, agents, handovers — installer-first build with role-aware AI coach' },
+      { path: '/installer', label: 'Installer Cockpit (v2)', desc: 'Today\'s jobs, surveys, materials, agents, handovers — installer-first build with role-aware AI coach' },
       { path: '/pipeline', label: 'Unified Pipeline', desc: 'Kanban of all leads with touchpoints + next automation that will fire' },
       { path: '/agents', label: 'Agent Foundation', desc: 'All 10 autonomous agents with status, last run, queue depth, manual trigger' },
     ],
@@ -81,31 +91,26 @@ export const ALL_ROUTES = [
   {
     group: 'Public / Customer-Facing',
     routes: [
-      { path: '/', label: 'Landing Page', desc: 'Marketing home — AI bill analyser CTA, savings calc, FAQ' },
-      { path: '/upload', label: 'Bill Upload + Calendar Booking', desc: 'AIBillAnalyser flow → calendar booking after lead capture (NEW in v3)' },
-      { path: '/upsell', label: 'Value Upsell', desc: 'Post-lead value-add upsell page' },
-      { path: '/about', label: 'About Us', desc: 'Company info page' },
-      { path: '/auth', label: 'Auth (Sign In / Sign Up)', desc: 'Login form with role picker (owner/consultant/installer/customer)' },
+      { path: '/', label: 'Landing Page', desc: 'Marketing home — installer-first reframed (still needs audit refinement)' },
+      { path: '/upload', label: 'Bill Upload + Calendar + Estimate Comparison', desc: 'Full flow: bill extract → AI estimate → lead capture → estimate-vs-proposal comparison → calendar booking' },
+      { path: '/about', label: 'About Us (rewritten)', desc: 'Now matches the SaaS positioning — what AISOLAR actually does + the 10 agents' },
+      { path: '/auth', label: 'Auth (Prestigious)', desc: 'Premium split-screen login — customer path (book consult) vs staff path (sign in)' },
       { path: '/customer/demo-token', label: 'Customer Portal (token)', desc: 'Token-gated customer view of one lead — proposal, contract, invoice, SEAI' },
     ],
   },
   {
-    group: 'Internal — Consultant / Owner',
+    group: 'Onboarding / Demo',
     routes: [
-      { path: '/consultant', label: 'Consultant Dashboard', desc: 'PremiumDashboard — leads, surveys, proposals, installations, calendar, follow-ups, analytics' },
-      { path: '/my-projects', label: 'My Projects (Customer)', desc: 'CustomerDashboard — same email-based project list customers see' },
+      { path: '/demo', label: 'Browse All Views', desc: 'Adapt for launch: new installer signups can test-drive every view before committing' },
     ],
   },
   {
-    group: 'Internal — Installer (legacy)',
+    group: 'Legacy (kept for reference)',
     routes: [
-      { path: '/installer-v2', label: 'Legacy Installer Dashboard', desc: 'Old thin-shell installer view (kept for comparison)' },
-    ],
-  },
-  {
-    group: 'Internal — Admin',
-    routes: [
-      { path: '/admin/settings', label: 'Admin Settings (legacy)', desc: 'User management, follow-up thresholds, email templates, products' },
+      { path: '/consultant-legacy', label: 'Old Consultant Dashboard', desc: 'The v1 PremiumDashboard — for comparison' },
+      { path: '/installer-v2', label: 'Old Installer Dashboard', desc: 'The v2 InstallerFirstDashboard — for comparison' },
+      { path: '/auth-legacy', label: 'Old Auth', desc: 'The v1 Auth page — for comparison' },
+      { path: '/admin/settings', label: 'Old Admin Settings', desc: 'The v1 AdminSettings — replaced by /system-settings' },
       { path: '/admin/audit', label: 'Audit Dashboard', desc: 'Data integrity checks, workflow stats, entity counts' },
     ],
   },

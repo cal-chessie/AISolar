@@ -28,6 +28,7 @@ import DemoIndex from "./pages/DemoIndex";
 import DemoBanner from "./components/DemoBanner";
 import InstallerFirstDashboard from "./components/InstallerFirstDashboard";
 import InstallerPortalV2 from "./components/installer/InstallerPortalV2";
+import InstallerBOM from "./components/installer/InstallerBOM";
 import PipelineView from "./components/PipelineView";
 import AgentFoundation from "./components/AgentFoundation";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
@@ -35,6 +36,11 @@ import CustomerMobilePortal from "./components/customer/CustomerMobilePortal";
 import ProfessionalProducts from "./components/ProfessionalProducts";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import SystemSettings from "./components/SystemSettings";
+import CommunicationHub from "./components/CommunicationHub";
+import ConsultantDashboardV2 from "./components/ConsultantDashboardV2";
+import InstallerIntelligenceBuilder from "./components/InstallerIntelligenceBuilder";
+import PrestigiousAuth from "./pages/PrestigiousAuth";
+import OnboardingMode from "./pages/OnboardingMode";
 import { isDemoMode } from "./lib/demoMode";
 
 const queryClient = new QueryClient();
@@ -69,18 +75,24 @@ function AppRoutes() {
           <Route path="/" element={<PageTransition><PremiumIndex /></PageTransition>} />
           <Route path="/upload" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/upsell" element={<PageTransition><ValueUpsell /></PageTransition>} />
-          <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+          <Route path="/auth" element={<PageTransition><PrestigiousAuth /></PageTransition>} />
+          <Route path="/auth-legacy" element={<PageTransition><Auth /></PageTransition>} />
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
+          <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ConsultantDashboardV2 /></PageTransition>} />
+          <Route path="/consultant-legacy" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
           <Route path="/installer-v3" element={<PageTransition><InstallerPortalV2 /></PageTransition>} />
+          <Route path="/installer-bom" element={<PageTransition><BOMPage /></PageTransition>} />
           <Route path="/pipeline" element={<PageTransition><PipelinePage /></PageTransition>} />
           <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />
           <Route path="/customer-mobile" element={<PageTransition><CustomerMobilePortal /></PageTransition>} />
           <Route path="/products" element={<PageTransition><ProductsPage /></PageTransition>} />
+          <Route path="/intelligence" element={<PageTransition><IntelligencePage /></PageTransition>} />
           <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
           <Route path="/system-settings" element={<PageTransition><SystemSettingsPage /></PageTransition>} />
+          <Route path="/comms" element={<PageTransition><CommsPage /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
           <Route path="/portal" element={<PageTransition><ClientPortal /></PageTransition>} />
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
@@ -141,6 +153,36 @@ function SystemSettingsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <SystemSettings />
+      </div>
+    </div>
+  );
+}
+
+function CommsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <CommunicationHub />
+      </div>
+    </div>
+  );
+}
+
+function BOMPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-5xl">
+        <InstallerBOM />
+      </div>
+    </div>
+  );
+}
+
+function IntelligencePage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-5xl">
+        <InstallerIntelligenceBuilder />
       </div>
     </div>
   );
