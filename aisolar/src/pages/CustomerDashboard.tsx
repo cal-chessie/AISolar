@@ -15,6 +15,7 @@ import StatusTimeline from '@/components/customer/StatusTimeline';
 import ProposalSummaryCard from '@/components/customer/ProposalSummaryCard';
 import InvoiceCard from '@/components/customer/InvoiceCard';
 import SEAIGrantStatus from '@/components/seai/SEAIGrantStatus';
+import { isDemoMode } from '@/lib/demoMode';
 
 interface ProjectData {
   id: string;
@@ -49,7 +50,7 @@ export default function CustomerDashboard() {
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !isDemoMode()) {
       navigate('/auth');
     }
   }, [authLoading, user, navigate]);
@@ -57,6 +58,9 @@ export default function CustomerDashboard() {
   useEffect(() => {
     if (user?.email) {
       fetchProjects(user.email);
+    } else if (isDemoMode()) {
+      // In demo mode, just clear loading — no email to fetch by
+      setLoading(false);
     }
   }, [user?.email]);
 
@@ -108,13 +112,19 @@ export default function CustomerDashboard() {
 
   const getStage = (stage: string | null) => STAGE_MAP[stage || 'new'] || { label: stage || 'Unknown', variant: 'outline' as const };
 
-  if (authLoading || (!user && !authLoading)) {
+  if (authLoading || (!user && !authLoading && !isDemoMode())) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  // In demo mode with no user, render the empty state
+  const demoUser = isDemoMode() && !user ? {
+    email: 'demo@aisolar.example',
+    user_metadata: { full_name: 'Demo Customer' }
+  } : user;
 
   return (
     <>
@@ -133,7 +143,7 @@ export default function CustomerDashboard() {
                 <span className="font-bold text-lg">{brand.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:inline">{user?.email}</span>
+                <span className="text-sm text-muted-foreground hidden sm:inline">{demoUser?.email}</span>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-1" />
                   Sign Out
@@ -155,7 +165,7 @@ export default function CustomerDashboard() {
               loading={loading}
               onSelect={setSelectedProject}
               getStage={getStage}
-              userName={user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there'}
+              userName={demoUser?.user_metadata?.full_name || demoUser?.email?.split('@')[0] || 'there'}
             />
           )}
         </main>

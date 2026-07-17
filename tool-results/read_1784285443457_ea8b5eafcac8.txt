@@ -1,0 +1,549 @@
+   500→                          <div 
+   501→                            className="h-full bg-primary transition-all"
+   502→                            style={{ width: `${Math.min((threshold.threshold_days / 14) * 100, 100)}%` }}
+   503→                          />
+   504→                        </div>
+   505→                      </div>
+   506→                    );
+   507→                  })}
+   508→
+   509→                  <Separator className="my-6" />
+   510→
+   511→                  <div className="flex items-center justify-between">
+   512→                    <Button
+   513→                      variant="outline"
+   514→                      onClick={resetToDefaults}
+   515→                      disabled={saving}
+   516→                    >
+   517→                      <RotateCcw className="h-4 w-4 mr-2" />
+   518→                      Reset to Defaults
+   519→                    </Button>
+   520→                    <Button
+   521→                      onClick={saveThresholds}
+   522→                      disabled={saving || !hasChanges}
+   523→                    >
+   524→                      <Save className="h-4 w-4 mr-2" />
+   525→                      {saving ? 'Saving...' : 'Save Changes'}
+   526→                    </Button>
+   527→                  </div>
+   528→                </CardContent>
+   529→              </Card>
+   530→            </TabsContent>
+   531→
+   532→            {/* Notification Preferences Tab */}
+   533→            <TabsContent value="notifications" className="space-y-6">
+   534→              <NotificationPreferences />
+   535→            </TabsContent>
+   536→
+   537→            {/* User Management Tab */}
+   538→            <TabsContent value="users" className="space-y-6">
+   539→              <Card>
+   540→                <CardHeader>
+   541→                  <div className="flex items-center justify-between">
+   542→                    <div>
+   543→                      <CardTitle className="flex items-center gap-2">
+   544→                        <Shield className="h-5 w-5" />
+   545→                        User Management
+   546→                      </CardTitle>
+   547→                      <CardDescription>
+   548→                        Manage user accounts and role assignments
+   549→                      </CardDescription>
+   550→                    </div>
+   551→                    <InviteUserDialog onInvite={handleInviteUser} />
+   552→                  </div>
+   553→                </CardHeader>
+   554→                <CardContent>
+   555→                  <div className="space-y-4">
+   556→                    {users.length === 0 ? (
+   557→                      <div className="text-center py-8">
+   558→                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+   559→                        <p className="text-muted-foreground">No users found</p>
+   560→                        <p className="text-sm text-muted-foreground">Invite team members to get started</p>
+   561→                      </div>
+   562→                    ) : (
+   563→                      users.map((user) => (
+   564→                        <div 
+   565→                          key={user.id} 
+   566→                          className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+   567→                        >
+   568→                          <div className="flex items-center gap-3">
+   569→                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+   570→                              user.role === 'admin' ? 'bg-primary/20 text-primary' :
+   571→                              user.role === 'installer' ? 'bg-orange-500/20 text-orange-600' :
+   572→                              'bg-blue-500/20 text-blue-600'
+   573→                            }`}>
+   574→                              <span className="font-medium">
+   575→                                {(user.full_name || 'U')[0].toUpperCase()}
+   576→                              </span>
+   577→                            </div>
+   578→                            <div>
+   579→                              <p className="font-medium">{user.full_name || 'Unknown User'}</p>
+   580→                              <p className="text-sm text-muted-foreground">
+   581→                                Joined {new Date(user.created_at).toLocaleDateString()}
+   582→                              </p>
+   583→                            </div>
+   584→                          </div>
+   585→                          <div className="flex items-center gap-3">
+   586→                            <Select
+   587→                              value={user.role}
+   588→                              onValueChange={(value) => updateUserRole(user.user_id, value as 'admin' | 'consultant' | 'installer')}
+   589→                            >
+   590→                              <SelectTrigger className="w-32">
+   591→                                <SelectValue />
+   592→                              </SelectTrigger>
+   593→                              <SelectContent>
+   594→                                <SelectItem value="admin">
+   595→                                  <div className="flex items-center gap-2">
+   596→                                    <Shield className="h-3 w-3" />
+   597→                                    Admin
+   598→                                  </div>
+   599→                                </SelectItem>
+   600→                                <SelectItem value="consultant">
+   601→                                  <div className="flex items-center gap-2">
+   602→                                    <Users className="h-3 w-3" />
+   603→                                    Consultant
+   604→                                  </div>
+   605→                                </SelectItem>
+   606→                                <SelectItem value="installer">
+   607→                                  <div className="flex items-center gap-2">
+   608→                                    <Settings className="h-3 w-3" />
+   609→                                    Installer
+   610→                                  </div>
+   611→                                </SelectItem>
+   612→                              </SelectContent>
+   613→                            </Select>
+   614→                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+   615→                              <Trash2 className="h-4 w-4" />
+   616→                            </Button>
+   617→                          </div>
+   618→                        </div>
+   619→                      ))
+   620→                    )}
+   621→                  </div>
+   622→                </CardContent>
+   623→              </Card>
+   624→
+   625→              <Card>
+   626→                <CardHeader>
+   627→                  <CardTitle>Role Permissions</CardTitle>
+   628→                  <CardDescription>Overview of what each role can access</CardDescription>
+   629→                </CardHeader>
+   630→                <CardContent>
+   631→                  <div className="grid md:grid-cols-3 gap-4">
+   632→                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
+   633→                      <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+   634→                        <Shield className="h-4 w-4" />
+   635→                        Admin
+   636→                      </h4>
+   637→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   638→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Full system access</li>
+   639→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> User management</li>
+   640→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Settings & configuration</li>
+   641→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Analytics & reports</li>
+   642→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Product management</li>
+   643→                      </ul>
+   644→                    </div>
+   645→                    <div className="p-4 border border-blue-300 rounded-lg bg-blue-500/5">
+   646→                      <h4 className="font-semibold text-blue-600 mb-2 flex items-center gap-2">
+   647→                        <Users className="h-4 w-4" />
+   648→                        Consultant
+   649→                      </h4>
+   650→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   651→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Lead management</li>
+   652→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Site surveys</li>
+   653→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Proposals</li>
+   654→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Calendar scheduling</li>
+   655→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Customer communication</li>
+   656→                      </ul>
+   657→                    </div>
+   658→                    <div className="p-4 border border-orange-300 rounded-lg bg-orange-500/5">
+   659→                      <h4 className="font-semibold text-orange-600 mb-2 flex items-center gap-2">
+   660→                        <Settings className="h-4 w-4" />
+   661→                        Installer
+   662→                      </h4>
+   663→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   664→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> View assignments</li>
+   665→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Survey details</li>
+   666→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Installation checklists</li>
+   667→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Map view</li>
+   668→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Completion signatures</li>
+   669→                      </ul>
+   670→                    </div>
+   671→                  </div>
+   672→                </CardContent>
+   673→              </Card>
+   674→            </TabsContent>
+   675→
+   676→            {/* Integrations Tab */}
+   677→            <TabsContent value="integrations" className="space-y-6">
+   678→              <Card>
+   679→                <CardHeader>
+   680→                  <CardTitle className="flex items-center gap-2">
+   681→                    <CreditCard className="h-5 w-5" />
+   682→                    Payment Gateways
+   683→                  </CardTitle>
+   684→                  <CardDescription>
+   685→                    Configure payment processing integrations
+   686→                  </CardDescription>
+   687→                </CardHeader>
+   688→                <CardContent className="space-y-4">
+   689→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   690→                    <div className="flex items-center gap-3">
+   691→                      <div className="h-10 w-10 rounded bg-[#635BFF] flex items-center justify-center">
+   692→                        <span className="text-white font-bold text-sm">S</span>
+   693→                      </div>
+   694→                      <div>
+   695→                        <p className="font-medium">Stripe</p>
+   696→                        <p className="text-sm text-muted-foreground">Card payments</p>
+   697→                      </div>
+   698→                    </div>
+   699→                    <div className="flex items-center gap-3">
+   700→                      {integrations.stripe.status === 'connected' ? (
+   701→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   702→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   703→                          Connected
+   704→                        </Badge>
+   705→                      ) : (
+   706→                        <Badge variant="secondary">
+   707→                          <AlertCircle className="h-3 w-3 mr-1" />
+   708→                          Not configured
+   709→                        </Badge>
+   710→                      )}
+   711→                      <Switch 
+   712→                        checked={integrations.stripe.enabled}
+   713→                        onCheckedChange={(checked) => 
+   714→                          setIntegrations(prev => ({
+   715→                            ...prev,
+   716→                            stripe: { ...prev.stripe, enabled: checked }
+   717→                          }))
+   718→                        }
+   719→                      />
+   720→                    </div>
+   721→                  </div>
+   722→
+   723→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   724→                    <div className="flex items-center gap-3">
+   725→                      <div className="h-10 w-10 rounded bg-[#0052FF] flex items-center justify-center">
+   726→                        <span className="text-white font-bold text-sm">C</span>
+   727→                      </div>
+   728→                      <div>
+   729→                        <p className="font-medium">Coinbase Commerce</p>
+   730→                        <p className="text-sm text-muted-foreground">Cryptocurrency payments</p>
+   731→                      </div>
+   732→                    </div>
+   733→                    <div className="flex items-center gap-3">
+   734→                      {integrations.coinbase.status === 'connected' ? (
+   735→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   736→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   737→                          Connected
+   738→                        </Badge>
+   739→                      ) : (
+   740→                        <Badge variant="secondary">
+   741→                          <AlertCircle className="h-3 w-3 mr-1" />
+   742→                          Not configured
+   743→                        </Badge>
+   744→                      )}
+   745→                      <Switch 
+   746→                        checked={integrations.coinbase.enabled}
+   747→                        onCheckedChange={(checked) => 
+   748→                          setIntegrations(prev => ({
+   749→                            ...prev,
+   750→                            coinbase: { ...prev.coinbase, enabled: checked }
+   751→                          }))
+   752→                        }
+   753→                      />
+   754→                    </div>
+   755→                  </div>
+   756→                </CardContent>
+   757→              </Card>
+   758→
+   759→              <Card>
+   760→                <CardHeader>
+   761→                  <CardTitle className="flex items-center gap-2">
+   762→                    <Mail className="h-5 w-5" />
+   763→                    Email Service
+   764→                  </CardTitle>
+   765→                  <CardDescription>
+   766→                    Configure email delivery settings
+   767→                  </CardDescription>
+   768→                </CardHeader>
+   769→                <CardContent>
+   770→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   771→                    <div className="flex items-center gap-3">
+   772→                      <div className="h-10 w-10 rounded bg-black flex items-center justify-center">
+   773→                        <span className="text-white font-bold text-sm">R</span>
+   774→                      </div>
+   775→                      <div>
+   776→                        <p className="font-medium">Resend</p>
+   777→                        <p className="text-sm text-muted-foreground">Transactional emails</p>
+   778→                      </div>
+   779→                    </div>
+   780→                    <div className="flex items-center gap-3">
+   781→                      {integrations.resend.status === 'connected' ? (
+   782→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   783→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   784→                          Connected
+   785→                        </Badge>
+   786→                      ) : (
+   787→                        <Badge variant="secondary">
+   788→                          <AlertCircle className="h-3 w-3 mr-1" />
+   789→                          Not configured
+   790→                        </Badge>
+   791→                      )}
+   792→                      <Switch 
+   793→                        checked={integrations.resend.enabled}
+   794→                        onCheckedChange={(checked) => 
+   795→                          setIntegrations(prev => ({
+   796→                            ...prev,
+   797→                            resend: { ...prev.resend, enabled: checked }
+   798→                          }))
+   799→                        }
+   800→                      />
+   801→                    </div>
+   802→                  </div>
+   803→                </CardContent>
+   804→              </Card>
+   805→            </TabsContent>
+   806→
+   807→            {/* Branding Tab */}
+   808→            <TabsContent value="branding" className="space-y-6">
+   809→              <Card>
+   810→                <CardHeader>
+   811→                  <CardTitle className="flex items-center gap-2">
+   812→                    <Palette className="h-5 w-5" />
+   813→                    Brand Configuration
+   814→                  </CardTitle>
+   815→                  <CardDescription>
+   816→                    Customize your company branding and appearance
+   817→                  </CardDescription>
+   818→                </CardHeader>
+   819→                <CardContent className="space-y-6">
+   820→                  <div className="grid md:grid-cols-2 gap-6">
+   821→                    <div className="space-y-2">
+   822→                      <Label>Company Name</Label>
+   823→                      <Input 
+   824→                        value={brandingConfig.companyName}
+   825→                        onChange={(e) => setBrandingConfig(prev => ({
+   826→                          ...prev,
+   827→                          companyName: e.target.value
+   828→                        }))}
+   829→                        placeholder="Your Company Name"
+   830→                      />
+   831→                    </div>
+   832→                    <div className="space-y-2">
+   833→                      <Label>Tagline</Label>
+   834→                      <Input 
+   835→                        value={brandingConfig.tagline}
+   836→                        onChange={(e) => setBrandingConfig(prev => ({
+   837→                          ...prev,
+   838→                          tagline: e.target.value
+   839→                        }))}
+   840→                        placeholder="Your company tagline"
+   841→                      />
+   842→                    </div>
+   843→                  </div>
+   844→
+   845→                  <Separator />
+   846→
+   847→                  <div className="grid md:grid-cols-2 gap-6">
+   848→                    <div className="space-y-2">
+   849→                      <Label>Primary Color</Label>
+   850→                      <div className="flex gap-2">
+   851→                        <Input 
+   852→                          type="color"
+   853→                          value={brandingConfig.primaryColor}
+   854→                          onChange={(e) => setBrandingConfig(prev => ({
+   855→                            ...prev,
+   856→                            primaryColor: e.target.value
+   857→                          }))}
+   858→                          className="w-16 h-10 p-1"
+   859→                        />
+   860→                        <Input 
+   861→                          value={brandingConfig.primaryColor}
+   862→                          onChange={(e) => setBrandingConfig(prev => ({
+   863→                            ...prev,
+   864→                            primaryColor: e.target.value
+   865→                          }))}
+   866→                          placeholder="#10b981"
+   867→                        />
+   868→                      </div>
+   869→                    </div>
+   870→                    <div className="space-y-2">
+   871→                      <Label>Accent Color</Label>
+   872→                      <div className="flex gap-2">
+   873→                        <Input 
+   874→                          type="color"
+   875→                          value={brandingConfig.accentColor}
+   876→                          onChange={(e) => setBrandingConfig(prev => ({
+   877→                            ...prev,
+   878→                            accentColor: e.target.value
+   879→                          }))}
+   880→                          className="w-16 h-10 p-1"
+   881→                        />
+   882→                        <Input 
+   883→                          value={brandingConfig.accentColor}
+   884→                          onChange={(e) => setBrandingConfig(prev => ({
+   885→                            ...prev,
+   886→                            accentColor: e.target.value
+   887→                          }))}
+   888→                          placeholder="#059669"
+   889→                        />
+   890→                      </div>
+   891→                    </div>
+   892→                  </div>
+   893→
+   894→                  <Separator />
+   895→
+   896→                  <div className="space-y-4">
+   897→                    <h4 className="font-medium">Contact Information</h4>
+   898→                    <div className="grid md:grid-cols-2 gap-4">
+   899→                      <div className="space-y-2">
+   900→                        <Label>Email</Label>
+   901→                        <Input 
+   902→                          type="email"
+   903→                          value={brandingConfig.contactEmail}
+   904→                          onChange={(e) => setBrandingConfig(prev => ({
+   905→                            ...prev,
+   906→                            contactEmail: e.target.value
+   907→                          }))}
+   908→                          placeholder="info@company.ie"
+   909→                        />
+   910→                      </div>
+   911→                      <div className="space-y-2">
+   912→                        <Label>Phone</Label>
+   913→                        <Input 
+   914→                          value={brandingConfig.contactPhone}
+   915→                          onChange={(e) => setBrandingConfig(prev => ({
+   916→                            ...prev,
+   917→                            contactPhone: e.target.value
+   918→                          }))}
+   919→                          placeholder="+353 1 234 5678"
+   920→                        />
+   921→                      </div>
+   922→                    </div>
+   923→                    <div className="space-y-2">
+   924→                      <Label>Address</Label>
+   925→                      <Input 
+   926→                        value={brandingConfig.address}
+   927→                        onChange={(e) => setBrandingConfig(prev => ({
+   928→                          ...prev,
+   929→                          address: e.target.value
+   930→                        }))}
+   931→                        placeholder="123 Main Street, Dublin, Ireland"
+   932→                      />
+   933→                    </div>
+   934→                  </div>
+   935→
+   936→                  <div className="flex justify-end">
+   937→                    <Button onClick={() => toast.success('Branding settings saved (demo)')}>
+   938→                      <Save className="h-4 w-4 mr-2" />
+   939→                      Save Branding
+   940→                    </Button>
+   941→                  </div>
+   942→                </CardContent>
+   943→              </Card>
+   944→
+   945→              <Card>
+   946→                <CardHeader>
+   947→                  <CardTitle>Preview</CardTitle>
+   948→                  <CardDescription>See how your branding looks</CardDescription>
+   949→                </CardHeader>
+   950→                <CardContent>
+   951→                  <div className="p-6 border border-border rounded-lg bg-muted/30">
+   952→                    <div className="flex items-center gap-3 mb-4">
+   953→                      <div 
+   954→                        className="h-10 w-10 rounded-lg flex items-center justify-center"
+   955→                        style={{ backgroundColor: brandingConfig.primaryColor }}
+   956→                      >
+   957→                        <span className="text-white font-bold">
+   958→                          {brandingConfig.companyName[0]}
+   959→                        </span>
+   960→                      </div>
+   961→                      <div>
+   962→                        <h3 className="font-bold">{brandingConfig.companyName}</h3>
+   963→                        <p className="text-sm text-muted-foreground">{brandingConfig.tagline}</p>
+   964→                      </div>
+   965→                    </div>
+   966→                    <Button style={{ backgroundColor: brandingConfig.primaryColor }}>
+   967→                      Get Your Free Quote
+   968→                    </Button>
+   969→                  </div>
+   970→                </CardContent>
+   971→              </Card>
+   972→            </TabsContent>
+   973→
+   974→            {/* Email Templates Tab */}
+   975→            <TabsContent value="emails" className="space-y-6">
+   976→              <Card>
+   977→                <CardHeader>
+   978→                  <CardTitle className="flex items-center gap-2">
+   979→                    <Mail className="h-5 w-5" />
+   980→                    Email Templates
+   981→                  </CardTitle>
+   982→                  <CardDescription>
+   983→                    Customize automated email notifications sent to customers
+   984→                  </CardDescription>
+   985→                </CardHeader>
+   986→                <CardContent className="space-y-6">
+   987→                  {emailTemplates.map((template) => (
+   988→                    <div key={template.id} className="border border-border rounded-lg p-4 space-y-4">
+   989→                      <div className="flex items-center justify-between">
+   990→                        <div className="flex items-center gap-3">
+   991→                          <h4 className="font-medium">{template.name}</h4>
+   992→                          <Switch 
+   993→                            checked={template.enabled}
+   994→                            onCheckedChange={(checked) => 
+   995→                              updateEmailTemplate(template.id, 'enabled', checked)
+   996→                            }
+   997→                          />
+   998→                        </div>
+   999→                        <Badge variant={template.enabled ? 'default' : 'secondary'}>
+  1000→                          {template.enabled ? 'Active' : 'Disabled'}
+  1001→                        </Badge>
+  1002→                      </div>
+  1003→                      
+  1004→                      <div className="space-y-2">
+  1005→                        <Label>Subject Line</Label>
+  1006→                        <Input 
+  1007→                          value={template.subject}
+  1008→                          onChange={(e) => updateEmailTemplate(template.id, 'subject', e.target.value)}
+  1009→                        />
+  1010→                      </div>
+  1011→
+  1012→                      <div className="space-y-2">
+  1013→                        <Label>Email Body</Label>
+  1014→                        <Textarea 
+  1015→                          value={template.body}
+  1016→                          onChange={(e) => updateEmailTemplate(template.id, 'body', e.target.value)}
+  1017→                          rows={5}
+  1018→                          className="font-mono text-sm"
+  1019→                        />
+  1020→                      </div>
+  1021→
+  1022→                      <p className="text-xs text-muted-foreground">
+  1023→                        Available variables: {'{{customer_name}}'}, {'{{company_name}}'}, {'{{portal_link}}'}, {'{{amount}}'}, {'{{survey_date}}'}, {'{{install_date}}'}
+  1024→                      </p>
+  1025→                    </div>
+  1026→                  ))}
+  1027→
+  1028→                  <div className="flex justify-end">
+  1029→                    <Button onClick={() => toast.success('Email templates saved (demo)')}>
+  1030→                      <Save className="h-4 w-4 mr-2" />
+  1031→                      Save Templates
+  1032→                    </Button>
+  1033→                  </div>
+  1034→                </CardContent>
+  1035→              </Card>
+  1036→            </TabsContent>
+  1037→
+  1038→            {/* Activity Audit Log Tab */}
+  1039→            <TabsContent value="activity">
+  1040→              <ActivityAuditLog />
+  1041→            </TabsContent>
+  1042→          </Tabs>
+  1043→        </main>
+  1044→      </div>
+  1045→    </>
+  1046→  );
+  1047→}
+  1048→

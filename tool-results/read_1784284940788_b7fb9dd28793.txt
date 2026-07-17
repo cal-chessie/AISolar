@@ -1,0 +1,1048 @@
+     1→import { useState, useEffect } from 'react';
+     2→import { useNavigate } from 'react-router-dom';
+     3→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Input } from '@/components/ui/input';
+     6→import { Label } from '@/components/ui/label';
+     7→import { Badge } from '@/components/ui/badge';
+     8→import { Separator } from '@/components/ui/separator';
+     9→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    10→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+    11→import { Textarea } from '@/components/ui/textarea';
+    12→import { Switch } from '@/components/ui/switch';
+    13→import {
+    14→  Dialog,
+    15→  DialogContent,
+    16→  DialogDescription,
+    17→  DialogFooter,
+    18→  DialogHeader,
+    19→  DialogTitle,
+    20→  DialogTrigger,
+    21→} from "@/components/ui/dialog";
+    22→import { 
+    23→  ArrowLeft, Settings, Clock, Save, RotateCcw, Users, Link2, 
+    24→  Palette, Mail, Shield, CreditCard, CheckCircle2, AlertCircle,
+    25→  Plus, Trash2, Edit2, Send, UserPlus, Copy, ExternalLink, Bell, Activity
+    26→} from 'lucide-react';
+    27→import { supabase } from '@/integrations/supabase/client';
+    28→import { toast } from 'sonner';
+    29→import SEOHead from '@/components/SEOHead';
+    30→import { brand } from '@/config/brand';
+    31→import NotificationPreferences from '@/components/settings/NotificationPreferences';
+    32→import { ActivityAuditLog } from '@/components/dashboard/ActivityAuditLog';
+    33→
+    34→interface InviteUser {
+    35→  email: string;
+    36→  role: 'admin' | 'consultant' | 'installer';
+    37→}
+    38→
+    39→interface ThresholdSetting {
+    40→  id: string;
+    41→  workflow_stage: string;
+    42→  threshold_days: number;
+    43→}
+    44→
+    45→interface UserWithRole {
+    46→  id: string;
+    47→  user_id: string;
+    48→  email: string;
+    49→  full_name: string | null;
+    50→  role: string;
+    51→  created_at: string;
+    52→}
+    53→
+    54→interface EmailTemplate {
+    55→  id: string;
+    56→  name: string;
+    57→  subject: string;
+    58→  body: string;
+    59→  enabled: boolean;
+    60→}
+    61→
+    62→const STAGE_LABELS: Record<string, { label: string; description: string }> = {
+    63→  'new': { label: 'New Leads', description: 'Leads that have just been captured' },
+    64→  'survey': { label: 'Survey Stage', description: 'Leads waiting for site survey' },
+    65→  'proposal': { label: 'Proposal Stage', description: 'Leads with pending proposal' },
+    66→  'approved': { label: 'Approved', description: 'Proposals accepted, awaiting scheduling' },
+    67→  'scheduled': { label: 'Scheduled', description: 'Installation scheduled' },
+    68→  'installed': { label: 'Installed', description: 'Installation completed, awaiting final steps' }
+    69→};
+    70→
+    71→const DEFAULT_THRESHOLDS: Record<string, number> = {
+    72→  'new': 2,
+    73→  'survey': 3,
+    74→  'proposal': 5,
+    75→  'approved': 3,
+    76→  'scheduled': 7,
+    77→  'installed': 14
+    78→};
+    79→
+    80→const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
+    81→  {
+    82→    id: 'proposal_sent',
+    83→    name: 'Proposal Sent',
+    84→    subject: 'Your Solar Proposal from {{company_name}}',
+    85→    body: 'Dear {{customer_name}},\n\nThank you for your interest in solar energy. Your personalized proposal is ready for review.\n\nView your proposal here: {{portal_link}}\n\nBest regards,\n{{company_name}}',
+    86→    enabled: true
+    87→  },
+    88→  {
+    89→    id: 'survey_scheduled',
+    90→    name: 'Survey Scheduled',
+    91→    subject: 'Site Survey Scheduled - {{company_name}}',
+    92→    body: 'Dear {{customer_name}},\n\nYour site survey has been scheduled for {{survey_date}}.\n\nOur consultant will arrive between {{time_slot}}.\n\nBest regards,\n{{company_name}}',
+    93→    enabled: true
+    94→  },
+    95→  {
+    96→    id: 'installation_confirmed',
+    97→    name: 'Installation Confirmed',
+    98→    subject: 'Installation Date Confirmed - {{company_name}}',
+    99→    body: 'Dear {{customer_name}},\n\nGreat news! Your installation has been confirmed for {{install_date}}.\n\nPlease ensure the property is accessible.\n\nBest regards,\n{{company_name}}',
+   100→    enabled: true
+   101→  },
+   102→  {
+   103→    id: 'payment_reminder',
+   104→    name: 'Payment Reminder',
+   105→    subject: 'Payment Reminder - {{company_name}}',
+   106→    body: 'Dear {{customer_name}},\n\nThis is a friendly reminder that your payment of €{{amount}} is due.\n\nPay now: {{payment_link}}\n\nBest regards,\n{{company_name}}',
+   107→    enabled: true
+   108→  }
+   109→];
+   110→
+   111→// Invite User Dialog Component
+   112→function InviteUserDialog({ onInvite }: { onInvite: (data: InviteUser) => void }) {
+   113→  const [email, setEmail] = useState('');
+   114→  const [role, setRole] = useState<'admin' | 'consultant' | 'installer'>('consultant');
+   115→  const [open, setOpen] = useState(false);
+   116→
+   117→  const handleSubmit = () => {
+   118→    if (email) {
+   119→      onInvite({ email, role });
+   120→      setEmail('');
+   121→      setRole('consultant');
+   122→      setOpen(false);
+   123→    }
+   124→  };
+   125→
+   126→  return (
+   127→    <Dialog open={open} onOpenChange={setOpen}>
+   128→      <DialogTrigger asChild>
+   129→        <Button size="sm">
+   130→          <UserPlus className="h-4 w-4 mr-2" />
+   131→          Invite User
+   132→        </Button>
+   133→      </DialogTrigger>
+   134→      <DialogContent>
+   135→        <DialogHeader>
+   136→          <DialogTitle>Invite Team Member</DialogTitle>
+   137→          <DialogDescription>
+   138→            Send an invitation email to add a new user to your team.
+   139→          </DialogDescription>
+   140→        </DialogHeader>
+   141→        <div className="space-y-4 py-4">
+   142→          <div className="space-y-2">
+   143→            <Label>Email Address</Label>
+   144→            <Input
+   145→              type="email"
+   146→              placeholder="colleague@company.ie"
+   147→              value={email}
+   148→              onChange={(e) => setEmail(e.target.value)}
+   149→            />
+   150→          </div>
+   151→          <div className="space-y-2">
+   152→            <Label>Role</Label>
+   153→            <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+   154→              <SelectTrigger>
+   155→                <SelectValue />
+   156→              </SelectTrigger>
+   157→              <SelectContent>
+   158→                <SelectItem value="admin">Admin</SelectItem>
+   159→                <SelectItem value="consultant">Consultant</SelectItem>
+   160→                <SelectItem value="installer">Installer</SelectItem>
+   161→              </SelectContent>
+   162→            </Select>
+   163→          </div>
+   164→        </div>
+   165→        <DialogFooter>
+   166→          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+   167→          <Button onClick={handleSubmit} disabled={!email}>
+   168→            <Send className="h-4 w-4 mr-2" />
+   169→            Send Invitation
+   170→          </Button>
+   171→        </DialogFooter>
+   172→      </DialogContent>
+   173→    </Dialog>
+   174→  );
+   175→}
+   176→
+   177→export default function AdminSettings() {
+   178→  const navigate = useNavigate();
+   179→  const [activeTab, setActiveTab] = useState('followups');
+   180→  const [thresholds, setThresholds] = useState<ThresholdSetting[]>([]);
+   181→  const [users, setUsers] = useState<UserWithRole[]>([]);
+   182→  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>(DEFAULT_EMAIL_TEMPLATES);
+   183→  const [loading, setLoading] = useState(true);
+   184→  const [saving, setSaving] = useState(false);
+   185→  const [hasChanges, setHasChanges] = useState(false);
+   186→  
+   187→  // Branding state
+   188→  const [brandingConfig, setBrandingConfig] = useState<{
+   189→    companyName: string;
+   190→    tagline: string;
+   191→    primaryColor: string;
+   192→    accentColor: string;
+   193→    contactEmail: string;
+   194→    contactPhone: string;
+   195→    address: string;
+   196→  }>({
+   197→    companyName: brand.name,
+   198→    tagline: brand.tagline,
+   199→    primaryColor: '#10b981',
+   200→    accentColor: '#059669',
+   201→    contactEmail: brand.contact.email,
+   202→    contactPhone: brand.contact.phone,
+   203→    address: brand.contact.address
+   204→  });
+   205→
+   206→  // Integration state
+   207→  const [integrations, setIntegrations] = useState<{
+   208→    stripe: { enabled: boolean; status: 'connected' | 'not_configured' };
+   209→    resend: { enabled: boolean; status: 'connected' | 'not_configured' };
+   210→    coinbase: { enabled: boolean; status: 'connected' | 'not_configured' };
+   211→  }>({
+   212→    stripe: { enabled: true, status: 'connected' },
+   213→    resend: { enabled: true, status: 'connected' },
+   214→    coinbase: { enabled: false, status: 'not_configured' }
+   215→  });
+   216→
+   217→  const handleInviteUser = (data: InviteUser) => {
+   218→    toast.success(`Invitation sent to ${data.email} as ${data.role}`);
+   219→  };
+   220→
+   221→  useEffect(() => {
+   222→    checkAuthAndFetch();
+   223→  }, []);
+   224→
+   225→  const checkAuthAndFetch = async () => {
+   226→    const { data: { session } } = await supabase.auth.getSession();
+   227→    if (!session) {
+   228→      navigate('/auth');
+   229→      return;
+   230→    }
+   231→    await Promise.all([fetchThresholds(), fetchUsers()]);
+   232→    setLoading(false);
+   233→  };
+   234→
+   235→  const fetchThresholds = async () => {
+   236→    try {
+   237→      const { data, error } = await supabase
+   238→        .from('follow_up_settings')
+   239→        .select('*')
+   240→        .order('workflow_stage');
+   241→
+   242→      if (error) throw error;
+   243→      setThresholds(data || []);
+   244→    } catch (error) {
+   245→      console.error('Error fetching thresholds:', error);
+   246→    }
+   247→  };
+   248→
+   249→  const fetchUsers = async () => {
+   250→    try {
+   251→      const { data: profiles, error: profilesError } = await supabase
+   252→        .from('profiles')
+   253→        .select('*');
+   254→
+   255→      if (profilesError) throw profilesError;
+   256→
+   257→      const { data: roles, error: rolesError } = await supabase
+   258→        .from('user_roles')
+   259→        .select('*');
+   260→
+   261→      if (rolesError) throw rolesError;
+   262→
+   263→      // Combine profiles with roles
+   264→      const usersWithRoles: UserWithRole[] = (profiles || []).map(profile => {
+   265→        const userRole = roles?.find(r => r.user_id === profile.user_id);
+   266→        return {
+   267→          id: profile.id,
+   268→          user_id: profile.user_id,
+   269→          email: profile.full_name || 'Unknown',
+   270→          full_name: profile.full_name,
+   271→          role: userRole?.role || 'consultant',
+   272→          created_at: profile.created_at
+   273→        };
+   274→      });
+   275→
+   276→      setUsers(usersWithRoles);
+   277→    } catch (error) {
+   278→      console.error('Error fetching users:', error);
+   279→    }
+   280→  };
+   281→
+   282→  const updateThreshold = (stage: string, days: number) => {
+   283→    setThresholds(prev => 
+   284→      prev.map(t => 
+   285→        t.workflow_stage === stage ? { ...t, threshold_days: days } : t
+   286→      )
+   287→    );
+   288→    setHasChanges(true);
+   289→  };
+   290→
+   291→  const saveThresholds = async () => {
+   292→    setSaving(true);
+   293→    try {
+   294→      for (const threshold of thresholds) {
+   295→        const { error } = await supabase
+   296→          .from('follow_up_settings')
+   297→          .update({ threshold_days: threshold.threshold_days })
+   298→          .eq('id', threshold.id);
+   299→
+   300→        if (error) throw error;
+   301→      }
+   302→      
+   303→      toast.success('Follow-up thresholds saved successfully');
+   304→      setHasChanges(false);
+   305→    } catch (error) {
+   306→      console.error('Error saving thresholds:', error);
+   307→      toast.error('Failed to save settings');
+   308→    } finally {
+   309→      setSaving(false);
+   310→    }
+   311→  };
+   312→
+   313→  const resetToDefaults = async () => {
+   314→    setSaving(true);
+   315→    try {
+   316→      for (const [stage, days] of Object.entries(DEFAULT_THRESHOLDS)) {
+   317→        const { error } = await supabase
+   318→          .from('follow_up_settings')
+   319→          .update({ threshold_days: days })
+   320→          .eq('workflow_stage', stage);
+   321→
+   322→        if (error) throw error;
+   323→      }
+   324→      
+   325→      await fetchThresholds();
+   326→      toast.success('Reset to default thresholds');
+   327→      setHasChanges(false);
+   328→    } catch (error) {
+   329→      console.error('Error resetting thresholds:', error);
+   330→      toast.error('Failed to reset settings');
+   331→    } finally {
+   332→      setSaving(false);
+   333→    }
+   334→  };
+   335→
+   336→  const updateUserRole = async (userId: string, newRole: 'admin' | 'consultant' | 'installer') => {
+   337→    try {
+   338→      const { error } = await supabase
+   339→        .from('user_roles')
+   340→        .update({ role: newRole })
+   341→        .eq('user_id', userId);
+   342→
+   343→      if (error) throw error;
+   344→      
+   345→      setUsers(prev => prev.map(u => 
+   346→        u.user_id === userId ? { ...u, role: newRole } : u
+   347→      ));
+   348→      toast.success('User role updated');
+   349→    } catch (error) {
+   350→      console.error('Error updating role:', error);
+   351→      toast.error('Failed to update user role');
+   352→    }
+   353→  };
+   354→
+   355→  const updateEmailTemplate = (templateId: string, field: keyof EmailTemplate, value: string | boolean) => {
+   356→    setEmailTemplates(prev => prev.map(t =>
+   357→      t.id === templateId ? { ...t, [field]: value } : t
+   358→    ));
+   359→    setHasChanges(true);
+   360→  };
+   361→
+   362→  const getStageOrder = (stage: string) => {
+   363→    const order = ['new', 'survey', 'proposal', 'approved', 'scheduled', 'installed'];
+   364→    return order.indexOf(stage);
+   365→  };
+   366→
+   367→  const sortedThresholds = [...thresholds].sort(
+   368→    (a, b) => getStageOrder(a.workflow_stage) - getStageOrder(b.workflow_stage)
+   369→  );
+   370→
+   371→  if (loading) {
+   372→    return (
+   373→      <div className="min-h-screen bg-background flex items-center justify-center">
+   374→        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+   375→      </div>
+   376→    );
+   377→  }
+   378→
+   379→  return (
+   380→    <>
+   381→      <SEOHead 
+   382→        title={`Admin Settings - ${brand.name}`}
+   383→        description="Configure system settings, user management, and integrations"
+   384→      />
+   385→      <div className="min-h-screen bg-background">
+   386→        <header className="bg-card border-b border-border shadow-sm sticky top-0 z-10">
+   387→          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4">
+   388→            <div className="flex items-center justify-between">
+   389→              <div className="flex items-center gap-4">
+   390→                <Button
+   391→                  variant="ghost"
+   392→                  size="icon"
+   393→                  onClick={() => navigate('/consultant')}
+   394→                >
+   395→                  <ArrowLeft className="h-5 w-5" />
+   396→                </Button>
+   397→                <div>
+   398→                  <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+   399→                    <Settings className="h-6 w-6" />
+   400→                    Admin Settings
+   401→                  </h1>
+   402→                  <p className="text-muted-foreground text-sm">Manage system configuration</p>
+   403→                </div>
+   404→              </div>
+   405→              {hasChanges && (
+   406→                <Badge variant="secondary" className="animate-pulse">
+   407→                  Unsaved changes
+   408→                </Badge>
+   409→              )}
+   410→            </div>
+   411→          </div>
+   412→        </header>
+   413→
+   414→        <main className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+   415→          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+   416→            <TabsList className="grid grid-cols-4 md:grid-cols-7 gap-2 h-auto p-1">
+   417→              <TabsTrigger value="followups" className="flex items-center gap-2">
+   418→                <Clock className="h-4 w-4" />
+   419→                <span className="hidden sm:inline">Follow-ups</span>
+   420→              </TabsTrigger>
+   421→              <TabsTrigger value="notifications" className="flex items-center gap-2">
+   422→                <Bell className="h-4 w-4" />
+   423→                <span className="hidden sm:inline">Notifications</span>
+   424→              </TabsTrigger>
+   425→              <TabsTrigger value="activity" className="flex items-center gap-2">
+   426→                <Activity className="h-4 w-4" />
+   427→                <span className="hidden sm:inline">Activity</span>
+   428→              </TabsTrigger>
+   429→              <TabsTrigger value="users" className="flex items-center gap-2">
+   430→                <Users className="h-4 w-4" />
+   431→                <span className="hidden sm:inline">Users</span>
+   432→              </TabsTrigger>
+   433→              <TabsTrigger value="integrations" className="flex items-center gap-2">
+   434→                <Link2 className="h-4 w-4" />
+   435→                <span className="hidden sm:inline">Integrations</span>
+   436→              </TabsTrigger>
+   437→              <TabsTrigger value="branding" className="flex items-center gap-2">
+   438→                <Palette className="h-4 w-4" />
+   439→                <span className="hidden sm:inline">Branding</span>
+   440→              </TabsTrigger>
+   441→              <TabsTrigger value="emails" className="flex items-center gap-2">
+   442→                <Mail className="h-4 w-4" />
+   443→                <span className="hidden sm:inline">Emails</span>
+   444→              </TabsTrigger>
+   445→            </TabsList>
+   446→
+   447→            {/* Follow-up Settings Tab */}
+   448→            <TabsContent value="followups" className="space-y-6">
+   449→              <Card>
+   450→                <CardHeader>
+   451→                  <CardTitle className="flex items-center gap-2">
+   452→                    <Clock className="h-5 w-5" />
+   453→                    Follow-up Reminder Thresholds
+   454→                  </CardTitle>
+   455→                  <CardDescription>
+   456→                    Configure how many days of inactivity trigger a follow-up reminder for each workflow stage.
+   457→                  </CardDescription>
+   458→                </CardHeader>
+   459→                <CardContent className="space-y-6">
+   460→                  {sortedThresholds.map((threshold) => {
+   461→                    const stageInfo = STAGE_LABELS[threshold.workflow_stage] || {
+   462→                      label: threshold.workflow_stage,
+   463→                      description: ''
+   464→                    };
+   465→                    const defaultValue = DEFAULT_THRESHOLDS[threshold.workflow_stage] || 3;
+   466→                    const isModified = threshold.threshold_days !== defaultValue;
+   467→
+   468→                    return (
+   469→                      <div key={threshold.id} className="space-y-2">
+   470→                        <div className="flex items-center justify-between">
+   471→                          <div>
+   472→                            <Label className="text-base font-medium flex items-center gap-2">
+   473→                              {stageInfo.label}
+   474→                              {isModified && (
+   475→                                <Badge variant="outline" className="text-xs">
+   476→                                  Modified
+   477→                                </Badge>
+   478→                              )}
+   479→                            </Label>
+   480→                            <p className="text-sm text-muted-foreground">
+   481→                              {stageInfo.description}
+   482→                            </p>
+   483→                          </div>
+   484→                          <div className="flex items-center gap-2">
+   485→                            <Input
+   486→                              type="number"
+   487→                              min={1}
+   488→                              max={30}
+   489→                              value={threshold.threshold_days}
+   490→                              onChange={(e) => updateThreshold(
+   491→                                threshold.workflow_stage,
+   492→                                parseInt(e.target.value) || 1
+   493→                              )}
+   494→                              className="w-20 text-center"
+   495→                            />
+   496→                            <span className="text-sm text-muted-foreground">days</span>
+   497→                          </div>
+   498→                        </div>
+   499→                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+   500→                          <div 
+   501→                            className="h-full bg-primary transition-all"
+   502→                            style={{ width: `${Math.min((threshold.threshold_days / 14) * 100, 100)}%` }}
+   503→                          />
+   504→                        </div>
+   505→                      </div>
+   506→                    );
+   507→                  })}
+   508→
+   509→                  <Separator className="my-6" />
+   510→
+   511→                  <div className="flex items-center justify-between">
+   512→                    <Button
+   513→                      variant="outline"
+   514→                      onClick={resetToDefaults}
+   515→                      disabled={saving}
+   516→                    >
+   517→                      <RotateCcw className="h-4 w-4 mr-2" />
+   518→                      Reset to Defaults
+   519→                    </Button>
+   520→                    <Button
+   521→                      onClick={saveThresholds}
+   522→                      disabled={saving || !hasChanges}
+   523→                    >
+   524→                      <Save className="h-4 w-4 mr-2" />
+   525→                      {saving ? 'Saving...' : 'Save Changes'}
+   526→                    </Button>
+   527→                  </div>
+   528→                </CardContent>
+   529→              </Card>
+   530→            </TabsContent>
+   531→
+   532→            {/* Notification Preferences Tab */}
+   533→            <TabsContent value="notifications" className="space-y-6">
+   534→              <NotificationPreferences />
+   535→            </TabsContent>
+   536→
+   537→            {/* User Management Tab */}
+   538→            <TabsContent value="users" className="space-y-6">
+   539→              <Card>
+   540→                <CardHeader>
+   541→                  <div className="flex items-center justify-between">
+   542→                    <div>
+   543→                      <CardTitle className="flex items-center gap-2">
+   544→                        <Shield className="h-5 w-5" />
+   545→                        User Management
+   546→                      </CardTitle>
+   547→                      <CardDescription>
+   548→                        Manage user accounts and role assignments
+   549→                      </CardDescription>
+   550→                    </div>
+   551→                    <InviteUserDialog onInvite={handleInviteUser} />
+   552→                  </div>
+   553→                </CardHeader>
+   554→                <CardContent>
+   555→                  <div className="space-y-4">
+   556→                    {users.length === 0 ? (
+   557→                      <div className="text-center py-8">
+   558→                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+   559→                        <p className="text-muted-foreground">No users found</p>
+   560→                        <p className="text-sm text-muted-foreground">Invite team members to get started</p>
+   561→                      </div>
+   562→                    ) : (
+   563→                      users.map((user) => (
+   564→                        <div 
+   565→                          key={user.id} 
+   566→                          className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+   567→                        >
+   568→                          <div className="flex items-center gap-3">
+   569→                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+   570→                              user.role === 'admin' ? 'bg-primary/20 text-primary' :
+   571→                              user.role === 'installer' ? 'bg-orange-500/20 text-orange-600' :
+   572→                              'bg-blue-500/20 text-blue-600'
+   573→                            }`}>
+   574→                              <span className="font-medium">
+   575→                                {(user.full_name || 'U')[0].toUpperCase()}
+   576→                              </span>
+   577→                            </div>
+   578→                            <div>
+   579→                              <p className="font-medium">{user.full_name || 'Unknown User'}</p>
+   580→                              <p className="text-sm text-muted-foreground">
+   581→                                Joined {new Date(user.created_at).toLocaleDateString()}
+   582→                              </p>
+   583→                            </div>
+   584→                          </div>
+   585→                          <div className="flex items-center gap-3">
+   586→                            <Select
+   587→                              value={user.role}
+   588→                              onValueChange={(value) => updateUserRole(user.user_id, value as 'admin' | 'consultant' | 'installer')}
+   589→                            >
+   590→                              <SelectTrigger className="w-32">
+   591→                                <SelectValue />
+   592→                              </SelectTrigger>
+   593→                              <SelectContent>
+   594→                                <SelectItem value="admin">
+   595→                                  <div className="flex items-center gap-2">
+   596→                                    <Shield className="h-3 w-3" />
+   597→                                    Admin
+   598→                                  </div>
+   599→                                </SelectItem>
+   600→                                <SelectItem value="consultant">
+   601→                                  <div className="flex items-center gap-2">
+   602→                                    <Users className="h-3 w-3" />
+   603→                                    Consultant
+   604→                                  </div>
+   605→                                </SelectItem>
+   606→                                <SelectItem value="installer">
+   607→                                  <div className="flex items-center gap-2">
+   608→                                    <Settings className="h-3 w-3" />
+   609→                                    Installer
+   610→                                  </div>
+   611→                                </SelectItem>
+   612→                              </SelectContent>
+   613→                            </Select>
+   614→                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+   615→                              <Trash2 className="h-4 w-4" />
+   616→                            </Button>
+   617→                          </div>
+   618→                        </div>
+   619→                      ))
+   620→                    )}
+   621→                  </div>
+   622→                </CardContent>
+   623→              </Card>
+   624→
+   625→              <Card>
+   626→                <CardHeader>
+   627→                  <CardTitle>Role Permissions</CardTitle>
+   628→                  <CardDescription>Overview of what each role can access</CardDescription>
+   629→                </CardHeader>
+   630→                <CardContent>
+   631→                  <div className="grid md:grid-cols-3 gap-4">
+   632→                    <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
+   633→                      <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+   634→                        <Shield className="h-4 w-4" />
+   635→                        Admin
+   636→                      </h4>
+   637→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   638→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Full system access</li>
+   639→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> User management</li>
+   640→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Settings & configuration</li>
+   641→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Analytics & reports</li>
+   642→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Product management</li>
+   643→                      </ul>
+   644→                    </div>
+   645→                    <div className="p-4 border border-blue-300 rounded-lg bg-blue-500/5">
+   646→                      <h4 className="font-semibold text-blue-600 mb-2 flex items-center gap-2">
+   647→                        <Users className="h-4 w-4" />
+   648→                        Consultant
+   649→                      </h4>
+   650→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   651→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Lead management</li>
+   652→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Site surveys</li>
+   653→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Proposals</li>
+   654→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Calendar scheduling</li>
+   655→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Customer communication</li>
+   656→                      </ul>
+   657→                    </div>
+   658→                    <div className="p-4 border border-orange-300 rounded-lg bg-orange-500/5">
+   659→                      <h4 className="font-semibold text-orange-600 mb-2 flex items-center gap-2">
+   660→                        <Settings className="h-4 w-4" />
+   661→                        Installer
+   662→                      </h4>
+   663→                      <ul className="text-sm space-y-1 text-muted-foreground">
+   664→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> View assignments</li>
+   665→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Survey details</li>
+   666→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Installation checklists</li>
+   667→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Map view</li>
+   668→                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Completion signatures</li>
+   669→                      </ul>
+   670→                    </div>
+   671→                  </div>
+   672→                </CardContent>
+   673→              </Card>
+   674→            </TabsContent>
+   675→
+   676→            {/* Integrations Tab */}
+   677→            <TabsContent value="integrations" className="space-y-6">
+   678→              <Card>
+   679→                <CardHeader>
+   680→                  <CardTitle className="flex items-center gap-2">
+   681→                    <CreditCard className="h-5 w-5" />
+   682→                    Payment Gateways
+   683→                  </CardTitle>
+   684→                  <CardDescription>
+   685→                    Configure payment processing integrations
+   686→                  </CardDescription>
+   687→                </CardHeader>
+   688→                <CardContent className="space-y-4">
+   689→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   690→                    <div className="flex items-center gap-3">
+   691→                      <div className="h-10 w-10 rounded bg-[#635BFF] flex items-center justify-center">
+   692→                        <span className="text-white font-bold text-sm">S</span>
+   693→                      </div>
+   694→                      <div>
+   695→                        <p className="font-medium">Stripe</p>
+   696→                        <p className="text-sm text-muted-foreground">Card payments</p>
+   697→                      </div>
+   698→                    </div>
+   699→                    <div className="flex items-center gap-3">
+   700→                      {integrations.stripe.status === 'connected' ? (
+   701→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   702→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   703→                          Connected
+   704→                        </Badge>
+   705→                      ) : (
+   706→                        <Badge variant="secondary">
+   707→                          <AlertCircle className="h-3 w-3 mr-1" />
+   708→                          Not configured
+   709→                        </Badge>
+   710→                      )}
+   711→                      <Switch 
+   712→                        checked={integrations.stripe.enabled}
+   713→                        onCheckedChange={(checked) => 
+   714→                          setIntegrations(prev => ({
+   715→                            ...prev,
+   716→                            stripe: { ...prev.stripe, enabled: checked }
+   717→                          }))
+   718→                        }
+   719→                      />
+   720→                    </div>
+   721→                  </div>
+   722→
+   723→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   724→                    <div className="flex items-center gap-3">
+   725→                      <div className="h-10 w-10 rounded bg-[#0052FF] flex items-center justify-center">
+   726→                        <span className="text-white font-bold text-sm">C</span>
+   727→                      </div>
+   728→                      <div>
+   729→                        <p className="font-medium">Coinbase Commerce</p>
+   730→                        <p className="text-sm text-muted-foreground">Cryptocurrency payments</p>
+   731→                      </div>
+   732→                    </div>
+   733→                    <div className="flex items-center gap-3">
+   734→                      {integrations.coinbase.status === 'connected' ? (
+   735→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   736→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   737→                          Connected
+   738→                        </Badge>
+   739→                      ) : (
+   740→                        <Badge variant="secondary">
+   741→                          <AlertCircle className="h-3 w-3 mr-1" />
+   742→                          Not configured
+   743→                        </Badge>
+   744→                      )}
+   745→                      <Switch 
+   746→                        checked={integrations.coinbase.enabled}
+   747→                        onCheckedChange={(checked) => 
+   748→                          setIntegrations(prev => ({
+   749→                            ...prev,
+   750→                            coinbase: { ...prev.coinbase, enabled: checked }
+   751→                          }))
+   752→                        }
+   753→                      />
+   754→                    </div>
+   755→                  </div>
+   756→                </CardContent>
+   757→              </Card>
+   758→
+   759→              <Card>
+   760→                <CardHeader>
+   761→                  <CardTitle className="flex items-center gap-2">
+   762→                    <Mail className="h-5 w-5" />
+   763→                    Email Service
+   764→                  </CardTitle>
+   765→                  <CardDescription>
+   766→                    Configure email delivery settings
+   767→                  </CardDescription>
+   768→                </CardHeader>
+   769→                <CardContent>
+   770→                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+   771→                    <div className="flex items-center gap-3">
+   772→                      <div className="h-10 w-10 rounded bg-black flex items-center justify-center">
+   773→                        <span className="text-white font-bold text-sm">R</span>
+   774→                      </div>
+   775→                      <div>
+   776→                        <p className="font-medium">Resend</p>
+   777→                        <p className="text-sm text-muted-foreground">Transactional emails</p>
+   778→                      </div>
+   779→                    </div>
+   780→                    <div className="flex items-center gap-3">
+   781→                      {integrations.resend.status === 'connected' ? (
+   782→                        <Badge className="bg-green-500/10 text-green-600 border-green-200">
+   783→                          <CheckCircle2 className="h-3 w-3 mr-1" />
+   784→                          Connected
+   785→                        </Badge>
+   786→                      ) : (
+   787→                        <Badge variant="secondary">
+   788→                          <AlertCircle className="h-3 w-3 mr-1" />
+   789→                          Not configured
+   790→                        </Badge>
+   791→                      )}
+   792→                      <Switch 
+   793→                        checked={integrations.resend.enabled}
+   794→                        onCheckedChange={(checked) => 
+   795→                          setIntegrations(prev => ({
+   796→                            ...prev,
+   797→                            resend: { ...prev.resend, enabled: checked }
+   798→                          }))
+   799→                        }
+   800→                      />
+   801→                    </div>
+   802→                  </div>
+   803→                </CardContent>
+   804→              </Card>
+   805→            </TabsContent>
+   806→
+   807→            {/* Branding Tab */}
+   808→            <TabsContent value="branding" className="space-y-6">
+   809→              <Card>
+   810→                <CardHeader>
+   811→                  <CardTitle className="flex items-center gap-2">
+   812→                    <Palette className="h-5 w-5" />
+   813→                    Brand Configuration
+   814→                  </CardTitle>
+   815→                  <CardDescription>
+   816→                    Customize your company branding and appearance
+   817→                  </CardDescription>
+   818→                </CardHeader>
+   819→                <CardContent className="space-y-6">
+   820→                  <div className="grid md:grid-cols-2 gap-6">
+   821→                    <div className="space-y-2">
+   822→                      <Label>Company Name</Label>
+   823→                      <Input 
+   824→                        value={brandingConfig.companyName}
+   825→                        onChange={(e) => setBrandingConfig(prev => ({
+   826→                          ...prev,
+   827→                          companyName: e.target.value
+   828→                        }))}
+   829→                        placeholder="Your Company Name"
+   830→                      />
+   831→                    </div>
+   832→                    <div className="space-y-2">
+   833→                      <Label>Tagline</Label>
+   834→                      <Input 
+   835→                        value={brandingConfig.tagline}
+   836→                        onChange={(e) => setBrandingConfig(prev => ({
+   837→                          ...prev,
+   838→                          tagline: e.target.value
+   839→                        }))}
+   840→                        placeholder="Your company tagline"
+   841→                      />
+   842→                    </div>
+   843→                  </div>
+   844→
+   845→                  <Separator />
+   846→
+   847→                  <div className="grid md:grid-cols-2 gap-6">
+   848→                    <div className="space-y-2">
+   849→                      <Label>Primary Color</Label>
+   850→                      <div className="flex gap-2">
+   851→                        <Input 
+   852→                          type="color"
+   853→                          value={brandingConfig.primaryColor}
+   854→                          onChange={(e) => setBrandingConfig(prev => ({
+   855→                            ...prev,
+   856→                            primaryColor: e.target.value
+   857→                          }))}
+   858→                          className="w-16 h-10 p-1"
+   859→                        />
+   860→                        <Input 
+   861→                          value={brandingConfig.primaryColor}
+   862→                          onChange={(e) => setBrandingConfig(prev => ({
+   863→                            ...prev,
+   864→                            primaryColor: e.target.value
+   865→                          }))}
+   866→                          placeholder="#10b981"
+   867→                        />
+   868→                      </div>
+   869→                    </div>
+   870→                    <div className="space-y-2">
+   871→                      <Label>Accent Color</Label>
+   872→                      <div className="flex gap-2">
+   873→                        <Input 
+   874→                          type="color"
+   875→                          value={brandingConfig.accentColor}
+   876→                          onChange={(e) => setBrandingConfig(prev => ({
+   877→                            ...prev,
+   878→                            accentColor: e.target.value
+   879→                          }))}
+   880→                          className="w-16 h-10 p-1"
+   881→                        />
+   882→                        <Input 
+   883→                          value={brandingConfig.accentColor}
+   884→                          onChange={(e) => setBrandingConfig(prev => ({
+   885→                            ...prev,
+   886→                            accentColor: e.target.value
+   887→                          }))}
+   888→                          placeholder="#059669"
+   889→                        />
+   890→                      </div>
+   891→                    </div>
+   892→                  </div>
+   893→
+   894→                  <Separator />
+   895→
+   896→                  <div className="space-y-4">
+   897→                    <h4 className="font-medium">Contact Information</h4>
+   898→                    <div className="grid md:grid-cols-2 gap-4">
+   899→                      <div className="space-y-2">
+   900→                        <Label>Email</Label>
+   901→                        <Input 
+   902→                          type="email"
+   903→                          value={brandingConfig.contactEmail}
+   904→                          onChange={(e) => setBrandingConfig(prev => ({
+   905→                            ...prev,
+   906→                            contactEmail: e.target.value
+   907→                          }))}
+   908→                          placeholder="info@company.ie"
+   909→                        />
+   910→                      </div>
+   911→                      <div className="space-y-2">
+   912→                        <Label>Phone</Label>
+   913→                        <Input 
+   914→                          value={brandingConfig.contactPhone}
+   915→                          onChange={(e) => setBrandingConfig(prev => ({
+   916→                            ...prev,
+   917→                            contactPhone: e.target.value
+   918→                          }))}
+   919→                          placeholder="+353 1 234 5678"
+   920→                        />
+   921→                      </div>
+   922→                    </div>
+   923→                    <div className="space-y-2">
+   924→                      <Label>Address</Label>
+   925→                      <Input 
+   926→                        value={brandingConfig.address}
+   927→                        onChange={(e) => setBrandingConfig(prev => ({
+   928→                          ...prev,
+   929→                          address: e.target.value
+   930→                        }))}
+   931→                        placeholder="123 Main Street, Dublin, Ireland"
+   932→                      />
+   933→                    </div>
+   934→                  </div>
+   935→
+   936→                  <div className="flex justify-end">
+   937→                    <Button onClick={() => toast.success('Branding settings saved (demo)')}>
+   938→                      <Save className="h-4 w-4 mr-2" />
+   939→                      Save Branding
+   940→                    </Button>
+   941→                  </div>
+   942→                </CardContent>
+   943→              </Card>
+   944→
+   945→              <Card>
+   946→                <CardHeader>
+   947→                  <CardTitle>Preview</CardTitle>
+   948→                  <CardDescription>See how your branding looks</CardDescription>
+   949→                </CardHeader>
+   950→                <CardContent>
+   951→                  <div className="p-6 border border-border rounded-lg bg-muted/30">
+   952→                    <div className="flex items-center gap-3 mb-4">
+   953→                      <div 
+   954→                        className="h-10 w-10 rounded-lg flex items-center justify-center"
+   955→                        style={{ backgroundColor: brandingConfig.primaryColor }}
+   956→                      >
+   957→                        <span className="text-white font-bold">
+   958→                          {brandingConfig.companyName[0]}
+   959→                        </span>
+   960→                      </div>
+   961→                      <div>
+   962→                        <h3 className="font-bold">{brandingConfig.companyName}</h3>
+   963→                        <p className="text-sm text-muted-foreground">{brandingConfig.tagline}</p>
+   964→                      </div>
+   965→                    </div>
+   966→                    <Button style={{ backgroundColor: brandingConfig.primaryColor }}>
+   967→                      Get Your Free Quote
+   968→                    </Button>
+   969→                  </div>
+   970→                </CardContent>
+   971→              </Card>
+   972→            </TabsContent>
+   973→
+   974→            {/* Email Templates Tab */}
+   975→            <TabsContent value="emails" className="space-y-6">
+   976→              <Card>
+   977→                <CardHeader>
+   978→                  <CardTitle className="flex items-center gap-2">
+   979→                    <Mail className="h-5 w-5" />
+   980→                    Email Templates
+   981→                  </CardTitle>
+   982→                  <CardDescription>
+   983→                    Customize automated email notifications sent to customers
+   984→                  </CardDescription>
+   985→                </CardHeader>
+   986→                <CardContent className="space-y-6">
+   987→                  {emailTemplates.map((template) => (
+   988→                    <div key={template.id} className="border border-border rounded-lg p-4 space-y-4">
+   989→                      <div className="flex items-center justify-between">
+   990→                        <div className="flex items-center gap-3">
+   991→                          <h4 className="font-medium">{template.name}</h4>
+   992→                          <Switch 
+   993→                            checked={template.enabled}
+   994→                            onCheckedChange={(checked) => 
+   995→                              updateEmailTemplate(template.id, 'enabled', checked)
+   996→                            }
+   997→                          />
+   998→                        </div>
+   999→                        <Badge variant={template.enabled ? 'default' : 'secondary'}>
+  1000→                          {template.enabled ? 'Active' : 'Disabled'}
+  1001→                        </Badge>
+  1002→                      </div>
+  1003→                      
+  1004→                      <div className="space-y-2">
+  1005→                        <Label>Subject Line</Label>
+  1006→                        <Input 
+  1007→                          value={template.subject}
+  1008→                          onChange={(e) => updateEmailTemplate(template.id, 'subject', e.target.value)}
+  1009→                        />
+  1010→                      </div>
+  1011→
+  1012→                      <div className="space-y-2">
+  1013→                        <Label>Email Body</Label>
+  1014→                        <Textarea 
+  1015→                          value={template.body}
+  1016→                          onChange={(e) => updateEmailTemplate(template.id, 'body', e.target.value)}
+  1017→                          rows={5}
+  1018→                          className="font-mono text-sm"
+  1019→                        />
+  1020→                      </div>
+  1021→
+  1022→                      <p className="text-xs text-muted-foreground">
+  1023→                        Available variables: {'{{customer_name}}'}, {'{{company_name}}'}, {'{{portal_link}}'}, {'{{amount}}'}, {'{{survey_date}}'}, {'{{install_date}}'}
+  1024→                      </p>
+  1025→                    </div>
+  1026→                  ))}
+  1027→
+  1028→                  <div className="flex justify-end">
+  1029→                    <Button onClick={() => toast.success('Email templates saved (demo)')}>
+  1030→                      <Save className="h-4 w-4 mr-2" />
+  1031→                      Save Templates
+  1032→                    </Button>
+  1033→                  </div>
+  1034→                </CardContent>
+  1035→              </Card>
+  1036→            </TabsContent>
+  1037→
+  1038→            {/* Activity Audit Log Tab */}
+  1039→            <TabsContent value="activity">
+  1040→              <ActivityAuditLog />
+  1041→            </TabsContent>
+  1042→          </Tabs>
+  1043→        </main>
+  1044→      </div>
+  1045→    </>
+  1046→  );
+  1047→}
+  1048→

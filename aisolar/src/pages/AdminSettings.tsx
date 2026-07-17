@@ -30,6 +30,7 @@ import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
 import { ActivityAuditLog } from '@/components/dashboard/ActivityAuditLog';
+import { isDemoMode } from '@/lib/demoMode';
 
 interface InviteUser {
   email: string;
@@ -223,6 +224,12 @@ export default function AdminSettings() {
   }, []);
 
   const checkAuthAndFetch = async () => {
+    // Demo mode bypass — skip auth, still attempt data fetches (will show empty states)
+    if (isDemoMode()) {
+      await Promise.all([fetchThresholds(), fetchUsers()]);
+      setLoading(false);
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/auth');

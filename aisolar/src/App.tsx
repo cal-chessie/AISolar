@@ -24,6 +24,8 @@ import AdminSettings from "./pages/AdminSettings";
 import AboutUs from "./pages/AboutUs";
 import AuditDashboard from "./pages/AuditDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import DemoIndex from "./pages/DemoIndex";
+import DemoBanner from "./components/DemoBanner";
 
 const queryClient = new QueryClient();
 
@@ -43,9 +45,10 @@ function AppRoutes() {
 
   return (
     <>
-      <GlobalSearchModal 
-        open={isSearchOpen} 
-        onOpenChange={setIsSearchOpen} 
+      <DemoBanner />
+      <GlobalSearchModal
+        open={isSearchOpen}
+        onOpenChange={setIsSearchOpen}
       />
       {showAICoach && <PersistentAICoach />}
       <AnimatePresence mode="wait">
@@ -54,6 +57,7 @@ function AppRoutes() {
           <Route path="/upload" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/upsell" element={<PageTransition><ValueUpsell /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+          <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
           <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />

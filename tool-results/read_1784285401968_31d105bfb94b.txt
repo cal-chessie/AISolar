@@ -1,0 +1,1171 @@
+     1→import { useState, useEffect, useMemo } from 'react';
+     2→import { motion, AnimatePresence } from 'framer-motion';
+     3→import { 
+     4→  Users, 
+     5→  FileText, 
+     6→  TrendingUp, 
+     7→  Calendar,
+     8→  Zap,
+     9→  ArrowUp,
+    10→  ArrowDown,
+    11→  Star,
+    12→  LogOut,
+    13→  Eye,
+    14→  ClipboardList,
+    15→  Search,
+    16→  FileCheck,
+    17→  Settings,
+    18→  Phone,
+    19→  Plus
+    20→} from 'lucide-react';
+    21→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+    22→import { toast } from '@/components/ui/use-toast';
+    23→import { Button } from '@/components/ui/button';
+    24→import { Input } from '@/components/ui/input';
+    25→import { supabase } from '@/integrations/supabase/client';
+    26→import { useNavigate } from 'react-router-dom';
+    27→import { brand } from '@/config/brand';
+    28→import { useAuth } from '@/hooks/useAuth';
+    29→import LeadDetailView from './LeadDetailView';
+    30→import ProposalQuestionnaire from './ProposalQuestionnaire';
+    31→import ProposalResultsView from './ProposalResultsView';
+    32→import ProductsManagement from './ProductsManagement';
+    33→import SurveysPanel from './dashboard/SurveysPanel';
+    34→import InstallationsPanel from './dashboard/InstallationsPanel';
+    35→import AnalyticsPanel from './dashboard/AnalyticsPanel';
+    36→import LaunchHeatmaps from './dashboard/LaunchHeatmaps';
+    37→import AddLeadDialog from './dashboard/AddLeadDialog';
+    38→import LeadSelectorDialog from './dashboard/LeadSelectorDialog';
+    39→import DeleteLeadDialog from './dashboard/DeleteLeadDialog';
+    40→import CollapsibleStats from './dashboard/CollapsibleStats';
+    41→import SiteSurveyForm from './SiteSurveyForm';
+    42→import { FollowUpReminders } from './dashboard/FollowUpReminders';
+    43→import DocumentManager from './dashboard/DocumentManager';
+    44→import ConsultantCalendar from './dashboard/ConsultantCalendar';
+    45→import MobileBottomNav from './layout/MobileBottomNav';
+    46→import AICoachFloatingButton from './ai/AICoachFloatingButton';
+    47→import { DashboardStatsSkeleton, LeadCardsSkeleton } from './ui/skeletons';
+    48→import ErrorBoundary from './ui/ErrorBoundary';
+    49→import { PaginationControls, usePagination } from './ui/PaginationControls';
+    50→import { EmptyLeadsState, EmptyProposalsState, EmptySearchResultsState } from './ui/EmptyState';
+    51→import { NotificationBell } from './notifications/NotificationBell';
+    52→import LeadWorkflowJourney from './dashboard/LeadWorkflowJourney';
+    53→
+    54→
+    55→interface StatCardProps {
+    56→  icon: React.ReactNode;
+    57→  value: string | number;
+    58→  label: string;
+    59→  trend: { value: string; positive: boolean };
+    60→  color: string;
+    61→  isLoading?: boolean;
+    62→}
+    63→
+    64→const StatCard = ({ icon, value, label, trend, color }: StatCardProps) => (
+    65→  <motion.div 
+    66→    className="bg-card p-3 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-lg hover:shadow-xl transition-all cursor-pointer"
+    67→    whileHover={{ scale: 1.02, y: -2 }}
+    68→    transition={{ type: "spring", stiffness: 300 }}
+    69→  >
+    70→    <div className="flex items-center gap-2 sm:gap-4">
+    71→      <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl bg-muted ${color}`}>
+    72→        {icon}
+    73→      </div>
+    74→      <div className="flex-1 min-w-0">
+    75→        <div className="text-xl sm:text-3xl font-bold text-foreground truncate">{value}</div>
+    76→        <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 truncate">{label}</div>
+    77→      </div>
+    78→      <div className={`hidden sm:flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+    79→        trend.positive ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-destructive/10 text-destructive dark:bg-destructive/20'
+    80→      }`}>
+    81→        {trend.positive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+    82→        {trend.value}
+    83→      </div>
+    84→    </div>
+    85→  </motion.div>
+    86→);
+    87→
+    88→type TabType = 'leads' | 'proposals' | 'surveys' | 'installations' | 'calendar' | 'followups' | 'products' | 'documents' | 'analytics';
+    89→
+    90→interface DashboardStats {
+    91→  totalLeads: number;
+    92→  conversionRate: string;
+    93→  avgDealSize: string;
+    94→  pendingLeads: number;
+    95→  leadsTrend: { value: string; positive: boolean };
+    96→  conversionTrend: { value: string; positive: boolean };
+    97→  dealSizeTrend: { value: string; positive: boolean };
+    98→  pendingTrend: { value: string; positive: boolean };
+    99→}
+   100→
+   101→export default function PremiumDashboard({ onBackToClient }: { onBackToClient?: () => void }) {
+   102→  const navigate = useNavigate();
+   103→  const { hasRole, isOwner } = useAuth();
+   104→  const isAdmin = hasRole('admin') || isOwner();
+   105→  
+   106→  const [activeTab, setActiveTab] = useState<TabType>('leads');
+   107→  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+   108→  const [selectedLeadData, setSelectedLeadData] = useState<any | null>(null);
+   109→  const [activeLeadForProposal, setActiveLeadForProposal] = useState<any | null>(null);
+   110→  const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
+   111→  const [viewMode, setViewMode] = useState<'list' | 'view' | 'edit'>('list');
+   112→  const [surveyLeadId, setSurveyLeadId] = useState<string | null>(null);
+   113→  const [refreshLeads, setRefreshLeads] = useState(0);
+   114→  const [prefilledProposalData, setPrefilledProposalData] = useState<Record<string, any> | null>(null);
+   115→  const [statsLoading, setStatsLoading] = useState(true);
+   116→  const [showLeadSelector, setShowLeadSelector] = useState(false);
+   117→  const [showAddLead, setShowAddLead] = useState(false);
+   118→  const [stats, setStats] = useState<DashboardStats>({
+   119→    totalLeads: 0,
+   120→    conversionRate: '0%',
+   121→    avgDealSize: '€0',
+   122→    pendingLeads: 0,
+   123→    leadsTrend: { value: '+0%', positive: true },
+   124→    conversionTrend: { value: '+0%', positive: true },
+   125→    dealSizeTrend: { value: '+0%', positive: true },
+   126→    pendingTrend: { value: '0%', positive: false },
+   127→  });
+   128→
+   129→  // Fetch real dashboard stats
+   130→  useEffect(() => {
+   131→    fetchDashboardStats();
+   132→    
+   133→    // Set up real-time subscription for leads
+   134→    const channel = supabase
+   135→      .channel('dashboard-stats')
+   136→      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+   137→        fetchDashboardStats();
+   138→      })
+   139→      .on('postgres_changes', { event: '*', schema: 'public', table: 'proposals' }, () => {
+   140→        fetchDashboardStats();
+   141→      })
+   142→      .subscribe();
+   143→
+   144→    return () => {
+   145→      supabase.removeChannel(channel);
+   146→    };
+   147→  }, []);
+   148→
+   149→  const fetchDashboardStats = async () => {
+   150→    try {
+   151→      // Fetch all leads
+   152→      const { data: leads, error: leadsError } = await supabase
+   153→        .from('leads')
+   154→        .select('id, workflow_stage, created_at, monthly_bill');
+   155→      
+   156→      if (leadsError) throw leadsError;
+   157→
+   158→      // Fetch accepted proposals with net_cost
+   159→      const { data: proposals, error: proposalsError } = await supabase
+   160→        .from('proposals')
+   161→        .select('id, status, net_cost, created_at')
+   162→        .eq('status', 'accepted');
+   163→      
+   164→      if (proposalsError) throw proposalsError;
+   165→
+   166→      // Calculate stats
+   167→      const totalLeads = leads?.length || 0;
+   168→      const closedWonLeads = leads?.filter(l => l.workflow_stage === 'completed').length || 0;
+   169→      const conversionRate = totalLeads > 0 ? ((closedWonLeads / totalLeads) * 100).toFixed(0) : '0';
+   170→      
+   171→      // Calculate avg deal size from accepted proposals
+   172→      const acceptedProposals = proposals || [];
+   173→      const totalDealValue = acceptedProposals.reduce((sum, p) => sum + (p.net_cost || 0), 0);
+   174→      const avgDealSize = acceptedProposals.length > 0 
+   175→        ? Math.round(totalDealValue / acceptedProposals.length) 
+   176→        : 0;
+   177→      
+   178→      const pendingLeads = leads?.filter(l => 
+   179→        l.workflow_stage === 'new' || l.workflow_stage === 'survey'
+   180→      ).length || 0;
+   181→
+   182→      // Calculate trends (last 7 days vs previous 7 days)
+   183→      const now = new Date();
+   184→      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+   185→      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+   186→
+   187→      const recentLeads = leads?.filter(l => new Date(l.created_at) >= sevenDaysAgo).length || 0;
+   188→      const previousLeads = leads?.filter(l => 
+   189→        new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
+   190→      ).length || 0;
+   191→
+   192→      const leadsTrendValue = previousLeads > 0 
+   193→        ? Math.round(((recentLeads - previousLeads) / previousLeads) * 100)
+   194→        : recentLeads > 0 ? 100 : 0;
+   195→
+   196→      setStats({
+   197→        totalLeads,
+   198→        conversionRate: `${conversionRate}%`,
+   199→        avgDealSize: `€${avgDealSize.toLocaleString()}`,
+   200→        pendingLeads,
+   201→        leadsTrend: { 
+   202→          value: `${leadsTrendValue >= 0 ? '+' : ''}${leadsTrendValue}%`, 
+   203→          positive: leadsTrendValue >= 0 
+   204→        },
+   205→        conversionTrend: { value: '+5%', positive: true },
+   206→        dealSizeTrend: { value: '+8%', positive: true },
+   207→        pendingTrend: { value: '-3%', positive: false },
+   208→      });
+   209→    } catch (error) {
+   210→      console.error('Error fetching dashboard stats:', error);
+   211→    } finally {
+   212→      setStatsLoading(false);
+   213→    }
+   214→  };
+   215→
+   216→  const handleLogout = async () => {
+   217→    await supabase.auth.signOut();
+   218→    navigate('/auth');
+   219→    toast({
+   220→      title: 'Logged out successfully',
+   221→      description: 'You have been signed out.',
+   222→    });
+   223→  };
+   224→
+   225→  // Handler for Survey → Proposal flow
+   226→  const handleCreateProposalFromSurvey = (surveyData: any, leadData: any) => {
+   227→    setPrefilledProposalData(surveyData);
+   228→    setActiveLeadForProposal(leadData);
+   229→    setActiveTab('proposals');
+   230→    toast({
+   231→      title: 'Creating proposal from survey',
+   232→      description: 'Survey data has been pre-filled into the proposal form.',
+   233→    });
+   234→  };
+   235→
+   236→  const statCards = [
+   237→    {
+   238→      icon: <Users className="text-blue-500" size={24} />,
+   239→      value: stats.totalLeads,
+   240→      label: 'Total Leads',
+   241→      trend: stats.leadsTrend,
+   242→      color: 'text-blue-500'
+   243→    },
+   244→    {
+   245→      icon: <TrendingUp className="text-green-500" size={24} />,
+   246→      value: stats.conversionRate,
+   247→      label: 'Conversion Rate',
+   248→      trend: stats.conversionTrend,
+   249→      color: 'text-green-500'
+   250→    },
+   251→    {
+   252→      icon: <FileText className="text-purple-500" size={24} />,
+   253→      value: stats.avgDealSize,
+   254→      label: 'Avg Deal Size',
+   255→      trend: stats.dealSizeTrend,
+   256→      color: 'text-purple-500'
+   257→    },
+   258→    {
+   259→      icon: <Calendar className="text-orange-500" size={24} />,
+   260→      value: stats.pendingLeads,
+   261→      label: 'Pending',
+   262→      trend: stats.pendingTrend,
+   263→      color: 'text-orange-500'
+   264→    }
+   265→  ];
+   266→
+   267→  // Consultant tabs (visible to all)
+   268→  const consultantTabs = [
+   269→    { id: 'leads' as TabType, label: 'Leads', icon: <Users size={16} /> },
+   270→    { id: 'surveys' as TabType, label: 'Surveys', icon: <ClipboardList size={16} /> },
+   271→    { id: 'proposals' as TabType, label: 'Proposals', icon: <FileText size={16} /> },
+   272→    { id: 'installations' as TabType, label: 'Installations', icon: <FileCheck size={16} /> },
+   273→    { id: 'calendar' as TabType, label: 'Calendar', icon: <Calendar size={16} /> },
+   274→    { id: 'followups' as TabType, label: 'Follow-ups', icon: <Phone size={16} /> },
+   275→  ];
+   276→
+   277→  // Admin-only tabs
+   278→  const adminTabs = [
+   279→    { id: 'products' as TabType, label: 'Products', icon: <FileText size={16} />, isAdmin: true },
+   280→    { id: 'documents' as TabType, label: 'Documents', icon: <FileText size={16} />, isAdmin: true },
+   281→    { id: 'analytics' as TabType, label: 'Analytics', icon: <TrendingUp size={16} />, isAdmin: true },
+   282→  ];
+   283→
+   284→  // Helper to check if current tab is admin tab
+   285→  const isAdminTab = (tabId: TabType) => adminTabs.some(t => t.id === tabId);
+   286→
+   287→  return (
+   288→    <div className="min-h-screen min-h-[100dvh] gradient-background pb-20 lg:pb-0">
+   289→      {/* Add Lead Dialog - Fixed: Now properly rendered */}
+   290→      <AddLeadDialog 
+   291→        open={showAddLead}
+   292→        onOpenChange={setShowAddLead}
+   293→        onLeadAdded={() => {
+   294→          setRefreshLeads(r => r + 1);
+   295→          setShowAddLead(false);
+   296→        }}
+   297→        showTrigger={false}
+   298→      />
+   299→
+   300→      {/* Header - Mobile Optimized */}
+   301→      <header className="bg-card border-b border-border shadow-md safe-area-inset-top">
+   302→        <div className="max-w-7xl mx-auto px-3 sm:px-8 py-3 sm:py-6">
+   303→          <div className="flex items-center justify-between gap-2">
+   304→            <div className="min-w-0 flex-1">
+   305→              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground truncate">{brand.name}</h1>
+   306→              <p className="text-muted-foreground text-xs sm:text-base">Consultant Portal</p>
+   307→            </div>
+   308→            <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
+   309→              <Button 
+   310→                className="gradient-primary text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center gap-1.5 sm:gap-2 hover:shadow-lg transition-all text-xs sm:text-base min-h-[44px] min-w-[44px]"
+   311→                onClick={() => setShowAddLead(true)}
+   312→                aria-label="Add new lead"
+   313→              >
+   314→                <Plus size={18} className="flex-shrink-0" />
+   315→                <span className="hidden sm:inline">New Lead</span>
+   316→              </Button>
+   317→              <NotificationBell />
+   318→              <DarkModeToggle />
+   319→              {isAdmin && (
+   320→                <Button
+   321→                  variant="ghost"
+   322→                  size="icon"
+   323→                  onClick={() => navigate('/admin/settings')}
+   324→                  className="hidden sm:flex h-9 w-9 sm:h-10 sm:w-10"
+   325→                >
+   326→                  <Settings size={18} />
+   327→                </Button>
+   328→              )}
+   329→              <Button
+   330→                variant="outline"
+   331→                onClick={handleLogout}
+   332→                className="flex items-center gap-1.5 sm:gap-2 h-9 sm:h-10 px-2 sm:px-4"
+   333→                size="sm"
+   334→              >
+   335→                <LogOut size={16} />
+   336→                <span className="hidden sm:inline">Logout</span>
+   337→              </Button>
+   338→              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full gradient-primary flex items-center justify-center text-white font-semibold text-xs sm:text-lg cursor-pointer hover:shadow-lg transition-all">
+   339→                JD
+   340→              </div>
+   341→            </div>
+   342→          </div>
+   343→        </div>
+   344→      </header>
+   345→
+   346→      {/* Stats Grid - Collapsible */}
+   347→      <div className="max-w-7xl mx-auto px-3 sm:px-8 py-4 sm:py-8">
+   348→        <CollapsibleStats defaultExpanded={false}>
+   349→          {statsLoading ? (
+   350→            <DashboardStatsSkeleton count={4} />
+   351→          ) : (
+   352→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+   353→              {statCards.map((stat, idx) => (
+   354→                <StatCard key={idx} {...stat} />
+   355→              ))}
+   356→            </div>
+   357→          )}
+   358→        </CollapsibleStats>
+   359→        
+   360→        
+   361→        {/* Follow-up Reminders */}
+   362→        <FollowUpReminders 
+   363→          onLeadClick={(leadId) => {
+   364→            const lead = { id: leadId };
+   365→            setSelectedLeadId(leadId);
+   366→            setActiveTab('leads');
+   367→          }}
+   368→        />
+   369→      </div>
+   370→
+   371→      {/* Main Content */}
+   372→      <div className="max-w-7xl mx-auto px-3 sm:px-8 pb-24 lg:pb-8">
+   373→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+   374→          {/* Left Panel - Tabs & Content */}
+   375→          <div className="lg:col-span-2">
+   376→            {/* Navigation Tabs - Mobile Optimized Horizontal Scroll */}
+   377→            <nav className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide items-center">
+   378→              {consultantTabs.map(tab => (
+   379→                <button
+   380→                  key={tab.id}
+   381→                  className={`px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all whitespace-nowrap text-xs sm:text-base touch-manipulation ${
+   382→                    activeTab === tab.id
+   383→                      ? 'gradient-primary text-white shadow-lg'
+   384→                      : 'bg-card text-muted-foreground hover:bg-muted border border-border'
+   385→                  }`}
+   386→                  onClick={() => setActiveTab(tab.id)}
+   387→                >
+   388→                  {tab.label}
+   389→                </button>
+   390→              ))}
+   391→              
+   392→              {/* Admin tabs separator and tabs */}
+   393→              {isAdmin && (
+   394→                <>
+   395→                  <div className="flex items-center gap-1.5 sm:gap-2 px-1 sm:px-2">
+   396→                    <div className="h-5 sm:h-6 w-px bg-border"></div>
+   397→                    <span className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wide">Admin</span>
+   398→                    <div className="h-5 sm:h-6 w-px bg-border"></div>
+   399→                  </div>
+   400→                  {adminTabs.map(tab => (
+   401→                    <button
+   402→                      key={tab.id}
+   403→                      className={`px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all whitespace-nowrap text-xs sm:text-base touch-manipulation ${
+   404→                        activeTab === tab.id
+   405→                          ? 'bg-orange-500 text-white shadow-lg'
+   406→                          : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 border border-orange-500/20'
+   407→                      }`}
+   408→                      onClick={() => setActiveTab(tab.id)}
+   409→                    >
+   410→                      {tab.label}
+   411→                    </button>
+   412→                  ))}
+   413→                </>
+   414→              )}
+   415→            </nav>
+   416→
+   417→            {/* Tab Content */}
+   418→            <AnimatePresence mode="wait">
+   419→              <motion.div
+   420→                key={activeTab}
+   421→                initial={{ opacity: 0, y: 20 }}
+   422→                animate={{ opacity: 1, y: 0 }}
+   423→                exit={{ opacity: 0, y: -20 }}
+   424→                transition={{ duration: 0.2 }}
+   425→                className="bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg p-3 sm:p-6 min-h-[400px] sm:min-h-[600px]"
+   426→              >
+   427→                <ErrorBoundary>
+   428→                  {activeTab === 'leads' && (
+   429→                    <LeadsPanel
+   430→                      onLeadSelect={(lead) => {
+   431→                        setSelectedLeadData(lead);
+   432→                        setSelectedLeadId(lead.id);
+   433→                        setActiveLeadForProposal(lead);
+   434→                      }}
+   435→                      onStartSurvey={(leadId) => {
+   436→                        setSurveyLeadId(leadId);
+   437→                        setActiveTab('surveys');
+   438→                      }}
+   439→                      onLeadAdded={() => setRefreshLeads(r => r + 1)}
+   440→                      refreshKey={refreshLeads}
+   441→                    />
+   442→                  )}
+   443→                  {activeTab === 'proposals' && (
+   444→                    viewMode === 'view' && selectedProposal ? (
+   445→                      <ProposalResultsView
+   446→                        proposalId={selectedProposal.id}
+   447→                        leadId={selectedProposal.lead_id}
+   448→                        onBack={() => {
+   449→                          setViewMode('list');
+   450→                          setSelectedProposal(null);
+   451→                        }}
+   452→                      />
+   453→                    ) : viewMode === 'edit' && selectedProposal ? (
+   454→                      <ProposalQuestionnaire
+   455→                        leadId={selectedProposal.lead_id}
+   456→                        proposalId={selectedProposal.id}
+   457→                        onBack={() => {
+   458→                          setViewMode('list');
+   459→                          setSelectedProposal(null);
+   460→                        }}
+   461→                      />
+   462→                    ) : activeLeadForProposal ? (
+   463→                      <ProposalQuestionnaire
+   464→                        leadId={activeLeadForProposal.id}
+   465→                        initialData={prefilledProposalData}
+   466→                        onBack={() => {
+   467→                          setActiveLeadForProposal(null);
+   468→                          setPrefilledProposalData(null);
+   469→                          setViewMode('list');
+   470→                        }}
+   471→                      />
+   472→                    ) : (
+   473→                      <ProposalsPanel 
+   474→                        onProposalSelect={(proposal, lead) => {
+   475→                          setSelectedProposal(proposal);
+   476→                          setViewMode('view');
+   477→                        }}
+   478→                        onEditProposal={(proposal) => {
+   479→                          setSelectedProposal(proposal);
+   480→                          setViewMode('edit');
+   481→                        }}
+   482→                      />
+   483→                    )
+   484→                  )}
+   485→                  {activeTab === 'surveys' && (
+   486→                    surveyLeadId ? (
+   487→                      <div>
+   488→                        <Button
+   489→                          variant="outline"
+   490→                          onClick={() => setSurveyLeadId(null)}
+   491→                          className="mb-4"
+   492→                        >
+   493→                          ← Back to Surveys
+   494→                        </Button>
+   495→                        <SiteSurveyForm 
+   496→                          leadId={surveyLeadId} 
+   497→                          onCreateProposal={(surveyData, leadData) => {
+   498→                            setSurveyLeadId(null);
+   499→                            handleCreateProposalFromSurvey(surveyData, leadData);
+   500→                          }}
+   501→                        />
+   502→                      </div>
+   503→                    ) : (
+   504→                      <SurveysPanel onCreateProposal={handleCreateProposalFromSurvey} />
+   505→                    )
+   506→                  )}
+   507→                  {activeTab === 'installations' && <InstallationsPanel />}
+   508→                  {activeTab === 'calendar' && (
+   509→                    <ConsultantCalendar 
+   510→                      onViewLead={(id) => {
+   511→                        setSelectedLeadId(id);
+   512→                        setActiveTab('leads');
+   513→                      }}
+   514→                      onViewSurvey={() => setActiveTab('surveys')}
+   515→                      onViewProposal={() => setActiveTab('proposals')}
+   516→                    />
+   517→                  )}
+   518→                  {activeTab === 'followups' && (
+   519→                    <div>
+   520→                      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">Follow-ups</h2>
+   521→                      <FollowUpReminders 
+   522→                        onLeadClick={(leadId) => {
+   523→                          setSelectedLeadId(leadId);
+   524→                          setActiveTab('leads');
+   525→                        }}
+   526→                        expanded
+   527→                      />
+   528→                    </div>
+   529→                  )}
+   530→                  {activeTab === 'products' && isAdmin && <ProductsManagement />}
+   531→                  {activeTab === 'documents' && isAdmin && <DocumentManager />}
+   532→                  {activeTab === 'analytics' && isAdmin && <AnalyticsPanel />}
+   533→                  {activeTab === 'analytics' && isAdmin && <LaunchHeatmaps />}
+   534→                </ErrorBoundary>
+   535→              </motion.div>
+   536→            </AnimatePresence>
+   537→          </div>
+   538→
+   539→          {/* Right Panel - AI Coach */}
+   540→          <div className="lg:col-span-1">
+   541→            <AnimatePresence>
+   542→              {selectedLeadId ? (
+   543→                <motion.div
+   544→                  initial={{ opacity: 0, x: 300 }}
+   545→                  animate={{ opacity: 1, x: 0 }}
+   546→                  exit={{ opacity: 0, x: 300 }}
+   547→                  className="bg-card rounded-2xl border border-border shadow-lg p-6 sticky top-8"
+   548→                >
+   549→                  <AISalesCoachPanel leadId={selectedLeadId} />
+   550→                </motion.div>
+   551→              ) : (
+   552→                <motion.div
+   553→                  initial={{ opacity: 0 }}
+   554→                  animate={{ opacity: 1 }}
+   555→                  className="bg-card rounded-2xl border border-border shadow-lg p-6 text-center"
+   556→                >
+   557→                  <div className="py-12">
+   558→                    <Zap className="mx-auto text-muted-foreground/30 mb-4" size={48} />
+   559→                    <h3 className="text-lg font-semibold text-foreground mb-2">AI Sales Coach</h3>
+   560→                    <p className="text-muted-foreground text-sm">
+   561→                      Select a lead to get AI-powered sales guidance
+   562→                    </p>
+   563→                  </div>
+   564→                </motion.div>
+   565→              )}
+   566→            </AnimatePresence>
+   567→          </div>
+   568→        </div>
+   569→      </div>
+   570→
+   571→      {/* Lead Detail Modal */}
+   572→      {selectedLeadData && (
+   573→        <LeadDetailView 
+   574→          lead={selectedLeadData} 
+   575→          onClose={() => setSelectedLeadData(null)} 
+   576→        />
+   577→      )}
+   578→
+   579→      {/* Lead Selector Dialog for New Proposal */}
+   580→      <LeadSelectorDialog
+   581→        isOpen={showLeadSelector}
+   582→        onClose={() => setShowLeadSelector(false)}
+   583→        onSelectLead={(lead) => {
+   584→          setActiveLeadForProposal(lead);
+   585→          setSelectedLeadId(lead.id);
+   586→          setPrefilledProposalData(null);
+   587→          setActiveTab('proposals');
+   588→        }}
+   589→        onCreateNewLead={() => {
+   590→          setShowAddLead(true);
+   591→        }}
+   592→      />
+   593→
+   594→      {/* AI Coach Floating Button for Mobile/Tablet */}
+   595→      <AICoachFloatingButton leadId={selectedLeadId} />
+   596→
+   597→      {/* Mobile Bottom Navigation */}
+   598→      <MobileBottomNav 
+   599→        activeTab={activeTab} 
+   600→        onTabChange={(tab) => setActiveTab(tab as TabType)} 
+   601→        variant="dashboard"
+   602→        isAdmin={isAdmin}
+   603→      />
+   604→    </div>
+   605→  );
+   606→}
+   607→
+   608→// LeadsPanel with search, survey, and quick actions
+   609→interface LeadsPanelProps {
+   610→  onLeadSelect: (lead: any) => void;
+   611→  onStartSurvey?: (leadId: string) => void;
+   612→  onLeadAdded?: () => void;
+   613→  refreshKey?: number;
+   614→}
+   615→
+   616→const dummyLeads = [
+   617→  {
+   618→    id: 'dummy-lead-1',
+   619→    name: 'Sean McCarthy',
+   620→    email: 'sean.mccarthy@email.com',
+   621→    phone: '087 123 4567',
+   622→    address: '45 Green Valley, Dublin 12',
+   623→    monthly_bill: 220,
+   624→    workflow_stage: 'new',
+   625→    score: 4,
+   626→    notes: '[SOURCE: AI_ANALYSER] High usage household',
+   627→    created_at: new Date().toISOString()
+   628→  },
+   629→  {
+   630→    id: 'dummy-lead-2',
+   631→    name: 'Aoife Brennan',
+   632→    email: 'aoife.brennan@email.com',
+   633→    phone: '086 234 5678',
+   634→    address: '12 Harbour View, Cork',
+   635→    monthly_bill: 165,
+   636→    workflow_stage: 'survey',
+   637→    score: 3,
+   638→    notes: 'Interested in battery storage',
+   639→    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+   640→  },
+   641→  {
+   642→    id: 'dummy-lead-3',
+   643→    name: 'Conor O\'Reilly',
+   644→    email: 'conor.oreilly@email.com',
+   645→    phone: '085 345 6789',
+   646→    address: '8 Castle Road, Limerick',
+   647→    monthly_bill: 280,
+   648→    workflow_stage: 'proposal',
+   649→    score: 5,
+   650→    notes: '[AI Analysis] Large detached property with excellent roof orientation',
+   651→    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+   652→  },
+   653→  {
+   654→    id: 'dummy-lead-4',
+   655→    name: 'Siobhan Murphy',
+   656→    email: 'siobhan.murphy@email.com',
+   657→    phone: '083 456 7890',
+   658→    address: '22 River Lane, Galway',
+   659→    monthly_bill: 145,
+   660→    workflow_stage: 'approved',
+   661→    score: 4,
+   662→    notes: 'Ready to proceed with installation',
+   663→    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+   664→  },
+   665→];
+   666→
+   667→const LeadsPanel = ({ onLeadSelect, onStartSurvey, onLeadAdded, refreshKey }: LeadsPanelProps) => {
+   668→  const [leads, setLeads] = useState<any[]>([]);
+   669→  const [loading, setLoading] = useState(true);
+   670→  const [searchQuery, setSearchQuery] = useState('');
+   671→  const [filterAILeads, setFilterAILeads] = useState(false);
+   672→  const [showDummy, setShowDummy] = useState(false);
+   673→
+   674→  // Check if lead is from AI Analyser
+   675→  const isAILead = (lead: any) => lead.notes?.includes('[SOURCE: AI_ANALYSER]') || lead.notes?.includes('[AI Analysis');
+   676→
+   677→  // Check if lead is high value (monthly bill > €200)
+   678→  const isHighValue = (lead: any) => (lead.monthly_bill || 0) >= 200;
+   679→
+   680→  useEffect(() => {
+   681→    fetchLeads();
+   682→  }, [refreshKey]);
+   683→
+   684→  const fetchLeads = async () => {
+   685→    const { data, error } = await supabase
+   686→      .from('leads')
+   687→      .select('*')
+   688→      .order('created_at', { ascending: false });
+   689→
+   690→    if (error) {
+   691→      console.error('Error fetching leads:', error);
+   692→      toast({
+   693→        title: 'Error loading leads',
+   694→        description: error.message,
+   695→        variant: 'destructive',
+   696→      });
+   697→    } else {
+   698→      setLeads(data || []);
+   699→    }
+   700→    setLoading(false);
+   701→  };
+   702→
+   703→  const updateLeadScore = async (leadId: string, newScore: number) => {
+   704→    const { error } = await supabase
+   705→      .from('leads')
+   706→      .update({ score: newScore })
+   707→      .eq('id', leadId);
+   708→
+   709→    if (error) {
+   710→      toast({
+   711→        title: 'Error updating score',
+   712→        description: error.message,
+   713→        variant: 'destructive',
+   714→      });
+   715→    } else {
+   716→      setLeads(leads.map(lead => 
+   717→        lead.id === leadId ? { ...lead, score: newScore } : lead
+   718→      ));
+   719→      toast({
+   720→        title: 'Score updated',
+   721→        description: `Lead score set to ${newScore} stars`,
+   722→      });
+   723→    }
+   724→  };
+   725→
+   726→  const StarRating = ({ score, leadId }: { score: number; leadId: string }) => (
+   727→    <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+   728→      {[1, 2, 3, 4, 5].map((star) => (
+   729→        <Star
+   730→          key={star}
+   731→          size={16}
+   732→          className={`cursor-pointer transition-all ${
+   733→            star <= score
+   734→              ? 'fill-yellow-400 text-yellow-400'
+   735→              : 'text-muted-foreground/40 hover:text-yellow-300'
+   736→          }`}
+   737→          onClick={() => updateLeadScore(leadId, star)}
+   738→        />
+   739→      ))}
+   740→    </div>
+   741→  );
+   742→
+   743→  // Count AI leads for badge
+   744→  const aiLeadsCount = leads.filter(isAILead).length;
+   745→
+   746→  // Filter leads by search query and AI filter
+   747→  const filteredLeads = useMemo(() => {
+   748→    return leads.filter(lead => {
+   749→      // AI filter
+   750→      if (filterAILeads && !isAILead(lead)) return false;
+   751→      
+   752→      // Search filter
+   753→      if (!searchQuery.trim()) return true;
+   754→      const query = searchQuery.toLowerCase();
+   755→      return (
+   756→        lead.name?.toLowerCase().includes(query) ||
+   757→        lead.email?.toLowerCase().includes(query) ||
+   758→        lead.phone?.toLowerCase().includes(query) ||
+   759→        lead.address?.toLowerCase().includes(query)
+   760→      );
+   761→    });
+   762→  }, [leads, searchQuery, filterAILeads]);
+   763→
+   764→  // Pagination
+   765→  const {
+   766→    currentPage,
+   767→    pageSize,
+   768→    totalPages,
+   769→    totalItems,
+   770→    paginatedItems: paginatedLeads,
+   771→    handlePageChange,
+   772→    handlePageSizeChange,
+   773→  } = usePagination(filteredLeads, 10);
+   774→
+   775→  if (loading) {
+   776→    return (
+   777→      <div className="space-y-4">
+   778→        <div className="flex justify-between items-center mb-6">
+   779→          <div className="h-8 w-32 bg-muted/70 rounded animate-pulse" />
+   780→          <div className="h-10 w-48 bg-muted/70 rounded animate-pulse" />
+   781→        </div>
+   782→        <LeadCardsSkeleton count={5} />
+   783→      </div>
+   784→    );
+   785→  }
+   786→
+   787→  return (
+   788→    <div>
+   789→      <div className="flex flex-col gap-4 mb-6">
+   790→        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+   791→          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Active Leads</h2>
+   792→          <div className="flex items-center gap-3 w-full sm:w-auto">
+   793→            <div className="relative flex-1 sm:flex-initial">
+   794→              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+   795→              <Input
+   796→                placeholder="Search leads..."
+   797→                value={searchQuery}
+   798→                onChange={(e) => setSearchQuery(e.target.value)}
+   799→                className="pl-10 w-full sm:w-64"
+   800→              />
+   801→            </div>
+   802→            <AddLeadDialog onLeadAdded={() => {
+   803→              fetchLeads();
+   804→              onLeadAdded?.();
+   805→            }} />
+   806→          </div>
+   807→        </div>
+   808→        
+   809→        {/* Filter Buttons */}
+   810→        <div className="flex items-center gap-2 flex-wrap">
+   811→          <Button
+   812→            variant={filterAILeads ? "default" : "outline"}
+   813→            size="sm"
+   814→            onClick={() => setFilterAILeads(!filterAILeads)}
+   815→            className="gap-2"
+   816→          >
+   817→            <Zap size={14} />
+   818→            AI Leads
+   819→            {aiLeadsCount > 0 && (
+   820→              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+   821→                filterAILeads ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+   822→              }`}>
+   823→                {aiLeadsCount}
+   824→              </span>
+   825→            )}
+   826→          </Button>
+   827→          <span className="text-sm text-muted-foreground">
+   828→            {filteredLeads.length} of {leads.length} leads
+   829→          </span>
+   830→        </div>
+   831→      </div>
+   832→
+   833→      {filteredLeads.length === 0 && !showDummy ? (
+   834→        searchQuery || filterAILeads ? (
+   835→          <EmptySearchResultsState query={searchQuery || 'AI leads'} />
+   836→        ) : (
+   837→          <div>
+   838→            <EmptyLeadsState onAddLead={() => {}} />
+   839→            <div className="text-center mt-4">
+   840→              <Button variant="outline" size="sm" onClick={() => setShowDummy(true)}>
+   841→                Show Demo Data
+   842→              </Button>
+   843→            </div>
+   844→          </div>
+   845→        )
+   846→      ) : (
+   847→        <>
+   848→          {showDummy && filteredLeads.length === 0 && (
+   849→            <div className="flex justify-end mb-2">
+   850→              <Button variant="ghost" size="sm" onClick={() => setShowDummy(false)}>
+   851→                Hide Demo Data
+   852→              </Button>
+   853→            </div>
+   854→          )}
+   855→          <div className="space-y-3 sm:space-y-4">
+   856→            {((filteredLeads.length > 0 ? paginatedLeads : showDummy ? dummyLeads : []) as any[]).map((lead) => (
+   857→              <div 
+   858→                key={lead.id}
+   859→                className={`p-4 sm:p-5 rounded-xl border hover:shadow-md transition-all ${
+   860→                  isAILead(lead) 
+   861→                    ? 'bg-primary/5 border-primary/30 dark:bg-primary/10' 
+   862→                    : 'bg-muted/50 border-border'
+   863→                }`}
+   864→              >
+   865→                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+   866→                  <div className="flex-1 min-w-0">
+   867→                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+   868→                      <h3 className="font-semibold text-foreground text-base sm:text-lg truncate">{lead.name}</h3>
+   869→                      {/* AI Lead Badge */}
+   870→                      {isAILead(lead) && (
+   871→                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+   872→                          <Zap size={10} />
+   873→                          AI Lead
+   874→                        </span>
+   875→                      )}
+   876→                      {/* High Value Badge */}
+   877→                      {isHighValue(lead) && (
+   878→                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+   879→                          <TrendingUp size={10} />
+   880→                          High Value
+   881→                        </span>
+   882→                      )}
+   883→                      <StarRating score={lead.score || 0} leadId={lead.id} />
+   884→                    </div>
+   885→                    {/* Progress Indicator Dots */}
+   886→                    <div className="flex items-center gap-1 mt-2">
+   887→                      {['new', 'survey', 'proposal', 'approved', 'installed', 'completed'].map((stage, idx) => {
+   888→                        const stageOrder = ['new', 'survey', 'proposal', 'approved', 'installed', 'completed'];
+   889→                        const currentIdx = stageOrder.indexOf(lead.workflow_stage || 'new');
+   890→                        const isCompleted = idx <= currentIdx;
+   891→                        const isCurrent = idx === currentIdx;
+   892→                        return (
+   893→                          <div 
+   894→                            key={stage}
+   895→                            className={`w-2 h-2 rounded-full transition-all ${
+   896→                              isCurrent ? 'w-4 bg-primary' :
+   897→                              isCompleted ? 'bg-primary/60' : 'bg-muted-foreground/20'
+   898→                            }`}
+   899→                            title={stage.replace('_', ' ')}
+   900→                          />
+   901→                        );
+   902→                      })}
+   903→                    </div>
+   904→                    <p className="text-sm text-muted-foreground truncate mt-1">
+   905→                      {lead.address || 'No address'} • €{lead.monthly_bill || 0}/month
+   906→                    </p>
+   907→                    <p className="text-xs text-muted-foreground/70 mt-1 truncate">{lead.email}</p>
+   908→                  </div>
+   909→                  <div className="flex items-center gap-2 flex-wrap">
+   910→                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
+   911→                      lead.workflow_stage === 'new' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+   912→                      lead.workflow_stage === 'survey' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+   913→                      lead.workflow_stage === 'proposal' ? 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
+   914→                      lead.workflow_stage === 'approved' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+   915→                      lead.workflow_stage === 'completed' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+   916→                      'bg-muted text-muted-foreground'
+   917→                    }`}>
+   918→                      {lead.workflow_stage?.replace('_', ' ').toUpperCase() || 'NEW'}
+   919→                    </span>
+   920→                    {onStartSurvey && (
+   921→                      <Button
+   922→                        variant="outline"
+   923→                        size="sm"
+   924→                        onClick={() => onStartSurvey(lead.id)}
+   925→                        className="gap-1 text-xs sm:text-sm"
+   926→                      >
+   927→                        <ClipboardList size={14} />
+   928→                        <span className="hidden sm:inline">Survey</span>
+   929→                      </Button>
+   930→                    )}
+   931→                    <LeadWorkflowJourney lead={lead} />
+   932→                    <Button
+   933→                      variant="outline"
+   934→                      size="sm"
+   935→                      onClick={() => onLeadSelect(lead)}
+   936→                      className="gap-1 text-xs sm:text-sm"
+   937→                    >
+   938→                      <Eye size={14} />
+   939→                      <span className="hidden sm:inline">View</span>
+   940→                    </Button>
+   941→                    <DeleteLeadDialog
+   942→                      leadId={lead.id}
+   943→                      leadName={lead.name}
+   944→                      onDeleted={() => {
+   945→                        fetchLeads();
+   946→                        onLeadAdded?.();
+   947→                      }}
+   948→                    />
+   949→                  </div>
+   950→                </div>
+   951→              </div>
+   952→            ))}
+   953→          </div>
+   954→          
+   955→          {totalPages > 1 && (
+   956→            <PaginationControls
+   957→              currentPage={currentPage}
+   958→              totalPages={totalPages}
+   959→              totalItems={totalItems}
+   960→              pageSize={pageSize}
+   961→              onPageChange={handlePageChange}
+   962→              onPageSizeChange={handlePageSizeChange}
+   963→              showPageSize={totalItems > 10}
+   964→            />
+   965→          )}
+   966→        </>
+   967→      )}
+   968→    </div>
+   969→  );
+   970→};
+   971→
+   972→const dummyProposals = [
+   973→  {
+   974→    id: 'dummy-prop-1',
+   975→    lead_id: 'dummy-lead-1',
+   976→    status: 'draft',
+   977→    system_size_kw: 6.6,
+   978→    net_cost: 12500,
+   979→    monthly_savings: 145,
+   980→    payback_period_years: 7.2,
+   981→    requires_review: false,
+   982→    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+   983→    leads: { name: 'Sean McCarthy', email: 'sean.mccarthy@email.com', address: '45 Green Valley, Dublin 12' }
+   984→  },
+   985→  {
+   986→    id: 'dummy-prop-2',
+   987→    lead_id: 'dummy-lead-2',
+   988→    status: 'presented',
+   989→    system_size_kw: 4.4,
+   990→    net_cost: 8900,
+   991→    monthly_savings: 98,
+   992→    payback_period_years: 7.5,
+   993→    requires_review: false,
+   994→    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+   995→    leads: { name: 'Aoife Brennan', email: 'aoife.brennan@email.com', address: '12 Harbour View, Cork' }
+   996→  },
+   997→  {
+   998→    id: 'dummy-prop-3',
+   999→    lead_id: 'dummy-lead-3',
+  1000→    status: 'approved',
+  1001→    system_size_kw: 8.8,
+  1002→    net_cost: 16800,
+  1003→    monthly_savings: 210,
+  1004→    payback_period_years: 6.7,
+  1005→    requires_review: false,
+  1006→    reviewed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  1007→    created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+  1008→    leads: { name: 'Conor O\'Reilly', email: 'conor.oreilly@email.com', address: '8 Castle Road, Limerick' }
+  1009→  },
+  1010→  {
+  1011→    id: 'dummy-prop-4',
+  1012→    lead_id: 'dummy-lead-4',
+  1013→    status: 'draft',
+  1014→    system_size_kw: 55,
+  1015→    net_cost: 85000,
+  1016→    monthly_savings: 890,
+  1017→    payback_period_years: 8,
+  1018→    requires_review: true,
+  1019→    reviewed_at: null,
+  1020→    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  1021→    leads: { name: 'Tech Solutions Ltd', email: 'info@techsolutions.ie', address: '15 Business Park, Galway' }
+  1022→  },
+  1023→];
+  1024→
+  1025→const ProposalsPanel = ({ onProposalSelect, onEditProposal }: { 
+  1026→  onProposalSelect?: (proposal: any, lead: any) => void;
+  1027→  onEditProposal?: (proposal: any) => void;
+  1028→}) => {
+  1029→  const [proposals, setProposals] = useState<any[]>([]);
+  1030→  const [loading, setLoading] = useState(true);
+  1031→  const [showDummy, setShowDummy] = useState(false);
+  1032→
+  1033→  useEffect(() => {
+  1034→    fetchProposals();
+  1035→  }, []);
+  1036→
+  1037→  const fetchProposals = async () => {
+  1038→    const { data, error } = await supabase
+  1039→      .from('proposals')
+  1040→      .select('*, leads(*)')
+  1041→      .order('created_at', { ascending: false });
+  1042→
+  1043→    if (error) {
+  1044→      console.error('Error fetching proposals:', error);
+  1045→      toast({
+  1046→        title: 'Error loading proposals',
+  1047→        description: error.message,
+  1048→        variant: 'destructive',
+  1049→      });
+  1050→    } else {
+  1051→      setProposals(data || []);
+  1052→    }
+  1053→    setLoading(false);
+  1054→  };
+  1055→
+  1056→  // Pagination
+  1057→  const {
+  1058→    currentPage,
+  1059→    pageSize,
+  1060→    totalPages,
+  1061→    totalItems,
+  1062→    paginatedItems: paginatedProposals,
+  1063→    handlePageChange,
+  1064→    handlePageSizeChange,
+  1065→  } = usePagination(proposals, 10);
+  1066→
+  1067→  if (loading) {
+  1068→    return (
+  1069→      <div className="flex items-center justify-center py-12">
+  1070→        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  1071→      </div>
+  1072→    );
+  1073→  }
+  1074→
+  1075→  return (
+  1076→    <div>
+  1077→      <div className="flex justify-between items-center mb-6">
+  1078→        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Proposals</h2>
+  1079→        <span className="text-sm text-muted-foreground">{proposals.length} total</span>
+  1080→      </div>
+  1081→      {proposals.length === 0 && !showDummy ? (
+  1082→        <div>
+  1083→          <EmptyProposalsState />
+  1084→          <div className="text-center mt-4">
+  1085→            <Button variant="outline" size="sm" onClick={() => setShowDummy(true)}>
+  1086→              Show Demo Data
+  1087→            </Button>
+  1088→          </div>
+  1089→        </div>
+  1090→      ) : (
+  1091→        <>
+  1092→          {showDummy && proposals.length === 0 && (
+  1093→            <div className="flex justify-end mb-2">
+  1094→              <Button variant="ghost" size="sm" onClick={() => setShowDummy(false)}>
+  1095→                Hide Demo Data
+  1096→              </Button>
+  1097→            </div>
+  1098→          )}
+  1099→          <div className="space-y-4">
+  1100→            {((proposals.length > 0 ? paginatedProposals : showDummy ? dummyProposals : []) as any[]).map((proposal) => (
+  1101→              <div 
+  1102→                key={proposal.id} 
+  1103→                className="p-4 sm:p-5 bg-muted/50 rounded-xl border border-border hover:shadow-md transition-all"
+  1104→              >
+  1105→                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+  1106→                  <div>
+  1107→                    <h3 className="font-semibold text-foreground text-base sm:text-lg">{proposal.leads?.name || 'Unknown'}</h3>
+  1108→                    <p className="text-sm text-muted-foreground">{proposal.system_size_kw} kW system</p>
+  1109→                  </div>
+  1110→                  <div className="flex items-center gap-2">
+  1111→                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+  1112→                      proposal.status === 'approved' ? 'bg-primary/10 text-primary dark:bg-primary/20' :
+  1113→                      proposal.status === 'presented' ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+  1114→                      proposal.status === 'draft' ? 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400' :
+  1115→                      proposal.requires_review ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' :
+  1116→                      'bg-muted text-muted-foreground'
+  1117→                    }`}>
+  1118→                      {proposal.requires_review && !proposal.reviewed_at ? 'PENDING REVIEW' : proposal.status?.toUpperCase()}
+  1119→                    </span>
+  1120→                  </div>
+  1121→                </div>
+  1122→                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+  1123→                  <span className="text-xl sm:text-2xl font-bold text-primary">€{proposal.net_cost?.toLocaleString() || 'N/A'}</span>
+  1124→                  <div className="flex gap-2">
+  1125→                    <Button
+  1126→                      size="sm"
+  1127→                      variant="outline"
+  1128→                      onClick={() => onEditProposal?.(proposal)}
+  1129→                    >
+  1130→                      Edit
+  1131→                    </Button>
+  1132→                    <Button
+  1133→                      size="sm"
+  1134→                      onClick={() => onProposalSelect?.(proposal, proposal.leads)}
+  1135→                    >
+  1136→                      <Eye size={16} className="mr-1" />
+  1137→                      View
+  1138→                    </Button>
+  1139→                  </div>
+  1140→                </div>
+  1141→                <p className="text-xs text-muted-foreground/70 mt-2">
+  1142→                  Created {new Date(proposal.created_at).toLocaleDateString()}
+  1143→                </p>
+  1144→              </div>
+  1145→            ))}
+  1146→          </div>
+  1147→          
+  1148→          {totalPages > 1 && (
+  1149→            <PaginationControls
+  1150→              currentPage={currentPage}
+  1151→              totalPages={totalPages}
+  1152→              totalItems={totalItems}
+  1153→              pageSize={pageSize}
+  1154→              onPageChange={handlePageChange}
+  1155→              onPageSizeChange={handlePageSizeChange}
+  1156→              showPageSize={totalItems > 10}
+  1157→            />
+  1158→          )}
+  1159→        </>
+  1160→      )}
+  1161→    </div>
+  1162→  );
+  1163→};
+  1164→
+  1165→// AISalesCoachPanel is now dynamic - imported from ai/DynamicAISalesCoach
+  1166→import DynamicAISalesCoach from './ai/DynamicAISalesCoach';
+  1167→
+  1168→const AISalesCoachPanel = ({ leadId }: { leadId: string }) => (
+  1169→  <DynamicAISalesCoach leadId={leadId} />
+  1170→);
+  1171→

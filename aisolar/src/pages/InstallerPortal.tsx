@@ -4,12 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import InstallerDashboard from '@/components/InstallerDashboard';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
+import { isDemoMode } from '@/lib/demoMode';
 
 export default function InstallerPortal() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Demo mode bypass
+    if (isDemoMode()) {
+      setLoading(false);
+      return;
+    }
+
     // Check authentication
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -21,7 +28,7 @@ export default function InstallerPortal() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
+      if (!session && !isDemoMode()) {
         navigate('/auth');
       }
     });

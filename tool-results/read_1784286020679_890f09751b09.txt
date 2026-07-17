@@ -1,0 +1,1132 @@
+     1→import { useState, useEffect, useCallback } from 'react';
+     2→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+     3→import { Button } from '@/components/ui/button';
+     4→import { Label } from '@/components/ui/label';
+     5→import { Textarea } from '@/components/ui/textarea';
+     6→import { Switch } from '@/components/ui/switch';
+     7→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+     8→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+     9→import { Badge } from '@/components/ui/badge';
+    10→import { supabase } from '@/integrations/supabase/client';
+    11→import { toast } from '@/hooks/use-toast';
+    12→import { logActivity } from '@/lib/activityLog';
+    13→import { sendStageChangeNotification } from '@/lib/stageNotifications';
+    14→import SignatureCanvas from '@/components/ui/SignatureCanvas';
+    15→import { 
+    16→  Loader2, 
+    17→  Zap, 
+    18→  Settings, 
+    19→  Home, 
+    20→  CheckCircle, 
+    21→  PenLine,
+    22→  Save,
+    23→  CreditCard,
+    24→  AlertCircle,
+    25→  FileText,
+    26→  Clock,
+    27→  CheckCircle2,
+    28→  XCircle,
+    29→  HelpCircle,
+    30→  Camera,
+    31→  Image,
+    32→  Trash2,
+    33→  Upload
+    34→} from 'lucide-react';
+    35→
+    36→interface InstallationChecklistProps {
+    37→  proposalId: string;
+    38→  leadId: string;
+    39→  leadName: string;
+    40→}
+    41→
+    42→interface InvoiceStatus {
+    43→  id: string;
+    44→  invoice_number: string;
+    45→  total_amount: number;
+    46→  deposit_amount: number | null;
+    47→  final_amount: number | null;
+    48→  deposit_paid: boolean;
+    49→  final_paid: boolean;
+    50→  status: string;
+    51→}
+    52→
+    53→interface SeaiStatus {
+    54→  id: string;
+    55→  application_number: string | null;
+    56→  status: string;
+    57→  grant_amount: number | null;
+    58→  system_size_kw: number | null;
+    59→  submitted_at: string | null;
+    60→  approved_at: string | null;
+    61→  rejected_at: string | null;
+    62→  ber_cert_uploaded: boolean;
+    63→  completion_cert_uploaded: boolean;
+    64→  invoice_uploaded: boolean;
+    65→  photos_uploaded: boolean;
+    66→}
+    67→
+    68→interface ChecklistData {
+    69→  id?: string;
+    70→  main_fuse_size: string | null;
+    71→  network_provider: string | null;
+    72→  ct_clamp_location: string | null;
+    73→  isolator_installed: boolean;
+    74→  export_limiter_required: boolean;
+    75→  rcd_present_tested: boolean;
+    76→  earth_bond_confirmed: boolean;
+    77→  panels_installed: boolean;
+    78→  inverter_installed: boolean;
+    79→  battery_installed: boolean;
+    80→  monitoring_online: boolean;
+    81→  customer_app_setup: boolean;
+    82→  myenergi_setup: boolean;
+    83→  roof_tiles_secure: boolean;
+    84→  flashing_installed: boolean;
+    85→  cable_routing_complete: boolean;
+    86→  weatherproofing_complete: boolean;
+    87→  installer_signature: string | null;
+    88→  installer_signed_at: string | null;
+    89→  customer_signature: string | null;
+    90→  customer_signed_at: string | null;
+    91→  completion_notes: string | null;
+    92→  status: string;
+    93→}
+    94→
+    95→interface InstallationPhoto {
+    96→  id: string;
+    97→  photo_url: string;
+    98→  photo_type: 'before' | 'after' | 'progress' | 'issue';
+    99→  description: string | null;
+   100→  created_at: string;
+   101→}
+   102→
+   103→const defaultChecklist: ChecklistData = {
+   104→  main_fuse_size: null,
+   105→  network_provider: null,
+   106→  ct_clamp_location: null,
+   107→  isolator_installed: false,
+   108→  export_limiter_required: false,
+   109→  rcd_present_tested: false,
+   110→  earth_bond_confirmed: false,
+   111→  panels_installed: false,
+   112→  inverter_installed: false,
+   113→  battery_installed: false,
+   114→  monitoring_online: false,
+   115→  customer_app_setup: false,
+   116→  myenergi_setup: false,
+   117→  roof_tiles_secure: false,
+   118→  flashing_installed: false,
+   119→  cable_routing_complete: false,
+   120→  weatherproofing_complete: false,
+   121→  installer_signature: null,
+   122→  installer_signed_at: null,
+   123→  customer_signature: null,
+   124→  customer_signed_at: null,
+   125→  completion_notes: null,
+   126→  status: 'pending'
+   127→};
+   128→
+   129→export default function InstallationChecklist({ proposalId, leadId, leadName }: InstallationChecklistProps) {
+   130→  const [checklist, setChecklist] = useState<ChecklistData>(defaultChecklist);
+   131→  const [loading, setLoading] = useState(true);
+   132→  const [saving, setSaving] = useState(false);
+   133→  const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus | null>(null);
+   134→  const [seaiStatus, setSeaiStatus] = useState<SeaiStatus | null>(null);
+   135→  const [photos, setPhotos] = useState<InstallationPhoto[]>([]);
+   136→  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+   137→  const [selectedPhotoType, setSelectedPhotoType] = useState<'before' | 'after' | 'progress' | 'issue'>('before');
+   138→  const [proposalData, setProposalData] = useState<{
+   139→    system_size_kw: number | null;
+   140→    panel_count: number | null;
+   141→    panel_type: string | null;
+   142→    battery_storage: boolean | null;
+   143→    battery_capacity_kwh: number | null;
+   144→    inverter_type: string | null;
+   145→    net_cost: number | null;
+   146→  } | null>(null);
+   147→
+   148→  useEffect(() => {
+   149→    fetchChecklist();
+   150→    fetchInvoiceStatus();
+   151→    fetchSeaiStatus();
+   152→    fetchProposalData();
+   153→  }, [proposalId]);
+   154→
+   155→  useEffect(() => {
+   156→    if (checklist.id) {
+   157→      fetchPhotos();
+   158→    }
+   159→  }, [checklist.id]);
+   160→
+   161→  const fetchPhotos = async () => {
+   162→    if (!checklist.id) return;
+   163→    try {
+   164→      const { data, error } = await supabase
+   165→        .from('installation_photos')
+   166→        .select('*')
+   167→        .eq('checklist_id', checklist.id)
+   168→        .order('created_at', { ascending: false });
+   169→      
+   170→      if (error) throw error;
+   171→      setPhotos((data || []) as InstallationPhoto[]);
+   172→    } catch (error) {
+   173→      console.error('Error fetching photos:', error);
+   174→    }
+   175→  };
+   176→
+   177→  const uploadPhoto = useCallback(async (file: File) => {
+   178→    if (!checklist.id) {
+   179→      // Save checklist first to get ID
+   180→      await saveChecklist();
+   181→      return;
+   182→    }
+   183→
+   184→    setUploadingPhoto(true);
+   185→    try {
+   186→      const { data: { user } } = await supabase.auth.getUser();
+   187→      if (!user) throw new Error('Not authenticated');
+   188→
+   189→      const fileExt = file.name.split('.').pop();
+   190→      const fileName = `${user.id}/${checklist.id}/${Date.now()}.${fileExt}`;
+   191→
+   192→      // Upload to storage
+   193→      const { error: uploadError } = await supabase.storage
+   194→        .from('installation-photos')
+   195→        .upload(fileName, file);
+   196→
+   197→      if (uploadError) throw uploadError;
+   198→
+   199→      // Get public URL
+   200→      const { data: { publicUrl } } = supabase.storage
+   201→        .from('installation-photos')
+   202→        .getPublicUrl(fileName);
+   203→
+   204→      // Save to database
+   205→      const { data, error } = await supabase
+   206→        .from('installation_photos')
+   207→        .insert({
+   208→          checklist_id: checklist.id,
+   209→          photo_url: publicUrl,
+   210→          photo_type: selectedPhotoType,
+   211→          uploaded_by: user.id,
+   212→        })
+   213→        .select()
+   214→        .single();
+   215→
+   216→      if (error) throw error;
+   217→
+   218→      setPhotos(prev => [data as InstallationPhoto, ...prev]);
+   219→      toast({ title: 'Photo uploaded', description: `${selectedPhotoType} photo added successfully.` });
+   220→    } catch (error: any) {
+   221→      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+   222→    } finally {
+   223→      setUploadingPhoto(false);
+   224→    }
+   225→  }, [checklist.id, selectedPhotoType]);
+   226→
+   227→  const deletePhoto = async (photoId: string, photoUrl: string) => {
+   228→    try {
+   229→      // Extract file path from URL
+   230→      const urlParts = photoUrl.split('/installation-photos/');
+   231→      if (urlParts.length > 1) {
+   232→        await supabase.storage.from('installation-photos').remove([urlParts[1]]);
+   233→      }
+   234→
+   235→      const { error } = await supabase
+   236→        .from('installation_photos')
+   237→        .delete()
+   238→        .eq('id', photoId);
+   239→
+   240→      if (error) throw error;
+   241→
+   242→      setPhotos(prev => prev.filter(p => p.id !== photoId));
+   243→      toast({ title: 'Photo deleted' });
+   244→    } catch (error: any) {
+   245→      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+   246→    }
+   247→  };
+   248→
+   249→  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+   250→    const file = e.target.files?.[0];
+   251→    if (file) {
+   252→      uploadPhoto(file);
+   253→    }
+   254→  };
+   255→
+   256→  const fetchProposalData = async () => {
+   257→    try {
+   258→      const { data, error } = await supabase
+   259→        .from('proposals')
+   260→        .select('system_size_kw, panel_count, panel_type, battery_storage, battery_capacity_kwh, inverter_type, net_cost')
+   261→        .eq('id', proposalId)
+   262→        .maybeSingle();
+   263→
+   264→      if (error) throw error;
+   265→      if (data) {
+   266→        setProposalData(data);
+   267→      }
+   268→    } catch (error) {
+   269→      console.error('Error fetching proposal data:', error);
+   270→    }
+   271→  };
+   272→
+   273→  const fetchChecklist = async () => {
+   274→    try {
+   275→      const { data, error } = await supabase
+   276→        .from('installation_checklists')
+   277→        .select('*')
+   278→        .eq('proposal_id', proposalId)
+   279→        .maybeSingle();
+   280→
+   281→      if (error) throw error;
+   282→      if (data) {
+   283→        setChecklist(data as ChecklistData);
+   284→      }
+   285→    } catch (error) {
+   286→      console.error('Error fetching checklist:', error);
+   287→    } finally {
+   288→      setLoading(false);
+   289→    }
+   290→  };
+   291→
+   292→  const fetchInvoiceStatus = async () => {
+   293→    try {
+   294→      const { data, error } = await supabase
+   295→        .from('invoices')
+   296→        .select('id, invoice_number, total_amount, deposit_amount, final_amount, deposit_paid, final_paid, status')
+   297→        .eq('proposal_id', proposalId)
+   298→        .maybeSingle();
+   299→
+   300→      if (error) throw error;
+   301→      if (data) {
+   302→        setInvoiceStatus(data as InvoiceStatus);
+   303→      }
+   304→    } catch (error) {
+   305→      console.error('Error fetching invoice status:', error);
+   306→    }
+   307→  };
+   308→
+   309→  const fetchSeaiStatus = async () => {
+   310→    try {
+   311→      const { data, error } = await supabase
+   312→        .from('seai_applications')
+   313→        .select('id, application_number, status, grant_amount, system_size_kw, submitted_at, approved_at, rejected_at, ber_cert_uploaded, completion_cert_uploaded, invoice_uploaded, photos_uploaded')
+   314→        .eq('proposal_id', proposalId)
+   315→        .maybeSingle();
+   316→
+   317→      if (error) throw error;
+   318→      if (data) {
+   319→        setSeaiStatus(data as SeaiStatus);
+   320→      }
+   321→    } catch (error) {
+   322→      console.error('Error fetching SEAI status:', error);
+   323→    }
+   324→  };
+   325→
+   326→  const getSeaiStatusIcon = (status: string) => {
+   327→    switch (status) {
+   328→      case 'approved':
+   329→        return <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />;
+   330→      case 'submitted':
+   331→      case 'pending_verification':
+   332→        return <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+   333→      case 'rejected':
+   334→        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+   335→      default:
+   336→        return <HelpCircle className="h-5 w-5 text-muted-foreground" />;
+   337→    }
+   338→  };
+   339→
+   340→  const getSeaiStatusLabel = (status: string) => {
+   341→    const labels: Record<string, string> = {
+   342→      draft: 'Draft - Not Submitted',
+   343→      submitted: 'Submitted - Awaiting Review',
+   344→      pending_verification: 'Pending Verification',
+   345→      approved: 'Approved',
+   346→      rejected: 'Rejected',
+   347→    };
+   348→    return labels[status] || status;
+   349→  };
+   350→
+   351→  const getSeaiDocProgress = () => {
+   352→    if (!seaiStatus) return 0;
+   353→    const docs = [
+   354→      seaiStatus.ber_cert_uploaded,
+   355→      seaiStatus.completion_cert_uploaded,
+   356→      seaiStatus.invoice_uploaded,
+   357→      seaiStatus.photos_uploaded,
+   358→    ];
+   359→    return docs.filter(Boolean).length;
+   360→  };
+   361→
+   362→  const saveChecklist = async () => {
+   363→    setSaving(true);
+   364→    try {
+   365→      const { id, ...checklistData } = checklist;
+   366→
+   367→      if (id) {
+   368→        const { error } = await supabase
+   369→          .from('installation_checklists')
+   370→          .update(checklistData)
+   371→          .eq('id', id);
+   372→        if (error) throw error;
+   373→      } else {
+   374→        const { data, error } = await supabase
+   375→          .from('installation_checklists')
+   376→          .insert({ ...checklistData, proposal_id: proposalId, lead_id: leadId })
+   377→          .select()
+   378→          .single();
+   379→        if (error) throw error;
+   380→        setChecklist({ ...checklist, id: data.id });
+   381→      }
+   382→
+   383→      toast({ title: 'Checklist Saved', description: 'Installation checklist has been updated.' });
+   384→    } catch (error: any) {
+   385→      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+   386→    } finally {
+   387→      setSaving(false);
+   388→    }
+   389→  };
+   390→
+   391→  const handleToggle = (field: keyof ChecklistData, value: boolean) => {
+   392→    setChecklist(prev => ({ ...prev, [field]: value }));
+   393→  };
+   394→
+   395→  const handleSign = (type: 'installer' | 'customer', signatureData: string | null) => {
+   396→    if (type === 'installer') {
+   397→      setChecklist(prev => ({ 
+   398→        ...prev, 
+   399→        installer_signature: signatureData,
+   400→        installer_signed_at: signatureData ? new Date().toISOString() : null
+   401→      }));
+   402→    } else {
+   403→      setChecklist(prev => ({ 
+   404→        ...prev, 
+   405→        customer_signature: signatureData,
+   406→        customer_signed_at: signatureData ? new Date().toISOString() : null
+   407→      }));
+   408→    }
+   409→  };
+   410→
+   411→  const completeChecklist = async () => {
+   412→    if (!checklist.installer_signature || !checklist.customer_signature) {
+   413→      toast({ title: 'Signatures Required', description: 'Both installer and customer signatures are required.', variant: 'destructive' });
+   414→      return;
+   415→    }
+   416→
+   417→    setSaving(true);
+   418→    try {
+   419→      const { error } = await supabase
+   420→        .from('installation_checklists')
+   421→        .update({ status: 'completed' })
+   422→        .eq('id', checklist.id);
+   423→
+   424→      if (error) throw error;
+   425→
+   426→      // Update proposal status
+   427→      await supabase
+   428→        .from('proposals')
+   429→        .update({ installation_status: 'completed' })
+   430→        .eq('id', proposalId);
+   431→
+   432→      // workflow_stage is automatically updated by database trigger when checklist is signed
+   433→
+   434→      // Fetch proposal to get pricing for invoice
+   435→      const { data: proposal } = await supabase
+   436→        .from('proposals')
+   437→        .select('net_cost, system_cost, seai_grant')
+   438→        .eq('id', proposalId)
+   439→        .single();
+   440→
+   441→      // Check if invoice already exists
+   442→      const { data: existingInvoice } = await supabase
+   443→        .from('invoices')
+   444→        .select('id')
+   445→        .eq('proposal_id', proposalId)
+   446→        .maybeSingle();
+   447→
+   448→      let invoiceId = existingInvoice?.id;
+   449→
+   450→      // Auto-generate invoice if it doesn't exist
+   451→      if (!existingInvoice && proposal) {
+   452→        const totalAmount = proposal.net_cost || proposal.system_cost || 0;
+   453→        const depositAmount = Math.round(totalAmount * 0.3);
+   454→        const finalAmount = totalAmount - depositAmount;
+   455→        const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+   456→
+   457→        const { data: newInvoice, error: invoiceError } = await supabase
+   458→          .from('invoices')
+   459→          .insert({
+   460→            lead_id: leadId,
+   461→            proposal_id: proposalId,
+   462→            invoice_number: invoiceNumber,
+   463→            total_amount: totalAmount,
+   464→            deposit_amount: depositAmount,
+   465→            final_amount: finalAmount,
+   466→            deposit_paid: true,
+   467→            deposit_paid_at: new Date().toISOString(),
+   468→            status: 'pending_final'
+   469→          })
+   470→          .select()
+   471→          .single();
+   472→
+   473→        if (invoiceError) {
+   474→          console.error('Invoice creation error:', invoiceError);
+   475→        } else {
+   476→          invoiceId = newInvoice?.id;
+   477→          
+   478→          // Log invoice creation
+   479→          await logActivity({
+   480→            leadId,
+   481→            actionType: 'invoice_created',
+   482→            description: `Invoice ${invoiceNumber} auto-generated on installation completion`,
+   483→            metadata: { invoice_id: newInvoice?.id, total_amount: totalAmount }
+   484→          });
+   485→        }
+   486→      }
+   487→
+   488→      // Send installation completed email with payment link
+   489→      try {
+   490→        await supabase.functions.invoke('send-notification', {
+   491→          body: {
+   492→            type: 'installation_completed',
+   493→            leadId,
+   494→            invoiceId
+   495→          }
+   496→        });
+   497→      } catch (emailError) {
+   498→        console.error('Email notification error:', emailError);
+   499→      }
+   500→      
+   501→      // Send stage change notification
+   502→      await sendStageChangeNotification(leadId, 'installation_scheduled', 'installed');
+   503→
+   504→      // Log activity
+   505→      await logActivity({
+   506→        leadId,
+   507→        actionType: 'installation_completed',
+   508→        description: `Installation completed for ${leadName}`,
+   509→        metadata: {
+   510→          proposal_id: proposalId
+   511→        }
+   512→      });
+   513→
+   514→      setChecklist(prev => ({ ...prev, status: 'completed' }));
+   515→      toast({ title: 'Installation Complete', description: 'Invoice generated and payment link sent to customer.' });
+   516→    } catch (error: any) {
+   517→      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+   518→    } finally {
+   519→      setSaving(false);
+   520→    }
+   521→  };
+   522→
+   523→  const getCompletionPercentage = () => {
+   524→    const booleanFields = [
+   525→      'isolator_installed', 'export_limiter_required', 'rcd_present_tested', 'earth_bond_confirmed',
+   526→      'panels_installed', 'inverter_installed', 'battery_installed', 'monitoring_online',
+   527→      'customer_app_setup', 'myenergi_setup', 'roof_tiles_secure', 'flashing_installed',
+   528→      'cable_routing_complete', 'weatherproofing_complete'
+   529→    ];
+   530→    const completed = booleanFields.filter(f => checklist[f as keyof ChecklistData]).length;
+   531→    return Math.round((completed / booleanFields.length) * 100);
+   532→  };
+   533→
+   534→  if (loading) {
+   535→    return (
+   536→      <Card>
+   537→        <CardContent className="flex items-center justify-center py-12">
+   538→          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+   539→        </CardContent>
+   540→      </Card>
+   541→    );
+   542→  }
+   543→
+   544→  const isComplete = checklist.status === 'completed';
+   545→
+   546→  return (
+   547→    <div className="space-y-6">
+   548→      {/* Payment Status Indicator */}
+   549→      {invoiceStatus && (
+   550→        <Card className={invoiceStatus.final_paid ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'}>
+   551→          <CardContent className="p-4">
+   552→            <div className="flex items-center justify-between">
+   553→              <div className="flex items-center gap-3">
+   554→                {invoiceStatus.final_paid ? (
+   555→                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
+   556→                    <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+   557→                  </div>
+   558→                ) : (
+   559→                  <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900">
+   560→                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+   561→                  </div>
+   562→                )}
+   563→                <div>
+   564→                  <p className="font-semibold text-sm">
+   565→                    {invoiceStatus.final_paid ? 'Final Payment Received' : 'Final Payment Pending'}
+   566→                  </p>
+   567→                  <p className="text-xs text-muted-foreground">
+   568→                    Invoice #{invoiceStatus.invoice_number} • Total: €{invoiceStatus.total_amount?.toLocaleString()}
+   569→                  </p>
+   570→                </div>
+   571→              </div>
+   572→              <div className="text-right">
+   573→                <div className="flex items-center gap-2">
+   574→                  <Badge variant={invoiceStatus.deposit_paid ? 'default' : 'secondary'} className={invoiceStatus.deposit_paid ? 'bg-green-500' : ''}>
+   575→                    Deposit {invoiceStatus.deposit_paid ? '✓' : 'Pending'}
+   576→                  </Badge>
+   577→                  <Badge variant={invoiceStatus.final_paid ? 'default' : 'secondary'} className={invoiceStatus.final_paid ? 'bg-green-500' : ''}>
+   578→                    Final {invoiceStatus.final_paid ? '✓' : 'Pending'}
+   579→                  </Badge>
+   580→                </div>
+   581→                {!invoiceStatus.final_paid && invoiceStatus.final_amount && (
+   582→                  <p className="text-xs text-muted-foreground mt-1">
+   583→                    Balance due: €{invoiceStatus.final_amount.toLocaleString()}
+   584→                  </p>
+   585→                )}
+   586→              </div>
+   587→            </div>
+   588→          </CardContent>
+   589→        </Card>
+   590→      )}
+   591→
+   592→      {/* SEAI Grant Status Indicator */}
+   593→      {seaiStatus && (
+   594→        <Card className={
+   595→          seaiStatus.status === 'approved' 
+   596→            ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+   597→            : seaiStatus.status === 'rejected'
+   598→            ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+   599→            : 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+   600→        }>
+   601→          <CardContent className="p-4">
+   602→            <div className="flex items-center justify-between flex-wrap gap-4">
+   603→              <div className="flex items-center gap-3">
+   604→                <div className={`p-2 rounded-full ${
+   605→                  seaiStatus.status === 'approved' 
+   606→                    ? 'bg-green-100 dark:bg-green-900'
+   607→                    : seaiStatus.status === 'rejected'
+   608→                    ? 'bg-red-100 dark:bg-red-900'
+   609→                    : 'bg-blue-100 dark:bg-blue-900'
+   610→                }`}>
+   611→                  <FileText className={`h-5 w-5 ${
+   612→                    seaiStatus.status === 'approved' 
+   613→                      ? 'text-green-600 dark:text-green-400'
+   614→                      : seaiStatus.status === 'rejected'
+   615→                      ? 'text-red-600 dark:text-red-400'
+   616→                      : 'text-blue-600 dark:text-blue-400'
+   617→                  }`} />
+   618→                </div>
+   619→                <div>
+   620→                  <p className="font-semibold text-sm flex items-center gap-2">
+   621→                    SEAI Grant Application
+   622→                    {getSeaiStatusIcon(seaiStatus.status)}
+   623→                  </p>
+   624→                  <p className="text-xs text-muted-foreground">
+   625→                    {seaiStatus.application_number 
+   626→                      ? `#${seaiStatus.application_number}` 
+   627→                      : 'No application number yet'
+   628→                    }
+   629→                    {seaiStatus.grant_amount && ` • Grant: €${seaiStatus.grant_amount.toLocaleString()}`}
+   630→                  </p>
+   631→                </div>
+   632→              </div>
+   633→              <div className="flex flex-col items-end gap-2">
+   634→                <Badge 
+   635→                  variant={seaiStatus.status === 'approved' ? 'default' : 'secondary'} 
+   636→                  className={
+   637→                    seaiStatus.status === 'approved' 
+   638→                      ? 'bg-green-500' 
+   639→                      : seaiStatus.status === 'rejected'
+   640→                      ? 'bg-red-500'
+   641→                      : seaiStatus.status === 'submitted' || seaiStatus.status === 'pending_verification'
+   642→                      ? 'bg-blue-500'
+   643→                      : ''
+   644→                  }
+   645→                >
+   646→                  {getSeaiStatusLabel(seaiStatus.status)}
+   647→                </Badge>
+   648→                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+   649→                  <span>Documents: {getSeaiDocProgress()}/4</span>
+   650→                  <div className="flex gap-0.5 ml-1">
+   651→                    {[
+   652→                      { uploaded: seaiStatus.ber_cert_uploaded, label: 'BER' },
+   653→                      { uploaded: seaiStatus.completion_cert_uploaded, label: 'Completion' },
+   654→                      { uploaded: seaiStatus.invoice_uploaded, label: 'Invoice' },
+   655→                      { uploaded: seaiStatus.photos_uploaded, label: 'Photos' },
+   656→                    ].map((doc, i) => (
+   657→                      <div 
+   658→                        key={i}
+   659→                        className={`w-2 h-2 rounded-full ${doc.uploaded ? 'bg-green-500' : 'bg-muted'}`}
+   660→                        title={`${doc.label}: ${doc.uploaded ? 'Uploaded' : 'Pending'}`}
+   661→                      />
+   662→                    ))}
+   663→                  </div>
+   664→                </div>
+   665→              </div>
+   666→            </div>
+   667→            {seaiStatus.status === 'approved' && seaiStatus.approved_at && (
+   668→              <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+   669→                Approved on {new Date(seaiStatus.approved_at).toLocaleDateString()}
+   670→              </p>
+   671→            )}
+   672→            {seaiStatus.status === 'submitted' && seaiStatus.submitted_at && (
+   673→              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+   674→                Submitted on {new Date(seaiStatus.submitted_at).toLocaleDateString()}
+   675→              </p>
+   676→            )}
+   677→          </CardContent>
+   678→        </Card>
+   679→      )}
+   680→
+   681→      {/* System Specifications from Proposal */}
+   682→      {proposalData && (
+   683→        <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
+   684→          <CardHeader className="pb-3">
+   685→            <CardTitle className="text-base flex items-center gap-2">
+   686→              <Zap className="h-4 w-4 text-primary" />
+   687→              System Specifications
+   688→            </CardTitle>
+   689→            <CardDescription>Pre-filled from accepted proposal</CardDescription>
+   690→          </CardHeader>
+   691→          <CardContent>
+   692→            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+   693→              <div>
+   694→                <p className="text-muted-foreground text-xs">System Size</p>
+   695→                <p className="font-semibold text-foreground">{proposalData.system_size_kw || 'N/A'} kW</p>
+   696→              </div>
+   697→              <div>
+   698→                <p className="text-muted-foreground text-xs">Panel Count</p>
+   699→                <p className="font-semibold text-foreground">{proposalData.panel_count || 'N/A'} panels</p>
+   700→              </div>
+   701→              <div>
+   702→                <p className="text-muted-foreground text-xs">Panel Type</p>
+   703→                <p className="font-semibold text-foreground">{proposalData.panel_type || 'N/A'}</p>
+   704→              </div>
+   705→              <div>
+   706→                <p className="text-muted-foreground text-xs">Inverter</p>
+   707→                <p className="font-semibold text-foreground">{proposalData.inverter_type || 'N/A'}</p>
+   708→              </div>
+   709→              {proposalData.battery_storage && (
+   710→                <div>
+   711→                  <p className="text-muted-foreground text-xs">Battery</p>
+   712→                  <p className="font-semibold text-foreground">{proposalData.battery_capacity_kwh || 0} kWh</p>
+   713→                </div>
+   714→              )}
+   715→              {proposalData.net_cost && (
+   716→                <div>
+   717→                  <p className="text-muted-foreground text-xs">Net Cost</p>
+   718→                  <p className="font-semibold text-primary">€{proposalData.net_cost.toLocaleString()}</p>
+   719→                </div>
+   720→              )}
+   721→            </div>
+   722→          </CardContent>
+   723→        </Card>
+   724→      )}
+   725→
+   726→      {/* Header */}
+   727→      <Card>
+   728→        <CardHeader>
+   729→          <div className="flex items-center justify-between">
+   730→            <div>
+   731→              <CardTitle className="flex items-center gap-2">
+   732→                <CheckCircle className="h-5 w-5" />
+   733→                Installation Checklist
+   734→              </CardTitle>
+   735→              <CardDescription>Complete all checks before marking installation as done</CardDescription>
+   736→            </div>
+   737→            <div className="text-right">
+   738→              <Badge variant={isComplete ? 'default' : 'secondary'} className={isComplete ? 'bg-green-500' : ''}>
+   739→                {isComplete ? 'Completed' : `${getCompletionPercentage()}% Complete`}
+   740→              </Badge>
+   741→            </div>
+   742→          </div>
+   743→        </CardHeader>
+   744→      </Card>
+   745→
+   746→      <Accordion type="multiple" defaultValue={['electrical', 'equipment', 'roofing']} className="space-y-4">
+   747→        {/* Electrical Verification */}
+   748→        <AccordionItem value="electrical" className="border rounded-lg">
+   749→          <AccordionTrigger className="px-4 hover:no-underline">
+   750→            <div className="flex items-center gap-2">
+   751→              <Zap className="h-5 w-5 text-yellow-500" />
+   752→              <span className="font-semibold">Electrical Verification</span>
+   753→            </div>
+   754→          </AccordionTrigger>
+   755→          <AccordionContent className="px-4 pb-4">
+   756→            <div className="grid gap-4">
+   757→              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+   758→                <div>
+   759→                  <Label>Main Fuse Size</Label>
+   760→                  <Select 
+   761→                    value={checklist.main_fuse_size || ''} 
+   762→                    onValueChange={(v) => setChecklist(prev => ({ ...prev, main_fuse_size: v }))}
+   763→                    disabled={isComplete}
+   764→                  >
+   765→                    <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
+   766→                    <SelectContent>
+   767→                      <SelectItem value="63A">63A</SelectItem>
+   768→                      <SelectItem value="80A">80A</SelectItem>
+   769→                      <SelectItem value="100A">100A</SelectItem>
+   770→                      <SelectItem value="125A">125A</SelectItem>
+   771→                    </SelectContent>
+   772→                  </Select>
+   773→                </div>
+   774→                <div>
+   775→                  <Label>Network Provider</Label>
+   776→                  <Select 
+   777→                    value={checklist.network_provider || ''} 
+   778→                    onValueChange={(v) => setChecklist(prev => ({ ...prev, network_provider: v }))}
+   779→                    disabled={isComplete}
+   780→                  >
+   781→                    <SelectTrigger><SelectValue placeholder="Select provider" /></SelectTrigger>
+   782→                    <SelectContent>
+   783→                      <SelectItem value="ESB Networks">ESB Networks</SelectItem>
+   784→                      <SelectItem value="SSE Airtricity">SSE Airtricity</SelectItem>
+   785→                      <SelectItem value="Energia">Energia</SelectItem>
+   786→                      <SelectItem value="Electric Ireland">Electric Ireland</SelectItem>
+   787→                      <SelectItem value="Other">Other</SelectItem>
+   788→                    </SelectContent>
+   789→                  </Select>
+   790→                </div>
+   791→                <div>
+   792→                  <Label>CT Clamp Location</Label>
+   793→                  <Select 
+   794→                    value={checklist.ct_clamp_location || ''} 
+   795→                    onValueChange={(v) => setChecklist(prev => ({ ...prev, ct_clamp_location: v }))}
+   796→                    disabled={isComplete}
+   797→                  >
+   798→                    <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
+   799→                    <SelectContent>
+   800→                      <SelectItem value="Consumer Unit">Consumer Unit</SelectItem>
+   801→                      <SelectItem value="Meter Tails">Meter Tails</SelectItem>
+   802→                      <SelectItem value="Distribution Board">Distribution Board</SelectItem>
+   803→                    </SelectContent>
+   804→                  </Select>
+   805→                </div>
+   806→              </div>
+   807→
+   808→              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+   809→                {[
+   810→                  { key: 'isolator_installed', label: 'Isolator Installed' },
+   811→                  { key: 'export_limiter_required', label: 'Export Limiter Required' },
+   812→                  { key: 'rcd_present_tested', label: 'RCD Present & Tested' },
+   813→                  { key: 'earth_bond_confirmed', label: 'Earth Bond Confirmed' },
+   814→                ].map(item => (
+   815→                  <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border">
+   816→                    <Label className="text-sm">{item.label}</Label>
+   817→                    <Switch
+   818→                      checked={checklist[item.key as keyof ChecklistData] as boolean}
+   819→                      onCheckedChange={(v) => handleToggle(item.key as keyof ChecklistData, v)}
+   820→                      disabled={isComplete}
+   821→                    />
+   822→                  </div>
+   823→                ))}
+   824→              </div>
+   825→            </div>
+   826→          </AccordionContent>
+   827→        </AccordionItem>
+   828→
+   829→        {/* Equipment Setup */}
+   830→        <AccordionItem value="equipment" className="border rounded-lg">
+   831→          <AccordionTrigger className="px-4 hover:no-underline">
+   832→            <div className="flex items-center gap-2">
+   833→              <Settings className="h-5 w-5 text-blue-500" />
+   834→              <span className="font-semibold">Equipment Setup</span>
+   835→            </div>
+   836→          </AccordionTrigger>
+   837→          <AccordionContent className="px-4 pb-4">
+   838→            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+   839→              {[
+   840→                { key: 'panels_installed', label: 'Panels Installed' },
+   841→                { key: 'inverter_installed', label: 'Inverter Installed' },
+   842→                { key: 'battery_installed', label: 'Battery Installed' },
+   843→                { key: 'monitoring_online', label: 'Monitoring Online' },
+   844→                { key: 'customer_app_setup', label: 'Customer App Setup' },
+   845→                { key: 'myenergi_setup', label: 'MyEnergi Setup' },
+   846→              ].map(item => (
+   847→                <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border">
+   848→                  <Label className="text-sm">{item.label}</Label>
+   849→                  <Switch
+   850→                    checked={checklist[item.key as keyof ChecklistData] as boolean}
+   851→                    onCheckedChange={(v) => handleToggle(item.key as keyof ChecklistData, v)}
+   852→                    disabled={isComplete}
+   853→                  />
+   854→                </div>
+   855→              ))}
+   856→            </div>
+   857→          </AccordionContent>
+   858→        </AccordionItem>
+   859→
+   860→        {/* Roofing Checks */}
+   861→        <AccordionItem value="roofing" className="border rounded-lg">
+   862→          <AccordionTrigger className="px-4 hover:no-underline">
+   863→            <div className="flex items-center gap-2">
+   864→              <Home className="h-5 w-5 text-orange-500" />
+   865→              <span className="font-semibold">Roofing Checks</span>
+   866→            </div>
+   867→          </AccordionTrigger>
+   868→          <AccordionContent className="px-4 pb-4">
+   869→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+   870→              {[
+   871→                { key: 'roof_tiles_secure', label: 'Roof Tiles Secure' },
+   872→                { key: 'flashing_installed', label: 'Flashing Installed' },
+   873→                { key: 'cable_routing_complete', label: 'Cable Routing Complete' },
+   874→                { key: 'weatherproofing_complete', label: 'Weatherproofing Complete' },
+   875→              ].map(item => (
+   876→                <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border">
+   877→                  <Label className="text-sm">{item.label}</Label>
+   878→                  <Switch
+   879→                    checked={checklist[item.key as keyof ChecklistData] as boolean}
+   880→                    onCheckedChange={(v) => handleToggle(item.key as keyof ChecklistData, v)}
+   881→                    disabled={isComplete}
+   882→                  />
+   883→                </div>
+   884→              ))}
+   885→            </div>
+   886→          </AccordionContent>
+   887→        </AccordionItem>
+   888→
+   889→        {/* Installation Photos */}
+   890→        <AccordionItem value="photos" className="border rounded-lg">
+   891→          <AccordionTrigger className="px-4 hover:no-underline">
+   892→            <div className="flex items-center gap-2">
+   893→              <Camera className="h-5 w-5 text-purple-500" />
+   894→              <span className="font-semibold">Installation Photos</span>
+   895→              {photos.length > 0 && (
+   896→                <Badge variant="secondary" className="ml-2">{photos.length}</Badge>
+   897→              )}
+   898→            </div>
+   899→          </AccordionTrigger>
+   900→          <AccordionContent className="px-4 pb-4">
+   901→            <div className="space-y-4">
+   902→              {/* Upload Section */}
+   903→              {!isComplete && (
+   904→                <div className="border-2 border-dashed rounded-lg p-4">
+   905→                  <div className="flex flex-col sm:flex-row items-center gap-4">
+   906→                    <Select
+   907→                      value={selectedPhotoType}
+   908→                      onValueChange={(v) => setSelectedPhotoType(v as any)}
+   909→                    >
+   910→                      <SelectTrigger className="w-[140px]">
+   911→                        <SelectValue placeholder="Photo type" />
+   912→                      </SelectTrigger>
+   913→                      <SelectContent>
+   914→                        <SelectItem value="before">Before</SelectItem>
+   915→                        <SelectItem value="progress">Progress</SelectItem>
+   916→                        <SelectItem value="after">After</SelectItem>
+   917→                        <SelectItem value="issue">Issue</SelectItem>
+   918→                      </SelectContent>
+   919→                    </Select>
+   920→                    
+   921→                    <div className="flex gap-2">
+   922→                      <Button 
+   923→                        variant="outline" 
+   924→                        disabled={uploadingPhoto}
+   925→                        onClick={() => document.getElementById('photo-upload')?.click()}
+   926→                      >
+   927→                        {uploadingPhoto ? (
+   928→                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+   929→                        ) : (
+   930→                          <Upload className="h-4 w-4 mr-2" />
+   931→                        )}
+   932→                        Upload Photo
+   933→                      </Button>
+   934→                      <Button
+   935→                        variant="outline"
+   936→                        disabled={uploadingPhoto}
+   937→                        onClick={() => document.getElementById('camera-capture')?.click()}
+   938→                      >
+   939→                        <Camera className="h-4 w-4 mr-2" />
+   940→                        Take Photo
+   941→                      </Button>
+   942→                    </div>
+   943→                    
+   944→                    <input
+   945→                      id="photo-upload"
+   946→                      type="file"
+   947→                      accept="image/*"
+   948→                      className="hidden"
+   949→                      onChange={handleFileInput}
+   950→                    />
+   951→                    <input
+   952→                      id="camera-capture"
+   953→                      type="file"
+   954→                      accept="image/*"
+   955→                      capture="environment"
+   956→                      className="hidden"
+   957→                      onChange={handleFileInput}
+   958→                    />
+   959→                  </div>
+   960→                </div>
+   961→              )}
+   962→
+   963→              {/* Photo Grid */}
+   964→              {photos.length > 0 ? (
+   965→                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+   966→                  {photos.map((photo) => (
+   967→                    <div key={photo.id} className="relative group">
+   968→                      <img
+   969→                        src={photo.photo_url}
+   970→                        alt={`${photo.photo_type} photo`}
+   971→                        className="w-full h-32 object-cover rounded-lg border"
+   972→                      />
+   973→                      <div className="absolute top-2 left-2">
+   974→                        <Badge 
+   975→                          variant="secondary" 
+   976→                          className={`text-xs capitalize ${
+   977→                            photo.photo_type === 'before' ? 'bg-blue-500 text-white' :
+   978→                            photo.photo_type === 'after' ? 'bg-green-500 text-white' :
+   979→                            photo.photo_type === 'progress' ? 'bg-yellow-500 text-white' :
+   980→                            'bg-red-500 text-white'
+   981→                          }`}
+   982→                        >
+   983→                          {photo.photo_type}
+   984→                        </Badge>
+   985→                      </div>
+   986→                      {!isComplete && (
+   987→                        <Button
+   988→                          variant="destructive"
+   989→                          size="icon"
+   990→                          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+   991→                          onClick={() => deletePhoto(photo.id, photo.photo_url)}
+   992→                        >
+   993→                          <Trash2 className="h-3 w-3" />
+   994→                        </Button>
+   995→                      )}
+   996→                      <p className="text-xs text-muted-foreground mt-1 text-center">
+   997→                        {new Date(photo.created_at).toLocaleDateString()}
+   998→                      </p>
+   999→                    </div>
+  1000→                  ))}
+  1001→                </div>
+  1002→              ) : (
+  1003→                <div className="text-center py-8 text-muted-foreground">
+  1004→                  <Image className="h-12 w-12 mx-auto mb-2 opacity-50" />
+  1005→                  <p>No photos uploaded yet</p>
+  1006→                  <p className="text-sm">Capture before, progress, and after photos</p>
+  1007→                </div>
+  1008→              )}
+  1009→            </div>
+  1010→          </AccordionContent>
+  1011→        </AccordionItem>
+  1012→
+  1013→        {/* Completion & Signatures */}
+  1014→        <AccordionItem value="completion" className="border rounded-lg">
+  1015→          <AccordionTrigger className="px-4 hover:no-underline">
+  1016→            <div className="flex items-center gap-2">
+  1017→              <PenLine className="h-5 w-5 text-green-500" />
+  1018→              <span className="font-semibold">Completion & Signatures</span>
+  1019→            </div>
+  1020→          </AccordionTrigger>
+  1021→          <AccordionContent className="px-4 pb-4">
+  1022→            <div className="space-y-6">
+  1023→              <div>
+  1024→                <Label>Completion Notes</Label>
+  1025→                <Textarea
+  1026→                  value={checklist.completion_notes || ''}
+  1027→                  onChange={(e) => setChecklist(prev => ({ ...prev, completion_notes: e.target.value }))}
+  1028→                  placeholder="Any notes about the installation..."
+  1029→                  disabled={isComplete}
+  1030→                />
+  1031→              </div>
+  1032→
+  1033→              <div className="grid md:grid-cols-2 gap-6">
+  1034→                {/* Installer Signature */}
+  1035→                <Card>
+  1036→                  <CardHeader className="pb-3">
+  1037→                    <CardTitle className="text-base">Installer Signature</CardTitle>
+  1038→                  </CardHeader>
+  1039→                  <CardContent>
+  1040→                    {checklist.installer_signature && checklist.installer_signature.startsWith('data:image') ? (
+  1041→                      <div className="space-y-2">
+  1042→                        <img 
+  1043→                          src={checklist.installer_signature} 
+  1044→                          alt="Installer signature" 
+  1045→                          className="h-24 border rounded bg-white"
+  1046→                        />
+  1047→                        <p className="text-xs text-muted-foreground">
+  1048→                          Signed: {checklist.installer_signed_at ? new Date(checklist.installer_signed_at).toLocaleString() : ''}
+  1049→                        </p>
+  1050→                        {!isComplete && (
+  1051→                          <Button 
+  1052→                            variant="ghost" 
+  1053→                            size="sm" 
+  1054→                            onClick={() => handleSign('installer', null)}
+  1055→                          >
+  1056→                            Clear & Re-sign
+  1057→                          </Button>
+  1058→                        )}
+  1059→                      </div>
+  1060→                    ) : (
+  1061→                      <SignatureCanvas
+  1062→                        onSignatureChange={(sig) => handleSign('installer', sig)}
+  1063→                        initialSignature={checklist.installer_signature}
+  1064→                        disabled={isComplete}
+  1065→                        label="Installer signs here"
+  1066→                      />
+  1067→                    )}
+  1068→                  </CardContent>
+  1069→                </Card>
+  1070→
+  1071→                {/* Customer Signature */}
+  1072→                <Card>
+  1073→                  <CardHeader className="pb-3">
+  1074→                    <CardTitle className="text-base">Customer Signature ({leadName})</CardTitle>
+  1075→                  </CardHeader>
+  1076→                  <CardContent>
+  1077→                    {checklist.customer_signature && checklist.customer_signature.startsWith('data:image') ? (
+  1078→                      <div className="space-y-2">
+  1079→                        <img 
+  1080→                          src={checklist.customer_signature} 
+  1081→                          alt="Customer signature" 
+  1082→                          className="h-24 border rounded bg-white"
+  1083→                        />
+  1084→                        <p className="text-xs text-muted-foreground">
+  1085→                          Signed: {checklist.customer_signed_at ? new Date(checklist.customer_signed_at).toLocaleString() : ''}
+  1086→                        </p>
+  1087→                        {!isComplete && (
+  1088→                          <Button 
+  1089→                            variant="ghost" 
+  1090→                            size="sm" 
+  1091→                            onClick={() => handleSign('customer', null)}
+  1092→                          >
+  1093→                            Clear & Re-sign
+  1094→                          </Button>
+  1095→                        )}
+  1096→                      </div>
+  1097→                    ) : (
+  1098→                      <SignatureCanvas
+  1099→                        onSignatureChange={(sig) => handleSign('customer', sig)}
+  1100→                        initialSignature={checklist.customer_signature}
+  1101→                        disabled={isComplete}
+  1102→                        label="Customer signs here"
+  1103→                      />
+  1104→                    )}
+  1105→                  </CardContent>
+  1106→                </Card>
+  1107→              </div>
+  1108→            </div>
+  1109→          </AccordionContent>
+  1110→        </AccordionItem>
+  1111→      </Accordion>
+  1112→
+  1113→      {/* Action Buttons */}
+  1114→      {!isComplete && (
+  1115→        <div className="flex gap-4">
+  1116→          <Button variant="outline" onClick={saveChecklist} disabled={saving}>
+  1117→            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+  1118→            Save Progress
+  1119→          </Button>
+  1120→          <Button 
+  1121→            onClick={completeChecklist} 
+  1122→            disabled={saving || !checklist.installer_signature || !checklist.customer_signature}
+  1123→          >
+  1124→            <CheckCircle className="h-4 w-4 mr-2" />
+  1125→            Complete Installation
+  1126→          </Button>
+  1127→        </div>
+  1128→      )}
+  1129→    </div>
+  1130→  );
+  1131→}
+  1132→

@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PremiumDashboard from '@/components/PremiumDashboard';
 import SEOHead from '@/components/SEOHead';
+import { isDemoMode } from '@/lib/demoMode';
 
 export default function ConsultantDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Demo mode bypass — let reviewers browse the UI without auth
+    if (isDemoMode()) {
+      setLoading(false);
+      return;
+    }
+
     // Check authentication
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -20,7 +27,7 @@ export default function ConsultantDashboard() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
+      if (!session && !isDemoMode()) {
         navigate('/auth');
       }
     });

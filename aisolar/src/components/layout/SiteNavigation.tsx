@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sun, Menu, X, Sparkles, LogIn, Users, Info, Upload, Home } from 'lucide-react';
+import { Sun, Menu, X, Sparkles, LogIn, Users, Info, Upload, Home, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { brand } from '@/config/brand';
@@ -92,10 +92,21 @@ export default function SiteNavigation() {
 
           {/* Right side buttons */}
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={() => navigate('/auth')} 
-              variant="outline" 
-              size="sm" 
+            <Button
+              onClick={() => navigate('/demo')}
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex h-10 px-3 text-sm text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+              title="Browse every view without auth — for review only"
+            >
+              <Compass className="h-4 w-4 mr-2" />
+              Browse Views
+            </Button>
+
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="outline"
+              size="sm"
               className="hidden sm:flex h-10 px-4 text-sm"
             >
               <LogIn className="h-4 w-4 mr-2" />
@@ -139,12 +150,24 @@ export default function SiteNavigation() {
                     {link.label}
                   </Link>
                 ))}
-                <Button 
+                <Button
+                  onClick={() => {
+                    navigate('/demo');
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="ghost"
+                  className="mt-2 justify-start gap-3 h-14 text-base text-violet-600"
+                >
+                  <Compass className="h-5 w-5" />
+                  Browse All Views
+                </Button>
+
+                <Button
                   onClick={() => {
                     navigate('/auth');
                     setMobileMenuOpen(false);
-                  }} 
-                  variant="outline" 
+                  }}
+                  variant="outline"
                   className="mt-2 justify-start gap-3 h-14 text-base"
                 >
                   <LogIn className="h-5 w-5" />
