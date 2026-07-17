@@ -36,6 +36,7 @@ import PipelineView from "./components/PipelineView";
 import AgentFoundation from "./components/AgentFoundation";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import CustomerMobilePortal from "./components/customer/CustomerMobilePortal";
+import CustomerPortalV2 from "./components/customer/CustomerPortalV2";
 import ProfessionalProducts from "./components/ProfessionalProducts";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import SystemSettings from "./components/SystemSettings";
@@ -43,6 +44,8 @@ import CommunicationHub from "./components/CommunicationHub";
 import ConsultantDashboardV2 from "./components/ConsultantDashboardV2";
 import ConsultantCockpitV3 from "./components/ConsultantCockpitV3";
 import LeadFlow from "./components/LeadFlow";
+import CustomerIntelligenceProfile from "./components/CustomerIntelligenceProfile";
+import ROICalculator from "./pages/ROICalculator";
 import InstallerIntelligenceBuilder from "./components/InstallerIntelligenceBuilder";
 import PrestigiousAuth from "./pages/PrestigiousAuth";
 import OnboardingMode from "./pages/OnboardingMode";
@@ -91,6 +94,8 @@ function AppRoutes() {
           <Route path="/consultant" element={<PageTransition><ConsultantCockpitV3 /></PageTransition>} />
           <Route path="/lead-flow" element={<PageTransition><LeadFlow /></PageTransition>} />
           <Route path="/lead-flow/:leadId" element={<PageTransition><LeadFlow /></PageTransition>} />
+          <Route path="/customer-profile" element={<PageTransition><CustomerIntelligenceProfile /></PageTransition>} />
+          <Route path="/calculator" element={<PageTransition><ROICalculator /></PageTransition>} />
           <Route path="/consultant-v2" element={<PageTransition><ConsultantDashboardV2 /></PageTransition>} />
           <Route path="/consultant-legacy" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
@@ -103,7 +108,8 @@ function AppRoutes() {
           <Route path="/installer-bom" element={<PageTransition><BOMPage /></PageTransition>} />
           <Route path="/pipeline" element={<PageTransition><PipelinePage /></PageTransition>} />
           <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />
-          <Route path="/customer-mobile" element={<PageTransition><CustomerMobilePortal /></PageTransition>} />
+          <Route path="/customer-mobile" element={<PageTransition><CustomerPortalV2 /></PageTransition>} />
+          <Route path="/customer-mobile-v1" element={<PageTransition><CustomerMobilePortal /></PageTransition>} />
           <Route path="/products" element={<PageTransition><ProductsPage /></PageTransition>} />
           <Route path="/intelligence" element={<PageTransition><IntelligencePage /></PageTransition>} />
           <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
