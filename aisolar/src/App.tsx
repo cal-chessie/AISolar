@@ -27,9 +27,14 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import DemoIndex from "./pages/DemoIndex";
 import DemoBanner from "./components/DemoBanner";
 import InstallerFirstDashboard from "./components/InstallerFirstDashboard";
+import InstallerPortalV2 from "./components/installer/InstallerPortalV2";
 import PipelineView from "./components/PipelineView";
 import AgentFoundation from "./components/AgentFoundation";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
+import CustomerMobilePortal from "./components/customer/CustomerMobilePortal";
+import ProfessionalProducts from "./components/ProfessionalProducts";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import SystemSettings from "./components/SystemSettings";
 import { isDemoMode } from "./lib/demoMode";
 
 const queryClient = new QueryClient();
@@ -69,8 +74,13 @@ function AppRoutes() {
           <Route path="/consultant" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
+          <Route path="/installer-v3" element={<PageTransition><InstallerPortalV2 /></PageTransition>} />
           <Route path="/pipeline" element={<PageTransition><PipelinePage /></PageTransition>} />
           <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />
+          <Route path="/customer-mobile" element={<PageTransition><CustomerMobilePortal /></PageTransition>} />
+          <Route path="/products" element={<PageTransition><ProductsPage /></PageTransition>} />
+          <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
+          <Route path="/system-settings" element={<PageTransition><SystemSettingsPage /></PageTransition>} />
           <Route path="/customer/:token" element={<PageTransition><CustomerPortal /></PageTransition>} />
           <Route path="/portal" element={<PageTransition><ClientPortal /></PageTransition>} />
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
@@ -101,6 +111,36 @@ function AgentsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <AgentFoundation />
+      </div>
+    </div>
+  );
+}
+
+function ProductsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <ProfessionalProducts />
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <AnalyticsDashboard />
+      </div>
+    </div>
+  );
+}
+
+function SystemSettingsPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <SystemSettings />
       </div>
     </div>
   );

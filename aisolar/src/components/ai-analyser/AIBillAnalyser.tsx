@@ -4,6 +4,7 @@ import { BillInputStep } from "./BillInputStep";
 import { AnalysisResultsStep } from "./AnalysisResultsStep";
 import { LeadCaptureModal } from "./LeadCaptureModal";
 import { SoftCTAStep } from "./SoftCTAStep";
+import CalendarBooking from "@/components/CalendarBooking";
 import { brand } from "@/config/brand";
 
 export interface AnalysisData {
@@ -22,16 +23,18 @@ export interface AnalysisData {
   confidence?: 'high' | 'medium' | 'low';
 }
 
-type Step = "input" | "results" | "complete";
+type Step = "input" | "results" | "complete" | "booking";
 
 export function AIBillAnalyser() {
   const [currentStep, setCurrentStep] = useState<Step>("input");
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [showLeadCapture, setShowLeadCapture] = useState(false);
   const [leadCaptured, setLeadCaptured] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string | undefined>(undefined);
 
-  const handleAnalyse = (data: { 
-    monthlyBill: number; 
+  const handleAnalyse = (data: {
+    monthlyBill: number;
     mprn?: string | null;
     annualKwh?: number | null;
     accountName?: string | null;
@@ -39,13 +42,13 @@ export function AIBillAnalyser() {
     confidence?: 'high' | 'medium' | 'low';
   }) => {
     const { monthlyBill, mprn, annualKwh, accountName, address, confidence } = data;
-    
+
     // Calculate analysis based on Irish data
     const annualSpend = monthlyBill * 12;
-    
+
     // Use extracted kWh if available, otherwise estimate from bill
     const estimatedAnnualKwh = annualKwh || (annualSpend / 0.35);
-    
+
     const estimatedSystemSize = Math.max(3, Math.min(12, Math.round(estimatedAnnualKwh / 950)));
     const annualProduction = estimatedSystemSize * 950; // kWh per kWp in Ireland
     const electricityRate = 0.35; // €/kWh average
@@ -76,9 +79,21 @@ export function AIBillAnalyser() {
     setShowLeadCapture(true);
   };
 
-  const handleLeadCaptured = () => {
+  const handleLeadCaptured = (email: string, name?: string) => {
     setShowLeadCapture(false);
     setLeadCaptured(true);
+    setCustomerEmail(email);
+    setCustomerName(name);
+    // v3: After lead capture, jump straight to calendar booking
+    setCurrentStep("booking");
+  };
+
+  const handleBookingConfirmed = () => {
+    // After booking, show the soft CTA (account creation / next steps)
+    setCurrentStep("complete");
+  };
+
+  const handleSkipBooking = () => {
     setCurrentStep("complete");
   };
 
@@ -113,6 +128,24 @@ export function AIBillAnalyser() {
           </motion.div>
         )}
 
+        {currentStep === "booking" && analysisData && (
+          <motion.div
+            key="booking"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CalendarBooking
+              customerEmail={customerEmail}
+              customerName={customerName}
+              systemSizeKw={analysisData.estimatedSystemSize}
+              onBookingConfirmed={handleBookingConfirmed}
+              onSkip={handleSkipBooking}
+            />
+          </motion.div>
+        )}
+
         {currentStep === "complete" && analysisData && (
           <motion.div
             key="complete"
@@ -130,7 +163,7 @@ export function AIBillAnalyser() {
         open={showLeadCapture}
         onOpenChange={setShowLeadCapture}
         analysisData={analysisData}
-        onSuccess={handleLeadCaptured}
+        onSuccess={(email, name) => handleLeadCaptured(email, name)}
       />
     </div>
   );

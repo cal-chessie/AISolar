@@ -25,7 +25,7 @@ interface LeadCaptureModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   analysisData: AnalysisData | null;
-  onSuccess: () => void;
+  onSuccess: (email: string, name?: string) => void;
 }
 
 export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }: LeadCaptureModalProps) {
@@ -128,7 +128,7 @@ export function LeadCaptureModal({ open, onOpenChange, analysisData, onSuccess }
           ? `Your property (MPRN: ${analysisData.mprn}) has been added to our system.`
           : "Check your email for your full solar report.",
       });
-      onSuccess();
+      onSuccess(formData.email, formData.name || undefined);
     } catch (error) {
       console.error("Error saving lead:", error);
       toast({

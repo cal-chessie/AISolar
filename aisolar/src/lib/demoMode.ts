@@ -61,18 +61,28 @@ export function isDemoAvailable(): boolean {
 /** Routes that exist in App.tsx, grouped for the demo navigation hub. */
 export const ALL_ROUTES = [
   {
-    group: 'NEW — Installer-First Build',
+    group: 'NEW — v3 Customer + Installer Build',
     routes: [
-      { path: '/installer', label: 'Installer Cockpit (NEW)', desc: 'Today\'s jobs, surveys, materials, agents, handovers — installer-first build with role-aware AI coach' },
-      { path: '/pipeline', label: 'Unified Pipeline (NEW)', desc: 'Kanban of all leads with touchpoints + next automation that will fire — what you asked for' },
-      { path: '/agents', label: 'Agent Foundation (NEW)', desc: 'All 10 autonomous agents with status, last run, queue depth, manual trigger' },
+      { path: '/installer-v3', label: 'Installer Portal V3 (NEW)', desc: 'Best-in-class field installer app: OSM map, route optimisation, materials, weather, mobile-first' },
+      { path: '/customer-mobile', label: 'Customer Mobile Portal (NEW)', desc: 'Mobile-first customer experience: timeline, paperwork, AI chat — what customers see on their phone' },
+      { path: '/products', label: 'Professional Products (NEW)', desc: 'Categorised product catalogue with bundles, margins, stock, "add to proposal" integration' },
+      { path: '/analytics', label: 'Analytics Dashboard (NEW)', desc: 'BI overhaul: revenue funnel, conversion rates, team performance, agent impact, SEAI pipeline' },
+      { path: '/system-settings', label: 'System Settings (NEW)', desc: 'The bedrock: email/SMS channels, kernel/Supabase, Vault secrets, pg_cron, integrations, audit log' },
+    ],
+  },
+  {
+    group: 'NEW — Installer-First Build (v2)',
+    routes: [
+      { path: '/installer', label: 'Installer Cockpit', desc: 'Today\'s jobs, surveys, materials, agents, handovers — installer-first build with role-aware AI coach' },
+      { path: '/pipeline', label: 'Unified Pipeline', desc: 'Kanban of all leads with touchpoints + next automation that will fire' },
+      { path: '/agents', label: 'Agent Foundation', desc: 'All 10 autonomous agents with status, last run, queue depth, manual trigger' },
     ],
   },
   {
     group: 'Public / Customer-Facing',
     routes: [
       { path: '/', label: 'Landing Page', desc: 'Marketing home — AI bill analyser CTA, savings calc, FAQ' },
-      { path: '/upload', label: 'Bill Upload', desc: 'AIBillAnalyser flow — lead capture from bill photo (front door of the pipeline)' },
+      { path: '/upload', label: 'Bill Upload + Calendar Booking', desc: 'AIBillAnalyser flow → calendar booking after lead capture (NEW in v3)' },
       { path: '/upsell', label: 'Value Upsell', desc: 'Post-lead value-add upsell page' },
       { path: '/about', label: 'About Us', desc: 'Company info page' },
       { path: '/auth', label: 'Auth (Sign In / Sign Up)', desc: 'Login form with role picker (owner/consultant/installer/customer)' },
@@ -89,13 +99,13 @@ export const ALL_ROUTES = [
   {
     group: 'Internal — Installer (legacy)',
     routes: [
-      { path: '/installer-v2', label: 'Legacy Installer Dashboard', desc: 'Old thin-shell installer view (kept for comparison; /installer now uses the new cockpit in demo mode)' },
+      { path: '/installer-v2', label: 'Legacy Installer Dashboard', desc: 'Old thin-shell installer view (kept for comparison)' },
     ],
   },
   {
     group: 'Internal — Admin',
     routes: [
-      { path: '/admin/settings', label: 'Admin Settings', desc: 'User management, follow-up thresholds, email templates (now persists to email_templates table), products' },
+      { path: '/admin/settings', label: 'Admin Settings (legacy)', desc: 'User management, follow-up thresholds, email templates, products' },
       { path: '/admin/audit', label: 'Audit Dashboard', desc: 'Data integrity checks, workflow stats, entity counts' },
     ],
   },
