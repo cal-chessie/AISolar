@@ -1,18 +1,51 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { isDemoMode, enableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
-import { Compass, Zap, ArrowRight, AlertTriangle, Bug, ShieldAlert } from 'lucide-react';
+import { isDemoMode, isDemoAvailable, enableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
+import { Compass, Zap, ArrowRight, AlertTriangle, Bug, ShieldAlert, Lock } from 'lucide-react';
 import { brand } from '@/config/brand';
 
 export default function DemoIndex() {
   const navigate = useNavigate();
+  const demoAvailable = isDemoAvailable();
 
   useEffect(() => {
-    // Auto-enable demo mode when this page is visited
-    enableDemoMode();
-  }, []);
+    // v3: Only auto-enable in dev/staging builds (never production)
+    if (demoAvailable) {
+      enableDemoMode();
+    }
+  }, [demoAvailable]);
 
   const demoActive = isDemoMode();
+
+  // If demo mode is not available (production build), show a lock screen
+  if (!demoAvailable) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-4">
+        <div className="max-w-md text-center">
+          <Lock className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Demo mode disabled</h1>
+          <p className="text-muted-foreground mb-4">
+            This is a production build. Demo mode (which bypasses authentication)
+            is disabled for security. Sign in to access internal views.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <Link
+              to="/auth"
+              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 border border-border px-4 py-2 rounded-lg hover:bg-muted"
+            >
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-emerald-50 dark:from-violet-950/30 dark:via-background dark:to-emerald-950/20">

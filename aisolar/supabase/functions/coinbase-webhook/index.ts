@@ -1,33 +1,75 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { corsHeaders, log, HttpError, errorResponse } from "../_shared/auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cc-webhook-signature",
-};
+const FN = "coinbase-webhook";
+
+/** Verify Coinbase Commerce webhook signature using HMAC-SHA256.
+ * See: https://docs.cloud.coinbase.com/commerce/docs/webhooks-security
+ */
+async function verifyCoinbaseSignature(
+  rawBody: string,
+  signatureHeader: string,
+  secret: string
+): Promise<boolean> {
+  if (!signatureHeader) return false;
+
+  // Coinbase sends a hex-encoded HMAC-SHA256 of the raw body
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(rawBody));
+  const expected = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  // Constant-time comparison
+  if (expected.length !== signatureHeader.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= expected.charCodeAt(i) ^ signatureHeader.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 const handler = async (req: Request): Promise<Response> => {
+  const headers = corsHeaders(req);
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
   }
 
   try {
     const webhookSecret = Deno.env.get("COINBASE_WEBHOOK_SECRET");
-    const signature = req.headers.get("x-cc-webhook-signature");
-    
-    // In production, verify the webhook signature
-    // For now, we'll process the webhook
-    
-    const payload = await req.json();
-    console.log("Coinbase webhook received:", payload.event?.type);
+    if (!webhookSecret) {
+      throw new HttpError(500, "Server misconfigured: COINBASE_WEBHOOK_SECRET missing");
+    }
 
+    const signature = req.headers.get("x-cc-webhook-signature");
+    if (!signature) {
+      throw new HttpError(401, "Missing x-cc-webhook-signature header");
+    }
+
+    const rawBody = await req.text();
+
+    // v3: Signature verification is now mandatory.
+    const valid = await verifyCoinbaseSignature(rawBody, signature, webhookSecret);
+    if (!valid) {
+      log(FN, "error", "Signature verification failed");
+      throw new HttpError(400, "Invalid signature");
+    }
+
+    const payload = JSON.parse(rawBody);
     const event = payload.event;
     if (!event) {
-      return new Response(JSON.stringify({ error: "No event in payload" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      throw new HttpError(400, "No event in payload");
     }
+
+    log(FN, "info", "Webhook verified", { type: event.type, eventId: event.id });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -39,18 +81,17 @@ const handler = async (req: Request): Promise<Response> => {
     const paymentType = metadata?.payment_type;
 
     if (!invoiceId) {
-      console.log("No invoice_id in metadata, skipping");
+      log(FN, "info", "No invoice_id in metadata, skipping");
       return new Response(JSON.stringify({ received: true }), {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...headers },
       });
     }
 
     switch (event.type) {
-      case "charge:confirmed":
-        console.log("Payment confirmed for invoice:", invoiceId, "type:", paymentType);
-        
-        // Update invoice based on payment type
+      case "charge:confirmed": {
+        log(FN, "info", "Payment confirmed", { invoiceId, paymentType });
+
         if (paymentType === "deposit") {
           const { error } = await supabase
             .from("invoices")
@@ -62,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
             .eq("id", invoiceId);
 
           if (error) {
-            console.error("Error updating invoice for deposit:", error);
+            log(FN, "error", "Failed to update invoice (deposit)", { error: error.message });
           }
         } else if (paymentType === "final") {
           const { error } = await supabase
@@ -75,11 +116,10 @@ const handler = async (req: Request): Promise<Response> => {
             .eq("id", invoiceId);
 
           if (error) {
-            console.error("Error updating invoice for final payment:", error);
+            log(FN, "error", "Failed to update invoice (final)", { error: error.message });
           }
         }
 
-        // Log activity
         const { data: invoice } = await supabase
           .from("invoices")
           .select("lead_id")
@@ -99,33 +139,30 @@ const handler = async (req: Request): Promise<Response> => {
           });
         }
         break;
+      }
 
       case "charge:pending":
-        console.log("Payment pending for invoice:", invoiceId);
+        log(FN, "info", "Payment pending", { invoiceId });
         break;
 
       case "charge:failed":
-        console.log("Payment failed for invoice:", invoiceId);
+        log(FN, "warn", "Payment failed", { invoiceId });
         break;
 
       case "charge:delayed":
-        console.log("Payment delayed for invoice:", invoiceId);
+        log(FN, "warn", "Payment delayed", { invoiceId });
         break;
 
       default:
-        console.log("Unhandled event type:", event.type);
+        log(FN, "info", "Unhandled event type", { type: event.type });
     }
 
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...headers },
     });
-  } catch (error: any) {
-    console.error("Error processing Coinbase webhook:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+  } catch (err) {
+    return errorResponse(err, headers);
   }
 };
 

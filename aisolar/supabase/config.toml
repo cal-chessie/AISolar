@@ -1,37 +1,53 @@
 project_id = "coxmtpnqjybwlrfwkols"
 
+# ============================================================================
+# v3 SECURITY: verify_jwt = true on all non-webhook functions
+# Webhooks (stripe-webhook, coinbase-webhook) keep verify_jwt=false because
+# they are called by external services (Stripe, Coinbase) and verify
+# signatures internally instead. All other functions MUST verify the JWT
+# to prevent anonymous invocation.
+# ============================================================================
+
+# --- WEBHOOKS (verify_jwt=false, signature verified inside) ---
 [functions.stripe-webhook]
-verify_jwt = false
-
-[functions.send-follow-up-digest]
-verify_jwt = false
-
-[functions.create-crypto-checkout]
 verify_jwt = false
 
 [functions.coinbase-webhook]
 verify_jwt = false
 
+# --- CUSTOMER-FACING (verify_jwt=true, also accept x-access-token header) ---
+# These functions are invoked from the customer portal (anon users with a token)
+# OR by authenticated staff. They verify the JWT OR the access token inside.
+[functions.send-notification]
+verify_jwt = true
+
 [functions.send-proposal-accepted]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-survey-notification]
-verify_jwt = false
+verify_jwt = true
+
+# --- STAFF-ONLY (verify_jwt=true, role check inside) ---
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.create-crypto-checkout]
+verify_jwt = true
 
 [functions.extract-bill-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.expert-chat]
-verify_jwt = false
+verify_jwt = true
 
-[functions.send-payment-reminder]
-verify_jwt = false
-
-[functions.send-notification]
-verify_jwt = false
-
-[functions.create-checkout]
-verify_jwt = false
+# --- CRON-TRIGGERED (verify_jwt=true, invoked via pg_cron with service-role JWT) ---
+# These are called by pg_cron with a vault-stored service-role JWT.
+# verify_jwt=true is correct — the JWT will be valid.
+[functions.send-follow-up-digest]
+verify_jwt = true
 
 [functions.send-notification-digest]
-verify_jwt = false
+verify_jwt = true
+
+[functions.send-payment-reminder]
+verify_jwt = true

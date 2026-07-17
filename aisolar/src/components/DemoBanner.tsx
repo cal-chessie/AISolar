@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { isDemoMode, disableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
-import { X, Compass, ExternalLink, AlertTriangle } from 'lucide-react';
+import { isDemoMode, isDemoAvailable, disableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
+import { X, Compass, ExternalLink, AlertTriangle, FlaskConical } from 'lucide-react';
 
 /**
  * Floating demo banner + navigation menu.
- * Renders only when demo mode is active.
- * Sits at top of every page so the reviewer can jump between views.
+ * Renders only when demo mode is active (dev/staging builds only).
+ * In production builds, this component is a no-op.
  */
 export default function DemoBanner() {
   const [active, setActive] = useState(false);
@@ -18,6 +18,8 @@ export default function DemoBanner() {
     setActive(isDemoMode());
   }, [location.pathname]);
 
+  // In production builds, render nothing.
+  if (!isDemoAvailable()) return null;
   if (!active) return null;
 
   const handleExit = () => {
@@ -40,12 +42,11 @@ export default function DemoBanner() {
       </button>
 
       {/* Top banner */}
-      <div className="fixed top-0 left-0 right-0 z-[9997] bg-amber-500 text-amber-950 text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
+      <div className="fixed top-0 left-0 right-0 z-[9997] bg-violet-600 text-white text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-3.5 w-3.5" />
+          <FlaskConical className="h-3.5 w-3.5" />
           <span>
-            <strong>DEMO MODE</strong> — Auth bypassed. Data fetches will show empty/error states.
-            Routes are open for review only.
+            <strong>STAGING PREVIEW</strong> — Auth bypassed for review. Not a production build.
           </span>
         </div>
         <div className="flex items-center gap-3">

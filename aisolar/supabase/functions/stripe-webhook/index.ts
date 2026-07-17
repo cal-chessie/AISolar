@@ -1,53 +1,53 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { corsHeaders, log, HttpError, errorResponse } from "../_shared/auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const FN = "stripe-webhook";
 
 serve(async (req) => {
+  const headers = corsHeaders(req);
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
   }
-
-  const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-
-  if (!stripeSecretKey) {
-    console.error("Stripe secret key not configured");
-    return new Response(JSON.stringify({ error: "Stripe not configured" }), { status: 500 });
-  }
-
-  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2025-08-27.basil" });
-  const signature = req.headers.get("stripe-signature");
-  const body = await req.text();
-
-  let event: Stripe.Event;
 
   try {
-    // If webhook secret is configured, verify signature
-    if (webhookSecret && signature) {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } else {
-      // For development, parse the event directly
-      event = JSON.parse(body);
-      console.log("Warning: Webhook signature not verified (development mode)");
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+
+    // v3: Both keys are mandatory. No dev fallback.
+    if (!stripeSecretKey) {
+      throw new HttpError(500, "Server misconfigured: STRIPE_SECRET_KEY missing");
     }
-  } catch (err: any) {
-    console.error("Webhook signature verification failed:", err.message);
-    return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
-  }
+    if (!webhookSecret) {
+      throw new HttpError(500, "Server misconfigured: STRIPE_WEBHOOK_SECRET missing");
+    }
 
-  console.log(`Processing webhook event: ${event.type}`);
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2025-08-27.basil" });
+    const signature = req.headers.get("stripe-signature");
+    const body = await req.text();
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (!signature) {
+      throw new HttpError(401, "Missing stripe-signature header");
+    }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
+    let event: Stripe.Event;
+    try {
+      // v3: Signature verification is mandatory. No fallback to JSON.parse.
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err: any) {
+      log(FN, "error", "Signature verification failed", { error: err.message });
+      throw new HttpError(400, `Invalid signature: ${err.message}`);
+    }
+
+    log(FN, "info", "Processing event", { type: event.type, eventId: event.id });
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
     const { invoice_id, payment_type } = session.metadata || {};
 
     if (!invoice_id || !payment_type) {
@@ -198,16 +198,19 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ received: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     } catch (error: any) {
-      console.error("Error updating invoice:", error);
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      log(FN, "error", "Error updating invoice", { error: error.message });
+      throw new HttpError(500, error.message);
     }
   }
 
   // Return success for unhandled events
   return new Response(JSON.stringify({ received: true }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
+  } catch (err) {
+    return errorResponse(err, headers);
+  }
 });

@@ -1,21 +1,33 @@
 /**
  * Demo Mode helper — lets you browse all internal views without auth.
  *
- * Activate:   visit /#/demo (sets localStorage flag)  OR  ?demo=1 on any URL
- * Deactivate: click "Exit Demo" in the demo banner
+ * v3 SECURITY UPDATE: Demo mode is now GATED BEHIND `import.meta.env.DEV`.
+ * In production builds, `isDemoMode()` always returns `false`. The `?demo=1`
+ * URL trick and localStorage flag no longer work in production — they were
+ * an auth bypass on production deployments.
  *
- * When active, guarded pages (ConsultantDashboard, InstallerPortal, AdminSettings,
- * AuditDashboard, CustomerDashboard) skip the `supabase.auth.getSession()` redirect
- * to /auth so the UI renders. Data fetches will return empty/error states because
- * there's no real Supabase session, but the layout, components, and interactions
- * are all visible for review.
+ * In dev (vite dev server, `npm run dev`), demo mode works as before.
+ *
+ * For staging/QA without auth, run a separate deployment on a separate domain
+ * with `VITE_ENABLE_DEMO=true` (a build-time flag).
+ *
+ * Activate:   visit /#/demo (sets localStorage flag)  OR  ?demo=1 on any URL — DEV ONLY
+ * Deactivate: click "Exit Demo" in the demo banner
  */
 
 const DEMO_KEY = 'aisolar_demo_mode';
 
+/** Demo mode is only ever available in dev builds OR if explicitly enabled
+ * at build time via VITE_ENABLE_DEMO=true. Production builds ALWAYS return false. */
+const DEMO_AVAILABLE: boolean =
+  (import.meta as any).env?.DEV === true ||
+  (import.meta as any).env?.VITE_ENABLE_DEMO === 'true';
+
 export function isDemoMode(): boolean {
+  if (!DEMO_AVAILABLE) return false; // hard gate — no escape in production
   if (typeof window === 'undefined') return false;
-  // URL param wins
+
+  // URL param wins (dev only)
   const params = new URLSearchParams(window.location.search);
   if (params.get('demo') === '1') {
     try { localStorage.setItem(DEMO_KEY, '1'); } catch { /* ignore */ }
@@ -33,11 +45,17 @@ export function isDemoMode(): boolean {
 }
 
 export function enableDemoMode(): void {
+  if (!DEMO_AVAILABLE) return; // no-op in production
   try { localStorage.setItem(DEMO_KEY, '1'); } catch { /* ignore */ }
 }
 
 export function disableDemoMode(): void {
   try { localStorage.removeItem(DEMO_KEY); } catch { /* ignore */ }
+}
+
+/** Returns true if demo mode is available in this build (for UI hints). */
+export function isDemoAvailable(): boolean {
+  return DEMO_AVAILABLE;
 }
 
 /** Routes that exist in App.tsx, grouped for the demo navigation hub. */
@@ -58,7 +76,6 @@ export const ALL_ROUTES = [
       { path: '/upsell', label: 'Value Upsell', desc: 'Post-lead value-add upsell page' },
       { path: '/about', label: 'About Us', desc: 'Company info page' },
       { path: '/auth', label: 'Auth (Sign In / Sign Up)', desc: 'Login form with role picker (owner/consultant/installer/customer)' },
-      { path: '/portal', label: 'Client Portal Lookup', desc: 'Email-based portal link finder (BROKEN: leaks access_token to anyone — see audit #10)' },
       { path: '/customer/demo-token', label: 'Customer Portal (token)', desc: 'Token-gated customer view of one lead — proposal, contract, invoice, SEAI' },
     ],
   },
@@ -78,7 +95,7 @@ export const ALL_ROUTES = [
   {
     group: 'Internal — Admin',
     routes: [
-      { path: '/admin/settings', label: 'Admin Settings', desc: 'User management, follow-up thresholds, email templates (was broken — now persists to email_templates table per 20260718 migration), products' },
+      { path: '/admin/settings', label: 'Admin Settings', desc: 'User management, follow-up thresholds, email templates (now persists to email_templates table), products' },
       { path: '/admin/audit', label: 'Audit Dashboard', desc: 'Data integrity checks, workflow stats, entity counts' },
     ],
   },
