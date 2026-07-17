@@ -21,11 +21,14 @@ import {
   Sun, FileText, CreditCard, Award, Calendar, CheckCircle2, Clock,
   AlertCircle, ArrowRight, ArrowLeft, Download, MessageSquare, Send,
   Phone, Mail, MapPin, ChevronDown, ChevronUp, Sparkles, Loader2, Zap,
+  Shield,
 } from 'lucide-react';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { calculateSEAI, eur } from '@/lib/seaiPipeline';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { brand } from '@/config/brand';
+import WorkflowOrchestrator from '@/components/WorkflowOrchestrator';
+import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 
 export default function CustomerMobilePortal() {
   const [lead] = useState<DummyLead>(() => {
@@ -33,7 +36,7 @@ export default function CustomerMobilePortal() {
     // Use the "approved" lead (signed contract, invoice pending) — best demo
     return leads.find(l => l.workflow_stage === 'approved') || leads[0];
   });
-  const [activeTab, setActiveTab] = useState<'timeline' | 'paperwork' | 'chat'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'paperwork' | 'chat' | 'action' | 'rights'>('timeline');
   const [showBooking, setShowBooking] = useState(false);
 
   return (
@@ -145,11 +148,13 @@ export default function CustomerMobilePortal() {
 
         {/* Tab navigation — mobile bottom nav style */}
         <nav className="sticky top-[57px] z-20 bg-background/95 backdrop-blur border-b">
-          <div className="grid grid-cols-3 gap-1 p-2">
+          <div className="grid grid-cols-5 gap-1 p-2">
             {[
               { id: 'timeline' as const, label: 'Timeline', icon: Calendar },
-              { id: 'paperwork' as const, label: 'Paperwork', icon: FileText },
+              { id: 'paperwork' as const, label: 'Docs', icon: FileText },
+              { id: 'action' as const, label: 'Action', icon: ArrowRight },
               { id: 'chat' as const, label: 'Ask AI', icon: Sparkles },
+              { id: 'rights' as const, label: 'My data', icon: Shield },
             ].map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -162,7 +167,7 @@ export default function CustomerMobilePortal() {
                   }`}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <span className="text-[10px] font-medium">{tab.label}</span>
                 </button>
               );
             })}
@@ -201,8 +206,47 @@ export default function CustomerMobilePortal() {
               <ChatTab lead={lead} />
             </motion.div>
           )}
+          {activeTab === 'action' && (
+            <motion.div
+              key="action"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="px-4 py-4"
+            >
+              <h2 className="text-lg font-bold mb-1">Your next step</h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                The workflow orchestrator shows what you need to do right now and what happens next.
+              </p>
+              <WorkflowOrchestrator
+                lead={lead}
+                viewer="customer"
+                onStepComplete={(step, data) => {
+                  console.log('Customer step complete:', step, data);
+                }}
+              />
+            </motion.div>
+          )}
+          {activeTab === 'rights' && (
+            <motion.div
+              key="rights"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="px-4 py-4"
+            >
+              <h2 className="text-lg font-bold mb-1">Your data, your rights</h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                GDPR-compliant. Access, export, or erase your data anytime.
+              </p>
+              <DataSubjectRightsPanel userEmail={lead.email} />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
+
+      {/* GDPR cookie consent banner — shows on first visit */}
+      <CookieConsentBanner />
 
       {showBooking && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={() => setShowBooking(false)}>

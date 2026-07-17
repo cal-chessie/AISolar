@@ -31,11 +31,13 @@ import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import WorkflowOrchestrator from '@/components/WorkflowOrchestrator';
 
 export default function InstallerPortalV2() {
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
-  const [activeTab, setActiveTab] = useState<'today' | 'map' | 'surveys' | 'stock' | 'handover'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'map' | 'surveys' | 'stock' | 'handover' | 'workflow'>('today');
+  const [selectedJobForWorkflow, setSelectedJobForWorkflow] = useState<DummyLead | null>(null);
 
   const myJobs = useMemo(() => leads.filter(l =>
     l.assignment && ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)
@@ -93,11 +95,12 @@ export default function InstallerPortalV2() {
 
       {/* Tab navigation — mobile bottom nav + tablet top nav */}
       <nav className="sticky top-[73px] z-20 bg-background/95 backdrop-blur border-b">
-        <div className="grid grid-cols-5 gap-1 p-2">
+        <div className="grid grid-cols-6 gap-1 p-2">
           {[
             { id: 'today' as const, label: 'Today', icon: Calendar, count: displayToday.length },
             { id: 'map' as const, label: 'Map', icon: MapPin, count: myJobs.length },
             { id: 'surveys' as const, label: 'Surveys', icon: Camera, count: surveysToDo.length },
+            { id: 'workflow' as const, label: 'Workflow', icon: ListTodo, count: 0 },
             { id: 'stock' as const, label: 'Stock', icon: Package, count: 0 },
             { id: 'handover' as const, label: 'Handover', icon: CheckCircle2, count: handoverPending.length },
           ].map(tab => {
@@ -125,9 +128,62 @@ export default function InstallerPortalV2() {
       </nav>
 
       <main className="pb-4">
-        {activeTab === 'today' && <TodayTab jobs={displayToday} />}
-        {activeTab === 'map' && <MapTab jobs={myJobs} />}
-        {activeTab === 'surveys' && <SurveysTab surveys={surveysToDo} />}
+        {activeTab === 'today' && (
+          <TodayTab jobs={displayToday} onOpenWorkflow={(lead) => {
+            setSelectedJobForWorkflow(lead);
+            setActiveTab('workflow');
+          }} />
+        )}
+        {activeTab === 'map' && <MapTab jobs={myJobs} onOpenWorkflow={(lead) => {
+          setSelectedJobForWorkflow(lead);
+          setActiveTab('workflow');
+        }} />}
+        {activeTab === 'surveys' && <SurveysTab surveys={surveysToDo} onOpenWorkflow={(lead) => {
+          setSelectedJobForWorkflow(lead);
+          setActiveTab('workflow');
+        }} />}
+        {activeTab === 'workflow' && (
+          <div className="px-4 py-4">
+            {selectedJobForWorkflow ? (
+              <>
+                <Card className="mb-4">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold">{selectedJobForWorkflow.name}</div>
+                      <div className="text-xs text-muted-foreground">{selectedJobForWorkflow.address}</div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedJobForWorkflow(null)}>Close</Button>
+                  </CardContent>
+                </Card>
+                <WorkflowOrchestrator
+                  lead={selectedJobForWorkflow}
+                  viewer="installer"
+                  onStepComplete={(step, data) => {
+                    console.log('Installer step complete:', step, data);
+                  }}
+                />
+              </>
+            ) : (
+              <div className="space-y-2">
+                <h2 className="text-lg font-bold">Pick a job to view its workflow</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Shows the survey form, installation checklist (toggles + photos + signature), and handover pack.
+                </p>
+                {[...displayToday, ...myJobs, ...surveysToDo].slice(0, 8).map(lead => (
+                  <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedJobForWorkflow(lead)}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-sm">{lead.name}</div>
+                        <div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {activeTab === 'stock' && <StockTab />}
         {activeTab === 'handover' && <HandoverTab jobs={handoverPending} />}
       </main>
@@ -138,7 +194,7 @@ export default function InstallerPortalV2() {
 }
 
 // ============= TODAY TAB =============
-function TodayTab({ jobs }: { jobs: DummyLead[] }) {
+function TodayTab({ jobs, onOpenWorkflow }: { jobs: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
@@ -168,13 +224,13 @@ function TodayTab({ jobs }: { jobs: DummyLead[] }) {
           </CardContent>
         </Card>
       ) : (
-        jobs.map(job => <JobCard key={job.id} lead={job} />)
+        jobs.map(job => <JobCard key={job.id} lead={job} onOpenWorkflow={onOpenWorkflow} />)
       )}
     </div>
   );
 }
 
-function JobCard({ lead }: { lead: DummyLead }) {
+function JobCard({ lead, onOpenWorkflow }: { lead: DummyLead; onOpenWorkflow?: (lead: DummyLead) => void }) {
   const proposal = lead.proposal;
   const survey = lead.survey;
   const initials = lead.name.split(' ').map(n => n[0]).slice(0, 2).join('');
@@ -252,16 +308,16 @@ function JobCard({ lead }: { lead: DummyLead }) {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700 h-9">
+          <Button size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700 h-9" onClick={() => onOpenWorkflow?.(lead)}>
             <FileText className="h-3 w-3 mr-1" /> Job sheet
           </Button>
           <Button size="sm" variant="outline" className="h-9">
             <Navigation className="h-3 w-3 mr-1" /> Navigate
           </Button>
-          <Button size="sm" variant="outline" className="h-9">
+          <Button size="sm" variant="outline" className="h-9" onClick={() => onOpenWorkflow?.(lead)}>
             <Camera className="h-3 w-3 mr-1" /> Photos
           </Button>
-          <Button size="sm" variant="default" className="bg-emerald-600 hover:bg-emerald-700 h-9 ml-auto">
+          <Button size="sm" variant="default" className="bg-emerald-600 hover:bg-emerald-700 h-9 ml-auto" onClick={() => onOpenWorkflow?.(lead)}>
             <CheckCircle2 className="h-3 w-3 mr-1" /> Mark complete
           </Button>
         </div>
@@ -271,7 +327,7 @@ function JobCard({ lead }: { lead: DummyLead }) {
 }
 
 // ============= MAP TAB =============
-function MapTab({ jobs }: { jobs: DummyLead[] }) {
+function MapTab({ jobs, onOpenWorkflow }: { jobs: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
   // Generate Dublin-area lat/lng for demo jobs
   const dublinCenter = { lat: 53.3498, lng: -6.2603 };
   const jobPins = jobs.map((job, i) => ({
@@ -325,8 +381,10 @@ function MapTab({ jobs }: { jobs: DummyLead[] }) {
       {/* Job pins list */}
       <div className="space-y-2">
         <h3 className="font-semibold text-sm">{jobPins.length} jobs on map</h3>
-        {jobPins.map(pin => (
-          <Card key={pin.id}>
+        {jobPins.map(pin => {
+          const lead = jobs.find(j => j.id === pin.id);
+          return (
+          <Card key={pin.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => lead && onOpenWorkflow?.(lead)}>
             <CardContent className="p-3 flex items-center gap-3">
               <div className={`p-2 rounded-full ${
                 pin.status === 'completed' ? 'bg-emerald-100' :
@@ -349,7 +407,8 @@ function MapTab({ jobs }: { jobs: DummyLead[] }) {
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Legend */}
@@ -366,7 +425,7 @@ function MapTab({ jobs }: { jobs: DummyLead[] }) {
 }
 
 // ============= SURVEYS TAB =============
-function SurveysTab({ surveys }: { surveys: DummyLead[] }) {
+function SurveysTab({ surveys, onOpenWorkflow }: { surveys: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
   return (
     <div className="px-4 py-4">
       <h2 className="text-lg font-bold mb-1">Site Surveys</h2>
@@ -411,7 +470,7 @@ function SurveysTab({ surveys }: { surveys: DummyLead[] }) {
               </div>
 
               <div className="flex gap-2">
-                <Button size="sm" variant="default" className="bg-indigo-600 hover:bg-indigo-700 h-9">
+                <Button size="sm" variant="default" className="bg-indigo-600 hover:bg-indigo-700 h-9" onClick={() => onOpenWorkflow?.(lead)}>
                   <Camera className="h-3 w-3 mr-1" /> Open survey
                 </Button>
                 <Button size="sm" variant="outline" className="h-9">

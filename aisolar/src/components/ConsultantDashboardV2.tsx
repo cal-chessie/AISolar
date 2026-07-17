@@ -27,6 +27,7 @@ import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
+import WorkflowOrchestrator from '@/components/WorkflowOrchestrator';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -34,6 +35,7 @@ export default function ConsultantDashboardV2() {
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [search, setSearch] = useState('');
+  const [selectedLeadForWorkflow, setSelectedLeadForWorkflow] = useState<DummyLead | null>(null);
 
   // Hot leads: proposal sent + opened 3+ times, OR score > 80
   const hotLeads = useMemo(() => leads.filter(l =>
@@ -401,13 +403,46 @@ export default function ConsultantDashboardV2() {
                         {lead.proposal && (
                           <span className="text-xs text-muted-foreground hidden md:inline">{eur(lead.proposal.net_cost)}</span>
                         )}
-                        <Button size="sm" variant="ghost" className="h-7 text-xs">Open</Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            setSelectedLeadForWorkflow(lead);
+                            document.getElementById('workflow-panel')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          Open workflow
+                        </Button>
                       </div>
                     );
                   })}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Workflow panel — shows the right workflow component for the selected lead */}
+            {selectedLeadForWorkflow && (
+              <div id="workflow-panel" className="mt-6">
+                <Card className="mb-4">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold">{selectedLeadForWorkflow.name}</div>
+                      <div className="text-xs text-muted-foreground">{selectedLeadForWorkflow.address} · {getStage(selectedLeadForWorkflow.workflow_stage).label}</div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedLeadForWorkflow(null)}>Close</Button>
+                  </CardContent>
+                </Card>
+                <WorkflowOrchestrator
+                  lead={selectedLeadForWorkflow}
+                  viewer="consultant"
+                  onStepComplete={(step, data) => {
+                    console.log('Step complete:', step, data);
+                    // In production: this calls the kernel to advance the lead's stage
+                  }}
+                />
+              </div>
+            )}
           </TabsContent>
 
           {/* TOOLS */}

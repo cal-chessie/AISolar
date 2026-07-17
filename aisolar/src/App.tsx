@@ -41,6 +41,9 @@ import ConsultantDashboardV2 from "./components/ConsultantDashboardV2";
 import InstallerIntelligenceBuilder from "./components/InstallerIntelligenceBuilder";
 import PrestigiousAuth from "./pages/PrestigiousAuth";
 import OnboardingMode from "./pages/OnboardingMode";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import { CookieConsentBanner } from "./lib/gdpr";
 import { isDemoMode } from "./lib/demoMode";
 
 const queryClient = new QueryClient();
@@ -65,6 +68,7 @@ function AppRoutes() {
   return (
     <>
       <DemoBanner />
+      <CookieConsentBanner />
       <GlobalSearchModal
         open={isSearchOpen}
         onOpenChange={setIsSearchOpen}
@@ -98,6 +102,8 @@ function AppRoutes() {
           <Route path="/admin/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
           <Route path="/admin/audit" element={<PageTransition><AuditDashboard /></PageTransition>} />
           <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
+          <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+          <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
           <Route path="/my-projects" element={<PageTransition><CustomerDashboard /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
