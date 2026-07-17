@@ -1,0 +1,37 @@
+project_id = "coxmtpnqjybwlrfwkols"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.send-follow-up-digest]
+verify_jwt = false
+
+[functions.create-crypto-checkout]
+verify_jwt = false
+
+[functions.coinbase-webhook]
+verify_jwt = false
+
+[functions.send-proposal-accepted]
+verify_jwt = false
+
+[functions.send-survey-notification]
+verify_jwt = false
+
+[functions.extract-bill-data]
+verify_jwt = false
+
+[functions.expert-chat]
+verify_jwt = false
+
+[functions.send-payment-reminder]
+verify_jwt = false
+
+[functions.send-notification]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.send-notification-digest]
+verify_jwt = false
