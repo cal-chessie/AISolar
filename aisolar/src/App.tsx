@@ -41,6 +41,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import SystemSettings from "./components/SystemSettings";
 import CommunicationHub from "./components/CommunicationHub";
 import ConsultantDashboardV2 from "./components/ConsultantDashboardV2";
+import ConsultantCockpitV3 from "./components/ConsultantCockpitV3";
 import InstallerIntelligenceBuilder from "./components/InstallerIntelligenceBuilder";
 import PrestigiousAuth from "./pages/PrestigiousAuth";
 import OnboardingMode from "./pages/OnboardingMode";
@@ -86,7 +87,8 @@ function AppRoutes() {
           <Route path="/auth-legacy" element={<PageTransition><Auth /></PageTransition>} />
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
           <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ConsultantDashboardV2 /></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV3 /></PageTransition>} />
+          <Route path="/consultant-v2" element={<PageTransition><ConsultantDashboardV2 /></PageTransition>} />
           <Route path="/consultant-legacy" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
