@@ -284,7 +284,7 @@ export default function ConsultantCockpitV3() {
                   <Button variant="ghost" size="sm" className="p-2">
                     <Calendar className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate('/job')}>
+                  <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate('/lead-flow')}>
                     <FileText className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="sm" className="p-2">
@@ -303,8 +303,8 @@ export default function ConsultantCockpitV3() {
                     {selectedLead.proposal && (
                       <span className="text-muted-foreground">{selectedLead.proposal.system_size_kw} kWp · {eur(selectedLead.proposal.net_cost)}</span>
                     )}
-                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => navigate('/job')}>
-                      Open workflow <ArrowRight className="h-2 w-2 ml-0.5" />
+                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => navigate('/lead-flow')}>
+                      Open flow <ArrowRight className="h-2 w-2 ml-0.5" />
                     </Button>
                   </div>
                 </div>
