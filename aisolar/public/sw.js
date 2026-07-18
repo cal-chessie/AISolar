@@ -1,89 +1,45 @@
-const CACHE_NAME = 'installer-field-v1';
-const OFFLINE_URL = '/field';
+/**
+ * Service Worker Kill Switch
+ *
+ * This file used to be a cache-first service worker that served stale JS
+ * bundles. The current app doesn't register a service worker at all, but
+ * browsers that previously registered the old sw.js still have it active.
+ *
+ * This replacement does ONE thing: on install, it clears ALL caches and
+ * unregisters itself. Once the browser picks up this version, the SW is
+ * gone for good and all cached assets are purged.
+ */
 
-// Assets to cache for offline use
-const PRECACHE_ASSETS = [
-  '/',
-  '/field',
-  '/index.html',
-];
-
-// Install event - precache assets
+// Clear all caches on install
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
+    caches.keys().then((cacheNames) => {
+      return Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }).then(() => {
+      return self.skipWaiting();
     })
   );
-  self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// On activate, clear any remaining caches + unregister self
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
+      return Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }).then(() => {
+      return self.registration.unregister();
+    }).then(() => {
+      return self.clients.claim();
+    }).then(() => {
+      // Tell all open clients to reload
+      return self.clients.matchAll({ type: 'window' });
+    }).then((clients) => {
+      clients.forEach((client) => client.navigate(client.url));
     })
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Pass-through fetch — don't intercept anything
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip non-GET requests
-  if (request.method !== 'GET') return;
-
-  // Skip Supabase API calls (handle offline in app)
-  if (url.hostname.includes('supabase')) return;
-
-  // For navigation requests, try network first, fallback to cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .catch(() => caches.match(OFFLINE_URL) || caches.match('/'))
-    );
-    return;
-  }
-
-  // For assets, try cache first, fallback to network
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cached version and update cache in background
-        fetch(request).then((response) => {
-          if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, response);
-            });
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-
-      // Not in cache, fetch from network
-      return fetch(request).then((response) => {
-        if (response.ok && request.url.startsWith(self.location.origin)) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return response;
-      });
-    })
-  );
-});
-
-// Handle messages from client
-self.addEventListener('message', (event) => {
-  if (event.data === 'skipWaiting') {
-    self.skipWaiting();
-  }
+  // intentionally empty — let the browser handle all requests normally
 });
