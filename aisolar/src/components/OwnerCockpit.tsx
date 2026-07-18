@@ -41,7 +41,7 @@ import UnifiedCalendar from './UnifiedCalendar';
 
 // Lazy-load heavy components only when their sidebar item is clicked
 const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
-const SystemSettings = lazy(() => import('./SystemSettings'));
+const SystemSettings = lazy(() => import('./SystemSettingsV2'));
 const AgentFoundation = lazy(() => import('./AgentFoundation'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
 const CustomerIntelligenceProfile = lazy(() => import('./CustomerIntelligenceProfile'));
