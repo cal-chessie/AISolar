@@ -1,0 +1,835 @@
+     1→/**
+     2→ * Owner Cockpit V2 — sidebar nav + single-screen cockpit.
+     3→ *
+     4→ * Left sidebar: quick links to every section (like a real OS).
+     5→ * Main area: the cockpit (vital signs, pipeline, activity, alerts, schedule).
+     6→ *
+     7→ * Sidebar links:
+     8→ *   Overview (cockpit) — what's visible by default
+     9→ *   Calendar — full month view
+    10→ *   Consultants — pick a consultant → see their customer chats
+    11→ *   Installers — pick an installer → see their jobs
+    12→ *   Clients — client list → 360° profile
+    13→ *   Products — product catalogue
+    14→ *   Settings — system settings
+    15→ *   Agents — agent monitor
+    16→ *   Analytics — full analytics
+    17→ *   CRM — (placeholder for your CRM add-on)
+    18→ */
+    19→
+    20→import { useState, useMemo, lazy, Suspense } from 'react';
+    21→import { useNavigate } from 'react-router-dom';
+    22→import { motion, AnimatePresence } from 'framer-motion';
+    23→import { Card, CardContent } from '@/components/ui/card';
+    24→import { Badge } from '@/components/ui/badge';
+    25→import { Button } from '@/components/ui/button';
+    26→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    27→import { Input } from '@/components/ui/input';
+    28→import {
+    29→  Users, Wrench, Calendar, TrendingUp, DollarSign, Bot, Clock,
+    30→  AlertTriangle, CheckCircle2, ArrowRight, Building2, UserCircle,
+    31→  Star, Phone, Video, MapPin, FileText, Zap, Award, Activity,
+    32→  ChevronRight, Flame, Target, Percent, Navigation, Package,
+    33→  Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
+    34→  Search, Calculator,
+    35→} from 'lucide-react';
+    36→import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
+    37→import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+    38→import { brand } from '@/config/brand';
+    39→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+    40→import UnifiedCalendar from './UnifiedCalendar';
+    41→
+    42→// Lazy-load heavy components only when their sidebar item is clicked
+    43→const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
+    44→const SystemSettings = lazy(() => import('./SystemSettingsV2'));
+    45→const AgentFoundation = lazy(() => import('./AgentFoundation'));
+    46→const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
+    47→const CustomerIntelligenceProfile = lazy(() => import('./CustomerIntelligenceProfile'));
+    48→const RealCalendar = lazy(() => import('./RealCalendar'));
+    49→const EstimateView = lazy(() => import('./EstimateView'));
+    50→const ProposalView = lazy(() => import('./ProposalView'));
+    51→const AgentTraining = lazy(() => import('./AgentTraining'));
+    52→const SEAIDashboard = lazy(() => import('./SEAIDashboard'));
+    53→const EstimatesView = lazy(() => import('./EstimatesView'));
+    54→
+    55→const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    56→
+    57→type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
+    58→
+    59→const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
+    60→  { id: 'overview', label: 'Overview', icon: Home },
+    61→  { id: 'estimates', label: 'Estimates', icon: Calculator },
+    62→  { id: 'calendar', label: 'Calendar', icon: Calendar },
+    63→  { id: 'consultants', label: 'Consultants', icon: Users },
+    64→  { id: 'installers', label: 'Installers', icon: Wrench },
+    65→  { id: 'clients', label: 'Clients', icon: UserCircle },
+    66→  { id: 'products', label: 'Products', icon: Package },
+    67→  { id: 'seai', label: 'SEAI & Compliance', icon: Award },
+    68→  { id: 'agents', label: 'Agents', icon: Bot },
+    69→  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    70→  { id: 'settings', label: 'Settings', icon: Settings },
+    71→  { id: 'crm', label: 'CRM', icon: MessageSquare },
+    72→];
+    73→
+    74→export default function OwnerCockpit() {
+    75→  const navigate = useNavigate();
+    76→  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+    77→  const [activeView, setActiveView] = useState<SidebarView>('overview');
+    78→  const [expandedStage, setExpandedStage] = useState<string | null>(null);
+    79→  const [sidebarOpen, setSidebarOpen] = useState(true);
+    80→  const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
+    81→
+    82→  // Compute everything from real lead data
+    83→  const data = useMemo(() => {
+    84→    const stats = computePipelineStats(leads);
+    85→    const revenueClosed = leads.filter(l => l.invoice?.final_paid).reduce((s, l) => s + (l.proposal?.net_cost || 0), 0);
+    86→    const revenuePending = leads.filter(l => l.proposal && !l.invoice?.final_paid).reduce((s, l) => s + (l.proposal.net_cost || 0), 0);
+    87→
+    88→    const stageCounts = PIPELINE_STAGES.map(s => ({
+    89→      ...s,
+    90→      count: leads.filter(l => l.workflow_stage === s.id).length,
+    91→      cumulative: leads.filter(l => {
+    92→        const idx = PIPELINE_STAGES.findIndex(p => p.id === l.workflow_stage);
+    93→        const sIdx = PIPELINE_STAGES.findIndex(p => p.id === s.id);
+    94→        return idx >= sIdx;
+    95→      }).length,
+    96→    }));
+    97→
+    98→    let bottleneck: { stage: string; rate: number } | null = null;
+    99→    for (let i = 1; i < stageCounts.length; i++) {
+   100→      const prev = stageCounts[i - 1].cumulative;
+   101→      const curr = stageCounts[i].cumulative;
+   102→      if (prev > 0) {
+   103→        const rate = (curr / prev) * 100;
+   104→        if (!bottleneck || rate < bottleneck.rate) {
+   105→          bottleneck = { stage: stageCounts[i].id, rate };
+   106→        }
+   107→      }
+   108→    }
+   109→
+   110→    const activity = leads
+   111→      .flatMap(l => l.touchpoints.map(tp => ({ ...tp, leadName: l.name, leadId: l.id })))
+   112→      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+   113→      .slice(0, 8);
+   114→
+   115→    const staleLeads = leads.filter(l => {
+   116→      const last = l.touchpoints[l.touchpoints.length - 1];
+   117→      if (!last) return false;
+   118→      return (Date.now() - new Date(last.timestamp).getTime()) > 5 * 86400000
+   119→        && !['completed', 'final_paid', 'installed', 'installing'].includes(l.workflow_stage);
+   120→    });
+   121→
+   122→    const todayEvents = leads
+   123→      .filter(l => l.assignment?.scheduled_date)
+   124→      .map(l => ({
+   125→        id: l.id, time: '08:00', type: 'install' as const,
+   126→        title: `${l.name} — ${l.proposal?.system_size_kw}kWp`,
+   127→        assignee: l.assignment?.installer_name || 'Unassigned',
+   128→      }))
+   129→      .concat(leads.filter(l => ['proposal_sent'].includes(l.workflow_stage)).map(l => ({
+   130→        id: l.id, time: '14:00', type: 'follow_up' as const,
+   131→        title: `${l.name} — follow-up`, assignee: l.assigned_consultant,
+   132→      })))
+   133→      .slice(0, 6);
+   134→
+   135→    const conversionRate = leads.length > 0 ? Math.round((leads.filter(l => l.contract).length / leads.length) * 100) : 0;
+   136→    const totalAgentRuns = 47;
+   137→    const agentFailures = 1;
+   138→    const agentHealth = 90;
+   139→
+   140→    // Consultant list with workload
+   141→    const consultantMap = new Map<string, { name: string; leads: DummyLead[] }>();
+   142→    leads.forEach(l => {
+   143→      if (!consultantMap.has(l.assigned_consultant)) {
+   144→        consultantMap.set(l.assigned_consultant, { name: l.assigned_consultant, leads: [] });
+   145→      }
+   146→      consultantMap.get(l.assigned_consultant)!.leads.push(l);
+   147→    });
+   148→    const consultants = Array.from(consultantMap.values()).map(c => ({
+   149→      ...c,
+   150→      activeLeads: c.leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length,
+   151→      hotLeads: c.leads.filter(l => l.score > 80).length,
+   152→      pipelineValue: c.leads.reduce((s, l) => s + (l.proposal?.net_cost || 0), 0),
+   153→    }));
+   154→
+   155→    // Installer list with workload
+   156→    const installerMap = new Map<string, { name: string; jobs: DummyLead[] }>();
+   157→    leads.forEach(l => {
+   158→      if (l.assignment?.installer_name) {
+   159→        if (!installerMap.has(l.assignment.installer_name)) {
+   160→          installerMap.set(l.assignment.installer_name, { name: l.assignment.installer_name, jobs: [] });
+   161→        }
+   162→        installerMap.get(l.assignment.installer_name)!.jobs.push(l);
+   163→      }
+   164→    });
+   165→    const installers = Array.from(installerMap.values()).map(i => ({
+   166→      ...i,
+   167→      activeJobs: i.jobs.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length,
+   168→      completedJobs: i.jobs.filter(l => l.assignment?.status === 'completed').length,
+   169→    }));
+   170→
+   171→    return {
+   172→      stats, revenueClosed, revenuePending, stageCounts, bottleneck,
+   173→      activity, staleLeads, todayEvents, conversionRate,
+   174→      totalAgentRuns, agentFailures, agentHealth,
+   175→      consultants, installers,
+   176→    };
+   177→  }, [leads]);
+   178→
+   179→  return (
+   180→    <div className="h-screen flex bg-background overflow-hidden">
+   181→      {/* Left sidebar */}
+   182→      <div className={`${sidebarOpen ? 'w-56' : 'w-0'} transition-all overflow-hidden border-r flex-shrink-0 bg-muted/30`}>
+   183→        <div className="w-56 h-full flex flex-col">
+   184→          {/* Logo */}
+   185→          <div className="p-3 flex items-center gap-2 border-b">
+   186→            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg">
+   187→              <Building2 className="h-4 w-4 text-white" />
+   188→            </div>
+   189→            <div>
+   190→              <div className="font-bold text-xs">{brand.name}</div>
+   191→              <div className="text-[9px] text-muted-foreground">Owner Cockpit</div>
+   192→            </div>
+   193→          </div>
+   194→
+   195→          {/* Nav items */}
+   196→          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+   197→            {SIDEBAR_ITEMS.map(item => {
+   198→              const Icon = item.icon;
+   199→              const isActive = activeView === item.id;
+   200→              return (
+   201→                <button
+   202→                  key={item.id}
+   203→                  onClick={() => setActiveView(item.id)}
+   204→                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+   205→                    isActive ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+   206→                  }`}
+   207→                >
+   208→                  <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+   209→                  <span className="flex-1 text-left">{item.label}</span>
+   210→                  {item.id === 'agents' && data.agentFailures > 0 && (
+   211→                    <span className="bg-red-500 text-white text-[8px] rounded-full h-3.5 min-w-3.5 px-0.5 flex items-center justify-center">{data.agentFailures}</span>
+   212→                  )}
+   213→                  {item.id === 'clients' && data.staleLeads.length > 0 && (
+   214→                    <span className="bg-amber-500 text-white text-[8px] rounded-full h-3.5 min-w-3.5 px-0.5 flex items-center justify-center">{data.staleLeads.length}</span>
+   215→                  )}
+   216→                </button>
+   217→              );
+   218→            })}
+   219→          </div>
+   220→
+   221→          {/* Bottom: cross-view + dark mode */}
+   222→          <div className="p-2 border-t space-y-0.5">
+   223→            <button onClick={() => navigate('/consultant')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+   224→              <Users className="h-3.5 w-3.5" /> Consultant view
+   225→            </button>
+   226→            <button onClick={() => navigate('/installer')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+   227→              <Wrench className="h-3.5 w-3.5" /> Installer view
+   228→            </button>
+   229→            <div className="flex items-center justify-between px-2 pt-1">
+   230→              <span className="text-[9px] text-muted-foreground">Theme</span>
+   231→              <DarkModeToggle />
+   232→            </div>
+   233→          </div>
+   234→        </div>
+   235→      </div>
+   236→
+   237→      {/* Toggle sidebar button */}
+   238→      <button
+   239→        onClick={() => setSidebarOpen(!sidebarOpen)}
+   240→        className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-background border rounded-r-lg p-1 shadow-md"
+   241→        style={{ left: sidebarOpen ? '224px' : '0' }}
+   242→      >
+   243→        {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+   244→      </button>
+   245→
+   246→      {/* Main content */}
+   247→      <div className="flex-1 overflow-y-auto">
+   248→        <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   249→          {activeView === 'overview' && (
+   250→            <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
+   251→          )}
+   252→          {activeView === 'calendar' && <RealCalendar />}
+   253→          {activeView === 'consultants' && (
+   254→            <ConsultantsView consultants={data.consultants} navigate={navigate} />
+   255→          )}
+   256→          {activeView === 'installers' && (
+   257→            <InstallersView installers={data.installers} navigate={navigate} />
+   258→          )}
+   259→          {activeView === 'clients' && (
+   260→            <ClientsView leads={leads} navigate={navigate} />
+   261→          )}
+   262→          {activeView === 'products' && <ProfessionalProducts />}
+   263→          {activeView === 'settings' && <SystemSettings />}
+   264→          {activeView === 'agents' && <AgentFoundation />}
+   265→          {activeView === 'analytics' && <AnalyticsDashboard />}
+   266→          {activeView === 'crm' && <CrmPlaceholder />}
+   267→          {activeView === 'seai' && <SEAIDashboard leads={leads} />}
+   268→          {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
+   269→          {activeView === 'lead_detail' && selectedLead && (
+   270→            <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
+   271→          )}
+   272→        </Suspense>
+   273→      </div>
+   274→    </div>
+   275→  );
+   276→}
+   277→
+   278→// ============= OVERVIEW (the cockpit) =============
+   279→function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setSelectedLead, setActiveView }: any) {
+   280→  return (
+   281→    <div className="p-3 space-y-3">
+   282→      {/* Vital signs */}
+   283→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+   284→        <Card className="border-emerald-200 dark:border-emerald-800">
+   285→          <CardContent className="p-3">
+   286→            <div className="flex items-center justify-between mb-1">
+   287→              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Revenue</span>
+   288→              <TrendingUp className="h-3 w-3 text-emerald-600" />
+   289→            </div>
+   290→            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.revenueClosed)}</div>
+   291→            <div className="text-[10px] text-muted-foreground">{eur(data.revenuePending)} pending</div>
+   292→            <div className="flex items-end gap-0.5 mt-1.5 h-6">
+   293→              {[40, 55, 48, 62, 70, 65, 78, 85, 72, 90, 88, 95].map((h, i) => (
+   294→                <div key={i} className="flex-1 bg-emerald-400/60 rounded-sm" style={{ height: `${h}%` }} />
+   295→              ))}
+   296→            </div>
+   297→          </CardContent>
+   298→        </Card>
+   299→        <Card className="border-blue-200 dark:border-blue-800">
+   300→          <CardContent className="p-3">
+   301→            <div className="flex items-center justify-between mb-1">
+   302→              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
+   303→              <Activity className="h-3 w-3 text-blue-600" />
+   304→            </div>
+   305→            <div className="text-xl font-bold text-blue-700 dark:text-blue-400">{eur(data.stats.totalValue)}</div>
+   306→            <div className="text-[10px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
+   307→            <div className="flex gap-0.5 mt-1.5">
+   308→              {data.stageCounts.slice(0, 8).map((s: any) => (
+   309→                <div key={s.id} className={`flex-1 h-1.5 rounded-full bg-${s.color}-400`} />
+   310→              ))}
+   311→            </div>
+   312→          </CardContent>
+   313→        </Card>
+   314→        <Card className="border-amber-200 dark:border-amber-800">
+   315→          <CardContent className="p-3">
+   316→            <div className="flex items-center justify-between mb-1">
+   317→              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Jobs</span>
+   318→              <Wrench className="h-3 w-3 text-amber-600" />
+   319→            </div>
+   320→            <div className="text-xl font-bold text-amber-700 dark:text-amber-400">{leads.filter((l: DummyLead) => l.assignment).length}</div>
+   321→            <div className="text-[10px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
+   322→            <div className="flex gap-0.5 mt-1.5">
+   323→              {leads.filter((l: DummyLead) => l.assignment).slice(0, 6).map((l: DummyLead, i: number) => (
+   324→                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+   325→              ))}
+   326→            </div>
+   327→          </CardContent>
+   328→        </Card>
+   329→        <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-violet-200 dark:border-violet-800'}>
+   330→          <CardContent className="p-3">
+   331→            <div className="flex items-center justify-between mb-1">
+   332→              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Agents</span>
+   333→              <Bot className="h-3 w-3 text-violet-600" />
+   334→            </div>
+   335→            <div className="text-xl font-bold text-violet-700 dark:text-violet-400">{data.totalAgentRuns}</div>
+   336→            <div className="text-[10px] text-muted-foreground">
+   337→              {data.agentFailures > 0 ? <span className="text-red-600">⚠ {data.agentFailures} failed</span> : 'all healthy'} · runs/24h
+   338→            </div>
+   339→            <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
+   340→              <div className={`h-full ${data.agentFailures > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${data.agentHealth}%` }} />
+   341→            </div>
+   342→          </CardContent>
+   343→        </Card>
+   344→      </div>
+   345→
+   346→      {/* Pipeline flow — the main attraction */}
+   347→      <Card>
+   348→        <CardContent className="p-4">
+   349→          <div className="flex items-center justify-between mb-3">
+   350→            <h3 className="text-sm font-bold">Pipeline — click any stage to see leads</h3>
+   351→            {data.bottleneck && (
+   352→              <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+   353→                <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+   354→                Bottleneck: {getStage(data.bottleneck.stage).label} ({data.bottleneck.rate}%)
+   355→              </Badge>
+   356→            )}
+   357→          </div>
+   358→          {/* Horizontal flow — bigger boxes */}
+   359→          <div className="flex gap-1 overflow-x-auto pb-3">
+   360→            {data.stageCounts.map((stage: any, i: number) => {
+   361→              const isBottleneck = data.bottleneck?.stage === stage.id;
+   362→              const isExpanded = expandedStage === stage.id;
+   363→              return (
+   364→                <div key={stage.id} className="flex items-center flex-shrink-0">
+   365→                  <button
+   366→                    onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
+   367→                    className={`p-3 rounded-lg border-2 text-center min-w-[85px] transition-all ${
+   368→                      isBottleneck ? 'border-red-400 bg-red-50 dark:bg-red-950/20' :
+   369→                      isExpanded ? `border-${stage.color}-500 bg-${stage.color}-50 dark:bg-${stage.color}-950/20` :
+   370→                      `border-${stage.color}-200 hover:border-${stage.color}-400`
+   371→                    }`}
+   372→                  >
+   373→                    <div className={`text-2xl font-bold ${isBottleneck ? 'text-red-600' : `text-${stage.color}-600`}`}>{stage.count}</div>
+   374→                    <div className="text-[9px] text-muted-foreground leading-tight mt-0.5">{stage.label}</div>
+   375→                    {i > 0 && stage.cumulative > 0 && (
+   376→                      <div className="text-[8px] text-muted-foreground mt-1">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}% of total</div>
+   377→                    )}
+   378→                  </button>
+   379→                  {i < data.stageCounts.length - 1 && <div className={`h-0.5 w-4 ${isBottleneck ? 'bg-red-300' : 'bg-muted-foreground/20'}`} />}
+   380→                </div>
+   381→              );
+   382→            })}
+   383→          </div>
+   384→          {/* Expanded leads */}
+   385→          {expandedStage && (
+   386→            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-3 pt-3 border-t">
+   387→              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+   388→                {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads (click to open)
+   389→              </div>
+   390→              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+   391→                {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
+   392→                  <div key={lead.id} className="p-3 border rounded-lg hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+   393→                    <div className="flex items-center gap-2 mb-1">
+   394→                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   395→                      <div className="flex-1 min-w-0">
+   396→                        <div className="flex items-center gap-1">
+   397→                          <span className="text-xs font-medium truncate">{lead.name}</span>
+   398→                          {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
+   399→                        </div>
+   400→                        <div className="text-[10px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
+   401→                      </div>
+   402→                    </div>
+   403→                    <div className="flex items-center gap-2 mt-1">
+   404→                      {lead.proposal && <span className="text-[10px] font-semibold text-emerald-600">{eur(lead.proposal.net_cost)}</span>}
+   405→                      <button className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+   406→                        <Calculator className="h-2.5 w-2.5 inline mr-0.5" />Estimate
+   407→                      </button>
+   408→                      {lead.proposal && (
+   409→                        <button className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+   410→                          <FileText className="h-2.5 w-2.5 inline mr-0.5" />Proposal
+   411→                        </button>
+   412→                      )}
+   413→                      <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto" />
+   414→                    </div>
+   415→                  </div>
+   416→                ))}
+   417→                {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length === 0 && (
+   418→                  <p className="text-xs text-muted-foreground italic p-2">No leads at this stage.</p>
+   419→                )}
+   420→              </div>
+   421→            </motion.div>
+   422→          )}
+   423→        </CardContent>
+   424→      </Card>
+   425→
+   426→      {/* Activity + Alerts */}
+   427→      <div className="grid lg:grid-cols-2 gap-2">
+   428→        <Card>
+   429→          <CardContent className="p-3">
+   430→            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Activity className="h-3 w-3" /> Live activity</h3>
+   431→            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+   432→              {data.activity.map((item: any, i: number) => {
+   433→                const isAgent = item.actor === 'agent';
+   434→                const isCustomer = item.actor === 'customer';
+   435→                return (
+   436→                  <div key={i} className="flex items-start gap-2 text-xs">
+   437→                    <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+   438→                    <div className={`p-0.5 rounded ${isAgent ? 'bg-violet-100 dark:bg-violet-950/30' : isCustomer ? 'bg-emerald-100 dark:bg-emerald-950/30' : 'bg-muted'}`}>
+   439→                      {isAgent && <Bot className="h-2.5 w-2.5 text-violet-600" />}
+   440→                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-emerald-600" />}
+   441→                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-blue-600" />}
+   442→                    </div>
+   443→                    <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
+   444→                  </div>
+   445→                );
+   446→              })}
+   447→            </div>
+   448→          </CardContent>
+   449→        </Card>
+   450→        <Card>
+   451→          <CardContent className="p-3">
+   452→            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Needs attention</h3>
+   453→            <div className="space-y-2">
+   454→              {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
+   455→              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => navigate('/agents')} />}
+   456→              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => navigate('/analytics')} />
+   457→            </div>
+   458→          </CardContent>
+   459→        </Card>
+   460→      </div>
+   461→
+   462→      {/* Today's schedule */}
+   463→      <Card>
+   464→        <CardContent className="p-3">
+   465→          <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Calendar className="h-3 w-3" /> Today's schedule</h3>
+   466→          <div className="space-y-1">
+   467→            {data.todayEvents.map((event: any, i: number) => (
+   468→              <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(event.type === 'install' ? '/job' : '/lead-flow')}>
+   469→                <span className="text-[10px] font-mono text-muted-foreground w-10">{event.time}</span>
+   470→                <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
+   471→                  {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
+   472→                </div>
+   473→                <span className="text-xs flex-1 truncate">{event.title}</span>
+   474→                <span className="text-[10px] text-muted-foreground">{event.assignee}</span>
+   475→                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+   476→              </div>
+   477→            ))}
+   478→          </div>
+   479→        </CardContent>
+   480→      </Card>
+   481→    </div>
+   482→  );
+   483→}
+   484→
+   485→// ============= CONSULTANTS VIEW =============
+   486→function ConsultantsView({ consultants, navigate }: { consultants: any[]; navigate: (path: string) => void }) {
+   487→  const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+   488→
+   489→  if (selectedConsultant) {
+   490→    const consultant = consultants.find(c => c.name === selectedConsultant);
+   491→    if (!consultant) return null;
+   492→    return (
+   493→      <div className="p-4 space-y-3">
+   494→        <Button variant="ghost" size="sm" onClick={() => setSelectedConsultant(null)}><ChevronLeft className="h-4 w-4 mr-1" /> Back to consultants</Button>
+   495→        <div className="flex items-center gap-3">
+   496→          <Avatar className="h-12 w-12"><AvatarFallback>{consultant.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   497→          <div>
+   498→            <h2 className="text-xl font-bold">{consultant.name}</h2>
+   499→            <p className="text-xs text-muted-foreground">{consultant.activeLeads} active leads · {consultant.hotLeads} hot · {eur(consultant.pipelineValue)} pipeline</p>
+   500→          </div>
+   501→        </div>
+   502→        <h3 className="text-sm font-bold mt-4">Their customer chats</h3>
+   503→        <div className="space-y-2">
+   504→          {consultant.leads.map((lead: DummyLead) => {
+   505→            const lastTouch = lead.touchpoints[lead.touchpoints.length - 1];
+   506→            return (
+   507→              <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate('/consultant')}>
+   508→                <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   509→                <div className="flex-1 min-w-0">
+   510→                  <div className="font-medium text-sm">{lead.name}</div>
+   511→                  <div className="text-xs text-muted-foreground truncate">{lastTouch?.summary || 'No messages'}</div>
+   512→                </div>
+   513→                <Badge variant="outline" className="text-[9px]">{getStage(lead.workflow_stage).label}</Badge>
+   514→                {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
+   515→                {lead.proposal && <span className="text-xs text-muted-foreground">{eur(lead.proposal.net_cost)}</span>}
+   516→                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   517→              </div>
+   518→            );
+   519→          })}
+   520→        </div>
+   521→      </div>
+   522→    );
+   523→  }
+   524→
+   525→  return (
+   526→    <div className="p-4 space-y-3">
+   527→      <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
+   528→      <div className="grid sm:grid-cols-2 gap-3">
+   529→        {consultants.map(c => (
+   530→          <Card key={c.name} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedConsultant(c.name)}>
+   531→            <CardContent className="p-4 flex items-center gap-3">
+   532→              <Avatar className="h-12 w-12"><AvatarFallback>{c.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   533→              <div className="flex-1">
+   534→                <div className="font-bold">{c.name}</div>
+   535→                <div className="text-xs text-muted-foreground">{c.activeLeads} active · {c.hotLeads} hot</div>
+   536→                <div className="text-sm font-bold text-emerald-600 mt-1">{eur(c.pipelineValue)}</div>
+   537→              </div>
+   538→              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+   539→            </CardContent>
+   540→          </Card>
+   541→        ))}
+   542→      </div>
+   543→    </div>
+   544→  );
+   545→}
+   546→
+   547→// ============= INSTALLERS VIEW =============
+   548→function InstallersView({ installers, navigate }: { installers: any[]; navigate: (path: string) => void }) {
+   549→  const [selectedInstaller, setSelectedInstaller] = useState<string | null>(null);
+   550→
+   551→  if (selectedInstaller) {
+   552→    const installer = installers.find(i => i.name === selectedInstaller);
+   553→    if (!installer) return null;
+   554→    return (
+   555→      <div className="p-4 space-y-3">
+   556→        <Button variant="ghost" size="sm" onClick={() => setSelectedInstaller(null)}><ChevronLeft className="h-4 w-4 mr-1" /> Back to installers</Button>
+   557→        <div className="flex items-center gap-3">
+   558→          <Avatar className="h-12 w-12"><AvatarFallback>{installer.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   559→          <div>
+   560→            <h2 className="text-xl font-bold">{installer.name}</h2>
+   561→            <p className="text-xs text-muted-foreground">{installer.activeJobs} active · {installer.completedJobs} completed</p>
+   562→          </div>
+   563→        </div>
+   564→        <h3 className="text-sm font-bold mt-4">Their jobs</h3>
+   565→        <div className="space-y-2">
+   566→          {installer.jobs.map((lead: DummyLead) => (
+   567→            <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate('/job')}>
+   568→              <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+   569→                <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'}`} />
+   570→              </div>
+   571→              <div className="flex-1 min-w-0">
+   572→                <div className="font-medium text-sm">{lead.name}</div>
+   573→                <div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.address.split(',').slice(-1)[0]?.trim()}</div>
+   574→              </div>
+   575→              <Badge variant="outline" className="text-[9px] capitalize">{lead.assignment?.status}</Badge>
+   576→              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   577→            </div>
+   578→          ))}
+   579→        </div>
+   580→      </div>
+   581→    );
+   582→  }
+   583→
+   584→  return (
+   585→    <div className="p-4 space-y-3">
+   586→      <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
+   587→      <div className="grid sm:grid-cols-2 gap-3">
+   588→        {installers.map(i => (
+   589→          <Card key={i.name} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedInstaller(i.name)}>
+   590→            <CardContent className="p-4 flex items-center gap-3">
+   591→              <Avatar className="h-12 w-12"><AvatarFallback>{i.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   592→              <div className="flex-1">
+   593→                <div className="font-bold">{i.name}</div>
+   594→                <div className="text-xs text-muted-foreground">{i.activeJobs} active · {i.completedJobs} completed</div>
+   595→              </div>
+   596→              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+   597→            </CardContent>
+   598→          </Card>
+   599→        ))}
+   600→      </div>
+   601→    </div>
+   602→  );
+   603→}
+   604→
+   605→// ============= CLIENTS VIEW (360° — cockpit style) =============
+   606→function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path: string) => void }) {
+   607→  const [search, setSearch] = useState('');
+   608→  const [selectedClient, setSelectedClient] = useState<DummyLead | null>(null);
+   609→
+   610→  const filtered = leads.filter(l =>
+   611→    !search || l.name.toLowerCase().includes(search.toLowerCase()) ||
+   612→    l.email.toLowerCase().includes(search.toLowerCase()) ||
+   613→    l.address.toLowerCase().includes(search.toLowerCase())
+   614→  );
+   615→
+   616→  if (selectedClient) {
+   617→    const lead = selectedClient;
+   618→    const stage = getStage(lead.workflow_stage);
+   619→    return (
+   620→      <div className="p-4 space-y-3">
+   621→        <Button variant="ghost" size="sm" onClick={() => setSelectedClient(null)}><ChevronLeft className="h-4 w-4 mr-1" /> Back to clients</Button>
+   622→
+   623→        {/* Client header */}
+   624→        <Card>
+   625→          <CardContent className="p-4">
+   626→            <div className="flex items-start gap-4">
+   627→              <Avatar className="h-16 w-16"><AvatarFallback className="text-lg">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   628→              <div className="flex-1">
+   629→                <div className="flex items-center gap-2">
+   630→                  <h1 className="text-xl font-bold">{lead.name}</h1>
+   631→                  <Badge className={`bg-${stage.color}-600 text-white text-[10px]`}>{stage.label}</Badge>
+   632→                  {lead.score > 80 && <Badge className="bg-red-500 text-white text-[10px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
+   633→                </div>
+   634→                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
+   635→                  <div><span className="text-muted-foreground">Phone:</span> {lead.phone}</div>
+   636→                  <div><span className="text-muted-foreground">Email:</span> {lead.email}</div>
+   637→                  <div><span className="text-muted-foreground">MPRN:</span> <span className="font-mono">{lead.mprn}</span></div>
+   638→                  <div><span className="text-muted-foreground">Consultant:</span> {lead.assigned_consultant}</div>
+   639→                </div>
+   640→              </div>
+   641→              <div className="flex flex-col gap-1">
+   642→                <Button size="sm" variant="outline" onClick={() => navigate('/consultant')}><MessageSquare className="h-3 w-3 mr-1" /> Chat</Button>
+   643→                <Button size="sm" variant="outline" onClick={() => navigate('/lead-flow')}><FileText className="h-3 w-3 mr-1" /> Flow</Button>
+   644→                <Button size="sm" variant="outline" onClick={() => navigate('/customer-mobile')}><UserCircle className="h-3 w-3 mr-1" /> Portal</Button>
+   645→              </div>
+   646→            </div>
+   647→          </CardContent>
+   648→        </Card>
+   649→
+   650→        {/* Quick stats */}
+   651→        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+   652→          {lead.proposal ? (
+   653→            <>
+   654→              <StatBox label="System" value={`${lead.proposal.system_size_kw}kWp`} sub={`${lead.proposal.panel_count} panels`} color="amber" icon={Zap} />
+   655→              <StatBox label="Net cost" value={eur(lead.proposal.net_cost)} sub={`Grant: ${eur(lead.proposal.seai_grant)}`} color="emerald" icon={DollarSign} />
+   656→              <StatBox label="Annual savings" value={eur(lead.proposal.annual_savings)} sub={`${lead.proposal.payback_years}yr payback`} color="blue" icon={TrendingUp} />
+   657→              <StatBox label="Touchpoints" value={String(lead.touchpoints.length)} sub={`Last: ${new Date(lead.touchpoints[lead.touchpoints.length-1]?.timestamp || Date.now()).toLocaleDateString('en-IE')}`} color="violet" icon={MessageSquare} />
+   658→            </>
+   659→          ) : (
+   660→            <>
+   661→              <StatBox label="Monthly bill" value={`€${lead.monthly_bill}`} sub={`${lead.annual_kwh?.toLocaleString()} kWh/yr`} color="blue" icon={FileText} />
+   662→              <StatBox label="Est. system" value={`${lead.intake.estimated_system_size_kw}kWp`} sub="from bill" color="amber" icon={Zap} />
+   663→              <StatBox label="Est. savings" value={eur(lead.intake.estimated_annual_savings || 0)} sub="per year" color="emerald" icon={TrendingUp} />
+   664→              <StatBox label="Touchpoints" value={String(lead.touchpoints.length)} sub="communications" color="violet" icon={MessageSquare} />
+   665→            </>
+   666→          )}
+   667→        </div>
+   668→
+   669→        {/* Touchpoint timeline */}
+   670→        <Card>
+   671→          <CardContent className="p-3">
+   672→            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Communication history</h3>
+   673→            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+   674→              {lead.touchpoints.map((tp, i) => (
+   675→                <div key={i} className="flex items-center gap-2 p-1.5 border rounded text-xs">
+   676→                  <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.channel}</Badge>
+   677→                  <span className="text-muted-foreground flex-shrink-0 w-16">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
+   678→                  <span className="flex-1 truncate">{tp.summary}</span>
+   679→                  <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.actor}</Badge>
+   680→                </div>
+   681→              ))}
+   682→            </div>
+   683→          </CardContent>
+   684→        </Card>
+   685→      </div>
+   686→    );
+   687→  }
+   688→
+   689→  return (
+   690→    <div className="p-4 space-y-3">
+   691→      <div className="flex items-center justify-between gap-2">
+   692→        <h2 className="text-lg font-bold">Clients — {leads.length} total</h2>
+   693→        <div className="relative w-64">
+   694→          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+   695→          <Input placeholder="Search name, email, address…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
+   696→        </div>
+   697→      </div>
+   698→      <div className="space-y-1">
+   699→        {filtered.map(lead => {
+   700→          const stage = getStage(lead.workflow_stage);
+   701→          return (
+   702→            <div key={lead.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => setSelectedClient(lead)}>
+   703→              <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   704→              <div className="flex-1 min-w-0">
+   705→                <div className="flex items-center gap-2">
+   706→                  <span className="font-medium text-sm truncate">{lead.name}</span>
+   707→                  {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+   708→                </div>
+   709→                <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
+   710→              </div>
+   711→              <Badge variant="outline" className={`text-[9px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
+   712→              {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
+   713→              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   714→            </div>
+   715→          );
+   716→        })}
+   717→      </div>
+   718→    </div>
+   719→  );
+   720→}
+   721→
+   722→// ============= CRM PLACEHOLDER =============
+   723→function CrmPlaceholder() {
+   724→  return (
+   725→    <div className="p-8 text-center">
+   726→      <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+   727→      <h2 className="text-xl font-bold mb-2">CRM</h2>
+   728→      <p className="text-sm text-muted-foreground">Your CRM add-on connects here. Share the CRM details and I'll integrate it into the owner cockpit.</p>
+   729→    </div>
+   730→  );
+   731→}
+   732→
+   733→// ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
+   734→function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
+   735→  const [tab, setTab] = useState<'estimate' | 'proposal' | 'compliance' | 'timeline'>('estimate');
+   736→
+   737→  return (
+   738→    <div className="p-3 space-y-3">
+   739→      {/* Back + header */}
+   740→      <div className="flex items-center gap-3">
+   741→        <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4 mr-1" /> Back</Button>
+   742→        <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   743→        <div className="flex-1">
+   744→          <div className="font-bold text-sm">{lead.name}</div>
+   745→          <div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {lead.address.split(',').slice(-1)[0]?.trim()}</div>
+   746→        </div>
+   747→      </div>
+   748→
+   749→      {/* Tabs — no blocks, owner can view all */}
+   750→      <div className="flex gap-1 border-b">
+   751→        {[
+   752→          { id: 'estimate' as const, label: 'Estimate', icon: FileText },
+   753→          { id: 'proposal' as const, label: 'Proposal', icon: FileText },
+   754→          { id: 'compliance' as const, label: 'Compliance', icon: Shield },
+   755→          { id: 'timeline' as const, label: 'Timeline', icon: Clock },
+   756→        ].map(t => {
+   757→          const Icon = t.icon;
+   758→          return (
+   759→            <button key={t.id} onClick={() => setTab(t.id)}
+   760→              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+   761→                tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-muted-foreground hover:text-foreground'
+   762→              }`}>
+   763→              <Icon className="h-3 w-3" /> {t.label}
+   764→            </button>
+   765→          );
+   766→        })}
+   767→      </div>
+   768→
+   769→      {/* Tab content */}
+   770→      <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   771→        {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
+   772→        {tab === 'proposal' && <ProposalView lead={lead} />}
+   773→        {tab === 'compliance' && <ProposalView lead={lead} />}
+   774→        {tab === 'timeline' && (
+   775→          <Card>
+   776→            <CardContent className="p-3">
+   777→              <div className="space-y-1.5 max-h-96 overflow-y-auto">
+   778→                {lead.touchpoints.map((tp, i) => (
+   779→                  <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
+   780→                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.channel}</Badge>
+   781→                    <span className="text-muted-foreground flex-shrink-0 w-20">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
+   782→                    <span className="flex-1 truncate">{tp.summary}</span>
+   783→                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.actor}</Badge>
+   784→                  </div>
+   785→                ))}
+   786→              </div>
+   787→            </CardContent>
+   788→          </Card>
+   789→        )}
+   790→      </Suspense>
+   791→
+   792→      {/* Quick actions — jump to any view */}
+   793→      <div className="flex gap-2 pt-2 border-t">
+   794→        <Button size="sm" variant="outline" onClick={() => navigate('/lead-flow')}><FileText className="h-3 w-3 mr-1" /> Open in LeadFlow</Button>
+   795→        <Button size="sm" variant="outline" onClick={() => navigate('/consultant')}><MessageSquare className="h-3 w-3 mr-1" /> Open chat</Button>
+   796→        <Button size="sm" variant="outline" onClick={() => navigate('/job')}><Wrench className="h-3 w-3 mr-1" /> Open job</Button>
+   797→        <Button size="sm" variant="outline" onClick={() => navigate('/customer-mobile')}><UserCircle className="h-3 w-3 mr-1" /> Customer portal</Button>
+   798→      </div>
+   799→    </div>
+   800→  );
+   801→}
+   802→
+   803→// ============= SHARED COMPONENTS =============
+   804→function AlertItem({ icon: Icon, color, title, desc, cta, onClick }: any) {
+   805→  return (
+   806→    <div className="flex items-center gap-2 p-2 border rounded-lg">
+   807→      <div className={`p-1.5 rounded-lg bg-${color}-100 dark:bg-${color}-950/40 flex-shrink-0`}>
+   808→        <Icon className={`h-3 w-3 text-${color}-600`} />
+   809→      </div>
+   810→      <div className="flex-1 min-w-0">
+   811→        <div className="text-xs font-medium">{title}</div>
+   812→        <div className="text-[10px] text-muted-foreground">{desc}</div>
+   813→      </div>
+   814→      <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={onClick}>{cta}</Button>
+   815→    </div>
+   816→  );
+   817→}
+   818→
+   819→function StatBox({ label, value, sub, color, icon: Icon }: any) {
+   820→  return (
+   821→    <Card>
+   822→      <CardContent className="p-2">
+   823→        <div className="flex items-center gap-1.5 mb-0.5">
+   824→          <div className={`p-0.5 rounded bg-${color}-100 dark:bg-${color}-950/40`}>
+   825→            <Icon className={`h-2.5 w-2.5 text-${color}-600`} />
+   826→          </div>
+   827→          <span className="text-[9px] text-muted-foreground">{label}</span>
+   828→        </div>
+   829→        <div className="text-sm font-bold">{value}</div>
+   830→        {sub && <div className="text-[9px] text-muted-foreground">{sub}</div>}
+   831→      </CardContent>
+   832→    </Card>
+   833→  );
+   834→}
+   835→

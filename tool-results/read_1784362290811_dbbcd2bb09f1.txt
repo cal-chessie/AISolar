@@ -1,0 +1,477 @@
+     1→/**
+     2→ * Consultant Cockpit V5 — logical, with REAL chat.
+     3→ *
+     4→ * Layout:
+     5→ *   ┌─────────────────────────────────────────────┐
+     6→ *   │ Header: logo + Owner/Installer + dark mode   │
+     7→ *   │ 11 header tabs (scrollable)                   │
+     8→ *   ├──────────────┬──────────────────────────────┤
+     9→ *   │ Lead list     │ Chat thread (real messages)  │
+    10→ *   │ (searchable)  │ + slide-out estimate/proposal│
+    11→ *   │               │ Reply box at bottom          │
+    12→ *   └──────────────┴──────────────────────────────┘
+    13→ *
+    14→ * The Chats tab IS the conversation view — not a lead list.
+    15→ * Clicking any lead in any tab opens the chat thread.
+    16→ */
+    17→
+    18→import { useState, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
+    19→import { useNavigate } from 'react-router-dom';
+    20→import { motion, AnimatePresence } from 'framer-motion';
+    21→import { Card, CardContent } from '@/components/ui/card';
+    22→import { Badge } from '@/components/ui/badge';
+    23→import { Button } from '@/components/ui/button';
+    24→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    25→import { Input } from '@/components/ui/input';
+    26→import { Progress } from '@/components/ui/progress';
+    27→import {
+    28→  Users, MessageSquare, Calculator, Camera, FileText, Wrench,
+    29→  Calendar, Clock, Package, FolderOpen, BarChart3, Search,
+    30→  Phone, Mail, ArrowRight, ChevronRight, Flame, Star, Zap,
+    31→  TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
+    32→  Building2, Sun, MapPin, Send, User, Sparkles, X,
+    33→} from 'lucide-react';
+    34→import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
+    35→import { getStage, PIPELINE_STAGES, calculateSystemEstimate } from '@/lib/leadIntake';
+    36→import { brand } from '@/config/brand';
+    37→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+    38→import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
+    39→
+    40→const EstimateView = lazy(() => import('./EstimateView'));
+    41→const ProposalView = lazy(() => import('./ProposalView'));
+    42→const UnifiedCalendar = lazy(() => import('./UnifiedCalendar'));
+    43→const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
+    44→
+    45→const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    46→
+    47→type TabId = 'leads' | 'chats' | 'estimates' | 'surveys' | 'proposals' | 'installations' | 'calendar' | 'followups' | 'products' | 'documents' | 'analytics';
+    48→
+    49→const TABS: Array<{ id: TabId; label: string; icon: typeof Users }> = [
+    50→  { id: 'leads', label: 'Leads', icon: Users },
+    51→  { id: 'chats', label: 'Chats', icon: MessageSquare },
+    52→  { id: 'estimates', label: 'Estimates', icon: Calculator },
+    53→  { id: 'surveys', label: 'Surveys', icon: Camera },
+    54→  { id: 'proposals', label: 'Proposals', icon: FileText },
+    55→  { id: 'installations', label: 'Installs', icon: Wrench },
+    56→  { id: 'calendar', label: 'Calendar', icon: Calendar },
+    57→  { id: 'followups', label: 'Follow-ups', icon: Clock },
+    58→  { id: 'products', label: 'Products', icon: Package },
+    59→  { id: 'documents', label: 'Documents', icon: FolderOpen },
+    60→  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    61→];
+    62→
+    63→interface Message {
+    64→  id: string;
+    65→  type: 'system' | 'agent' | 'company' | 'customer' | 'ai';
+    66→  body: string;
+    67→  timestamp: string;
+    68→}
+    69→
+    70→function leadToMessages(lead: DummyLead): Message[] {
+    71→  const msgs: Message[] = [];
+    72→  lead.touchpoints.forEach((tp, i) => {
+    73→    if (tp.actor === 'agent') {
+    74→      msgs.push({ id: `tp_${i}`, type: 'agent', body: tp.summary, timestamp: tp.timestamp });
+    75→    } else if (tp.actor === 'consultant') {
+    76→      msgs.push({ id: `tp_${i}`, type: 'company', body: tp.summary, timestamp: tp.timestamp });
+    77→    } else if (tp.actor === 'customer') {
+    78→      msgs.push({ id: `tp_${i}`, type: 'customer', body: tp.summary, timestamp: tp.timestamp });
+    79→    } else {
+    80→      msgs.push({ id: `tp_${i}`, type: 'system', body: tp.summary, timestamp: tp.timestamp });
+    81→    }
+    82→  });
+    83→  if (['proposal_sent', 'approved', 'deposit_paid'].includes(lead.workflow_stage)) {
+    84→    const last = lead.touchpoints[lead.touchpoints.length - 1];
+    85→    const ts = last?.timestamp || new Date().toISOString();
+    86→    msgs.push({ id: 'chat_q', type: 'customer', body: 'When will my installation happen?', timestamp: ts });
+    87→    msgs.push({ id: 'chat_a', type: 'ai', body: 'Your installation is scheduled based on your deposit payment. Once you pay the 30% deposit, the Install Coordinator Agent will book your install within 4-6 weeks.', timestamp: ts });
+    88→  }
+    89→  return msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    90→}
+    91→
+    92→export default function ConsultantCockpitV5() {
+    93→  const navigate = useNavigate();
+    94→  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+    95→  const [activeTab, setActiveTab] = useState<TabId>('chats');
+    96→  const [search, setSearch] = useState('');
+    97→  const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
+    98→  const [slideOutView, setSlideOutView] = useState<'estimate' | 'proposal' | null>(null);
+    99→  const [replyText, setReplyText] = useState('');
+   100→  const messagesEndRef = useRef<HTMLDivElement>(null);
+   101→
+   102→  const stats = useMemo(() => computePipelineStats(leads), [leads]);
+   103→  const messages = useMemo(() => selectedLead ? leadToMessages(selectedLead) : [], [selectedLead]);
+   104→
+   105→  const filteredLeads = useMemo(() => {
+   106→    if (!search) return leads;
+   107→    const q = search.toLowerCase();
+   108→    return leads.filter(l => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.address.toLowerCase().includes(q) || l.mprn.includes(q));
+   109→  }, [leads, search]);
+   110→
+   111→  const surveyLeads = leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage));
+   112→  const proposalLeads = leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage));
+   113→  const installLeads = leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage));
+   114→  const staleLeads = leads.filter(l => {
+   115→    const last = l.touchpoints[l.touchpoints.length - 1];
+   116→    if (!last) return false;
+   117→    return (Date.now() - new Date(last.timestamp).getTime()) > 5 * 86400000 && !['completed', 'final_paid', 'installed', 'installing'].includes(l.workflow_stage);
+   118→  });
+   119→  const hotLeads = leads.filter(l => l.score > 80);
+   120→
+   121→  useEffect(() => {
+   122→    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+   123→  }, [messages.length]);
+   124→
+   125→  // Auto-select first lead on Chats tab
+   126→  useEffect(() => {
+   127→    if (activeTab === 'chats' && !selectedLead && hotLeads.length > 0) {
+   128→      setSelectedLead(hotLeads[0]);
+   129→    }
+   130→  }, [activeTab]);
+   131→
+   132→  const handleSendReply = () => {
+   133→    if (!replyText.trim() || !selectedLead) return;
+   134→    setReplyText('');
+   135→    // In production: insert into touchpoints + send via Postmark
+   136→  };
+   137→
+   138→  const isChatView = activeTab === 'chats' || activeTab === 'leads';
+   139→
+   140→  return (
+   141→    <div className="h-screen flex flex-col bg-background overflow-hidden">
+   142→      {/* Header */}
+   143→      <header className="bg-background border-b flex-shrink-0">
+   144→        <div className="px-4 py-2 flex items-center justify-between">
+   145→          <div className="flex items-center gap-2">
+   146→            <Sun className="h-5 w-5 text-blue-600" />
+   147→            <span className="font-bold text-sm">{brand.name}</span>
+   148→            <span className="text-xs text-muted-foreground">Consultant</span>
+   149→          </div>
+   150→          <div className="flex items-center gap-1">
+   151→            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
+   152→            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/installer')}><Wrench className="h-3.5 w-3.5 mr-1" /> Installer</Button>
+   153→            <DarkModeToggle />
+   154→          </div>
+   155→        </div>
+   156→        {/* 11 tabs */}
+   157→        <div className="flex gap-0.5 px-2 pb-1.5 overflow-x-auto">
+   158→          {TABS.map(tab => {
+   159→            const Icon = tab.icon;
+   160→            const isActive = activeTab === tab.id;
+   161→            const count = tab.id === 'leads' ? leads.length : tab.id === 'surveys' ? surveyLeads.length : tab.id === 'proposals' ? proposalLeads.length : tab.id === 'installations' ? installLeads.length : tab.id === 'followups' ? staleLeads.length : tab.id === 'chats' ? hotLeads.length : 0;
+   162→            return (
+   163→              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+   164→                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
+   165→                <Icon className="h-3.5 w-3.5" /> {tab.label}
+   166→                {count > 0 && <span className={`text-[9px] px-1 rounded-full ${isActive ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{count}</span>}
+   167→              </button>
+   168→            );
+   169→          })}
+   170→        </div>
+   171→      </header>
+   172→
+   173→      {/* Main content */}
+   174→      {isChatView ? (
+   175→        /* Chat layout: lead list + conversation thread */
+   176→        <div className="flex-1 flex overflow-hidden">
+   177→          {/* Lead list (left) */}
+   178→          <div className="w-72 lg:w-80 flex-shrink-0 border-r flex flex-col">
+   179→            <div className="p-2 border-b">
+   180→              <div className="relative">
+   181→                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+   182→                <Input placeholder="Search leads…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
+   183→              </div>
+   184→            </div>
+   185→            <div className="flex-1 overflow-y-auto">
+   186→              {(activeTab === 'chats' ? hotLeads : filteredLeads).map(lead => {
+   187→                const last = lead.touchpoints[lead.touchpoints.length - 1];
+   188→                const isSelected = selectedLead?.id === lead.id;
+   189→                return (
+   190→                  <button key={lead.id} onClick={() => setSelectedLead(lead)}
+   191→                    className={`w-full p-2.5 border-b flex items-start gap-2 text-left hover:bg-muted/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
+   192→                    <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   193→                    <div className="flex-1 min-w-0">
+   194→                      <div className="flex items-center justify-between gap-1">
+   195→                        <span className="font-medium text-sm truncate">{lead.name}</span>
+   196→                        {last && <span className="text-[9px] text-muted-foreground flex-shrink-0">{new Date(last.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>}
+   197→                      </div>
+   198→                      <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
+   199→                      <div className="flex items-center gap-1 mt-0.5">
+   200→                        <Badge variant="outline" className={`text-[8px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
+   201→                        {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+   202→                      </div>
+   203→                    </div>
+   204→                  </button>
+   205→                );
+   206→              })}
+   207→            </div>
+   208→          </div>
+   209→
+   210→          {/* Conversation thread (right) */}
+   211→          <div className="flex-1 flex flex-col">
+   212→            {!selectedLead ? (
+   213→              <div className="flex-1 flex items-center justify-center text-center p-8">
+   214→                <div>
+   215→                  <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+   216→                  <h3 className="font-semibold text-muted-foreground">Select a lead to view conversation</h3>
+   217→                  <p className="text-xs text-muted-foreground mt-1">All emails, SMS, calls, AI chat, and agent actions in one thread.</p>
+   218→                </div>
+   219→              </div>
+   220→            ) : (
+   221→              <>
+   222→                {/* Conversation header */}
+   223→                <div className="p-2.5 border-b flex items-center gap-2">
+   224→                  <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   225→                  <div className="flex-1 min-w-0">
+   226→                    <div className="font-semibold text-sm truncate">{selectedLead.name}</div>
+   227→                    <div className="text-xs text-muted-foreground truncate">{selectedLead.address.split(',').slice(-1)[0]?.trim()}</div>
+   228→                  </div>
+   229→                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
+   230→                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
+   231→                  <Button variant="ghost" size="sm" className="text-xs h-7" asChild><a href={`tel:${selectedLead.phone}`}><Phone className="h-3.5 w-3.5" /></a></Button>
+   232→                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate('/lead-flow')}><ArrowRight className="h-3.5 w-3.5" /></Button>
+   233→                </div>
+   234→
+   235→                {/* Messages */}
+   236→                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-muted/10">
+   237→                  {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
+   238→                  <div ref={messagesEndRef} />
+   239→                </div>
+   240→
+   241→                {/* Reply box */}
+   242→                <div className="border-t p-2">
+   243→                  <div className="flex gap-2">
+   244→                    <Input placeholder="Type a reply…" value={replyText} onChange={e => setReplyText(e.target.value)}
+   245→                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} className="h-9 text-xs" />
+   246→                    <Button onClick={handleSendReply} disabled={!replyText.trim()} className="bg-blue-600 hover:bg-blue-700 h-9 px-3">
+   247→                      <Send className="h-3.5 w-3.5" />
+   248→                    </Button>
+   249→                  </div>
+   250→                </div>
+   251→              </>
+   252→            )}
+   253→          </div>
+   254→        </div>
+   255→      ) : (
+   256→        /* Tab content (non-chat views) */
+   257→        <div className="flex-1 overflow-y-auto">
+   258→          <AnimatePresence mode="wait">
+   259→            <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="p-3 space-y-2">
+   260→
+   261→              {activeTab === 'estimates' && (
+   262→                <>
+   263→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Estimates — {leads.length} leads</h3>
+   264→                  {leads.map(lead => {
+   265→                    const est = calculateSystemEstimate({ monthlyBill: lead.monthly_bill, annualKwh: lead.annual_kwh });
+   266→                    return (
+   267→                      <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('estimate'); }}>
+   268→                        <CardContent className="p-3 flex items-center gap-3">
+   269→                          <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   270→                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">€{lead.monthly_bill}/mo · {est.systemSizeKw}kWp · {eur(est.annualSavings)}/yr</div></div>
+   271→                          <Badge variant="outline" className="text-[9px] text-amber-600">{est.systemSizeKw} kWp</Badge>
+   272→                          <Badge variant="outline" className="text-[9px] text-emerald-600">{eur(est.annualSavings)}</Badge>
+   273→                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   274→                        </CardContent>
+   275→                      </Card>
+   276→                    );
+   277→                  })}
+   278→                </>
+   279→              )}
+   280→
+   281→              {activeTab === 'surveys' && (
+   282→                <>
+   283→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Surveys — {surveyLeads.length} pending</h3>
+   284→                  {surveyLeads.map(lead => (
+   285→                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate('/lead-flow')}>
+   286→                      <CardContent className="p-3 flex items-center gap-3">
+   287→                        <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg"><Camera className="h-4 w-4 text-indigo-600" /></div>
+   288→                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()} · {lead.survey?.photo_count || 0}/8 photos</div></div>
+   289→                        <Progress value={((lead.survey?.photo_count || 0) / 8) * 100} className="h-1.5 w-16" />
+   290→                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   291→                      </CardContent>
+   292→                    </Card>
+   293→                  ))}
+   294→                  {surveyLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No surveys pending.</p>}
+   295→                </>
+   296→              )}
+   297→
+   298→              {activeTab === 'proposals' && (
+   299→                <>
+   300→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Proposals — {proposalLeads.length} active</h3>
+   301→                  {proposalLeads.map(lead => (
+   302→                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+   303→                      <CardContent className="p-3 flex items-center gap-3">
+   304→                        <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-lg"><FileText className="h-4 w-4 text-violet-600" /></div>
+   305→                        <div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-medium text-sm">{lead.name}</span><Badge variant="outline" className="text-[9px]">{lead.proposal?.status}</Badge></div><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {eur(lead.proposal?.net_cost || 0)} · {lead.proposal?.payback_years}yr</div></div>
+   306→                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   307→                      </CardContent>
+   308→                    </Card>
+   309→                  ))}
+   310→                  {proposalLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active proposals.</p>}
+   311→                </>
+   312→              )}
+   313→
+   314→              {activeTab === 'installations' && (
+   315→                <>
+   316→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Installations — {installLeads.length} active</h3>
+   317→                  {installLeads.map(lead => (
+   318→                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate('/job')}>
+   319→                      <CardContent className="p-3 flex items-center gap-3">
+   320→                        <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Wrench className="h-4 w-4 text-amber-600" /></div>
+   321→                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.assignment?.installer_name} · {lead.assignment?.scheduled_date ? new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE') : 'TBD'}</div></div>
+   322→                        <Badge variant="outline" className="text-[9px] capitalize">{lead.assignment?.status}</Badge>
+   323→                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   324→                      </CardContent>
+   325→                    </Card>
+   326→                  ))}
+   327→                  {installLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active installations.</p>}
+   328→                </>
+   329→              )}
+   330→
+   331→              {activeTab === 'calendar' && (
+   332→                <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   333→                  <UnifiedCalendar filterRole="consultant" />
+   334→                </Suspense>
+   335→              )}
+   336→
+   337→              {activeTab === 'followups' && (
+   338→                <>
+   339→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-amber-600" /> Follow-ups — {staleLeads.length} stale (5+ days)</h3>
+   340→                  {staleLeads.map(lead => {
+   341→                    const last = lead.touchpoints[lead.touchpoints.length - 1];
+   342→                    const days = last ? Math.round((Date.now() - new Date(last.timestamp).getTime()) / 86400000) : 0;
+   343→                    return (
+   344→                      <Card key={lead.id} className="cursor-pointer hover:shadow-md border-l-4 border-l-amber-500" onClick={() => { setSelectedLead(lead); setActiveTab('chats'); }}>
+   345→                        <CardContent className="p-3 flex items-center gap-3">
+   346→                          <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+   347→                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {days}d since last contact</div></div>
+   348→                          <Button size="sm" variant="outline" className="h-7 text-xs" asChild><a href={`tel:${lead.phone}`}><Phone className="h-3 w-3 mr-1" /> Call</a></Button>
+   349→                          <Button size="sm" variant="outline" className="h-7 text-xs" asChild><a href={`mailto:${lead.email}`}><Mail className="h-3 w-3 mr-1" /> Email</a></Button>
+   350→                        </CardContent>
+   351→                      </Card>
+   352→                    );
+   353→                  })}
+   354→                  {staleLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">All caught up — no stale leads!</p>}
+   355→                </>
+   356→              )}
+   357→
+   358→              {activeTab === 'products' && (
+   359→                <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   360→                  <ProfessionalProducts />
+   361→                </Suspense>
+   362→              )}
+   363→
+   364→              {activeTab === 'documents' && (
+   365→                <>
+   366→                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents — proposals, contracts, invoices</h3>
+   367→                  {leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => (
+   368→                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+   369→                      <CardContent className="p-3 flex items-center gap-3">
+   370→                        <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
+   371→                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[8px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[8px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[8px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
+   372→                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   373→                      </CardContent>
+   374→                    </Card>
+   375→                  ))}
+   376→                </>
+   377→              )}
+   378→
+   379→              {activeTab === 'analytics' && (
+   380→                <div className="space-y-3">
+   381→                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+   382→                    <StatBox label="Active leads" value={String(stats.activeLeads)} icon={Users} color="blue" />
+   383→                    <StatBox label="Pipeline" value={eur(stats.totalValue)} icon={DollarSign} color="emerald" />
+   384→                    <StatBox label="Conversion" value={`${Math.round((leads.filter(l => l.contract).length / leads.length) * 100)}%`} icon={TrendingUp} color="violet" />
+   385→                    <StatBox label="Stale" value={String(stats.staleLeads)} icon={Clock} color="amber" />
+   386→                  </div>
+   387→                  <Card><CardContent className="p-3">
+   388→                    <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Pipeline by stage</h4>
+   389→                    <div className="space-y-1">
+   390→                      {PIPELINE_STAGES.map(s => {
+   391→                        const count = leads.filter(l => l.workflow_stage === s.id).length;
+   392→                        return (
+   393→                          <div key={s.id} className="flex items-center gap-2">
+   394→                            <div className="w-24 text-[10px] truncate">{s.label}</div>
+   395→                            <div className="flex-1 h-4 bg-muted rounded relative overflow-hidden"><div className={`h-full bg-${s.color}-500`} style={{ width: `${Math.max(2, (count / leads.length) * 100)}%` }} /></div>
+   396→                            <span className="text-[10px] font-bold w-6 text-right">{count}</span>
+   397→                          </div>
+   398→                        );
+   399→                      })}
+   400→                    </div>
+   401→                  </CardContent></Card>
+   402→                  <Button variant="outline" size="sm" className="w-full" onClick={() => navigate('/owner')}>Full analytics <ArrowRight className="h-3 w-3 ml-1" /></Button>
+   403→                </div>
+   404→              )}
+   405→
+   406→            </motion.div>
+   407→          </AnimatePresence>
+   408→        </div>
+   409→      )}
+   410→
+   411→      {/* Slide-out panel */}
+   412→      <AnimatePresence>
+   413→        {slideOutView && selectedLead && (
+   414→          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30 }}
+   415→            className="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 overflow-y-auto">
+   416→            <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between z-10">
+   417→              <h3 className="font-bold text-sm flex items-center gap-2">
+   418→                {slideOutView === 'estimate' ? <><Calculator className="h-4 w-4 text-blue-600" /> Estimate</> : <><FileText className="h-4 w-4 text-emerald-600" /> Proposal</>}
+   419→                <span className="text-muted-foreground font-normal">· {selectedLead.name}</span>
+   420→              </h3>
+   421→              <div className="flex items-center gap-1">
+   422→                {slideOutView === 'estimate' && <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}>Proposal →</Button>}
+   423→                {slideOutView === 'proposal' && <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}>← Estimate</Button>}
+   424→                <Button variant="ghost" size="sm" className="p-1.5" onClick={() => setSlideOutView(null)}><X className="h-4 w-4" /></Button>
+   425→              </div>
+   426→            </div>
+   427→            <div className="p-3">
+   428→              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   429→                {slideOutView === 'estimate' && <EstimateView lead={selectedLead} onOpenProposal={() => setSlideOutView('proposal')} />}
+   430→                {slideOutView === 'proposal' && <ProposalView lead={selectedLead} />}
+   431→              </Suspense>
+   432→            </div>
+   433→          </motion.div>
+   434→        )}
+   435→      </AnimatePresence>
+   436→
+   437→      <RoleBasedAICoach />
+   438→    </div>
+   439→  );
+   440→}
+   441→
+   442→function MessageBubble({ message }: { message: Message }) {
+   443→  if (message.type === 'system') {
+   444→    return <div className="flex justify-center"><div className="px-3 py-1 bg-muted/50 rounded-full text-[10px] text-muted-foreground text-center max-w-[85%]">{message.body}</div></div>;
+   445→  }
+   446→  const isCustomer = message.type === 'customer';
+   447→  const isAI = message.type === 'ai';
+   448→  const isAgent = message.type === 'agent';
+   449→  const bg = isCustomer ? 'bg-blue-600 text-white rounded-br-sm' : isAI ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm' : isAgent ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
+   450→  const label = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
+   451→  const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
+   452→  return (
+   453→    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
+   454→      <div className={`max-w-[80%] ${isCustomer ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+   455→        <div className={`flex items-center gap-1 text-[10px] ${isCustomer ? 'flex-row-reverse' : ''}`}>
+   456→          <Icon className="h-2.5 w-2.5 text-muted-foreground" />
+   457→          <span className="text-muted-foreground font-medium">{label}</span>
+   458→          <span className="text-muted-foreground">·</span>
+   459→          <span className="text-muted-foreground">{new Date(message.timestamp).toLocaleString('en-IE', { dateStyle: 'short', timeStyle: 'short' })}</span>
+   460→        </div>
+   461→        <div className={`rounded-2xl px-4 py-2.5 ${bg}`}>
+   462→          <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+   463→        </div>
+   464→      </div>
+   465→    </motion.div>
+   466→  );
+   467→}
+   468→
+   469→function StatBox({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Users; color: string }) {
+   470→  return (
+   471→    <Card><CardContent className="p-3">
+   472→      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-${color}-100 dark:bg-${color}-950/40`}><Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} /></div><span className="text-[10px] text-muted-foreground">{label}</span></div>
+   473→      <div className="text-lg font-bold">{value}</div>
+   474→    </CardContent></Card>
+   475→  );
+   476→}
+   477→
