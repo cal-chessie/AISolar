@@ -18,7 +18,7 @@ import { isDemoMode } from '@/lib/demoMode';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Bot, Clock, CheckCircle2, AlertCircle, Pause, Play, Zap, Calendar,
-  ArrowRight, Shield, FileText, RefreshCw, Loader2,
+  ArrowRight, Shield, FileText, Loader2,
 } from 'lucide-react';
 
 interface AgentStatus {
@@ -45,7 +45,7 @@ async function fetchAgentStatus(): Promise<AgentStatus[]> {
       runs24h: Math.floor(Math.random() * 8) + 1,
       queueDepth: agent.id === 'customer_digest' ? 12 : Math.floor(Math.random() * 4),
       nextRun: agent.trigger === 'cron' ? '09:00 tomorrow' : undefined,
-      lastError: agent.id === 'payment_remider' ? 'Postmark rate limit exceeded' : undefined,
+      lastError: agent.id === 'payment_reminder' ? 'Postmark rate limit exceeded' : undefined,
     }));
   }
 
@@ -53,7 +53,7 @@ async function fetchAgentStatus(): Promise<AgentStatus[]> {
   const twentyFourHoursAgo = new Date();
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-  const { data: runs, error: runsError } = await supabase
+  const { data: runs, error: runsError } = await (supabase as any)
     .from('agent_runs')
     .select('agent_id, status, created_at, error_message, outputs')
     .gte('created_at', twentyFourHoursAgo.toISOString())
@@ -61,7 +61,7 @@ async function fetchAgentStatus(): Promise<AgentStatus[]> {
 
   if (runsError) throw runsError;
 
-  const { data: queue, error: queueError } = await supabase
+  const { data: queue, error: queueError } = await (supabase as any)
     .from('agent_queue')
     .select('agent_id, id')
     .is('locked_until', null);

@@ -29,9 +29,10 @@ import {
   CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight,
   PoundSterling, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
   Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
+  Send, MessageSquare,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
-import { calculateSEAI, eur } from '@/lib/seaiPipeline';
+import { calculateSEAI } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
@@ -50,9 +51,6 @@ const STEPS: Array<{ id: FlowStep; label: string; icon: typeof MapPin }> = [
   { id: 'proposal', label: 'Proposal', icon: FileText },
   { id: 'send', label: 'Send', icon: Send },
 ];
-
-// Need Send icon
-import { Send } from 'lucide-react';
 
 export default function LeadFlow({ leadId }: { leadId?: string }) {
   const navigate = useNavigate();

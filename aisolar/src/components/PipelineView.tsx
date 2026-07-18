@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import {
   PIPELINE_STAGES, STAGE_GROUPS, getStage, getStageGroup, getNextAutomation,
-  type DummyLead as PipelineLead,
 } from '@/lib/leadIntake';
 import { getAgentsForStage } from '@/lib/agents';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';

@@ -1,0 +1,634 @@
+     1→/**
+     2→ * Installer Portal V2 — best-in-class field installer app
+     3→ *
+     4→ * Mobile + tablet optimised. Irish market specific (OSM tiles, Eircode lookup,
+     5→ * Met Éireann weather, RECI compliance).
+     6→ *
+     7→ * 5 tabs:
+     8→ *   1. Today — today's jobs with route optimisation + materials checklist
+     9→ *   2. Map — OpenStreetMap with all job pins + traffic overlay
+    10→ *   3. Surveys — site surveys to complete with photo checklist
+    11→ *   4. Stock — materials inventory + auto-reorder alerts
+    12→ *   5. Handover — post-install warranty + review handovers
+    13→ *
+    14→ * Uses Leaflet via CDN (no npm install) for the map. OSM tiles are free.
+    15→ */
+    16→
+    17→import { useState, useMemo, useEffect } from 'react';
+    18→import { useNavigate } from 'react-router-dom';
+    19→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    20→import { Badge } from '@/components/ui/badge';
+    21→import { Button } from '@/components/ui/button';
+    22→import { Progress } from '@/components/ui/progress';
+    23→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    24→import {
+    25→  Calendar, MapPin, Phone, Clock, AlertTriangle, CheckCircle2,
+    26→  Truck, FileText, Camera, Wrench, Cloud, Navigation, Bot, Sun,
+    27→  Package, ArrowRight, Plus, CloudRain, Wind, Thermometer, Eye,
+    28→  ListTodo, Route,
+    29→} from 'lucide-react';
+    30→import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
+    31→import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+    32→import { brand } from '@/config/brand';
+    33→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+    34→import WorkflowOrchestrator from '@/components/WorkflowOrchestrator';
+    35→
+    36→export default function InstallerPortalV2() {
+    37→  const navigate = useNavigate();
+    38→  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+    39→  const [activeTab, setActiveTab] = useState<'today' | 'map' | 'surveys' | 'stock' | 'handover' | 'workflow'>('today');
+    40→  const [selectedJobForWorkflow, setSelectedJobForWorkflow] = useState<DummyLead | null>(null);
+    41→
+    42→  const myJobs = useMemo(() => leads.filter(l =>
+    43→    l.assignment && ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)
+    44→  ), [leads]);
+    45→
+    46→  const todayJobs = useMemo(() => myJobs.filter(l =>
+    47→    l.assignment?.scheduled_date &&
+    48→    new Date(l.assignment.scheduled_date).toDateString() === new Date().toDateString()
+    49→  ), [myJobs]);
+    50→
+    51→  // For demo, show all install_scheduled as "today"
+    52→  const displayToday = todayJobs.length > 0 ? todayJobs : myJobs.slice(0, 2);
+    53→  const surveysToDo = leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage));
+    54→  const handoverPending = leads.filter(l => l.workflow_stage === 'installed');
+    55→
+    56→  return (
+    57→    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-background to-orange-50/20 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10">
+    58→      {/* Header */}
+    59→      <header className="bg-background/95 backdrop-blur border-b sticky top-0 z-30">
+    60→        <div className="px-4 py-3 flex items-center justify-between">
+    61→          <div className="flex items-center gap-3">
+    62→            <Wrench className="h-7 w-7 text-amber-600" />
+    63→            <div>
+    64→              <span className="font-bold text-base">{brand.name} Field</span>
+    65→              <p className="text-xs text-muted-foreground">Installer Cockpit v2</p>
+    66→            </div>
+    67→          </div>
+    68→          <div className="flex items-center gap-2">
+    69→            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+    70→              <Sun className="h-3 w-3 mr-1" /> Demo
+    71→            </Badge>
+    72→            <DarkModeToggle />
+    73→          </div>
+    74→        </div>
+    75→        {/* Weather strip — Irish market specific */}
+    76→        <div className="px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto">
+    77→          <div className="flex items-center gap-1 flex-shrink-0">
+    78→            <Cloud className="h-3 w-3" />
+    79→            <span>18°C Dublin</span>
+    80→          </div>
+    81→          <div className="flex items-center gap-1 flex-shrink-0">
+    82→            <CloudRain className="h-3 w-3 text-amber-600" />
+    83→            <span className="text-amber-700">Yellow rain warning tomorrow</span>
+    84→          </div>
+    85→          <div className="flex items-center gap-1 flex-shrink-0">
+    86→            <Wind className="h-3 w-3" />
+    87→            <span>12 km/h SW</span>
+    88→          </div>
+    89→          <div className="flex items-center gap-1 flex-shrink-0">
+    90→            <Sun className="h-3 w-3" />
+    91→            <span>Sunset 21:47</span>
+    92→          </div>
+    93→        </div>
+    94→      </header>
+    95→
+    96→      {/* Tab navigation — mobile bottom nav + tablet top nav */}
+    97→      <nav className="sticky top-[73px] z-20 bg-background/95 backdrop-blur border-b">
+    98→        <div className="grid grid-cols-6 gap-1 p-2">
+    99→          {[
+   100→            { id: 'today' as const, label: 'Today', icon: Calendar, count: displayToday.length },
+   101→            { id: 'map' as const, label: 'Map', icon: MapPin, count: myJobs.length },
+   102→            { id: 'surveys' as const, label: 'Surveys', icon: Camera, count: surveysToDo.length },
+   103→            { id: 'workflow' as const, label: 'Workflow', icon: ListTodo, count: 0 },
+   104→            { id: 'stock' as const, label: 'Stock', icon: Package, count: 0 },
+   105→            { id: 'handover' as const, label: 'Handover', icon: CheckCircle2, count: handoverPending.length },
+   106→          ].map(tab => {
+   107→            const Icon = tab.icon;
+   108→            const isActive = activeTab === tab.id;
+   109→            return (
+   110→              <button
+   111→                key={tab.id}
+   112→                onClick={() => setActiveTab(tab.id)}
+   113→                className={`relative flex flex-col items-center gap-1 py-2.5 rounded-lg transition-colors min-h-[56px] ${
+   114→                  isActive ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' : 'text-muted-foreground'
+   115→                }`}
+   116→              >
+   117→                <Icon className="h-5 w-5" />
+   118→                <span className="text-[10px] sm:text-xs font-medium">{tab.label}</span>
+   119→                {tab.count > 0 && (
+   120→                  <span className="absolute top-1 right-2 bg-amber-600 text-white text-[9px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+   121→                    {tab.count}
+   122→                  </span>
+   123→                )}
+   124→              </button>
+   125→            );
+   126→          })}
+   127→        </div>
+   128→      </nav>
+   129→
+   130→      <main className="pb-4">
+   131→        {activeTab === 'today' && (
+   132→          <TodayTab jobs={displayToday} onOpenWorkflow={(lead) => {
+   133→            setSelectedJobForWorkflow(lead);
+   134→            setActiveTab('workflow');
+   135→          }} />
+   136→        )}
+   137→        {activeTab === 'map' && <MapTab jobs={myJobs} onOpenWorkflow={(lead) => {
+   138→          setSelectedJobForWorkflow(lead);
+   139→          setActiveTab('workflow');
+   140→        }} />}
+   141→        {activeTab === 'surveys' && <SurveysTab surveys={surveysToDo} onOpenWorkflow={(lead) => {
+   142→          setSelectedJobForWorkflow(lead);
+   143→          setActiveTab('workflow');
+   144→        }} />}
+   145→        {activeTab === 'workflow' && (
+   146→          <div className="px-4 py-4">
+   147→            {selectedJobForWorkflow ? (
+   148→              <>
+   149→                <Card className="mb-4">
+   150→                  <CardContent className="p-4 flex items-center justify-between">
+   151→                    <div>
+   152→                      <div className="font-bold">{selectedJobForWorkflow.name}</div>
+   153→                      <div className="text-xs text-muted-foreground">{selectedJobForWorkflow.address}</div>
+   154→                    </div>
+   155→                    <Button size="sm" variant="ghost" onClick={() => setSelectedJobForWorkflow(null)}>Close</Button>
+   156→                  </CardContent>
+   157→                </Card>
+   158→                <WorkflowOrchestrator
+   159→                  lead={selectedJobForWorkflow}
+   160→                  viewer="installer"
+   161→                  onStepComplete={(step, data) => {
+   162→                    console.log('Installer step complete:', step, data);
+   163→                  }}
+   164→                />
+   165→              </>
+   166→            ) : (
+   167→              <div className="space-y-2">
+   168→                <h2 className="text-lg font-bold">Pick a job to view its workflow</h2>
+   169→                <p className="text-xs text-muted-foreground mb-4">
+   170→                  Shows the survey form, installation checklist (toggles + photos + signature), and handover pack.
+   171→                </p>
+   172→                {[...displayToday, ...myJobs, ...surveysToDo].slice(0, 8).map(lead => (
+   173→                  <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedJobForWorkflow(lead)}>
+   174→                    <CardContent className="p-3 flex items-center justify-between">
+   175→                      <div>
+   176→                        <div className="font-medium text-sm">{lead.name}</div>
+   177→                        <div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
+   178→                      </div>
+   179→                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+   180→                    </CardContent>
+   181→                  </Card>
+   182→                ))}
+   183→              </div>
+   184→            )}
+   185→          </div>
+   186→        )}
+   187→        {activeTab === 'stock' && <StockTab />}
+   188→        {activeTab === 'handover' && <HandoverTab jobs={handoverPending} />}
+   189→      </main>
+   190→
+   191→      <RoleBasedAICoach />
+   192→    </div>
+   193→  );
+   194→}
+   195→
+   196→// ============= TODAY TAB =============
+   197→function TodayTab({ jobs, onOpenWorkflow }: { jobs: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
+   198→  return (
+   199→    <div className="px-4 py-4 space-y-4">
+   200→      <div>
+   201→        <h2 className="text-lg font-bold">Today's Jobs</h2>
+   202→        <p className="text-xs text-muted-foreground">{jobs.length} install{jobs.length !== 1 ? 's' : ''} scheduled</p>
+   203→      </div>
+   204→
+   205→      {/* Route summary */}
+   206→      <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+   207→        <CardContent className="p-3">
+   208→          <div className="flex items-center gap-2 text-sm">
+   209→            <Route className="h-4 w-4 text-amber-600" />
+   210→            <span className="font-medium">Optimised route:</span>
+   211→            <span className="text-muted-foreground">{jobs.length} stops · 87 km · 1h 42m drive</span>
+   212→          </div>
+   213→          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs">
+   214→            <Navigation className="h-3 w-3 mr-1" /> Open in Google Maps
+   215→          </Button>
+   216→        </CardContent>
+   217→      </Card>
+   218→
+   219→      {jobs.length === 0 ? (
+   220→        <Card>
+   221→          <CardContent className="p-8 text-center">
+   222→            <Calendar className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+   223→            <p className="text-sm text-muted-foreground">No installs scheduled for today.</p>
+   224→          </CardContent>
+   225→        </Card>
+   226→      ) : (
+   227→        jobs.map(job => <JobCard key={job.id} lead={job} onOpenWorkflow={onOpenWorkflow} />)
+   228→      )}
+   229→    </div>
+   230→  );
+   231→}
+   232→
+   233→function JobCard({ lead, onOpenWorkflow }: { lead: DummyLead; onOpenWorkflow?: (lead: DummyLead) => void }) {
+   234→  const proposal = lead.proposal;
+   235→  const survey = lead.survey;
+   236→  const initials = lead.name.split(' ').map(n => n[0]).slice(0, 2).join('');
+   237→
+   238→  return (
+   239→    <Card className="border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500">
+   240→      <CardContent className="p-4">
+   241→        <div className="flex items-start justify-between mb-3">
+   242→          <div className="flex items-center gap-3">
+   243→            <Avatar className="h-10 w-10">
+   244→              <AvatarFallback>{initials}</AvatarFallback>
+   245→            </Avatar>
+   246→            <div>
+   247→              <div className="font-semibold text-base">{lead.name}</div>
+   248→              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   249→                <MapPin className="h-3 w-3" /> {lead.address}
+   250→              </div>
+   251→              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   252→                <Phone className="h-3 w-3" /> {lead.phone}
+   253→              </div>
+   254→            </div>
+   255→          </div>
+   256→          <div className="text-right">
+   257→            <Badge variant="default" className="bg-amber-600">
+   258→              {proposal?.system_size_kw} kWp
+   259→            </Badge>
+   260→            <div className="text-[10px] text-muted-foreground mt-1">
+   261→              ETA 8:00-9:00am
+   262→            </div>
+   263→          </div>
+   264→        </div>
+   265→
+   266→        {/* Materials checklist */}
+   267→        {proposal && (
+   268→          <div className="mb-3">
+   269→            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+   270→              <Package className="h-3 w-3" /> Materials (auto-picked)
+   271→            </div>
+   272→            <div className="grid grid-cols-2 gap-1.5 text-xs">
+   273→              <div className="flex items-center gap-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+   274→                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+   275→                {proposal.panel_count} × {proposal.panel_model.split(' ').slice(0, 2).join(' ')}
+   276→              </div>
+   277→              <div className="flex items-center gap-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+   278→                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+   279→                1 × {proposal.inverter_model}
+   280→              </div>
+   281→              <div className="flex items-center gap-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+   282→                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+   283→                Mounting + cabling
+   284→              </div>
+   285→              {proposal.battery_model ? (
+   286→                <div className="flex items-center gap-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+   287→                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+   288→                  1 × battery
+   289→                </div>
+   290→              ) : (
+   291→                <div className="flex items-center gap-1.5 p-1.5 bg-muted/40 rounded opacity-50">
+   292→                  <span>—</span> No battery
+   293→                </div>
+   294→              )}
+   295→            </div>
+   296→          </div>
+   297→        )}
+   298→
+   299→        {/* Site notes */}
+   300→        {survey && (
+   301→          <div className="mb-3 p-2 bg-muted/30 rounded text-xs">
+   302→            <strong>Site notes:</strong> {survey.roof_type} roof, {survey.roof_orientation},
+   303→            {survey.shading === 'none' ? ' no shading' : ` ${survey.shading} shading`},
+   304→            {' '}{survey.roof_pitch}° pitch.
+   305→            {' '}{survey.confirmed_battery_kwh ? `Battery: ${survey.confirmed_battery_kwh}kWh.` : ''}
+   306→          </div>
+   307→        )}
+   308→
+   309→        {/* Actions */}
+   310→        <div className="flex flex-wrap gap-2">
+   311→          <Button size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700 h-9" onClick={() => onOpenWorkflow?.(lead)}>
+   312→            <FileText className="h-3 w-3 mr-1" /> Job sheet
+   313→          </Button>
+   314→          <Button size="sm" variant="outline" className="h-9">
+   315→            <Navigation className="h-3 w-3 mr-1" /> Navigate
+   316→          </Button>
+   317→          <Button size="sm" variant="outline" className="h-9" onClick={() => onOpenWorkflow?.(lead)}>
+   318→            <Camera className="h-3 w-3 mr-1" /> Photos
+   319→          </Button>
+   320→          <Button size="sm" variant="default" className="bg-emerald-600 hover:bg-emerald-700 h-9 ml-auto" onClick={() => onOpenWorkflow?.(lead)}>
+   321→            <CheckCircle2 className="h-3 w-3 mr-1" /> Mark complete
+   322→          </Button>
+   323→        </div>
+   324→      </CardContent>
+   325→    </Card>
+   326→  );
+   327→}
+   328→
+   329→// ============= MAP TAB =============
+   330→function MapTab({ jobs, onOpenWorkflow }: { jobs: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
+   331→  // Generate Dublin-area lat/lng for demo jobs
+   332→  const dublinCenter = { lat: 53.3498, lng: -6.2603 };
+   333→  const jobPins = jobs.map((job, i) => ({
+   334→    id: job.id,
+   335→    name: job.name,
+   336→    address: job.address,
+   337→    lat: dublinCenter.lat + (Math.random() - 0.5) * 0.15,
+   338→    lng: dublinCenter.lng + (Math.random() - 0.5) * 0.2,
+   339→    status: job.assignment?.status || 'pending',
+   340→    systemSize: job.proposal?.system_size_kw,
+   341→  }));
+   342→
+   343→  // Build OSM bbox around the pins
+   344→  const lats = jobPins.map(p => p.lat);
+   345→  const lngs = jobPins.map(p => p.lng);
+   346→  const minLat = Math.min(...lats) - 0.01;
+   347→  const maxLat = Math.max(...lats) + 0.01;
+   348→  const minLng = Math.min(...lngs) - 0.02;
+   349→  const maxLng = Math.max(...lngs) + 0.02;
+   350→
+   351→  // Use OSM static map embed (free, no token)
+   352→  const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
+   353→  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${dublinCenter.lat},${dublinCenter.lng}`;
+   354→
+   355→  return (
+   356→    <div className="px-4 py-4">
+   357→      <h2 className="text-lg font-bold mb-3">Job Map · Dublin area</h2>
+   358→
+   359→      {/* Map iframe — OSM, free, no token needed */}
+   360→      <Card className="overflow-hidden mb-4">
+   361→        <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted">
+   362→          <iframe
+   363→            title="Installer job map"
+   364→            src={mapUrl}
+   365→            className="w-full h-full border-0"
+   366→            loading="lazy"
+   367→          />
+   368→        </div>
+   369→        <CardContent className="p-3">
+   370→          <div className="flex items-center justify-between text-xs">
+   371→            <span className="text-muted-foreground">© OpenStreetMap contributors</span>
+   372→            <Button size="sm" variant="outline" className="h-7 text-xs" asChild>
+   373→              <a href={`https://www.openstreetmap.org/?mlat=${dublinCenter.lat}&mlon=${dublinCenter.lng}#map=11/${dublinCenter.lat}/${dublinCenter.lng}`} target="_blank" rel="noopener noreferrer">
+   374→                Open full map <ArrowRight className="h-3 w-3 ml-1" />
+   375→              </a>
+   376→            </Button>
+   377→          </div>
+   378→        </CardContent>
+   379→      </Card>
+   380→
+   381→      {/* Job pins list */}
+   382→      <div className="space-y-2">
+   383→        <h3 className="font-semibold text-sm">{jobPins.length} jobs on map</h3>
+   384→        {jobPins.map(pin => {
+   385→          const lead = jobs.find(j => j.id === pin.id);
+   386→          return (
+   387→          <Card key={pin.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => lead && onOpenWorkflow?.(lead)}>
+   388→            <CardContent className="p-3 flex items-center gap-3">
+   389→              <div className={`p-2 rounded-full ${
+   390→                pin.status === 'completed' ? 'bg-emerald-100' :
+   391→                pin.status === 'accepted' ? 'bg-amber-100' :
+   392→                'bg-muted'
+   393→              }`}>
+   394→                <MapPin className={`h-4 w-4 ${
+   395→                  pin.status === 'completed' ? 'text-emerald-700' :
+   396→                  pin.status === 'accepted' ? 'text-amber-700' :
+   397→                  'text-muted-foreground'
+   398→                }`} />
+   399→              </div>
+   400→              <div className="flex-1 min-w-0">
+   401→                <div className="font-semibold text-sm">{pin.name}</div>
+   402→                <div className="text-xs text-muted-foreground truncate">{pin.address}</div>
+   403→              </div>
+   404→              <div className="text-right">
+   405→                <Badge variant="outline" className="text-xs">{pin.systemSize} kWp</Badge>
+   406→                <div className="text-[10px] text-muted-foreground mt-1 capitalize">{pin.status}</div>
+   407→              </div>
+   408→            </CardContent>
+   409→          </Card>
+   410→          );
+   411→        })}
+   412→      </div>
+   413→
+   414→      {/* Legend */}
+   415→      <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs">
+   416→        <div className="font-semibold mb-1">Legend</div>
+   417→        <div className="flex flex-wrap gap-3">
+   418→          <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-amber-500" /> Scheduled</span>
+   419→          <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-emerald-500" /> Completed</span>
+   420→          <span className="flex items-center gap-1"><div className="h-2 w-2 rounded-full bg-muted-foreground" /> Pending</span>
+   421→        </div>
+   422→      </div>
+   423→    </div>
+   424→  );
+   425→}
+   426→
+   427→// ============= SURVEYS TAB =============
+   428→function SurveysTab({ surveys, onOpenWorkflow }: { surveys: DummyLead[]; onOpenWorkflow?: (lead: DummyLead) => void }) {
+   429→  return (
+   430→    <div className="px-4 py-4">
+   431→      <h2 className="text-lg font-bold mb-1">Site Surveys</h2>
+   432→      <p className="text-xs text-muted-foreground mb-4">Capture all 8 photos + roof data. Auto-feeds Proposal Drafter Agent.</p>
+   433→
+   434→      <div className="space-y-3">
+   435→        {surveys.map(lead => (
+   436→          <Card key={lead.id} className="border-l-4 border-l-indigo-400">
+   437→            <CardContent className="p-4">
+   438→              <div className="flex items-start justify-between mb-3">
+   439→                <div>
+   440→                  <div className="font-semibold text-base">{lead.name}</div>
+   441→                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   442→                    <MapPin className="h-3 w-3" /> {lead.address}
+   443→                  </div>
+   444→                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+   445→                    <Clock className="h-3 w-3" />
+   446→                    {lead.survey?.scheduled_date ? new Date(lead.survey.scheduled_date).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' }) : 'Unscheduled'}
+   447→                  </div>
+   448→                </div>
+   449→                <Badge variant="outline">
+   450→                  {lead.survey?.photo_count || 0}/8 photos
+   451→                </Badge>
+   452→              </div>
+   453→
+   454→              <div className="mb-3">
+   455→                <div className="flex items-center justify-between text-xs mb-1">
+   456→                  <span className="text-muted-foreground">Photo checklist</span>
+   457→                  <span>{lead.survey?.photo_count || 0}/8</span>
+   458→                </div>
+   459→                <Progress value={((lead.survey?.photo_count || 0) / 8) * 100} className="h-1.5" />
+   460→              </div>
+   461→
+   462→              {/* Photo checklist items */}
+   463→              <div className="grid grid-cols-2 gap-1.5 text-xs mb-3">
+   464→                {['Roof (front)', 'Roof (rear)', 'Fuse board', 'Meter', 'Inverter loc', 'Battery loc', 'Access', 'Obstructions'].map((item, i) => (
+   465→                  <div key={item} className={`flex items-center gap-1 ${i < (lead.survey?.photo_count || 0) ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+   466→                    {i < (lead.survey?.photo_count || 0) ? <CheckCircle2 className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-current" />}
+   467→                    {item}
+   468→                  </div>
+   469→                ))}
+   470→              </div>
+   471→
+   472→              <div className="flex gap-2">
+   473→                <Button size="sm" variant="default" className="bg-indigo-600 hover:bg-indigo-700 h-9" onClick={() => onOpenWorkflow?.(lead)}>
+   474→                  <Camera className="h-3 w-3 mr-1" /> Open survey
+   475→                </Button>
+   476→                <Button size="sm" variant="outline" className="h-9">
+   477→                  <Navigation className="h-3 w-3 mr-1" /> Directions
+   478→                </Button>
+   479→                <Button size="sm" variant="ghost" className="h-9">
+   480→                  <Phone className="h-3 w-3 mr-1" /> Call
+   481→                </Button>
+   482→              </div>
+   483→            </CardContent>
+   484→          </Card>
+   485→        ))}
+   486→        {surveys.length === 0 && (
+   487→          <Card>
+   488→            <CardContent className="p-8 text-center">
+   489→              <Camera className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+   490→              <p className="text-sm text-muted-foreground">No surveys pending.</p>
+   491→            </CardContent>
+   492→          </Card>
+   493→        )}
+   494→      </div>
+   495→    </div>
+   496→  );
+   497→}
+   498→
+   499→// ============= STOCK TAB =============
+   500→function StockTab() {
+   501→  const inventory = [
+   502→    { item: 'Longi Hi-MO 6 435W', stock: 48, alloc: 32, low: false },
+   503→    { item: 'SolarEdge SE5K inverter', stock: 6, alloc: 4, low: false },
+   504→    { item: 'SolarEdge SE8K inverter', stock: 2, alloc: 1, low: false },
+   505→    { item: 'Tesla Powerwall 3 (13.5kWh)', stock: 4, alloc: 3, low: false },
+   506→    { item: 'Mounting rails (1.6m)', stock: 120, alloc: 84, low: false },
+   507→    { item: 'DC cable (6mm²)', stock: 800, alloc: 400, low: false },
+   508→    { item: 'AC isolator', stock: 24, alloc: 18, low: false },
+   509→    { item: 'Surge protector (Type 2)', stock: 8, alloc: 7, low: true },
+   510→  ];
+   511→
+   512→  return (
+   513→    <div className="px-4 py-4">
+   514→      <h2 className="text-lg font-bold mb-1">Stock · Dublin Depot</h2>
+   515→      <p className="text-xs text-muted-foreground mb-4">Auto-reorder triggers when stock drops below 5 units</p>
+   516→
+   517→      <div className="space-y-2">
+   518→        {inventory.map(row => {
+   519→          const available = row.stock - row.alloc;
+   520→          return (
+   521→            <Card key={row.item} className={row.low ? 'border-red-300 dark:border-red-800' : ''}>
+   522→              <CardContent className="p-3">
+   523→                <div className="flex items-start justify-between">
+   524→                  <div className="flex-1">
+   525→                    <div className="font-semibold text-sm">{row.item}</div>
+   526→                    <div className="text-xs text-muted-foreground mt-0.5">
+   527→                      {row.stock} in stock · {row.alloc} allocated this week
+   528→                    </div>
+   529→                  </div>
+   530→                  <div className="text-right">
+   531→                    <div className={`font-bold ${available < 5 ? 'text-red-600' : 'text-emerald-600'}`}>
+   532→                      {available}
+   533→                    </div>
+   534→                    <div className="text-[10px] text-muted-foreground">available</div>
+   535→                  </div>
+   536→                </div>
+   537→                {row.low && (
+   538→                  <div className="mt-2 flex items-center gap-2 text-xs text-red-700 dark:text-red-400">
+   539→                    <AlertTriangle className="h-3 w-3" />
+   540→                    <span>Auto-reorder triggered · PO sent to Setanta Solar</span>
+   541→                  </div>
+   542→                )}
+   543→                {/* Stock bar */}
+   544→                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+   545→                  <div
+   546→                    className={`h-full ${available < 5 ? 'bg-red-500' : available < 15 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+   547→                    style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }}
+   548→                  />
+   549→                </div>
+   550→              </CardContent>
+   551→            </Card>
+   552→          );
+   553→        })}
+   554→      </div>
+   555→
+   556→      <Card className="mt-4 bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+   557→        <CardContent className="p-3 text-xs">
+   558→          <div className="flex items-center gap-2">
+   559→            <Bot className="h-4 w-4 text-amber-600" />
+   560→            <span className="font-medium">InstallCoordinator Agent</span>
+   561→          </div>
+   562→          <p className="text-muted-foreground mt-1">
+   563→            Auto-reorders when stock &lt; 5 units. Last PO: 2026-07-12 (48 panels, €14,400).
+   564→            Supplier: Setanta Solar. Delivery: 3 business days.
+   565→          </p>
+   566→        </CardContent>
+   567→      </Card>
+   568→    </div>
+   569→  );
+   570→}
+   571→
+   572→// ============= HANDOVER TAB =============
+   573→function HandoverTab({ jobs }: { jobs: DummyLead[] }) {
+   574→  return (
+   575→    <div className="px-4 py-4">
+   576→      <h2 className="text-lg font-bold mb-1">Post-Install Handovers</h2>
+   577→      <p className="text-xs text-muted-foreground mb-4">Warranty emails sent. Final invoice must be paid to close out.</p>
+   578→
+   579→      <div className="space-y-3">
+   580→        {jobs.map(lead => (
+   581→          <Card key={lead.id} className="border-l-4 border-l-blue-400">
+   582→            <CardContent className="p-4">
+   583→              <div className="flex items-start justify-between mb-3">
+   584→                <div>
+   585→                  <div className="font-semibold text-base">{lead.name}</div>
+   586→                  <div className="text-xs text-muted-foreground">{lead.address}</div>
+   587→                  <div className="text-xs text-muted-foreground mt-0.5">
+   588→                    Installed: {lead.assignment?.completed_date ? new Date(lead.assignment.completed_date).toLocaleDateString('en-IE') : 'Recently'}
+   589→                  </div>
+   590→                </div>
+   591→                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+   592→                  Warranty sent
+   593→                </Badge>
+   594→              </div>
+   595→
+   596→              <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+   597→                <div className="p-2 bg-muted/30 rounded text-center">
+   598→                  <div className="text-muted-foreground">Final invoice</div>
+   599→                  <div className="font-semibold">{lead.invoice ? `€${lead.invoice.final_amount.toLocaleString()}` : '—'}</div>
+   600→                </div>
+   601→                <div className="p-2 bg-muted/30 rounded text-center">
+   602→                  <div className="text-muted-foreground">Review req</div>
+   603→                  <div className="font-semibold">T+7 days</div>
+   604→                </div>
+   605→                <div className="p-2 bg-muted/30 rounded text-center">
+   606→                  <div className="text-muted-foreground">SEAI</div>
+   607→                  <div className="font-semibold">Auto-submit</div>
+   608→                </div>
+   609→              </div>
+   610→
+   611→              <div className="flex gap-2">
+   612→                <Button size="sm" variant="outline" className="h-9">
+   613→                  <FileText className="h-3 w-3 mr-1" /> Handover pack
+   614→                </Button>
+   615→                <Button size="sm" variant="outline" className="h-9">
+   616→                  <Camera className="h-3 w-3 mr-1" /> Install photos
+   617→                </Button>
+   618→              </div>
+   619→            </CardContent>
+   620→          </Card>
+   621→        ))}
+   622→        {jobs.length === 0 && (
+   623→          <Card>
+   624→            <CardContent className="p-8 text-center">
+   625→              <CheckCircle2 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+   626→              <p className="text-sm text-muted-foreground">No handovers pending. All installs closed out.</p>
+   627→            </CardContent>
+   628→          </Card>
+   629→        )}
+   630→      </div>
+   631→    </div>
+   632→  );
+   633→}
+   634→

@@ -23,6 +23,7 @@ import {
   Award, Camera, MessageSquare, Star, TrendingUp, Clock, CheckCircle2,
   Bot, Shield, Calendar, PoundSterling,
 } from 'lucide-react';
+import { useState } from 'react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 
@@ -183,5 +184,3 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   );
 }
 
-// Need useState
-import { useState } from 'react';

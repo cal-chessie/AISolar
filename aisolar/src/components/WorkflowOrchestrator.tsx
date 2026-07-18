@@ -35,8 +35,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   Loader2, ClipboardList, FileText, PenLine, CreditCard, Wrench,
-  CheckCircle2, Package, Camera, Sparkles, ArrowRight, RefreshCw,
-  Sun, Shield, Award,
+  CheckCircle2, Package, Camera, Sparkles, ArrowRight,
+  Sun, Shield, Award, Calendar,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
@@ -114,9 +114,6 @@ const STEP_META: Record<WorkflowStep, { label: string; description: string; icon
   install_complete_awaiting_handover: { label: 'Install complete — awaiting handover', description: 'Warranty email sent, review request scheduled T+7', icon: CheckCircle2, color: 'emerald' },
   project_complete: { label: 'Project complete', description: 'SEAI submitted, handover pack delivered, review received', icon: Award, color: 'green' },
 };
-
-// Need Calendar import
-import { Calendar } from 'lucide-react';
 
 export default function WorkflowOrchestrator({ lead, viewer, onStepComplete }: WorkflowOrchestratorProps) {
   const [step, setStep] = useState<WorkflowStep>(() => determineStep(lead));
@@ -200,7 +197,7 @@ function renderWorkflowComponent(
       return (
         <SiteSurveyForm
           leadId={lead.id}
-          onSurveyComplete={(data) => onStepComplete?.('survey_complete', data)}
+          onCreateProposal={(surveyData, leadData) => onStepComplete?.('survey_complete', surveyData)}
         />
       );
     }
@@ -240,14 +237,14 @@ function renderWorkflowComponent(
           leadId={lead.id}
           proposalId={lead.proposal.id}
           initialData={{
-            systemSizeKw: lead.proposal.system_size_kw,
-            panelCount: lead.proposal.panel_count,
-            panelModel: lead.proposal.panel_model,
-            inverterModel: lead.proposal.inverter_model,
-            batteryModel: lead.proposal.battery_model || undefined,
-            netCost: lead.proposal.net_cost,
+            systemSize: String(lead.proposal.system_size_kw ?? ''),
+            panelType: lead.proposal.panel_model,
+            inverterType: lead.proposal.inverter_model,
+            batteryCapacity: lead.proposal.battery_model || '',
+            budget: String(lead.proposal.net_cost ?? ''),
+            _prefilledFromSurvey: true,
           }}
-          onProposalSent={() => onStepComplete?.('proposal_sent')}
+          onBack={() => onStepComplete?.('proposal_back')}
         />
       );
     }

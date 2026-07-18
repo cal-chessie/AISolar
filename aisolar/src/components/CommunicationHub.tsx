@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Mail, MessageSquare, Phone, FileText, Bot, User, Search,
   ArrowUpRight, ArrowDownLeft, Clock, Filter, Sparkles, Send,
-  Calendar, Phone as PhoneIcon,
+  Calendar,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 
@@ -301,7 +301,7 @@ export default function CommunicationHub() {
                               <Mail className="h-3 w-3 mr-1" /> Reply
                             </Button>
                             <Button size="sm" variant="ghost" className="h-7 text-xs">
-                              <PhoneIcon className="h-3 w-3 mr-1" /> Call
+                              <Phone className="h-3 w-3 mr-1" /> Call
                             </Button>
                             <Button size="sm" variant="ghost" className="h-7 text-xs">
                               <Calendar className="h-3 w-3 mr-1" /> Book

@@ -1,0 +1,930 @@
+     1→/**
+     2→ * JobView V2 — tabbed, not scrolling.
+     3→ *
+     4→ * Tabs take the installer through what actually matters, in order:
+     5→ *   1. Overview — customer snapshot, site notes, BOM summary, completion status
+     6→ *   2. Pre-install — electrical checks (toggles)
+     7→ *   3. Roof — mounting + panel install (toggles + named photos)
+     8→ *   4. Electrical — isolators, SPD, cabling (toggles + named photos)
+     9→ *   5. Commissioning — monitoring setup, serial numbers (toggles + named photos)
+    10→ *   6. Handover — customer walkthrough, signature, final photo
+    11→ *
+    12→ * Each tab shows:
+    13→ *   - Toggle checklist with the EXACT items the installer needs
+    14→ *   - Named photos (each photo tells you what to photograph)
+    15→ *   - Notes field per item
+    16→ *   - Phase completion status
+    17→ *
+    18→ * Overall completion status at the top — green when everything's done.
+    19→ * No scrolling for days. Click a tab → see that phase → done → next tab.
+    20→ */
+    21→
+    22→import { useState, useEffect, useMemo } from 'react';
+    23→import { useNavigate, useParams } from 'react-router-dom';
+    24→import { motion, AnimatePresence } from 'framer-motion';
+    25→import { Card, CardContent } from '@/components/ui/card';
+    26→import { Badge } from '@/components/ui/badge';
+    27→import { Button } from '@/components/ui/button';
+    28→import { Switch } from '@/components/ui/switch';
+    29→import { Input } from '@/components/ui/input';
+    30→import { Label } from '@/components/ui/label';
+    31→import { Textarea } from '@/components/ui/textarea';
+    32→import { Progress } from '@/components/ui/progress';
+    33→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    34→import {
+    35→  ArrowLeft, MapPin, Phone, Calendar, Clock, Navigation, Camera,
+    36→  Package, CheckCircle2, AlertTriangle, ChevronRight, Zap, Wrench,
+    37→  Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind,
+    38→  User, ClipboardList, X, Star, Truck, ListChecks, Award,
+    39→} from 'lucide-react';
+    40→import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+    41→import { brand } from '@/config/brand';
+    42→
+    43→const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    44→
+    45→// ============= TOGGLE ITEM TYPES =============
+    46→interface ToggleItem {
+    47→  id: string;
+    48→  label: string;
+    49→  done: boolean;
+    50→  notes: string;
+    51→}
+    52→
+    53→interface PhotoItem {
+    54→  id: string;
+    55→  label: string;       // e.g. "Main fuse board"
+    56→  description: string; // e.g. "Photo of the consumer unit showing fuse rating"
+    57→  uploaded: boolean;
+    58→  // In production: storage URL
+    59→}
+    60→
+    61→// ============= TAB DEFINITIONS =============
+    62→type TabId = 'overview' | 'pre_install' | 'roof' | 'electrical' | 'commissioning' | 'handover';
+    63→
+    64→const TABS: Array<{ id: TabId; label: string; icon: typeof Home; shortLabel: string }> = [
+    65→  { id: 'overview', label: 'Overview', icon: ClipboardList, shortLabel: 'Overview' },
+    66→  { id: 'pre_install', label: 'Pre-install checks', icon: Shield, shortLabel: 'Pre-install' },
+    67→  { id: 'roof', label: 'Roof work', icon: Home, shortLabel: 'Roof' },
+    68→  { id: 'electrical', label: 'Electrical', icon: Zap, shortLabel: 'Electrical' },
+    69→  { id: 'commissioning', label: 'Commissioning', icon: Wifi, shortLabel: 'Commission' },
+    70→  { id: 'handover', label: 'Handover', icon: PenLine, shortLabel: 'Handover' },
+    71→];
+    72→
+    73→// ============= DEFAULT CHECKLIST ITEMS =============
+    74→const DEFAULT_PRE_INSTALL: ToggleItem[] = [
+    75→  { id: 'isolator_installed', label: 'Isolator Installed', done: false, notes: '' },
+    76→  { id: 'export_limiter_required', label: 'Export Limiter Required', done: false, notes: '' },
+    77→  { id: 'rcd_present_tested', label: 'RCD Present & Tested', done: false, notes: '' },
+    78→  { id: 'earth_bond_confirmed', label: 'Earth Bond Confirmed', done: false, notes: '' },
+    79→];
+    80→
+    81→const DEFAULT_ROOF: ToggleItem[] = [
+    82→  { id: 'panels_installed', label: 'Panels Installed', done: false, notes: '' },
+    83→  { id: 'roof_tiles_secure', label: 'Roof Tiles Secure', done: false, notes: '' },
+    84→  { id: 'flashing_installed', label: 'Flashing Installed', done: false, notes: '' },
+    85→  { id: 'cable_routing_complete', label: 'Cable Routing Complete', done: false, notes: '' },
+    86→  { id: 'weatherproofing_complete', label: 'Weatherproofing Complete', done: false, notes: '' },
+    87→];
+    88→
+    89→const DEFAULT_ELECTRICAL: ToggleItem[] = [
+    90→  { id: 'inverter_installed', label: 'Inverter Installed', done: false, notes: '' },
+    91→  { id: 'battery_installed', label: 'Battery Installed', done: false, notes: '' },
+    92→  { id: 'dc_cable_run', label: 'DC cabling run (roof to inverter)', done: false, notes: '' },
+    93→  { id: 'ac_cable_run', label: 'AC cabling run (inverter to CU)', done: false, notes: '' },
+    94→  { id: 'dc_isolator', label: 'DC isolator installed', done: false, notes: '' },
+    95→  { id: 'ac_isolator', label: 'AC isolator installed', done: false, notes: '' },
+    96→  { id: 'spd_installed', label: 'Type 2 SPD installed', done: false, notes: '' },
+    97→  { id: 'labelling_complete', label: 'All circuits labelled (RECI)', done: false, notes: '' },
+    98→];
+    99→
+   100→const DEFAULT_COMMISSIONING: ToggleItem[] = [
+   101→  { id: 'monitoring_online', label: 'Monitoring Online', done: false, notes: '' },
+   102→  { id: 'customer_app_setup', label: 'Customer App Setup', done: false, notes: '' },
+   103→  { id: 'myenergi_setup', label: 'MyEnergi Setup', done: false, notes: '' },
+   104→  { id: 'serial_numbers_recorded', label: 'All serial numbers recorded', done: false, notes: '' },
+   105→  { id: 'production_verified', label: 'Production verified (kW output confirmed)', done: false, notes: '' },
+   106→];
+   107→
+   108→const DEFAULT_HANDOVER: ToggleItem[] = [
+   109→  { id: 'customer_walkthrough', label: 'Customer walkthrough complete', done: false, notes: '' },
+   110→  { id: 'handover_pack_given', label: 'Handover pack given (warranty, manual, SEAI docs)', done: false, notes: '' },
+   111→  { id: 'emergency_shutdown_explained', label: 'Emergency shutdown procedure explained', done: false, notes: '' },
+   112→  { id: 'customer_signature', label: 'Customer signature obtained', done: false, notes: '' },
+   113→];
+   114→
+   115→// ============= NAMED PHOTOS =============
+   116→const DEFAULT_PHOTOS: Record<TabId, PhotoItem[]> = {
+   117→  overview: [],
+   118→  pre_install: [
+   119→    { id: 'photo_arrival', label: 'Property front (arrival)', description: 'Photo showing the property from the street, confirming you\'ve arrived', uploaded: false },
+   120→    { id: 'photo_fuse_board', label: 'Main fuse board', description: 'Photo of the consumer unit showing fuse rating and existing RCDs', uploaded: false },
+   121→    { id: 'photo_earth_bond', label: 'Earth bonding (gas/water)', description: 'Photo of earth bonding clamps on gas and water pipes', uploaded: false },
+   122→  ],
+   123→  roof: [
+   124→    { id: 'photo_roof_before', label: 'Roof before work starts', description: 'Photo of the roof from ground level, showing original state', uploaded: false },
+   125→    { id: 'photo_mounting', label: 'Mounting rails installed', description: 'Photo showing rails + roof hooks in place before panels', uploaded: false },
+   126→    { id: 'photo_panels', label: 'Completed panel array', description: 'Photo of all panels mounted, from roof level', uploaded: false },
+   127→    { id: 'photo_weatherproofing', label: 'Weatherproofing / flashing', description: 'Close-up of flashing and weatherproofing around roof penetrations', uploaded: false },
+   128→  ],
+   129→  electrical: [
+   130→    { id: 'photo_inverter', label: 'Inverter installed', description: 'Photo of inverter mounted in final location', uploaded: false },
+   131→    { id: 'photo_battery', label: 'Battery installed', description: 'Photo of battery in final location (if applicable)', uploaded: false },
+   132→    { id: 'photo_isolators', label: 'DC + AC isolators', description: 'Photo showing both isolators clearly labelled', uploaded: false },
+   133→    { id: 'photo_spd', label: 'Type 2 SPD in consumer unit', description: 'Photo of surge protection device installed in CU', uploaded: false },
+   134→    { id: 'photo_labelling', label: 'Circuit labelling', description: 'Photo showing all labels (DC+, DC-, AC, isolators)', uploaded: false },
+   135→  ],
+   136→  commissioning: [
+   137→    { id: 'photo_inverter_screen', label: 'Inverter screen showing production', description: 'Photo of inverter display confirming it\'s producing power', uploaded: false },
+   138→    { id: 'photo_monitoring_app', label: 'Monitoring app on customer phone', description: 'Screenshot/photo of monitoring app showing data flowing', uploaded: false },
+   139→    { id: 'photo_serial_numbers', label: 'Serial numbers (panels + inverter + battery)', description: 'Photo of serial number labels — needed for SEAI + warranty', uploaded: false },
+   140→  ],
+   141→  handover: [
+   142→    { id: 'photo_handover_pack', label: 'Handover pack given to customer', description: 'Photo of the documents folder handed to customer', uploaded: false },
+   143→    { id: 'photo_final_array', label: 'Final photo of completed install', description: 'Photo of the full array from ground level, install complete', uploaded: false },
+   144→  ],
+   145→};
+   146→
+   147→export default function JobViewV2() {
+   148→  const { leadId } = useParams();
+   149→  const navigate = useNavigate();
+   150→  const [lead] = useState<DummyLead>(() => {
+   151→    const leads = generateDummyLeads();
+   152→    return leads.find(l => l.proposal && l.assignment) || leads[8];
+   153→  });
+   154→
+   155→  const [activeTab, setActiveTab] = useState<TabId>('overview');
+   156→
+   157→  // Checklist state — persisted to localStorage
+   158→  const [preInstall, setPreInstall] = useState<ToggleItem[]>(DEFAULT_PRE_INSTALL);
+   159→  const [roof, setRoof] = useState<ToggleItem[]>(DEFAULT_ROOF);
+   160→  const [electrical, setElectrical] = useState<ToggleItem[]>(DEFAULT_ELECTRICAL);
+   161→  const [commissioning, setCommissioning] = useState<ToggleItem[]>(DEFAULT_COMMISSIONING);
+   162→  const [handover, setHandover] = useState<ToggleItem[]>(DEFAULT_HANDOVER);
+   163→  const [photos, setPhotos] = useState<Record<TabId, PhotoItem[]>>(DEFAULT_PHOTOS);
+   164→  const [signature, setSignature] = useState<string | null>(null);
+   165→  const [showSignaturePad, setShowSignaturePad] = useState(false);
+   166→
+   167→  const storageKey = `jobview_v2_${lead.id}`;
+   168→
+   169→  // Load from localStorage
+   170→  useEffect(() => {
+   171→    try {
+   172→      const saved = localStorage.getItem(storageKey);
+   173→      if (saved) {
+   174→        const data = JSON.parse(saved);
+   175→        if (data.preInstall) setPreInstall(data.preInstall);
+   176→        if (data.roof) setRoof(data.roof);
+   177→        if (data.electrical) setElectrical(data.electrical);
+   178→        if (data.commissioning) setCommissioning(data.commissioning);
+   179→        if (data.handover) setHandover(data.handover);
+   180→        if (data.photos) setPhotos(data.photos);
+   181→        if (data.signature) setSignature(data.signature);
+   182→      }
+   183→    } catch { /* ignore */ }
+   184→  }, [storageKey]);
+   185→
+   186→  const persist = (updates: Partial<{
+   187→    preInstall: ToggleItem[]; roof: ToggleItem[]; electrical: ToggleItem[];
+   188→    commissioning: ToggleItem[]; handover: ToggleItem[];
+   189→    photos: Record<TabId, PhotoItem[]>; signature: string | null;
+   190→  }>) => {
+   191→    const data = {
+   192→      preInstall, roof, electrical, commissioning, handover, photos, signature,
+   193→      ...updates,
+   194→    };
+   195→    try {
+   196→      localStorage.setItem(storageKey, JSON.stringify(data));
+   197→    } catch { /* ignore */ }
+   198→  };
+   199→
+   200→  const updateToggle = (phase: 'preInstall' | 'roof' | 'electrical' | 'commissioning' | 'handover', id: string, updates: Partial<ToggleItem>) => {
+   201→    const setters = { preInstall: setPreInstall, roof: setRoof, electrical: setElectrical, commissioning: setCommissioning, handover: setHandover };
+   202→    const current = { preInstall, roof, electrical, commissioning, handover };
+   203→    const newList = current[phase].map(item => item.id === id ? { ...item, ...updates } : item);
+   204→    setters[phase](newList);
+   205→    persist({ [phase]: newList } as any);
+   206→  };
+   207→
+   208→  const updatePhoto = (tab: TabId, id: string, uploaded: boolean) => {
+   209→    const newList = photos[tab].map(p => p.id === id ? { ...p, uploaded } : p);
+   210→    const newPhotos = { ...photos, [tab]: newList };
+   211→    setPhotos(newPhotos);
+   212→    persist({ photos: newPhotos });
+   213→  };
+   214→
+   215→  // Completion calculations
+   216→  const allToggles = [...preInstall, ...roof, ...electrical, ...commissioning, ...handover];
+   217→  const togglesDone = allToggles.filter(t => t.done).length;
+   218→  const allPhotos = Object.values(photos).flat();
+   219→  const photosUploaded = allPhotos.filter(p => p.uploaded).length;
+   220→  const photosRequired = allPhotos.length;
+   221→
+   222→  const phaseCompletion = {
+   223→    pre_install: preInstall.every(t => t.done),
+   224→    roof: roof.every(t => t.done),
+   225→    electrical: electrical.every(t => t.done),
+   226→    commissioning: commissioning.every(t => t.done),
+   227→    handover: handover.every(t => t.done) && !!signature,
+   228→  };
+   229→
+   230→  const overallComplete = Object.values(phaseCompletion).every(Boolean);
+   231→  const overallProgress = Math.round(((togglesDone / allToggles.length) * 0.6 + (photosUploaded / photosRequired) * 0.4) * 100);
+   232→
+   233→  const proposal = lead.proposal;
+   234→  const survey = lead.survey;
+   235→
+   236→  return (
+   237→    <div className="min-h-screen bg-background">
+   238→      {/* Sticky header with completion status */}
+   239→      <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-background/95 backdrop-blur'}`}>
+   240→        <div className="px-4 py-3 flex items-center gap-3">
+   241→          <Button variant="ghost" size="sm" onClick={() => navigate('/installer-v4')} className="p-2">
+   242→            <ArrowLeft className="h-5 w-5" />
+   243→          </Button>
+   244→          <Avatar className="h-9 w-9">
+   245→            <AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback>
+   246→          </Avatar>
+   247→          <div className="flex-1 min-w-0">
+   248→            <div className="font-bold text-sm truncate">{lead.name}</div>
+   249→            <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+   250→              <MapPin className="h-3 w-3" />
+   251→              {lead.address.split(',').slice(-2).join(',').trim()}
+   252→            </div>
+   253→          </div>
+   254→          {/* Completion status badge */}
+   255→          {overallComplete ? (
+   256→            <Badge className="bg-emerald-600 text-white">
+   257→              <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
+   258→            </Badge>
+   259→          ) : (
+   260→            <div className="text-right">
+   261→              <div className="text-sm font-bold">{overallProgress}%</div>
+   262→              <div className="text-[10px] text-muted-foreground">complete</div>
+   263→            </div>
+   264→          )}
+   265→        </div>
+   266→        {/* Progress bar */}
+   267→        <div className="h-1 bg-muted">
+   268→          <motion.div
+   269→            className={`h-full transition-all ${overallComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-emerald-500'}`}
+   270→            style={{ width: `${overallProgress}%` }}
+   271→          />
+   272→        </div>
+   273→      </header>
+   274→
+   275→      {/* Tab navigation — horizontal scroll on mobile, full on desktop */}
+   276→      <nav className="border-b bg-background sticky top-[57px] z-20">
+   277→        <div className="flex overflow-x-auto px-2 py-2 gap-1 scrollbar-thin">
+   278→          {TABS.map(tab => {
+   279→            const Icon = tab.icon;
+   280→            const isActive = activeTab === tab.id;
+   281→            const phaseDone = tab.id !== 'overview' && phaseCompletion[tab.id as keyof typeof phaseCompletion];
+   282→            return (
+   283→              <button
+   284→                key={tab.id}
+   285→                onClick={() => setActiveTab(tab.id)}
+   286→                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors min-h-[40px] ${
+   287→                  isActive
+   288→                    ? 'bg-amber-600 text-white'
+   289→                    : phaseDone
+   290→                    ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+   291→                    : 'text-muted-foreground hover:bg-muted'
+   292→                }`}
+   293→              >
+   294→                <Icon className="h-3.5 w-3.5" />
+   295→                <span className="hidden sm:inline">{tab.label}</span>
+   296→                <span className="sm:hidden">{tab.shortLabel}</span>
+   297→                {phaseDone && <CheckCircle2 className="h-3 w-3" />}
+   298→              </button>
+   299→            );
+   300→          })}
+   301→        </div>
+   302→      </nav>
+   303→
+   304→      <main className="max-w-4xl mx-auto px-4 py-4 pb-20">
+   305→        <AnimatePresence mode="wait">
+   306→          <motion.div
+   307→            key={activeTab}
+   308→            initial={{ opacity: 0, y: 10 }}
+   309→            animate={{ opacity: 1, y: 0 }}
+   310→            exit={{ opacity: 0, y: -10 }}
+   311→            transition={{ duration: 0.2 }}
+   312→          >
+   313→            {activeTab === 'overview' && (
+   314→              <OverviewTab lead={lead} phaseCompletion={phaseCompletion} overallComplete={overallComplete} />
+   315→            )}
+   316→            {activeTab === 'pre_install' && (
+   317→              <ChecklistTab
+   318→                title="Pre-install electrical checks"
+   319→                description="Verify the existing electrical installation before starting work."
+   320→                items={preInstall}
+   321→                photos={photos.pre_install}
+   322→                onToggle={(id, updates) => updateToggle('preInstall', id, updates)}
+   323→                onPhoto={(id, uploaded) => updatePhoto('pre_install', id, uploaded)}
+   324→                onComplete={() => setActiveTab('roof')}
+   325→              />
+   326→            )}
+   327→            {activeTab === 'roof' && (
+   328→              <ChecklistTab
+   329→                title="Roof work"
+   330→                description="Mounting rails, panels, weatherproofing. Take a photo at each stage."
+   331→                items={roof}
+   332→                photos={photos.roof}
+   333→                onToggle={(id, updates) => updateToggle('roof', id, updates)}
+   334→                onPhoto={(id, uploaded) => updatePhoto('roof', id, uploaded)}
+   335→                onComplete={() => setActiveTab('electrical')}
+   336→              />
+   337→            )}
+   338→            {activeTab === 'electrical' && (
+   339→              <ChecklistTab
+   340→                title="Electrical installation"
+   341→                description="Inverter, battery, cabling, isolators, SPD, labelling."
+   342→                items={electrical}
+   343→                photos={photos.electrical}
+   344→                onToggle={(id, updates) => updateToggle('electrical', id, updates)}
+   345→                onPhoto={(id, uploaded) => updatePhoto('electrical', id, uploaded)}
+   346→                onComplete={() => setActiveTab('commissioning')}
+   347→              />
+   348→            )}
+   349→            {activeTab === 'commissioning' && (
+   350→              <ChecklistTab
+   351→                title="Commissioning & monitoring"
+   352→                description="Power up, verify production, set up monitoring apps, record serials."
+   353→                items={commissioning}
+   354→                photos={photos.commissioning}
+   355→                onToggle={(id, updates) => updateToggle('commissioning', id, updates)}
+   356→                onPhoto={(id, uploaded) => updatePhoto('commissioning', id, uploaded)}
+   357→                onComplete={() => setActiveTab('handover')}
+   358→              />
+   359→            )}
+   360→            {activeTab === 'handover' && (
+   361→              <HandoverTab
+   362→                items={handover}
+   363→                photos={photos.handover}
+   364→                signature={signature}
+   365→                onToggle={(id, updates) => updateToggle('handover', id, updates)}
+   366→                onPhoto={(id, uploaded) => updatePhoto('handover', id, uploaded)}
+   367→                onSignature={(sig) => { setSignature(sig); persist({ signature: sig }); }}
+   368→                overallComplete={overallComplete}
+   369→                lead={lead}
+   370→              />
+   371→            )}
+   372→          </motion.div>
+   373→        </AnimatePresence>
+   374→      </main>
+   375→    </div>
+   376→  );
+   377→}
+   378→
+   379→// ============= OVERVIEW TAB =============
+   380→function OverviewTab({ lead, phaseCompletion, overallComplete }: {
+   381→  lead: DummyLead;
+   382→  phaseCompletion: Record<string, boolean>;
+   383→  overallComplete: boolean;
+   384→}) {
+   385→  const proposal = lead.proposal;
+   386→  const survey = lead.survey;
+   387→  const phases = [
+   388→    { id: 'pre_install', label: 'Pre-install checks', icon: Shield },
+   389→    { id: 'roof', label: 'Roof work', icon: Home },
+   390→    { id: 'electrical', label: 'Electrical', icon: Zap },
+   391→    { id: 'commissioning', label: 'Commissioning', icon: Wifi },
+   392→    { id: 'handover', label: 'Handover', icon: PenLine },
+   393→  ];
+   394→
+   395→  return (
+   396→    <div className="space-y-4">
+   397→      {/* Completion status banner */}
+   398→      {overallComplete ? (
+   399→        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+   400→          <CardContent className="p-4 flex items-center gap-3">
+   401→            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+   402→            <div>
+   403→              <div className="font-bold text-emerald-800 dark:text-emerald-300">All checks complete</div>
+   404→              <div className="text-xs text-emerald-700 dark:text-emerald-400">Ready to mark job complete. Customer has signed, all photos uploaded.</div>
+   405→            </div>
+   406→          </CardContent>
+   407→        </Card>
+   408→      ) : (
+   409→        <Card className="border-amber-300 bg-amber-50/30 dark:bg-amber-950/10">
+   410→          <CardContent className="p-4 flex items-center gap-3">
+   411→            <AlertTriangle className="h-8 w-8 text-amber-600" />
+   412→            <div>
+   413→              <div className="font-bold text-amber-800 dark:text-amber-300">Job in progress</div>
+   414→              <div className="text-xs text-amber-700 dark:text-amber-400">Work through each tab in order. Don't skip checks — they prevent call-backs.</div>
+   415→            </div>
+   416→          </CardContent>
+   417→        </Card>
+   418→      )}
+   419→
+   420→      {/* Phase completion grid */}
+   421→      <div>
+   422→        <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-2">Phase status</h3>
+   423→        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+   424→          {phases.map(phase => {
+   425→            const done = phaseCompletion[phase.id];
+   426→            const Icon = phase.icon;
+   427→            return (
+   428→              <Card key={phase.id} className={done ? 'border-emerald-400' : ''}>
+   429→                <CardContent className="p-3 text-center">
+   430→                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+   431→                  <div className="text-[10px] font-medium leading-tight">{phase.label}</div>
+   432→                  {done ? (
+   433→                    <Badge variant="outline" className="mt-1 text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200">
+   434→                      <CheckCircle2 className="h-2 w-2 mr-0.5" /> Done
+   435→                    </Badge>
+   436→                  ) : (
+   437→                    <Badge variant="outline" className="mt-1 text-[9px] bg-muted">Pending</Badge>
+   438→                  )}
+   439→                </CardContent>
+   440→              </Card>
+   441→            );
+   442→          })}
+   443→        </div>
+   444→      </div>
+   445→
+   446→      {/* Customer snapshot */}
+   447→      <Card>
+   448→        <CardContent className="p-4">
+   449→          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   450→            <User className="h-4 w-4" /> Customer
+   451→          </h3>
+   452→          <div className="grid grid-cols-2 gap-3 text-sm">
+   453→            <div>
+   454→              <div className="text-xs text-muted-foreground">Name</div>
+   455→              <div className="font-medium">{lead.name}</div>
+   456→            </div>
+   457→            <div>
+   458→              <div className="text-xs text-muted-foreground">Phone</div>
+   459→              <div className="font-medium">{lead.phone}</div>
+   460→            </div>
+   461→            <div className="col-span-2">
+   462→              <div className="text-xs text-muted-foreground">Address</div>
+   463→              <div className="font-medium">{lead.address}</div>
+   464→            </div>
+   465→            <div>
+   466→              <div className="text-xs text-muted-foreground">MPRN</div>
+   467→              <div className="font-medium font-mono">{lead.mprn}</div>
+   468→            </div>
+   469→            <div>
+   470→              <div className="text-xs text-muted-foreground">Install date</div>
+   471→              <div className="font-medium">{lead.assignment?.scheduled_date ? new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE') : 'TBD'}</div>
+   472→            </div>
+   473→          </div>
+   474→          <div className="mt-3 flex gap-2">
+   475→            <Button size="sm" variant="outline" asChild>
+   476→              <a href={`tel:${lead.phone}`}><Phone className="h-3 w-3 mr-1" /> Call</a>
+   477→            </Button>
+   478→            <Button size="sm" variant="outline" asChild>
+   479→              <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lead.address)}`} target="_blank" rel="noopener noreferrer">
+   480→                <Navigation className="h-3 w-3 mr-1" /> Directions
+   481→              </a>
+   482→            </Button>
+   483→          </div>
+   484→        </CardContent>
+   485→      </Card>
+   486→
+   487→      {/* Site notes from survey (read-only snapshot, not the survey questions) */}
+   488→      {survey && (
+   489→        <Card className="border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/10">
+   490→          <CardContent className="p-4">
+   491→            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   492→              <ClipboardList className="h-4 w-4 text-indigo-600" /> Site notes (from survey)
+   493→            </h3>
+   494→            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+   495→              <div>
+   496→                <div className="text-xs text-muted-foreground">Roof type</div>
+   497→                <div className="font-medium">{survey.roof_type}</div>
+   498→              </div>
+   499→              <div>
+   500→                <div className="text-xs text-muted-foreground">Orientation</div>
+   501→                <div className="font-medium">{survey.roof_orientation}</div>
+   502→              </div>
+   503→              <div>
+   504→                <div className="text-xs text-muted-foreground">Pitch</div>
+   505→                <div className="font-medium">{survey.roof_pitch}°</div>
+   506→              </div>
+   507→              <div>
+   508→                <div className="text-xs text-muted-foreground">Shading</div>
+   509→                <div className="font-medium capitalize">{survey.shading}</div>
+   510→              </div>
+   511→              <div>
+   512→                <div className="text-xs text-muted-foreground">Available area</div>
+   513→                <div className="font-medium">{survey.available_area_m2}m²</div>
+   514→              </div>
+   515→              <div>
+   516→                <div className="text-xs text-muted-foreground">Battery</div>
+   517→                <div className="font-medium">{survey.confirmed_battery_kwh ? `${survey.confirmed_battery_kwh}kWh` : 'None'}</div>
+   518→              </div>
+   519→            </div>
+   520→            <div className="mt-3 p-2 bg-background/60 rounded text-xs">
+   521→              <strong>Surveyor notes:</strong> {survey.roof_type} roof, {survey.shading} shading. {survey.confirmed_battery_kwh ? `Battery: ${survey.confirmed_battery_kwh}kWh.` : 'No battery.'} Inverter type: {survey.confirmed_inverter_type}.
+   522→            </div>
+   523→          </CardContent>
+   524→        </Card>
+   525→      )}
+   526→
+   527→      {/* System summary */}
+   528→      {proposal && (
+   529→        <Card>
+   530→          <CardContent className="p-4">
+   531→            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   532→              <Sun className="h-4 w-4 text-amber-600" /> System being installed
+   533→            </h3>
+   534→            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+   535→              <div>
+   536→                <div className="text-xs text-muted-foreground">System size</div>
+   537→                <div className="font-bold text-lg">{proposal.system_size_kw} kWp</div>
+   538→              </div>
+   539→              <div>
+   540→                <div className="text-xs text-muted-foreground">Panels</div>
+   541→                <div className="font-medium">{proposal.panel_count} × {proposal.panel_model}</div>
+   542→              </div>
+   543→              <div>
+   544→                <div className="text-xs text-muted-foreground">Inverter</div>
+   545→                <div className="font-medium">{proposal.inverter_model}</div>
+   546→              </div>
+   547→              {proposal.battery_model && (
+   548→                <div>
+   549→                  <div className="text-xs text-muted-foreground">Battery</div>
+   550→                  <div className="font-medium">{proposal.battery_model}</div>
+   551→                </div>
+   552→              )}
+   553→              <div>
+   554→                <div className="text-xs text-muted-foreground">Net cost</div>
+   555→                <div className="font-medium">{eur(proposal.net_cost)}</div>
+   556→              </div>
+   557→              <div>
+   558→                <div className="text-xs text-muted-foreground">SEAI grant</div>
+   559→                <div className="font-medium text-emerald-600">{eur(proposal.seai_grant)}</div>
+   560→              </div>
+   561→            </div>
+   562→          </CardContent>
+   563→        </Card>
+   564→      )}
+   565→
+   566→      {/* Weather */}
+   567→      <Card>
+   568→        <CardContent className="p-4">
+   569→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   570→            <Cloud className="h-4 w-4" /> Weather
+   571→          </h3>
+   572→          <div className="grid grid-cols-3 gap-2 text-sm">
+   573→            <div className="flex items-center gap-2">
+   574→              <Sun className="h-4 w-4 text-amber-500" />
+   575→              <span>18°C</span>
+   576→            </div>
+   577→            <div className="flex items-center gap-2">
+   578→              <CloudRain className="h-4 w-4 text-muted-foreground" />
+   579→              <span>10% rain</span>
+   580→            </div>
+   581→            <div className="flex items-center gap-2">
+   582→              <Wind className="h-4 w-4 text-muted-foreground" />
+   583→              <span>12 km/h SW</span>
+   584→            </div>
+   585→          </div>
+   586→          <div className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+   587→            ✓ Safe for roof work
+   588→          </div>
+   589→        </CardContent>
+   590→      </Card>
+   591→    </div>
+   592→  );
+   593→}
+   594→
+   595→// ============= CHECKLIST TAB (used for pre-install, roof, electrical, commissioning) =============
+   596→function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, onComplete }: {
+   597→  title: string;
+   598→  description: string;
+   599→  items: ToggleItem[];
+   600→  photos: PhotoItem[];
+   601→  onToggle: (id: string, updates: Partial<ToggleItem>) => void;
+   602→  onPhoto: (id: string, uploaded: boolean) => void;
+   603→  onComplete: () => void;
+   604→}) {
+   605→  const allDone = items.every(t => t.done) && photos.every(p => p.uploaded);
+   606→
+   607→  return (
+   608→    <div className="space-y-4">
+   609→      <div>
+   610→        <h2 className="text-xl font-bold">{title}</h2>
+   611→        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+   612→      </div>
+   613→
+   614→      {/* Phase completion banner */}
+   615→      {allDone ? (
+   616→        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+   617→          <CardContent className="p-3 flex items-center gap-2">
+   618→            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+   619→            <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Phase complete — move to next tab</span>
+   620→          </CardContent>
+   621→        </Card>
+   622→      ) : (
+   623→        <div className="text-xs text-muted-foreground">
+   624→          {items.filter(t => t.done).length}/{items.length} checks done · {photos.filter(p => p.uploaded).length}/{photos.length} photos uploaded
+   625→        </div>
+   626→      )}
+   627→
+   628→      {/* Toggle checklist */}
+   629→      <Card>
+   630→        <CardContent className="p-0">
+   631→          <div className="p-3 border-b">
+   632→            <h3 className="font-semibold text-sm flex items-center gap-2">
+   633→              <ListChecks className="h-4 w-4" /> Checklist
+   634→            </h3>
+   635→          </div>
+   636→          <div className="divide-y">
+   637→            {items.map(item => (
+   638→              <div key={item.id} className="p-3">
+   639→                <div className="flex items-center gap-3">
+   640→                  <Switch
+   641→                    checked={item.done}
+   642→                    onCheckedChange={(v) => onToggle(item.id, { done: v })}
+   643→                  />
+   644→                  <Label className={`text-sm font-medium flex-1 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
+   645→                    {item.label}
+   646→                  </Label>
+   647→                  {item.done && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+   648→                </div>
+   649→                <Input
+   650→                  placeholder="Add note (e.g. '100A main fuse', 'earth bond at gas meter')"
+   651→                  value={item.notes}
+   652→                  onChange={e => onToggle(item.id, { notes: e.target.value })}
+   653→                  className="mt-2 h-8 text-xs"
+   654→                  disabled={!item.done}
+   655→                />
+   656→              </div>
+   657→            ))}
+   658→          </div>
+   659→        </CardContent>
+   660→      </Card>
+   661→
+   662→      {/* Named photos */}
+   663→      {photos.length > 0 && (
+   664→        <Card>
+   665→          <CardContent className="p-0">
+   666→            <div className="p-3 border-b">
+   667→              <h3 className="font-semibold text-sm flex items-center gap-2">
+   668→                <Camera className="h-4 w-4" /> Required photos
+   669→              </h3>
+   670→              <p className="text-xs text-muted-foreground mt-1">Each photo tells you exactly what to capture. Needed for SEAI + warranty.</p>
+   671→            </div>
+   672→            <div className="divide-y">
+   673→              {photos.map(photo => (
+   674→                <div key={photo.id} className="p-3 flex items-start gap-3">
+   675→                  <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-muted'}`}>
+   676→                    {photo.uploaded ? (
+   677→                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+   678→                    ) : (
+   679→                      <Camera className="h-4 w-4 text-muted-foreground" />
+   680→                    )}
+   681→                  </div>
+   682→                  <div className="flex-1">
+   683→                    <div className="font-medium text-sm">{photo.label}</div>
+   684→                    <div className="text-xs text-muted-foreground">{photo.description}</div>
+   685→                  </div>
+   686→                  <Button
+   687→                    size="sm"
+   688→                    variant={photo.uploaded ? "outline" : "default"}
+   689→                    className="h-8 text-xs"
+   690→                    onClick={() => onPhoto(photo.id, !photo.uploaded)}
+   691→                  >
+   692→                    {photo.uploaded ? 'Retake' : 'Capture'}
+   693→                  </Button>
+   694→                </div>
+   695→              ))}
+   696→            </div>
+   697→          </CardContent>
+   698→        </Card>
+   699→      )}
+   700→
+   701→      {/* Next button */}
+   702→      <Button
+   703→        onClick={onComplete}
+   704→        disabled={!allDone}
+   705→        className="w-full h-12 bg-amber-600 hover:bg-amber-700 disabled:opacity-50"
+   706→      >
+   707→        {allDone ? (
+   708→          <>Phase complete — next <ChevronRight className="h-4 w-4 ml-1" /></>
+   709→        ) : (
+   710→          <>Complete all checks + photos to continue</>
+   711→        )}
+   712→      </Button>
+   713→    </div>
+   714→  );
+   715→}
+   716→
+   717→// ============= HANDOVER TAB =============
+   718→function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature, overallComplete, lead }: {
+   719→  items: ToggleItem[];
+   720→  photos: PhotoItem[];
+   721→  signature: string | null;
+   722→  onToggle: (id: string, updates: Partial<ToggleItem>) => void;
+   723→  onPhoto: (id: string, uploaded: boolean) => void;
+   724→  onSignature: (sig: string) => void;
+   725→  overallComplete: boolean;
+   726→  lead: DummyLead;
+   727→}) {
+   728→  const [showPad, setShowPad] = useState(false);
+   729→  const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && !!signature;
+   730→
+   731→  return (
+   732→    <div className="space-y-4">
+   733→      <div>
+   734→        <h2 className="text-xl font-bold">Customer handover</h2>
+   735→        <p className="text-sm text-muted-foreground mt-1">Walk customer through the system, get their signature, take final photos.</p>
+   736→      </div>
+   737→
+   738→      {/* Checklist */}
+   739→      <Card>
+   740→        <CardContent className="p-0">
+   741→          <div className="divide-y">
+   742→            {items.map(item => (
+   743→              <div key={item.id} className="p-3">
+   744→                <div className="flex items-center gap-3">
+   745→                  <Switch
+   746→                    checked={item.done}
+   747→                    onCheckedChange={(v) => onToggle(item.id, { done: v })}
+   748→                  />
+   749→                  <Label className={`text-sm font-medium flex-1 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
+   750→                    {item.label}
+   751→                  </Label>
+   752→                </div>
+   753→                {item.id === 'customer_signature' && (
+   754→                  <div className="mt-2 pl-11">
+   755→                    {signature ? (
+   756→                      <div>
+   757→                        <img src={signature} alt="Customer signature" className="border rounded bg-white p-2 max-h-24 w-auto" />
+   758→                        <div className="text-xs text-emerald-700 mt-1">Signed · {new Date().toLocaleString('en-IE')}</div>
+   759→                        <Button size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setShowPad(true)}>Re-sign</Button>
+   760→                      </div>
+   761→                    ) : (
+   762→                      <Button size="sm" onClick={() => setShowPad(true)} className="bg-emerald-600 hover:bg-emerald-700">
+   763→                        <PenLine className="h-3 w-3 mr-1" /> Get signature
+   764→                      </Button>
+   765→                    )}
+   766→                  </div>
+   767→                )}
+   768→              </div>
+   769→            ))}
+   770→          </div>
+   771→        </CardContent>
+   772→      </Card>
+   773→
+   774→      {/* Photos */}
+   775→      <Card>
+   776→        <CardContent className="p-0">
+   777→          <div className="p-3 border-b">
+   778→            <h3 className="font-semibold text-sm flex items-center gap-2">
+   779→              <Camera className="h-4 w-4" /> Required photos
+   780→            </h3>
+   781→          </div>
+   782→          <div className="divide-y">
+   783→            {photos.map(photo => (
+   784→              <div key={photo.id} className="p-3 flex items-start gap-3">
+   785→                <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-muted'}`}>
+   786→                  {photo.uploaded ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
+   787→                </div>
+   788→                <div className="flex-1">
+   789→                  <div className="font-medium text-sm">{photo.label}</div>
+   790→                  <div className="text-xs text-muted-foreground">{photo.description}</div>
+   791→                </div>
+   792→                <Button
+   793→                  size="sm"
+   794→                  variant={photo.uploaded ? "outline" : "default"}
+   795→                  className="h-8 text-xs"
+   796→                  onClick={() => onPhoto(photo.id, !photo.uploaded)}
+   797→                >
+   798→                  {photo.uploaded ? 'Retake' : 'Capture'}
+   799→                </Button>
+   800→              </div>
+   801→            ))}
+   802→          </div>
+   803→        </CardContent>
+   804→      </Card>
+   805→
+   806→      {/* Completion status */}
+   807→      {overallComplete ? (
+   808→        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+   809→          <CardContent className="p-6 text-center">
+   810→            <Award className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
+   811→            <h3 className="font-bold text-lg">Job complete!</h3>
+   812→            <p className="text-sm text-muted-foreground mt-1">
+   813→              All checks done, all photos uploaded, customer signed. PostInstall Agent will send warranty docs + schedule review request.
+   814→            </p>
+   815→            <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700 w-full h-12">
+   816→              <CheckCircle2 className="h-4 w-4 mr-2" /> Mark job complete
+   817→            </Button>
+   818→          </CardContent>
+   819→        </Card>
+   820→      ) : (
+   821→        <div className="p-4 bg-muted/30 rounded-lg text-center text-xs text-muted-foreground">
+   822→          {!allDone ? 'Complete all handover checks + signature + photos to finish' : 'Ready to complete'}
+   823→        </div>
+   824→      )}
+   825→
+   826→      {/* Signature pad modal */}
+   827→      {showPad && (
+   828→        <SignaturePad
+   829→          customerName={lead.name}
+   830→          onSave={(sig) => { onSignature(sig); onToggle('customer_signature', { done: true }); setShowPad(false); }}
+   831→          onCancel={() => setShowPad(false)}
+   832→        />
+   833→      )}
+   834→    </div>
+   835→  );
+   836→}
+   837→
+   838→// ============= SIGNATURE PAD =============
+   839→function SignaturePad({ customerName, onSave, onCancel }: {
+   840→  customerName: string;
+   841→  onSave: (sig: string) => void;
+   842→  onCancel: () => void;
+   843→}) {
+   844→  const canvasRef = useState<HTMLCanvasElement | null>(null);
+   845→  const [isDrawing, setIsDrawing] = useState(false);
+   846→
+   847→  const getCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   848→    const canvas = e.currentTarget;
+   849→    const rect = canvas.getBoundingClientRect();
+   850→    const scaleX = canvas.width / rect.width;
+   851→    const scaleY = canvas.height / rect.height;
+   852→    return {
+   853→      x: (e.clientX - rect.left) * scaleX,
+   854→      y: (e.clientY - rect.top) * scaleY,
+   855→    };
+   856→  };
+   857→
+   858→  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   859→    e.preventDefault();
+   860→    const canvas = e.currentTarget;
+   861→    const ctx = canvas.getContext('2d');
+   862→    if (!ctx) return;
+   863→    ctx.beginPath();
+   864→    const { x, y } = getCoords(e);
+   865→    ctx.moveTo(x, y);
+   866→    setIsDrawing(true);
+   867→  };
+   868→
+   869→  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   870→    if (!isDrawing) return;
+   871→    e.preventDefault();
+   872→    const canvas = e.currentTarget;
+   873→    const ctx = canvas.getContext('2d');
+   874→    if (!ctx) return;
+   875→    const { x, y } = getCoords(e);
+   876→    ctx.lineWidth = 2;
+   877→    ctx.lineCap = 'round';
+   878→    ctx.strokeStyle = '#0f172a';
+   879→    ctx.lineTo(x, y);
+   880→    ctx.stroke();
+   881→  };
+   882→
+   883→  const stopDraw = () => setIsDrawing(false);
+   884→
+   885→  const clear = () => {
+   886→    const canvas = canvasRef[0];
+   887→    if (!canvas) return;
+   888→    const ctx = canvas.getContext('2d');
+   889→    if (!ctx) return;
+   890→    ctx.clearRect(0, 0, canvas.width, canvas.height);
+   891→  };
+   892→
+   893→  const save = () => {
+   894→    const canvas = canvasRef[0];
+   895→    if (!canvas) return;
+   896→    onSave(canvas.toDataURL());
+   897→  };
+   898→
+   899→  return (
+   900→    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
+   901→      <div className="bg-background w-full max-w-md rounded-2xl p-4" onClick={e => e.stopPropagation()}>
+   902→        <div className="flex items-center justify-between mb-3">
+   903→          <h3 className="font-bold">Customer signature</h3>
+   904→          <Button variant="ghost" size="sm" onClick={onCancel}><X className="h-4 w-4" /></Button>
+   905→        </div>
+   906→        <p className="text-xs text-muted-foreground mb-3">
+   907→          I, {customerName}, confirm the solar installation is complete, commissioned, and I've been shown how to use the monitoring app.
+   908→        </p>
+   909→        <canvas
+   910→          ref={(el) => { canvasRef[1](el); }}
+   911→          className="w-full h-48 border-2 border-border rounded-lg bg-white touch-none cursor-crosshair"
+   912→          style={{ touchAction: 'none' }}
+   913→          onPointerDown={startDraw}
+   914→          onPointerMove={draw}
+   915→          onPointerUp={stopDraw}
+   916→          onPointerLeave={stopDraw}
+   917→          width={400}
+   918→          height={200}
+   919→        />
+   920→        <div className="flex gap-2 mt-3">
+   921→          <Button variant="outline" className="flex-1" onClick={clear}>Clear</Button>
+   922→          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={save}>
+   923→            Save signature
+   924→          </Button>
+   925→        </div>
+   926→      </div>
+   927→    </div>
+   928→  );
+   929→}
+   930→

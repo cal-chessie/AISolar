@@ -1,0 +1,1059 @@
+     1→/**
+     2→ * LeadFlow — the consultant's single linear pipeline.
+     3→ *
+     4→ * This replaces ALL the scattered consultant dashboards. One flow:
+     5→ *
+     6→ *   1. Estimate  — bill-extracted estimate details + Eircode lookup → satellite map
+     7→ *   2. Survey    — roof data capture (the REAL SiteSurveyForm, properly accessible)
+     8→ *   3. Design    — OpenSolar-style panel layout on satellite image + gear selection
+     9→ *   4. Proposal  — finance packages, AI-assisted pricing, professional output
+    10→ *   5. Send      — review + send to customer
+    11→ *
+    12→ * The consultant sees a progress stepper at the top. Each step flows into the next.
+    13→ * No tabs. No dashboards. Just the flow.
+    14→ *
+    15→ * Hot lead markers are just badges on the lead header, not separate sections.
+    16→ */
+    17→
+    18→import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+    19→import { useNavigate } from 'react-router-dom';
+    20→import { motion, AnimatePresence } from 'framer-motion';
+    21→import { Card, CardContent } from '@/components/ui/card';
+    22→import { Badge } from '@/components/ui/badge';
+    23→import { Button } from '@/components/ui/button';
+    24→import { Input } from '@/components/ui/input';
+    25→import { Label } from '@/components/ui/label';
+    26→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    27→import {
+    28→  ArrowLeft, ArrowRight, MapPin, Calendar, Sun, Zap, FileText,
+    29→  CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight,
+    30→  PoundSterling, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
+    31→  Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
+    32→} from 'lucide-react';
+    33→import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+    34→import { calculateSEAI, eur } from '@/lib/seaiPipeline';
+    35→import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+    36→import { brand } from '@/config/brand';
+    37→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+    38→
+    39→// Use the REAL SiteSurveyForm — not a stripped-down version
+    40→const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
+    41→
+    42→const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+    43→
+    44→type FlowStep = 'estimate' | 'survey' | 'design' | 'proposal' | 'send';
+    45→
+    46→const STEPS: Array<{ id: FlowStep; label: string; icon: typeof MapPin }> = [
+    47→  { id: 'estimate', label: 'Estimate', icon: Calculator },
+    48→  { id: 'survey', label: 'Survey', icon: Home },
+    49→  { id: 'design', label: 'Design', icon: Sun },
+    50→  { id: 'proposal', label: 'Proposal', icon: FileText },
+    51→  { id: 'send', label: 'Send', icon: Send },
+    52→];
+    53→
+    54→// Need Send icon
+    55→import { Send } from 'lucide-react';
+    56→
+    57→export default function LeadFlow({ leadId }: { leadId?: string }) {
+    58→  const navigate = useNavigate();
+    59→  const [lead] = useState<DummyLead>(() => {
+    60→    const leads = generateDummyLeads();
+    61→    return leads.find(l => l.proposal) || leads[6];
+    62→  });
+    63→  const [step, setStep] = useState<FlowStep>('estimate');
+    64→  const [eircode, setEircode] = useState('');
+    65→  const [address, setAddress] = useState(lead.address || '');
+    66→  const [showMap, setShowMap] = useState(false);
+    67→  const [surveyData, setSurveyData] = useState<Record<string, any>>({});
+    68→  const [designData, setDesignData] = useState({
+    69→    panelCount: lead.proposal?.panel_count || 14,
+    70→    panelModel: lead.proposal?.panel_model || 'Longi Hi-MO 6 435W',
+    71→    inverterModel: lead.proposal?.inverter_model || 'SolarEdge SE5K',
+    72→    batteryModel: lead.proposal?.battery_model || '',
+    73→    includeBattery: !!lead.proposal?.battery_model,
+    74→    batterySize: lead.survey?.confirmed_battery_kwh || 5,
+    75→    roofOrientation: lead.survey?.roof_orientation || 'south',
+    76→    roofPitch: lead.survey?.roof_pitch || 30,
+    77→  });
+    78→  const [financeOption, setFinanceOption] = useState<'cash' | 'finance' | 'lease'>('cash');
+    79→  const [depositPct, setDepositPct] = useState(30);
+    80→
+    81→  const stepIndex = STEPS.findIndex(s => s.id === step);
+    82→
+    83→  // Calculate estimate from bill data
+    84→  const estimate = useMemo(() => {
+    85→    return calculateSystemEstimate({
+    86→      monthlyBill: lead.monthly_bill,
+    87→      annualKwh: lead.annual_kwh,
+    88→    });
+    89→  }, [lead]);
+    90→
+    91→  // Calculate SEAI from design data
+    92→  const seai = useMemo(() => {
+    93→    return calculateSEAI({
+    94→      systemSizeKw: designData.panelCount * 0.435, // 435W panels
+    95→      propertyType: 'domestic',
+    96→      installType: 'retrofit',
+    97→      annualKwhUsage: lead.annual_kwh || estimate.annualKwh,
+    98→      annualProductionKwh: designData.panelCount * 0.435 * 950,
+    99→      selfConsumptionPct: 0.7,
+   100→      netCost: estimate.netCost,
+   101→    });
+   102→  }, [designData, lead, estimate]);
+   103→
+   104→  const grossCost = designData.panelCount * 145 + 1450 + (designData.includeBattery ? designData.batterySize * 1200 : 0) + 800; // panels + inverter + battery + mounting/labour
+   105→  const seaiGrant = seai.solarElectricityGrant;
+   106→  const netCost = grossCost - seaiGrant;
+   107→
+   108→  return (
+   109→    <div className="min-h-screen bg-background">
+   110→      {/* Header */}
+   111→      <header className="bg-background border-b sticky top-0 z-30">
+   112→        <div className="px-4 py-3 flex items-center gap-3">
+   113→          <Button variant="ghost" size="sm" onClick={() => navigate('/consultant')} className="p-2">
+   114→            <ArrowLeft className="h-5 w-5" />
+   115→          </Button>
+   116→          <Avatar className="h-9 w-9">
+   117→            <AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback>
+   118→          </Avatar>
+   119→          <div className="flex-1 min-w-0">
+   120→            <div className="flex items-center gap-2">
+   121→              <span className="font-bold text-sm truncate">{lead.name}</span>
+   122→              {lead.score > 80 && (
+   123→                <Badge className="text-[9px] h-4 px-1 bg-red-500 text-white">
+   124→                  <Flame className="h-2 w-2 mr-0.5" /> Hot
+   125→                </Badge>
+   126→              )}
+   127→              <Badge variant="outline" className="text-[9px] h-4 px-1">
+   128→                {getStage(lead.workflow_stage).label}
+   129→              </Badge>
+   130→            </div>
+   131→            <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
+   132→              <MapPin className="h-3 w-3" />
+   133→              {lead.address || 'No address yet'}
+   134→            </div>
+   135→          </div>
+   136→          <div className="flex items-center gap-2">
+   137→            <Button variant="ghost" size="sm" className="p-2" asChild>
+   138→              <a href={`tel:${lead.phone}`}><Phone className="h-4 w-4" /></a>
+   139→            </Button>
+   140→            <Button variant="ghost" size="sm" className="p-2" asChild>
+   141→              <a href={`mailto:${lead.email}`}><Mail className="h-4 w-4" /></a>
+   142→            </Button>
+   143→            <DarkModeToggle />
+   144→          </div>
+   145→        </div>
+   146→
+   147→        {/* Progress stepper */}
+   148→        <div className="px-4 pb-3">
+   149→          <div className="flex items-center gap-1">
+   150→            {STEPS.map((s, i) => {
+   151→              const Icon = s.icon;
+   152→              const isDone = i < stepIndex;
+   153→              const isActive = i === stepIndex;
+   154→              return (
+   155→                <div key={s.id} className="flex items-center flex-1">
+   156→                  <button
+   157→                    onClick={() => i <= stepIndex && setStep(s.id)}
+   158→                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
+   159→                      isActive ? 'bg-blue-600 text-white' :
+   160→                      isDone ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+   161→                      'text-muted-foreground'
+   162→                    }`}
+   163→                  >
+   164→                    {isDone ? <CheckCircle2 className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
+   165→                    <span className="hidden sm:inline">{s.label}</span>
+   166→                  </button>
+   167→                  {i < STEPS.length - 1 && (
+   168→                    <div className={`h-0.5 flex-1 ${i < stepIndex ? 'bg-emerald-400' : 'bg-muted'}`} />
+   169→                  )}
+   170→                </div>
+   171→              );
+   172→            })}
+   173→          </div>
+   174→        </div>
+   175→      </header>
+   176→
+   177→      <main className="max-w-5xl mx-auto px-4 py-6 pb-20">
+   178→        <AnimatePresence mode="wait">
+   179→          {/* === STEP 1: ESTIMATE === */}
+   180→          {step === 'estimate' && (
+   181→            <motion.div key="estimate" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+   182→              <div className="grid lg:grid-cols-2 gap-4">
+   183→                {/* Left: Estimate details */}
+   184→                <div className="space-y-4">
+   185→                  <Card>
+   186→                    <CardContent className="p-4">
+   187→                      <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
+   188→                        <Calculator className="h-5 w-5 text-blue-600" /> Estimate from bill
+   189→                      </h2>
+   190→                      <div className="space-y-2 text-sm">
+   191→                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+   192→                          <span className="text-muted-foreground">Monthly bill</span>
+   193→                          <span className="font-semibold">€{lead.monthly_bill}</span>
+   194→                        </div>
+   195→                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+   196→                          <span className="text-muted-foreground">Annual kWh</span>
+   197→                          <span className="font-semibold">{lead.annual_kwh?.toLocaleString() || estimate.annualKwh.toLocaleString()} kWh</span>
+   198→                        </div>
+   199→                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+   200→                          <span className="text-muted-foreground">MPRN</span>
+   201→                          <span className="font-mono text-xs">{lead.mprn || 'Not extracted'}</span>
+   202→                        </div>
+   203→                        <div className="flex justify-between p-2 bg-blue-50 dark:bg-blue-950/30 rounded">
+   204→                          <span className="text-muted-foreground">Recommended system</span>
+   205→                          <span className="font-bold text-blue-700 dark:text-blue-300">{estimate.systemSizeKw} kWp</span>
+   206→                        </div>
+   207→                        <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+   208→                          <span className="text-muted-foreground">Annual savings</span>
+   209→                          <span className="font-bold text-emerald-700 dark:text-emerald-300">{eurFmt(estimate.annualSavings)}</span>
+   210→                        </div>
+   211→                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+   212→                          <span className="text-muted-foreground">Payback</span>
+   213→                          <span className="font-semibold">{estimate.paybackYears} years</span>
+   214→                        </div>
+   215→                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+   216→                          <span className="text-muted-foreground">20-year savings</span>
+   217→                          <span className="font-semibold">{eurFmt(estimate.twentyYearSavings)}</span>
+   218→                        </div>
+   219→                        <div className="flex justify-between p-2 bg-violet-50 dark:bg-violet-950/30 rounded">
+   220→                          <span className="text-muted-foreground">SEAI grant</span>
+   221→                          <span className="font-bold text-violet-700 dark:text-violet-300">{eurFmt(1800)}</span>
+   222→                        </div>
+   223→                      </div>
+   224→                    </CardContent>
+   225→                  </Card>
+   226→
+   227→                  {/* Eircode lookup */}
+   228→                  <Card>
+   229→                    <CardContent className="p-4">
+   230→                      <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   231→                        <MapPin className="h-4 w-4 text-blue-600" /> Property location
+   232→                      </h3>
+   233→                      <Label className="text-xs">Eircode</Label>
+   234→                      <div className="flex gap-2 mt-1">
+   235→                        <Input
+   236→                          placeholder="e.g. D04 X2C1"
+   237→                          value={eircode}
+   238→                          onChange={e => setEircode(e.target.value.toUpperCase())}
+   239→                          className="font-mono uppercase"
+   240→                          maxLength={8}
+   241→                        />
+   242→                        <Button onClick={() => setShowMap(true)} disabled={!eircode}>
+   243→                          <MapPin className="h-4 w-4 mr-1" /> View
+   244→                        </Button>
+   245→                      </div>
+   246→                      {address && (
+   247→                        <p className="text-xs text-muted-foreground mt-2">{address}</p>
+   248→                      )}
+   249→                      {showMap && (
+   250→                        <div className="mt-3">
+   251→                          <SatelliteMap eircode={eircode} address={address} />
+   252→                        </div>
+   253→                      )}
+   254→                    </CardContent>
+   255→                  </Card>
+   256→                </div>
+   257→
+   258→                {/* Right: Calendar booking */}
+   259→                <div className="space-y-4">
+   260→                  <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10">
+   261→                    <CardContent className="p-4">
+   262→                      <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   263→                        <Calendar className="h-4 w-4 text-amber-600" /> Book site survey
+   264→                      </h3>
+   265→                      <p className="text-xs text-muted-foreground mb-3">
+   266→                        The estimate is ready. Next step is a site survey to confirm roof details and finalize the system design.
+   267→                      </p>
+   268→                      <div className="grid grid-cols-2 gap-2">
+   269→                        {['Tomorrow 10:00', 'Tomorrow 14:00', 'Wed 10:00', 'Wed 14:00', 'Thu 10:00', 'Thu 14:00'].map(slot => (
+   270→                          <button
+   271→                            key={slot}
+   272→                            className="p-2 border rounded-lg text-xs hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left"
+   273→                          >
+   274→                            {slot}
+   275→                          </button>
+   276→                        ))}
+   277→                      </div>
+   278→                      <Button className="w-full mt-3 bg-amber-600 hover:bg-amber-700">
+   279→                        <Calendar className="h-4 w-4 mr-2" /> Book survey
+   280→                      </Button>
+   281→                    </CardContent>
+   282→                  </Card>
+   283→
+   284→                  <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+   285→                    <CardContent className="p-4">
+   286→                      <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   287→                        <Bot className="h-4 w-4 text-violet-600" /> AI Coach
+   288→                      </h3>
+   289→                      <p className="text-xs text-muted-foreground mb-2">
+   290→                        Based on €{lead.monthly_bill}/mo bill, this is a high-value lead. Lead with the SEAI grant + monthly savings.
+   291→                      </p>
+   292→                      <div className="text-xs space-y-1">
+   293→                        <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+   294→                          <strong>Script:</strong> "With your {estimate.systemSizeKw}kWp system, you'll save {eurFmt(estimate.annualSavings)}/year and the SEAI covers {eurFmt(1800)}. Payback in {estimate.paybackYears} years."
+   295→                        </div>
+   296→                      </div>
+   297→                    </CardContent>
+   298→                  </Card>
+   299→                </div>
+   300→              </div>
+   301→
+   302→              {/* Next button */}
+   303→              <div className="mt-6 flex justify-end">
+   304→                <Button onClick={() => setStep('survey')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+   305→                  Continue to survey <ArrowRight className="h-4 w-4 ml-2" />
+   306→                </Button>
+   307→              </div>
+   308→            </motion.div>
+   309→          )}
+   310→
+   311→          {/* === STEP 2: SURVEY — uses the REAL SiteSurveyForm === */}
+   312→          {step === 'survey' && (
+   313→            <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+   314→              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
+   315→                <SiteSurveyForm
+   316→                  leadId={lead.id}
+   317→                  onCreateProposal={(surveyData, leadData) => {
+   318→                    setSurveyData(surveyData);
+   319→                    setStep('design');
+   320→                  }}
+   321→                />
+   322→              </Suspense>
+   323→              <div className="mt-6 flex justify-between">
+   324→                <Button variant="outline" onClick={() => setStep('estimate')} className="h-12">
+   325→                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to estimate
+   326→                </Button>
+   327→              </div>
+   328→            </motion.div>
+   329→          )}
+   330→
+   331→          {/* === STEP 3: DESIGN === */}
+   332→          {step === 'design' && (
+   333→            <motion.div key="design" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+   334→              <DesignStep
+   335→                lead={lead}
+   336→                designData={designData}
+   337→                setDesignData={setDesignData}
+   338→                estimate={estimate}
+   339→              />
+   340→              <div className="mt-6 flex justify-between">
+   341→                <Button variant="outline" onClick={() => setStep('survey')} className="h-12">
+   342→                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
+   343→                </Button>
+   344→                <Button onClick={() => setStep('proposal')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+   345→                  Continue to proposal <ArrowRight className="h-4 w-4 ml-2" />
+   346→                </Button>
+   347→              </div>
+   348→            </motion.div>
+   349→          )}
+   350→
+   351→          {/* === STEP 4: PROPOSAL === */}
+   352→          {step === 'proposal' && (
+   353→            <motion.div key="proposal" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+   354→              <ProposalStep
+   355→                lead={lead}
+   356→                designData={designData}
+   357→                grossCost={grossCost}
+   358→                seaiGrant={seaiGrant}
+   359→                netCost={netCost}
+   360→                estimate={estimate}
+   361→                financeOption={financeOption}
+   362→                setFinanceOption={setFinanceOption}
+   363→                depositPct={depositPct}
+   364→                setDepositPct={setDepositPct}
+   365→              />
+   366→              <div className="mt-6 flex justify-between">
+   367→                <Button variant="outline" onClick={() => setStep('design')} className="h-12">
+   368→                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
+   369→                </Button>
+   370→                <Button onClick={() => setStep('send')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+   371→                  Review & send <ArrowRight className="h-4 w-4 ml-2" />
+   372→                </Button>
+   373→              </div>
+   374→            </motion.div>
+   375→          )}
+   376→
+   377→          {/* === STEP 5: SEND === */}
+   378→          {step === 'send' && (
+   379→            <motion.div key="send" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+   380→              <SendStep lead={lead} designData={designData} netCost={netCost} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} />
+   381→              <div className="mt-6 flex justify-between">
+   382→                <Button variant="outline" onClick={() => setStep('proposal')} className="h-12">
+   383→                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
+   384→                </Button>
+   385→                <Button className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6">
+   386→                  <Send className="h-4 w-4 mr-2" /> Send proposal to customer
+   387→                </Button>
+   388→              </div>
+   389→            </motion.div>
+   390→          )}
+   391→        </AnimatePresence>
+   392→      </main>
+   393→    </div>
+   394→  );
+   395→}
+   396→
+   397→// ============= SATELLITE MAP =============
+   398→function SatelliteMap({ eircode, address }: { eircode: string; address: string }) {
+   399→  // Use OSM satellite tiles (free, no token needed)
+   400→  // In production: use Mapbox satellite layer with token
+   401→  const dublinCenter = { lat: 53.3498, lng: -6.2603 };
+   402→  const bbox = `${dublinCenter.lng - 0.01},${dublinCenter.lat - 0.005},${dublinCenter.lng + 0.01},${dublinCenter.lat + 0.005}`;
+   403→  const satelliteUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${dublinCenter.lat},${dublinCenter.lng}`;
+   404→
+   405→  return (
+   406→    <Card className="overflow-hidden">
+   407→      <div className="aspect-[16/10] bg-muted relative">
+   408→        <iframe
+   409→          title="Property satellite view"
+   410→          src={satelliteUrl}
+   411→          className="w-full h-full border-0"
+   412→          loading="lazy"
+   413→        />
+   414→        {/* Overlay badge */}
+   415→        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur">
+   416→          <MapPin className="h-3 w-3 inline mr-1" />
+   417→          {eircode || address || 'Property location'}
+   418→        </div>
+   419→      </div>
+   420→      <CardContent className="p-2 text-xs text-center text-muted-foreground">
+   421→        © OpenStreetMap · In production: Mapbox satellite with panel overlay
+   422→      </CardContent>
+   423→    </Card>
+   424→  );
+   425→}
+   426→
+   427→// ============= SURVEY STEP =============
+   428→function SurveyStep({ lead, eircode, address, onDataCollected }: {
+   429→  lead: DummyLead;
+   430→  eircode: string;
+   431→  address: string;
+   432→  onDataCollected: (data: Record<string, any>) => void;
+   433→}) {
+   434→  const [data, setData] = useState({
+   435→    roof_type: lead.survey?.roof_type || '',
+   436→    roof_condition: '',
+   437→    roof_orientation: lead.survey?.roof_orientation || 'south',
+   438→    roof_pitch: String(lead.survey?.roof_pitch || 30),
+   439→    roof_material: '',
+   440→    shading: lead.survey?.shading || 'none',
+   441→    nearby_obstructions: '',
+   442→    property_storeys: '2',
+   443→    property_type: 'residential',
+   444→    electrical_panel_capacity: '',
+   445→    meter_location: '',
+   446→    grid_connection_type: 'single_phase',
+   447→    customer_priorities: '',
+   448→    battery_interest: false,
+   449→    ev_charger: false,
+   450→    hot_water_diverter: false,
+   451→    existing_solar: false,
+   452→    access_notes: '',
+   453→    installation_notes: '',
+   454→  });
+   455→
+   456→  const update = (field: string, value: any) => {
+   457→    setData(prev => {
+   458→      const next = { ...prev, [field]: value };
+   459→      onDataCollected(next);
+   460→      return next;
+   461→    });
+   462→  };
+   463→
+   464→  return (
+   465→    <div className="space-y-4">
+   466→      <div>
+   467→        <h2 className="text-xl font-bold flex items-center gap-2">
+   468→          <Home className="h-5 w-5 text-indigo-600" /> Site survey
+   469→        </h2>
+   470→        <p className="text-sm text-muted-foreground mt-1">Capture roof details, electrical setup, and customer preferences. This data flows directly into the proposal.</p>
+   471→      </div>
+   472→
+   473→      {/* Satellite view for reference */}
+   474→      <Card>
+   475→        <CardContent className="p-4">
+   476→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   477→            <MapPin className="h-4 w-4 text-blue-600" /> Property overview
+   478→          </h3>
+   479→          <SatelliteMap eircode={eircode || lead.mprn} address={address || lead.address} />
+   480→        </CardContent>
+   481→      </Card>
+   482→
+   483→      {/* Roof details */}
+   484→      <Card>
+   485→        <CardContent className="p-4">
+   486→          <h3 className="font-semibold text-sm mb-3">Roof details</h3>
+   487→          <div className="grid sm:grid-cols-2 gap-3">
+   488→            <div>
+   489→              <Label className="text-xs">Roof type *</Label>
+   490→              <select value={data.roof_type} onChange={e => update('roof_type', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   491→                <option value="">Select…</option>
+   492→                <option value="concrete_tile">Concrete tile</option>
+   493→                <option value="slate">Slate</option>
+   494→                <option value="flat">Flat (membrane)</option>
+   495→                <option value="metal">Metal</option>
+   496→                <option value="thatch">Thatch</option>
+   497→              </select>
+   498→            </div>
+   499→            <div>
+   500→              <Label className="text-xs">Roof condition</Label>
+   501→              <select value={data.roof_condition} onChange={e => update('roof_condition', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   502→                <option value="">Select…</option>
+   503→                <option value="excellent">Excellent (new)</option>
+   504→                <option value="good">Good</option>
+   505→                <option value="fair">Fair</option>
+   506→                <option value="poor">Poor (needs repair first)</option>
+   507→              </select>
+   508→            </div>
+   509→            <div>
+   510→              <Label className="text-xs">Orientation</Label>
+   511→              <select value={data.roof_orientation} onChange={e => update('roof_orientation', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   512→                <option value="south">South (ideal)</option>
+   513→                <option value="south_east">South-east</option>
+   514→                <option value="south_west">South-west</option>
+   515→                <option value="east">East</option>
+   516→                <option value="west">West</option>
+   517→                <option value="north">North (not recommended)</option>
+   518→              </select>
+   519→            </div>
+   520→            <div>
+   521→              <Label className="text-xs">Roof pitch (degrees)</Label>
+   522→              <Input type="number" value={data.roof_pitch} onChange={e => update('roof_pitch', e.target.value)} className="mt-1" />
+   523→            </div>
+   524→            <div>
+   525→              <Label className="text-xs">Shading</Label>
+   526→              <select value={data.shading} onChange={e => update('shading', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   527→                <option value="none">No shading (ideal)</option>
+   528→                <option value="light">Light shading</option>
+   529→                <option value="moderate">Moderate shading</option>
+   530→                <option value="heavy">Heavy shading (not suitable)</option>
+   531→              </select>
+   532→            </div>
+   533→            <div>
+   534→              <Label className="text-xs">Property storeys</Label>
+   535→              <select value={data.property_storeys} onChange={e => update('property_storeys', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   536→                <option value="1">Single storey (bungalow)</option>
+   537→                <option value="2">Two storey (house)</option>
+   538→                <option value="3">Three storey</option>
+   539→              </select>
+   540→            </div>
+   541→          </div>
+   542→        </CardContent>
+   543→      </Card>
+   544→
+   545→      {/* Electrical */}
+   546→      <Card>
+   547→        <CardContent className="p-4">
+   548→          <h3 className="font-semibold text-sm mb-3">Electrical setup</h3>
+   549→          <div className="grid sm:grid-cols-2 gap-3">
+   550→            <div>
+   551→              <Label className="text-xs">Main fuse / panel capacity</Label>
+   552→              <Input placeholder="e.g. 100A" value={data.electrical_panel_capacity} onChange={e => update('electrical_panel_capacity', e.target.value)} className="mt-1" />
+   553→            </div>
+   554→            <div>
+   555→              <Label className="text-xs">Meter location</Label>
+   556→              <Input placeholder="e.g. Hallway cupboard" value={data.meter_location} onChange={e => update('meter_location', e.target.value)} className="mt-1" />
+   557→            </div>
+   558→            <div>
+   559→              <Label className="text-xs">Grid connection</Label>
+   560→              <select value={data.grid_connection_type} onChange={e => update('grid_connection_type', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   561→                <option value="single_phase">Single phase (domestic)</option>
+   562→                <option value="three_phase">Three phase</option>
+   563→              </select>
+   564→            </div>
+   565→          </div>
+   566→        </CardContent>
+   567→      </Card>
+   568→
+   569→      {/* Customer preferences */}
+   570→      <Card>
+   571→        <CardContent className="p-4">
+   572→          <h3 className="font-semibold text-sm mb-3">Customer preferences</h3>
+   573→          <div className="space-y-2">
+   574→            {[
+   575→              { key: 'battery_interest', label: 'Interested in battery storage' },
+   576→              { key: 'ev_charger', label: 'Has / wants EV charger' },
+   577→              { key: 'hot_water_diverter', label: 'Wants hot water diverter' },
+   578→              { key: 'existing_solar', label: 'Already has solar (partial)' },
+   579→            ].map(item => (
+   580→              <label key={item.key} className="flex items-center gap-2 cursor-pointer">
+   581→                <input
+   582→                  type="checkbox"
+   583→                  checked={data[item.key as keyof typeof data] as boolean}
+   584→                  onChange={e => update(item.key, e.target.checked)}
+   585→                  className="h-4 w-4 rounded border-input"
+   586→                />
+   587→                <span className="text-sm">{item.label}</span>
+   588→              </label>
+   589→            ))}
+   590→          </div>
+   591→          <div className="mt-3">
+   592→            <Label className="text-xs">Customer priorities / notes</Label>
+   593→            <textarea
+   594→              placeholder="e.g. wants to future-proof for EV, concerned about payback period, interested in maximum self-consumption…"
+   595→              value={data.customer_priorities}
+   596→              onChange={e => update('customer_priorities', e.target.value)}
+   597→              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 min-h-[60px]"
+   598→            />
+   599→          </div>
+   600→        </CardContent>
+   601→      </Card>
+   602→    </div>
+   603→  );
+   604→}
+   605→
+   606→// ============= DESIGN STEP (OpenSolar-style) =============
+   607→function DesignStep({ lead, designData, setDesignData, estimate }: {
+   608→  lead: DummyLead;
+   609→  designData: any;
+   610→  setDesignData: (data: any) => void;
+   611→  estimate: any;
+   612→}) {
+   613→  const update = (field: string, value: any) => {
+   614→    setDesignData({ ...designData, [field]: value });
+   615→  };
+   616→
+   617→  const systemSizeKw = (designData.panelCount * 0.435).toFixed(1);
+   618→  const annualProduction = Math.round(Number(systemSizeKw) * 950);
+   619→
+   620→  return (
+   621→    <div className="space-y-4">
+   622→      <div>
+   623→        <h2 className="text-xl font-bold flex items-center gap-2">
+   624→          <Sun className="h-5 w-5 text-amber-600" /> System design
+   625→        </h2>
+   626→        <p className="text-sm text-muted-foreground mt-1">Lay out panels on the roof, select gear, and size the system.</p>
+   627→      </div>
+   628→
+   629→      {/* Satellite + panel layout (OpenSolar-style) */}
+   630→      <Card>
+   631→        <CardContent className="p-4">
+   632→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   633→            <MapPin className="h-4 w-4 text-amber-600" /> Roof layout designer
+   634→          </h3>
+   635→          <p className="text-xs text-muted-foreground mb-3">
+   636→            Satellite view with panel overlay. Use + / − to adjust panel count. In production: Mapbox satellite + roof polygon detection + drag-to-position panels.
+   637→          </p>
+   638→          <div className="relative aspect-[16/10] rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-700">
+   639→            {/* Real satellite tiles via OSM */}
+   640→            <iframe
+   641→              title="Roof satellite view"
+   642→              src={`https://www.openstreetmap.org/export/embed.html?bbox=-6.27,53.34,-6.25,53.36&layer=mapnik&marker=53.35,-6.26`}
+   643→              className="absolute inset-0 w-full h-full"
+   644→              style={{ filter: 'contrast(1.1) brightness(0.9)' }}
+   645→              loading="lazy"
+   646→            />
+   647→            {/* Panel overlay grid — positioned over the "roof" area */}
+   648→            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+   649→              <div className="bg-blue-600/20 border-2 border-blue-500/50 rounded-lg p-2 pointer-events-auto" style={{ width: '60%', height: '50%' }}>
+   650→                <div className="grid h-full gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(designData.panelCount))}, 1fr)` }}>
+   651→                  {Array.from({ length: designData.panelCount }).map((_, i) => (
+   652→                    <div
+   653→                      key={i}
+   654→                      className="bg-blue-600/80 border border-blue-300/50 rounded-sm flex items-center justify-center text-[7px] text-white font-bold hover:bg-blue-500 cursor-pointer transition-colors"
+   655→                      onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
+   656→                      title={`Panel ${i + 1}`}
+   657→                    />
+   658→                  ))}
+   659→                </div>
+   660→              </div>
+   661→            </div>
+   662→            {/* Controls */}
+   663→            <div className="absolute top-2 right-2 flex gap-1 z-10">
+   664→              <button
+   665→                onClick={() => update('panelCount', designData.panelCount + 1)}
+   666→                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
+   667→                title="Add panel"
+   668→              >
+   669→                <Plus className="h-3 w-3" />
+   670→              </button>
+   671→              <button
+   672→                onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
+   673→                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
+   674→                title="Remove panel"
+   675→              >
+   676→                <Minus className="h-3 w-3" />
+   677→              </button>
+   678→            </div>
+   679→            {/* Orientation indicator */}
+   680→            <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded backdrop-blur z-10">
+   681→              <span className="font-bold">N ↑</span> · Orientation: {designData.roofOrientation}
+   682→            </div>
+   683→          </div>
+   684→          <div className="mt-2 flex items-center justify-between text-xs">
+   685→            <span className="text-muted-foreground">
+   686→              {designData.panelCount} panels · {systemSizeKw} kWp · {annualProduction.toLocaleString()} kWh/yr
+   687→            </span>
+   688→            <span className="text-emerald-600 font-medium">
+   689→              {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage covered
+   690→            </span>
+   691→          </div>
+   692→          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded text-xs text-amber-800 dark:text-amber-300">
+   693→            <Info className="h-3 w-3 inline mr-1" />
+   694→            In production: Mapbox satellite layer + automated roof detection + drag-to-position panels + 3D pitch rendering (like OpenSolar).
+   695→          </div>
+   696→        </CardContent>
+   697→      </Card>
+   698→
+   699→      {/* Gear selection */}
+   700→      <Card>
+   701→        <CardContent className="p-4">
+   702→          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   703→            <Zap className="h-4 w-4 text-violet-600" /> Gear selection
+   704→          </h3>
+   705→          <div className="space-y-3">
+   706→            {/* Panels */}
+   707→            <div>
+   708→              <Label className="text-xs">Solar panels</Label>
+   709→              <select value={designData.panelModel} onChange={e => update('panelModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   710→                <option value="Longi Hi-MO 6 435W">Longi Hi-MO 6 435W — €145/panel</option>
+   711→                <option value="Jinko Tiger Neo 415W">Jinko Tiger Neo 415W — €138/panel</option>
+   712→                <option value="Trina Vertex S+ 420W">Trina Vertex S+ 420W — €142/panel</option>
+   713→              </select>
+   714→            </div>
+   715→            {/* Inverter */}
+   716→            <div>
+   717→              <Label className="text-xs">Inverter</Label>
+   718→              <select value={designData.inverterModel} onChange={e => update('inverterModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+   719→                <option value="SolarEdge SE5K">SolarEdge SE5K — €1,450</option>
+   720→                <option value="Huawei SUN2000-6KTL-L1">Huawei SUN2000-6KTL — €1,280</option>
+   721→                <option value="Fronius Primo 8.6-1">Fronius Primo 8.6 — €1,850</option>
+   722→              </select>
+   723→            </div>
+   724→            {/* Battery */}
+   725→            <div>
+   726→              <div className="flex items-center justify-between mb-1">
+   727→                <Label className="text-xs">Battery storage</Label>
+   728→                <input
+   729→                  type="checkbox"
+   730→                  checked={designData.includeBattery}
+   731→                  onChange={e => update('includeBattery', e.target.checked)}
+   732→                  className="h-4 w-4 rounded border-input"
+   733→                />
+   734→              </div>
+   735→              {designData.includeBattery && (
+   736→                <select value={designData.batteryModel} onChange={e => update('batteryModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+   737→                  <option value="Tesla Powerwall 3 (13.5kWh)">Tesla Powerwall 3 (13.5kWh) — €7,200</option>
+   738→                  <option value="SolarEdge Home Battery 5kWh">SolarEdge Home Battery 5kWh — €2,800</option>
+   739→                  <option value="Huawei LUNA2000-5-S0 (5kWh)">Huawei LUNA2000 5kWh — €2,600</option>
+   740→                </select>
+   741→              )}
+   742→            </div>
+   743→          </div>
+   744→        </CardContent>
+   745→      </Card>
+   746→
+   747→      {/* AI suggestion */}
+   748→      <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+   749→        <CardContent className="p-4">
+   750→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   751→            <Bot className="h-4 w-4 text-violet-600" /> AI design suggestion
+   752→          </h3>
+   753→          <p className="text-xs text-muted-foreground">
+   754→            Based on {lead.annual_kwh?.toLocaleString() || estimate.annualKwh.toLocaleString()} kWh annual usage
+   755→            and {designData.roofOrientation} roof:
+   756→          </p>
+   757→          <div className="mt-2 p-2 bg-background rounded text-xs space-y-1">
+   758→            <div>✓ {designData.panelCount} panels ({systemSizeKw} kWp) covers {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage</div>
+   759→            <div>✓ {designData.includeBattery ? 'Battery included — good for self-consumption' : 'Consider adding battery for 70%+ self-consumption'}</div>
+   760→            <div>✓ {designData.roofOrientation === 'south' ? 'South-facing — optimal' : 'Consider optimisers for non-south orientation'}</div>
+   761→          </div>
+   762→        </CardContent>
+   763→      </Card>
+   764→    </div>
+   765→  );
+   766→}
+   767→
+   768→// ============= PROPOSAL STEP (finance + packages) =============
+   769→function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimate, financeOption, setFinanceOption, depositPct, setDepositPct }: {
+   770→  lead: DummyLead;
+   771→  designData: any;
+   772→  grossCost: number;
+   773→  seaiGrant: number;
+   774→  netCost: number;
+   775→  estimate: any;
+   776→  financeOption: 'cash' | 'finance' | 'lease';
+   777→  setFinanceOption: (v: 'cash' | 'finance' | 'lease') => void;
+   778→  depositPct: number;
+   779→  setDepositPct: (v: number) => void;
+   780→}) {
+   781→  const depositAmount = Math.round(netCost * (depositPct / 100));
+   782→  const balanceAmount = netCost - depositAmount;
+   783→
+   784→  // Finance calc (3.9% APR over 10 years)
+   785→  const financeMonthly = financeOption === 'finance' ? Math.round((netCost * 1.21) / 120) : 0; // ~21% total interest over 10yr
+   786→  const annualSavings = estimate.annualSavings;
+   787→  const netMonthlyPosition = financeOption === 'finance' ? annualSavings / 12 - financeMonthly : annualSavings / 12;
+   788→
+   789→  return (
+   790→    <div className="space-y-4">
+   791→      <div>
+   792→        <h2 className="text-xl font-bold flex items-center gap-2">
+   793→          <FileText className="h-5 w-5 text-emerald-600" /> Proposal & financing
+   794→        </h2>
+   795→        <p className="text-sm text-muted-foreground mt-1">Choose payment structure, review costs, and prepare the professional proposal.</p>
+   796→      </div>
+   797→
+   798→      {/* Cost breakdown */}
+   799→      <Card>
+   800→        <CardContent className="p-4">
+   801→          <h3 className="font-semibold text-sm mb-3">Cost breakdown</h3>
+   802→          <div className="space-y-2 text-sm">
+   803→            <div className="flex justify-between p-2 bg-muted/30 rounded">
+   804→              <span>{designData.panelCount} × {designData.panelModel}</span>
+   805→              <span className="font-semibold">{eurFmt(designData.panelCount * 145)}</span>
+   806→            </div>
+   807→            <div className="flex justify-between p-2 bg-muted/30 rounded">
+   808→              <span>{designData.inverterModel}</span>
+   809→              <span className="font-semibold">{eurFmt(1450)}</span>
+   810→            </div>
+   811→            {designData.includeBattery && (
+   812→              <div className="flex justify-between p-2 bg-muted/30 rounded">
+   813→                <span>{designData.batteryModel}</span>
+   814→                <span className="font-semibold">{eurFmt(designData.batterySize * 1200)}</span>
+   815→              </div>
+   816→            )}
+   817→            <div className="flex justify-between p-2 bg-muted/30 rounded">
+   818→              <span>Mounting + cabling + labour</span>
+   819→              <span className="font-semibold">{eurFmt(800)}</span>
+   820→            </div>
+   821→            <div className="flex justify-between p-2 border-t-2 font-bold">
+   822→              <span>Gross cost</span>
+   823→              <span>{eurFmt(grossCost)}</span>
+   824→            </div>
+   825→            <div className="flex justify-between p-2 bg-violet-50 dark:bg-violet-950/30 rounded text-violet-700 dark:text-violet-300">
+   826→              <span>SEAI grant</span>
+   827→              <span className="font-semibold">−{eurFmt(seaiGrant)}</span>
+   828→            </div>
+   829→            <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded text-lg font-bold text-emerald-700 dark:text-emerald-300">
+   830→              <span>Net cost</span>
+   831→              <span>{eurFmt(netCost)}</span>
+   832→            </div>
+   833→          </div>
+   834→        </CardContent>
+   835→      </Card>
+   836→
+   837→      {/* Finance options */}
+   838→      <Card>
+   839→        <CardContent className="p-4">
+   840→          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   841→            <CreditCard className="h-4 w-4 text-blue-600" /> Payment options
+   842→          </h3>
+   843→          <div className="grid sm:grid-cols-3 gap-2">
+   844→            {[
+   845→              { id: 'cash', label: 'Pay cash', desc: 'Full payment on completion', icon: PoundSterling },
+   846→              { id: 'finance', label: 'Finance (HEUL)', desc: '3.9% APR · 10 years', icon: Percent },
+   847→              { id: 'lease', label: 'Solar lease', desc: 'Pay from savings', icon: TrendingUp },
+   848→            ].map(opt => {
+   849→              const Icon = opt.icon;
+   850→              const isSelected = financeOption === opt.id;
+   851→              return (
+   852→                <button
+   853→                  key={opt.id}
+   854→                  onClick={() => setFinanceOption(opt.id as 'cash' | 'finance' | 'lease')}
+   855→                  className={`p-3 rounded-lg border-2 transition-all text-left ${
+   856→                    isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-border hover:border-blue-300'
+   857→                  }`}
+   858→                >
+   859→                  <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-blue-600' : 'text-muted-foreground'}`} />
+   860→                  <div className="font-semibold text-sm">{opt.label}</div>
+   861→                  <div className="text-xs text-muted-foreground">{opt.desc}</div>
+   862→                </button>
+   863→              );
+   864→            })}
+   865→          </div>
+   866→
+   867→          {/* Deposit slider */}
+   868→          {financeOption !== 'lease' && (
+   869→            <div className="mt-4">
+   870→              <div className="flex items-center justify-between mb-2">
+   871→                <Label className="text-xs">Deposit: {depositPct}%</Label>
+   872→                <span className="text-sm font-bold">{eurFmt(depositAmount)}</span>
+   873→              </div>
+   874→              <input
+   875→                type="range"
+   876→                min="0"
+   877→                max="50"
+   878→                step="5"
+   879→                value={depositPct}
+   880→                onChange={e => setDepositPct(Number(e.target.value))}
+   881→                className="w-full"
+   882→              />
+   883→              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+   884→                <span>Balance: {eurFmt(balanceAmount)}</span>
+   885→                <span>Due on completion</span>
+   886→              </div>
+   887→            </div>
+   888→          )}
+   889→
+   890→          {/* Finance breakdown */}
+   891→          {financeOption === 'finance' && (
+   892→            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+   893→              <div className="grid grid-cols-2 gap-3 text-sm">
+   894→                <div>
+   895→                  <div className="text-xs text-muted-foreground">Monthly payment</div>
+   896→                  <div className="font-bold text-lg">{eurFmt(financeMonthly)}</div>
+   897→                </div>
+   898→                <div>
+   899→                  <div className="text-xs text-muted-foreground">Monthly savings</div>
+   900→                  <div className="font-bold text-lg text-emerald-600">{eurFmt(annualSavings / 12)}</div>
+   901→                </div>
+   902→                <div className="col-span-2 pt-2 border-t">
+   903→                  <div className="text-xs text-muted-foreground">Net monthly position</div>
+   904→                  <div className={`font-bold text-lg ${netMonthlyPosition > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+   905→                    {netMonthlyPosition > 0 ? '+' : ''}{eurFmt(netMonthlyPosition)}/month
+   906→                  </div>
+   907→                  <p className="text-xs text-muted-foreground mt-1">
+   908→                    {netMonthlyPosition > 0
+   909→                      ? 'Customer is cashflow positive from month one!'
+   910→                      : 'Customer pays slightly more monthly but owns the system'}
+   911→                  </p>
+   912→                </div>
+   913→              </div>
+   914→            </div>
+   915→          )}
+   916→        </CardContent>
+   917→      </Card>
+   918→
+   919→      {/* Savings summary */}
+   920→      <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10">
+   921→        <CardContent className="p-4">
+   922→          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+   923→            <TrendingUp className="h-4 w-4 text-emerald-600" /> Savings summary
+   924→          </h3>
+   925→          <div className="grid grid-cols-3 gap-3 text-center">
+   926→            <div>
+   927→              <div className="text-xs text-muted-foreground">Annual savings</div>
+   928→              <div className="font-bold text-lg text-emerald-700 dark:text-emerald-300">{eurFmt(annualSavings)}</div>
+   929→            </div>
+   930→            <div>
+   931→              <div className="text-xs text-muted-foreground">Payback</div>
+   932→              <div className="font-bold text-lg">{estimate.paybackYears} yrs</div>
+   933→            </div>
+   934→            <div>
+   935→              <div className="text-xs text-muted-foreground">20-year savings</div>
+   936→              <div className="font-bold text-lg">{eurFmt(estimate.twentyYearSavings)}</div>
+   937→            </div>
+   938→          </div>
+   939→        </CardContent>
+   940→      </Card>
+   941→
+   942→      {/* AI pricing suggestion */}
+   943→      <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+   944→        <CardContent className="p-4">
+   945→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+   946→            <Bot className="h-4 w-4 text-violet-600" /> AI pricing coach
+   947→          </h3>
+   948→          <div className="text-xs space-y-1">
+   949→            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+   950→              <strong>Margin:</strong> {Math.round(((netCost - grossCost + seaiGrant) / netCost) * 100)}% (healthy — industry avg is 18-22%)
+   951→            </div>
+   952→            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+   953→              <strong>Objection handler:</strong> If customer says "too expensive" → offer the finance option. {eurFmt(annualSavings / 12)}/mo savings vs {eurFmt(financeMonthly)}/mo payment = cashflow positive from month 1.
+   954→            </div>
+   955→            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+   956→              <strong>Closing tip:</strong> Lead with the SEAI grant ({eurFmt(seaiGrant)}) — it's "free money" that makes the decision feel urgent (grant rates may change).
+   957→            </div>
+   958→          </div>
+   959→        </CardContent>
+   960→      </Card>
+   961→    </div>
+   962→  );
+   963→}
+   964→
+   965→// ============= SEND STEP =============
+   966→function SendStep({ lead, designData, netCost, seaiGrant, financeOption, depositPct }: {
+   967→  lead: DummyLead;
+   968→  designData: any;
+   969→  netCost: number;
+   970→  seaiGrant: number;
+   971→  financeOption: string;
+   972→  depositPct: number;
+   973→}) {
+   974→  return (
+   975→    <div className="space-y-4">
+   976→      <div>
+   977→        <h2 className="text-xl font-bold flex items-center gap-2">
+   978→          <Send className="h-5 w-5 text-emerald-600" /> Review & send
+   979→        </h2>
+   980→        <p className="text-sm text-muted-foreground mt-1">Final review before sending the professional proposal to {lead.name}.</p>
+   981→      </div>
+   982→
+   983→      {/* Summary card */}
+   984→      <Card className="border-emerald-300 dark:border-emerald-800">
+   985→        <CardContent className="p-4">
+   986→          <div className="grid sm:grid-cols-2 gap-4">
+   987→            <div>
+   988→              <h3 className="font-semibold text-sm mb-2">System</h3>
+   989→              <div className="text-xs space-y-1">
+   990→                <div>{designData.panelCount} × {designData.panelModel}</div>
+   991→                <div>Inverter: {designData.inverterModel}</div>
+   992→                {designData.includeBattery && <div>Battery: {designData.batteryModel}</div>}
+   993→                <div>System size: {(designData.panelCount * 0.435).toFixed(1)} kWp</div>
+   994→              </div>
+   995→            </div>
+   996→            <div>
+   997→              <h3 className="font-semibold text-sm mb-2">Financials</h3>
+   998→              <div className="text-xs space-y-1">
+   999→                <div>Net cost: <strong>{eurFmt(netCost)}</strong></div>
+  1000→                <div>SEAI grant: {eurFmt(seaiGrant)}</div>
+  1001→                <div>Payment: {financeOption === 'cash' ? 'Cash' : financeOption === 'finance' ? 'Finance (3.9% APR)' : 'Lease'}</div>
+  1002→                <div>Deposit: {depositPct}% ({eurFmt(netCost * depositPct / 100)})</div>
+  1003→              </div>
+  1004→            </div>
+  1005→          </div>
+  1006→        </CardContent>
+  1007→      </Card>
+  1008→
+  1009→      {/* Professional proposal preview */}
+  1010→      <Card>
+  1011→        <CardContent className="p-4">
+  1012→          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+  1013→            <FileText className="h-4 w-4 text-blue-600" /> Professional proposal
+  1014→          </h3>
+  1015→          <p className="text-xs text-muted-foreground mb-3">
+  1016→            4-page branded PDF: Cover page · System design + roof layout · Investment & savings (20-year cashflow) · Terms & acceptance
+  1017→          </p>
+  1018→          <div className="aspect-[210/297] max-w-xs mx-auto bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30 rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-800 flex items-center justify-center">
+  1019→            <div className="text-center p-4">
+  1020→              <div className="text-xs font-bold mb-1">{brand.name}</div>
+  1021→              <div className="text-[10px] text-muted-foreground">Solar Investment Plan</div>
+  1022→              <div className="text-[10px] text-muted-foreground mt-2">Prepared for {lead.name}</div>
+  1023→              <div className="text-[10px] text-muted-foreground">{(designData.panelCount * 0.435).toFixed(1)} kWp · {eurFmt(netCost)}</div>
+  1024→              <FileText className="h-8 w-8 text-emerald-400 mx-auto mt-3" />
+  1025→            </div>
+  1026→          </div>
+  1027→          <Button variant="outline" className="w-full mt-3">
+  1028→            <FileText className="h-4 w-4 mr-2" /> Preview full proposal
+  1029→          </Button>
+  1030→        </CardContent>
+  1031→      </Card>
+  1032→
+  1033→      {/* Send options */}
+  1034→      <Card>
+  1035→        <CardContent className="p-4">
+  1036→          <h3 className="font-semibold text-sm mb-3">Send to customer</h3>
+  1037→          <div className="space-y-2">
+  1038→            <div className="flex items-center gap-2 p-2 border rounded-lg">
+  1039→              <input type="checkbox" defaultChecked className="h-4 w-4 rounded" />
+  1040→              <Mail className="h-4 w-4 text-muted-foreground" />
+  1041→              <span className="text-sm flex-1">Email proposal link to {lead.email}</span>
+  1042→            </div>
+  1043→            <div className="flex items-center gap-2 p-2 border rounded-lg">
+  1044→              <input type="checkbox" className="h-4 w-4 rounded" />
+  1045→              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+  1046→              <span className="text-sm flex-1">SMS notification to {lead.phone}</span>
+  1047→            </div>
+  1048→            <div className="flex items-center gap-2 p-2 border rounded-lg">
+  1049→              <input type="checkbox" defaultChecked className="h-4 w-4 rounded" />
+  1050→              <Calendar className="h-4 w-4 text-muted-foreground" />
+  1051→              <span className="text-sm flex-1">Auto-follow up in 3 days if no response</span>
+  1052→            </div>
+  1053→          </div>
+  1054→        </CardContent>
+  1055→      </Card>
+  1056→    </div>
+  1057→  );
+  1058→}
+  1059→

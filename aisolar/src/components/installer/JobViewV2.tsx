@@ -19,7 +19,7 @@
  * No scrolling for days. Click a tab → see that phase → done → next tab.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -841,7 +841,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
   onSave: (sig: string) => void;
   onCancel: () => void;
 }) {
-  const canvasRef = useState<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const getCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -883,7 +883,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
   const stopDraw = () => setIsDrawing(false);
 
   const clear = () => {
-    const canvas = canvasRef[0];
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -891,7 +891,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
   };
 
   const save = () => {
-    const canvas = canvasRef[0];
+    const canvas = canvasRef.current;
     if (!canvas) return;
     onSave(canvas.toDataURL());
   };
@@ -907,7 +907,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
           I, {customerName}, confirm the solar installation is complete, commissioned, and I've been shown how to use the monitoring app.
         </p>
         <canvas
-          ref={(el) => { canvasRef[1](el); }}
+          ref={canvasRef}
           className="w-full h-48 border-2 border-border rounded-lg bg-white touch-none cursor-crosshair"
           style={{ touchAction: 'none' }}
           onPointerDown={startDraw}

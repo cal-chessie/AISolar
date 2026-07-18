@@ -187,7 +187,7 @@ export default function OnboardingMode() {
           </motion.div>
           <h1 className="text-3xl font-bold mb-2">Welcome to {brand.name}</h1>
           <p className="text-muted-foreground">
-            Take a 5-minute tour. Click around — it\'s all demo data, nothing breaks.
+            Take a 5-minute tour. Click around — it's all demo data, nothing breaks.
           </p>
         </div>
 
@@ -281,8 +281,8 @@ export default function OnboardingMode() {
         {demoActive && (
           <div className="mt-8 p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg text-xs text-violet-800 dark:text-violet-300 text-center">
             <Lock className="h-3 w-3 inline mr-1" />
-            You\'re in demo mode. No real data is loaded. When you sign up for real,
-            you\'ll see your actual leads, products, and agents here.
+            You're in demo mode. No real data is loaded. When you sign up for real,
+            you'll see your actual leads, products, and agents here.
           </div>
         )}
       </div>
