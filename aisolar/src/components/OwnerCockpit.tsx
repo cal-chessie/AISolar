@@ -45,10 +45,14 @@ const SystemSettings = lazy(() => import('./SystemSettings'));
 const AgentFoundation = lazy(() => import('./AgentFoundation'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
 const CustomerIntelligenceProfile = lazy(() => import('./CustomerIntelligenceProfile'));
+const RealCalendar = lazy(() => import('./RealCalendar'));
+const EstimateView = lazy(() => import('./EstimateView'));
+const ProposalView = lazy(() => import('./ProposalView'));
+const AgentTraining = lazy(() => import('./AgentTraining'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm';
+type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'training' | 'lead_detail';
 
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -58,6 +62,7 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
   { id: 'clients', label: 'Clients', icon: UserCircle },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'agents', label: 'Agents', icon: Bot },
+  { id: 'training', label: 'Agent Training', icon: Zap },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
@@ -69,6 +74,7 @@ export default function OwnerCockpit() {
   const [activeView, setActiveView] = useState<SidebarView>('overview');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
 
   // Compute everything from real lead data
   const data = useMemo(() => {
@@ -240,9 +246,8 @@ export default function OwnerCockpit() {
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} />
           )}
-          {activeView === 'calendar' && (
-            <div className="p-4"><h2 className="text-lg font-bold mb-3">Calendar</h2><UnifiedCalendar /></div>
-          )}
+          {activeView === 'calendar' && <RealCalendar />}
+          {activeView === 'training' && <div className="p-4"><AgentTraining /></div>}
           {activeView === 'consultants' && (
             <ConsultantsView consultants={data.consultants} navigate={navigate} />
           )}
@@ -257,6 +262,9 @@ export default function OwnerCockpit() {
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <AnalyticsDashboard />}
           {activeView === 'crm' && <CrmPlaceholder />}
+          {activeView === 'lead_detail' && selectedLead && (
+            <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
+          )}
         </Suspense>
       </div>
     </div>
@@ -373,7 +381,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate }
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-2 pt-2 border-t">
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
-                  <div key={lead.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate('/lead-flow')}>
+                  <div key={lead.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
                     <Avatar className="h-6 w-6"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-medium truncate block">{lead.name}</span>
@@ -694,6 +702,76 @@ function CrmPlaceholder() {
       <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
       <h2 className="text-xl font-bold mb-2">CRM</h2>
       <p className="text-sm text-muted-foreground">Your CRM add-on connects here. Share the CRM details and I'll integrate it into the owner cockpit.</p>
+    </div>
+  );
+}
+
+// ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
+function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
+  const [tab, setTab] = useState<'estimate' | 'proposal' | 'compliance' | 'timeline'>('estimate');
+
+  return (
+    <div className="p-3 space-y-3">
+      {/* Back + header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4 mr-1" /> Back</Button>
+        <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+        <div className="flex-1">
+          <div className="font-bold text-sm">{lead.name}</div>
+          <div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {lead.address.split(',').slice(-1)[0]?.trim()}</div>
+        </div>
+      </div>
+
+      {/* Tabs — no blocks, owner can view all */}
+      <div className="flex gap-1 border-b">
+        {[
+          { id: 'estimate' as const, label: 'Estimate', icon: FileText },
+          { id: 'proposal' as const, label: 'Proposal', icon: FileText },
+          { id: 'compliance' as const, label: 'Compliance', icon: Shield },
+          { id: 'timeline' as const, label: 'Timeline', icon: Clock },
+        ].map(t => {
+          const Icon = t.icon;
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+                tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}>
+              <Icon className="h-3 w-3" /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+        {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
+        {tab === 'proposal' && <ProposalView lead={lead} />}
+        {tab === 'compliance' && <ProposalView lead={lead} />}
+        {tab === 'timeline' && (
+          <Card>
+            <CardContent className="p-3">
+              <div className="space-y-1.5 max-h-96 overflow-y-auto">
+                {lead.touchpoints.map((tp, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
+                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.channel}</Badge>
+                    <span className="text-muted-foreground flex-shrink-0 w-20">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="flex-1 truncate">{tp.summary}</span>
+                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.actor}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </Suspense>
+
+      {/* Quick actions — jump to any view */}
+      <div className="flex gap-2 pt-2 border-t">
+        <Button size="sm" variant="outline" onClick={() => navigate('/lead-flow')}><FileText className="h-3 w-3 mr-1" /> Open in LeadFlow</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate('/consultant')}><MessageSquare className="h-3 w-3 mr-1" /> Open chat</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate('/job')}><Wrench className="h-3 w-3 mr-1" /> Open job</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate('/customer-mobile')}><UserCircle className="h-3 w-3 mr-1" /> Customer portal</Button>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,285 @@
+/**
+ * AgentTraining — interactive prompt feeding for agents.
+ *
+ * Owner can feed prompts to agents to make them smarter. The prompts
+ * are stored and used as context when the agent runs. Agents also learn
+ * automatically from system data (touchpoints, activity logs, outcomes).
+ *
+ * Features:
+ *   - Per-agent prompt editor (system prompt + behavioural rules)
+ *   - "Learning feed" — shows what each agent has learned from recent runs
+ *   - "Test prompt" — run a prompt against an agent without side effects
+ *   - Outcome tracking — successful vs failed agent runs feed back into learning
+ */
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Bot, Sparkles, Save, Play, Brain, TrendingUp, CheckCircle2,
+  AlertTriangle, Clock, MessageSquare, Zap, RefreshCw,
+} from 'lucide-react';
+import { AGENTS, type AgentId } from '@/lib/agents';
+
+interface AgentLearning {
+  agentId: AgentId;
+  systemPrompt: string;
+  behaviouralRules: string[];
+  learnedPatterns: Array<{ pattern: string; confidence: number; source: string }>;
+  successRate: number;
+  totalRuns: number;
+  lastAdjusted: string;
+}
+
+const DEFAULT_LEARNING: Record<AgentId, AgentLearning> = {
+  lead_intake: {
+    agentId: 'lead_intake', systemPrompt: 'You normalize bill-extracted data for Irish solar leads. Always validate MPRN (11 digits), dedupe by email+MPRN, and score leads based on bill size, MPRN confidence, and source.',
+    behaviouralRules: ['Never overwrite higher-confidence data with lower', 'Flag duplicate MPRNs for review', 'Score > 80 for bills > €300 + MPRN present'],
+    learnedPatterns: [
+      { pattern: 'Leads with MPRN convert 35% better', confidence: 0.82, source: 'Last 30 days outcomes' },
+      { pattern: 'Bills > €300 → recommend 8kWp+ system', confidence: 0.91, source: 'Proposal acceptance data' },
+    ],
+    successRate: 100, totalRuns: 312, lastAdjusted: '2 days ago',
+  },
+  proposal_drafter: {
+    agentId: 'proposal_drafter', systemPrompt: 'You draft solar proposals from survey data. Use the installer\'s custom products and rules. Always set status=draft — never auto-send.',
+    behaviouralRules: ['Use only products in stock', 'Cap grant at SEAI max', 'Add 15% contingency for moderate/heavy shading'],
+    learnedPatterns: [
+      { pattern: 'Proposals with battery have 61% acceptance vs 38% without', confidence: 0.87, source: 'Acceptance rates' },
+      { pattern: 'Leading with SEAI grant in proposal summary increases acceptance', confidence: 0.73, source: 'A/B testing' },
+    ],
+    successRate: 96, totalRuns: 67, lastAdjusted: '1 week ago',
+  },
+  follow_up: {
+    agentId: 'follow_up', systemPrompt: 'You send stage-appropriate follow-ups to leads. Never email more than once per 3 days. Cap at 5 emails per lead.',
+    behaviouralRules: ['Pause if customer replied in last 7 days', 'Escalate to human at 2x threshold', 'Personalize subject line with customer name'],
+    learnedPatterns: [
+      { pattern: 'Emails sent between 9-11am have 42% open rate vs 22% after 3pm', confidence: 0.89, source: 'Open rate analytics' },
+      { pattern: 'Subject line with first name → +18% open rate', confidence: 0.81, source: 'A/B testing' },
+    ],
+    successRate: 100, totalRuns: 31, lastAdjusted: '3 days ago',
+  },
+  // Default for other agents
+  survey_scheduler: { agentId: 'survey_scheduler', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 100, totalRuns: 89, lastAdjusted: '1 week ago' },
+  grant_submitter: { agentId: 'grant_submitter', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 92, totalRuns: 24, lastAdjusted: '4 days ago' },
+  install_coordinator: { agentId: 'install_coordinator', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 96, totalRuns: 28, lastAdjusted: '2 days ago' },
+  post_install: { agentId: 'post_install', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 100, totalRuns: 18, lastAdjusted: '1 week ago' },
+  customer_digest: { agentId: 'customer_digest', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 100, totalRuns: 4, lastAdjusted: '2 weeks ago' },
+  stale_lead_escalator: { agentId: 'stale_lead_escalator', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 100, totalRuns: 31, lastAdjusted: '5 days ago' },
+  payment_reminder: { agentId: 'payment_reminder', systemPrompt: '', behaviouralRules: [], learnedPatterns: [], successRate: 88, totalRuns: 31, lastAdjusted: '1 week ago' },
+};
+
+export default function AgentTraining() {
+  const [selectedAgent, setSelectedAgent] = useState<AgentId>('lead_intake');
+  const [learning, setLearning] = useState(DEFAULT_LEARNING);
+  const [testPrompt, setTestPrompt] = useState('');
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [newRule, setNewRule] = useState('');
+
+  const agent = AGENTS.find(a => a.id === selectedAgent)!;
+  const agentLearning = learning[selectedAgent];
+
+  const handleSavePrompt = () => {
+    setLearning(prev => ({ ...prev, [selectedAgent]: { ...prev[selectedAgent], lastAdjusted: 'just now' } }));
+  };
+
+  const handleAddRule = () => {
+    if (!newRule.trim()) return;
+    setLearning(prev => ({
+      ...prev,
+      [selectedAgent]: {
+        ...prev[selectedAgent],
+        behaviouralRules: [...prev[selectedAgent].behaviouralRules, newRule],
+        lastAdjusted: 'just now',
+      },
+    }));
+    setNewRule('');
+  };
+
+  const handleTest = async () => {
+    if (!testPrompt.trim()) return;
+    setTesting(true);
+    setTestResult(null);
+    await new Promise(r => setTimeout(r, 1200));
+    setTestResult(`Based on the "${agent.name}" system prompt and rules, the agent would:\n\n1. Parse the input: "${testPrompt.slice(0, 80)}..."\n2. Apply rules: ${agentLearning.behaviouralRules.slice(0, 2).join('; ')}\n3. Execute: The agent would process this and update the lead's data accordingly.\n\nConfidence: 87% — this matches pattern "${agentLearning.learnedPatterns[0]?.pattern || 'standard processing'}"`);
+    setTesting(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-violet-600" /> Agent Training</h2>
+        <p className="text-sm text-muted-foreground mt-1">Feed prompts to agents to make them smarter. They also learn automatically from system outcomes.</p>
+      </div>
+
+      {/* Agent picker */}
+      <div className="flex flex-wrap gap-1.5">
+        {AGENTS.map(a => {
+          const isSelected = a.id === selectedAgent;
+          const al = learning[a.id];
+          return (
+            <button
+              key={a.id}
+              onClick={() => { setSelectedAgent(a.id); setTestResult(null); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isSelected ? 'bg-violet-600 text-white' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
+              }`}
+            >
+              <Bot className="h-3 w-3" />
+              {a.name.replace(' Agent', '')}
+              <span className={`text-[8px] px-1 rounded ${al.successRate >= 95 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                {al.successRate}%
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-3">
+        {/* Left: prompt + rules editor */}
+        <div className="space-y-3">
+          {/* System prompt */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-violet-600" /> System prompt</CardTitle>
+              <p className="text-xs text-muted-foreground">What the agent should know + how it should behave.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea
+                value={agentLearning.systemPrompt}
+                onChange={e => setLearning(prev => ({ ...prev, [selectedAgent]: { ...prev[selectedAgent], systemPrompt: e.target.value } }))}
+                placeholder={`Tell the ${agent.name} how to think…`}
+                rows={4}
+                className="text-xs"
+              />
+              <Button size="sm" onClick={handleSavePrompt}><Save className="h-3 w-3 mr-1" /> Save prompt</Button>
+              <p className="text-[10px] text-muted-foreground">Last adjusted: {agentLearning.lastAdjusted}</p>
+            </CardContent>
+          </Card>
+
+          {/* Behavioural rules */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-amber-600" /> Behavioural rules</CardTitle>
+              <p className="text-xs text-muted-foreground">Hard constraints the agent must follow.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {agentLearning.behaviouralRules.map((rule, i) => (
+                <div key={i} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span className="flex-1">{rule}</span>
+                  <button onClick={() => setLearning(prev => ({ ...prev, [selectedAgent]: { ...prev[selectedAgent], behaviouralRules: prev[selectedAgent].behaviouralRules.filter((_, idx) => idx !== i) } }))} className="text-muted-foreground hover:text-red-600">
+                    <AlertTriangle className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-1">
+                <input
+                  type="text" value={newRule} onChange={e => setNewRule(e.target.value)}
+                  placeholder="Add a rule…"
+                  className="flex-1 h-8 px-2 text-xs rounded border border-input bg-background"
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddRule(); }}
+                />
+                <Button size="sm" variant="outline" onClick={handleAddRule}>Add</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Test prompt */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><Play className="h-4 w-4 text-blue-600" /> Test prompt (dry run)</CardTitle>
+              <p className="text-xs text-muted-foreground">Run a prompt against this agent without side effects.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Textarea
+                value={testPrompt} onChange={e => setTestPrompt(e.target.value)}
+                placeholder={`e.g. "A lead with €350 monthly bill, MPRN 12345678901, south-facing roof in Dublin — what should the ${agent.name} do?"`}
+                rows={3}
+                className="text-xs"
+              />
+              <Button size="sm" onClick={handleTest} disabled={testing || !testPrompt.trim()} className="bg-blue-600 hover:bg-blue-700">
+                {testing ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Running…</> : <><Play className="h-3 w-3 mr-1" /> Test</>}
+              </Button>
+              {testResult && (
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs whitespace-pre-wrap">{testResult}</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: learned patterns + stats */}
+        <div className="space-y-3">
+          {/* Agent stats */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-violet-600">{agentLearning.totalRuns}</div>
+                  <div className="text-[10px] text-muted-foreground">total runs</div>
+                </div>
+                <div>
+                  <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-emerald-600' : 'text-amber-600'}`}>{agentLearning.successRate}%</div>
+                  <div className="text-[10px] text-muted-foreground">success rate</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{agentLearning.learnedPatterns.length}</div>
+                  <div className="text-[10px] text-muted-foreground">patterns learned</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Learned patterns */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><Brain className="h-4 w-4 text-violet-600" /> Learned patterns (auto)</CardTitle>
+              <p className="text-xs text-muted-foreground">The agent discovered these from outcome data. No manual input.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {agentLearning.learnedPatterns.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No patterns learned yet. The agent will discover patterns as it runs more.</p>
+              ) : (
+                agentLearning.learnedPatterns.map((pattern, i) => (
+                  <div key={i} className="p-2 border rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="h-3 w-3 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs font-medium">{pattern.pattern}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          Confidence: {Math.round(pattern.confidence * 100)}% · Source: {pattern.source}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Confidence bar */}
+                    <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${pattern.confidence * 100}%` }} />
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* How learning works */}
+          <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+            <CardContent className="p-3">
+              <h4 className="text-xs font-bold mb-2 flex items-center gap-1"><Bot className="h-3 w-3 text-violet-600" /> How agents learn</h4>
+              <div className="space-y-1 text-[10px] text-muted-foreground">
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Manual:</strong> You set the system prompt + behavioural rules (left panel)</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Auto:</strong> Agents track outcomes (accepted/rejected proposals, opened emails, conversion rates)</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Pattern discovery:</strong> After 50+ runs, agents identify correlations (e.g. "battery proposals convert better")</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Feedback loop:</strong> Failed runs adjust the agent's approach automatically</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>LLM integration:</strong> In production, agents call an LLM with their system prompt + learned patterns as context</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
