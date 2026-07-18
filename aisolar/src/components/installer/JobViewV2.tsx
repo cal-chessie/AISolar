@@ -22,6 +22,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -149,8 +150,13 @@ export default function JobViewV2() {
   const navigate = useNavigate();
   const [lead] = useState<DummyLead>(() => {
     const leads = generateDummyLeads();
+    if (leadId) {
+      const found = leads.find(l => l.id === leadId);
+      if (found) return found;
+    }
     return leads.find(l => l.proposal && l.assignment) || leads[8];
   });
+  const [jobCompleted, setJobCompleted] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
@@ -238,7 +244,7 @@ export default function JobViewV2() {
       {/* Sticky header with completion status */}
       <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-background/95 backdrop-blur'}`}>
         <div className="px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/installer-v4')} className="p-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/installer')} className="p-2" aria-label="Back to installer portal">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <Avatar className="h-9 w-9">
@@ -367,6 +373,14 @@ export default function JobViewV2() {
                 onSignature={(sig) => { setSignature(sig); persist({ signature: sig }); }}
                 overallComplete={overallComplete}
                 lead={lead}
+                jobCompleted={jobCompleted}
+                onMarkJobComplete={() => {
+                  setJobCompleted(true);
+                  toast.success('Job marked complete', {
+                    description: `PostInstall Agent will send warranty docs + schedule a review request for ${lead.name} in 7 days.`,
+                  });
+                  setTimeout(() => navigate('/installer'), 1800);
+                }}
               />
             )}
           </motion.div>
@@ -715,7 +729,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
 }
 
 // ============= HANDOVER TAB =============
-function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature, overallComplete, lead }: {
+function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature, overallComplete, lead, jobCompleted, onMarkJobComplete }: {
   items: ToggleItem[];
   photos: PhotoItem[];
   signature: string | null;
@@ -724,6 +738,8 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
   onSignature: (sig: string) => void;
   overallComplete: boolean;
   lead: DummyLead;
+  jobCompleted?: boolean;
+  onMarkJobComplete?: () => void;
 }) {
   const [showPad, setShowPad] = useState(false);
   const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && !!signature;
@@ -807,14 +823,31 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
       {overallComplete ? (
         <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardContent className="p-6 text-center">
-            <Award className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
-            <h3 className="font-bold text-lg">Job complete!</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              All checks done, all photos uploaded, customer signed. PostInstall Agent will send warranty docs + schedule review request.
-            </p>
-            <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700 w-full h-12">
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Mark job complete
-            </Button>
+            {jobCompleted ? (
+              <>
+                <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-600 mb-3 shadow-lg shadow-emerald-500/30">
+                  <CheckCircle2 className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="font-bold text-lg">Job complete</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  PostInstall Agent notified. Warranty docs + review request scheduled for {lead.name}. Returning to installer portal…
+                </p>
+              </>
+            ) : (
+              <>
+                <Award className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
+                <h3 className="font-bold text-lg">Ready to mark complete!</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All checks done, all photos uploaded, customer signed. Click below to finalize — PostInstall Agent will send warranty docs + schedule a review request.
+                </p>
+                <Button
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700 w-full h-12"
+                  onClick={onMarkJobComplete}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Mark job complete
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (

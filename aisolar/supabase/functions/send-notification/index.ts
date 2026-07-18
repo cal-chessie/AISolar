@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireRole } from "../_shared/auth.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
@@ -29,6 +30,16 @@ serve(async (req) => {
   }
 
   try {
+    // Authz (P0-6 fix): must be either the service-role key (pg_cron) OR an
+    // admin/consultant/installer JWT. Prevents any authenticated customer
+    // from triggering emails to arbitrary addresses.
+    const authHeader = req.headers.get("authorization") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const isServiceKey = !!serviceKey && authHeader === `Bearer ${serviceKey}`;
+    if (!isServiceKey) {
+      await requireRole(req, ["admin", "consultant", "installer"]);
+    }
+
     const { type, leadId, invoiceId, installationDate, previousStage, newStage }: EmailRequest = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

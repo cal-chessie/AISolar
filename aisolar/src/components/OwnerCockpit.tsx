@@ -452,8 +452,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Needs attention</h3>
             <div className="space-y-2">
               {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
-              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => navigate('/agents')} />}
-              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => navigate('/analytics')} />
+              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
+              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
             </div>
           </CardContent>
         </Card>
@@ -464,17 +464,22 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <CardContent className="p-3">
           <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Calendar className="h-3 w-3" /> Today's schedule</h3>
           <div className="space-y-1">
-            {data.todayEvents.map((event: any, i: number) => (
-              <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(event.type === 'install' ? '/job' : '/lead-flow')}>
-                <span className="text-[10px] font-mono text-muted-foreground w-10">{event.time}</span>
-                <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
-                  {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
+            {data.todayEvents.map((event: any, i: number) => {
+              const target = event.leadId
+                ? (event.type === 'install' ? `/job/${event.leadId}` : `/lead-flow/${event.leadId}`)
+                : (event.type === 'install' ? '/job' : '/lead-flow');
+              return (
+                <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(target)}>
+                  <span className="text-[10px] font-mono text-muted-foreground w-10">{event.time}</span>
+                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
+                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
+                  </div>
+                  <span className="text-xs flex-1 truncate">{event.title}</span>
+                  <span className="text-[10px] text-muted-foreground">{event.assignee}</span>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </div>
-                <span className="text-xs flex-1 truncate">{event.title}</span>
-                <span className="text-[10px] text-muted-foreground">{event.assignee}</span>
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -504,7 +509,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
           {consultant.leads.map((lead: DummyLead) => {
             const lastTouch = lead.touchpoints[lead.touchpoints.length - 1];
             return (
-              <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate('/consultant')}>
+              <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/consultant?lead=${lead.id}`)}>
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{lead.name}</div>
@@ -564,7 +569,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
         <h3 className="text-sm font-bold mt-4">Their jobs</h3>
         <div className="space-y-2">
           {installer.jobs.map((lead: DummyLead) => (
-            <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate('/job')}>
+            <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/job/${lead.id}`)}>
               <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
                 <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'}`} />
               </div>
@@ -639,9 +644,9 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <Button size="sm" variant="outline" onClick={() => navigate('/consultant')}><MessageSquare className="h-3 w-3 mr-1" /> Chat</Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/lead-flow')}><FileText className="h-3 w-3 mr-1" /> Flow</Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/customer-mobile')}><UserCircle className="h-3 w-3 mr-1" /> Portal</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/consultant?lead=${lead.id}`)}><MessageSquare className="h-3 w-3 mr-1" /> Chat</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/lead-flow/${lead.id}`)}><FileText className="h-3 w-3 mr-1" /> Flow</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate('/my-projects')}><UserCircle className="h-3 w-3 mr-1" /> Portal</Button>
               </div>
             </div>
           </CardContent>
@@ -791,10 +796,10 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
 
       {/* Quick actions — jump to any view */}
       <div className="flex gap-2 pt-2 border-t">
-        <Button size="sm" variant="outline" onClick={() => navigate('/lead-flow')}><FileText className="h-3 w-3 mr-1" /> Open in LeadFlow</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate('/consultant')}><MessageSquare className="h-3 w-3 mr-1" /> Open chat</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate('/job')}><Wrench className="h-3 w-3 mr-1" /> Open job</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate('/customer-mobile')}><UserCircle className="h-3 w-3 mr-1" /> Customer portal</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate(`/lead-flow/${lead.id}`)}><FileText className="h-3 w-3 mr-1" /> Open in LeadFlow</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate(`/consultant?lead=${lead.id}`)}><MessageSquare className="h-3 w-3 mr-1" /> Open chat</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate(`/job/${lead.id}`)}><Wrench className="h-3 w-3 mr-1" /> Open job</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate('/my-projects')}><UserCircle className="h-3 w-3 mr-1" /> Customer portal</Button>
       </div>
     </div>
   );

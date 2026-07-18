@@ -16,7 +16,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ import { calculateSEAI } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import { toast } from 'sonner';
 
 // Use the REAL SiteSurveyForm — not a stripped-down version
 const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
@@ -52,16 +53,24 @@ const STEPS: Array<{ id: FlowStep; label: string; icon: typeof MapPin }> = [
   { id: 'send', label: 'Send', icon: Send },
 ];
 
-export default function LeadFlow({ leadId }: { leadId?: string }) {
+export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   const navigate = useNavigate();
-  const [lead] = useState<DummyLead>(() => {
+  const params = useParams<{ leadId: string }>();
+  const routeLeadId = leadIdProp ?? params.leadId;
+  const [lead, setLead] = useState<DummyLead>(() => {
     const leads = generateDummyLeads();
+    if (routeLeadId) {
+      const found = leads.find(l => l.id === routeLeadId);
+      if (found) return found;
+    }
     return leads.find(l => l.proposal) || leads[6];
   });
   const [step, setStep] = useState<FlowStep>('estimate');
   const [eircode, setEircode] = useState('');
   const [address, setAddress] = useState(lead.address || '');
   const [showMap, setShowMap] = useState(false);
+  const [surveyBooked, setSurveyBooked] = useState<{ slot: string } | null>(null);
+  const [proposalSent, setProposalSent] = useState(false);
   const [surveyData, setSurveyData] = useState<Record<string, any>>({});
   const [designData, setDesignData] = useState({
     panelCount: lead.proposal?.panel_count || 14,
@@ -264,17 +273,32 @@ export default function LeadFlow({ leadId }: { leadId?: string }) {
                         The estimate is ready. Next step is a site survey to confirm roof details and finalize the system design.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Tomorrow 10:00', 'Tomorrow 14:00', 'Wed 10:00', 'Wed 14:00', 'Thu 10:00', 'Thu 14:00'].map(slot => (
-                          <button
-                            key={slot}
-                            className="p-2 border rounded-lg text-xs hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left"
-                          >
-                            {slot}
-                          </button>
-                        ))}
+                        {['Tomorrow 10:00', 'Tomorrow 14:00', 'Wed 10:00', 'Wed 14:00', 'Thu 10:00', 'Thu 14:00'].map(slot => {
+                          const isSelected = surveyBooked?.slot === slot;
+                          return (
+                            <button
+                              key={slot}
+                              onClick={() => setSurveyBooked({ slot })}
+                              className={`p-2 border rounded-lg text-xs hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left ${isSelected ? 'border-amber-500 bg-amber-100 dark:bg-amber-950/40 font-medium' : ''}`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
                       </div>
-                      <Button className="w-full mt-3 bg-amber-600 hover:bg-amber-700">
-                        <Calendar className="h-4 w-4 mr-2" /> Book survey
+                      <Button
+                        className="w-full mt-3 bg-amber-600 hover:bg-amber-700"
+                        disabled={!surveyBooked}
+                        onClick={() => {
+                          if (!surveyBooked) return;
+                          toast.success(`Site survey booked for ${surveyBooked.slot}`, {
+                            description: `Survey Scheduler Agent will confirm with ${lead.name}.`,
+                          });
+                          // Advance to survey step after a brief moment
+                          setTimeout(() => setStep('survey'), 600);
+                        }}
+                      >
+                        <Calendar className="h-4 w-4 mr-2" /> {surveyBooked ? `Book ${surveyBooked.slot}` : 'Select a slot above'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -375,14 +399,33 @@ export default function LeadFlow({ leadId }: { leadId?: string }) {
           {/* === STEP 5: SEND === */}
           {step === 'send' && (
             <motion.div key="send" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <SendStep lead={lead} designData={designData} netCost={netCost} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} />
+              <SendStep lead={lead} designData={designData} netCost={netCost} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} proposalSent={proposalSent} />
               <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={() => setStep('proposal')} className="h-12">
+                <Button variant="outline" onClick={() => setStep('proposal')} className="h-12" disabled={proposalSent}>
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6">
-                  <Send className="h-4 w-4 mr-2" /> Send proposal to customer
-                </Button>
+                {proposalSent ? (
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => navigate(`/consultant`)} className="h-12">
+                      <MessageSquare className="h-4 w-4 mr-2" /> Back to inbox
+                    </Button>
+                    <Button onClick={() => navigate('/owner')} className="h-12 bg-blue-600 hover:bg-blue-700">
+                      View in pipeline <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6"
+                    onClick={() => {
+                      setProposalSent(true);
+                      toast.success('Proposal sent to customer', {
+                        description: `${lead.name} will receive an email + SMS. Follow-Up Agent will check in, in 3 days.`,
+                      });
+                    }}
+                  >
+                    <Send className="h-4 w-4 mr-2" /> Send proposal to customer
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}
@@ -961,14 +1004,35 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
 }
 
 // ============= SEND STEP =============
-function SendStep({ lead, designData, netCost, seaiGrant, financeOption, depositPct }: {
+function SendStep({ lead, designData, netCost, seaiGrant, financeOption, depositPct, proposalSent }: {
   lead: DummyLead;
   designData: any;
   netCost: number;
   seaiGrant: number;
   financeOption: string;
   depositPct: number;
+  proposalSent?: boolean;
 }) {
+  if (proposalSent) {
+    return (
+      <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <CardContent className="p-6 text-center">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-600 mb-3 shadow-lg shadow-emerald-500/30">
+            <CheckCircle2 className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-xl font-bold">Proposal sent to {lead.name}</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+            An email with the proposal link has been sent to {lead.email}. The Follow-Up Agent will check in automatically, in 3 days, if they don't respond.
+          </p>
+          <div className="mt-4 inline-flex items-center gap-2 text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-full border">
+            <Bot className="h-3 w-3 text-violet-600" />
+            Follow-Up Agent scheduled · 3 days
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div>

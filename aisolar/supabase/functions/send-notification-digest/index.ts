@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireRole } from "../_shared/auth.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
@@ -116,6 +117,20 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Authz (P0-6): service-role key (pg_cron) OR admin/consultant JWT only.
+  const authHeader = req.headers.get("authorization") ?? "";
+  const isServiceKey = !!supabaseServiceKey && authHeader === `Bearer ${supabaseServiceKey}`;
+  if (!isServiceKey) {
+    try {
+      await requireRole(req, ["admin", "consultant"]);
+    } catch (err: any) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: err.status || 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
   }
 
   try {

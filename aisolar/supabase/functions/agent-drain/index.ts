@@ -13,7 +13,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
-import { corsHeaders, log, HttpError, errorResponse } from "../_shared/auth.ts";
+import { corsHeaders, log, HttpError, errorResponse, requireRole } from "../_shared/auth.ts";
 
 const FN = "agent-drain";
 
@@ -70,7 +70,24 @@ serve(async (req) => {
     const manualLeadId = body.lead_id;
     const triggerType = body.trigger_type || "cron";
 
-    log(FN, "info", "Drain started", { agentId: drainAgentId, triggerType });
+    // Authz: cron path (empty body) accepts the service-role key.
+    // Manual trigger path (lead_id + agent_id in body) requires admin role.
+    const isManualTrigger = !!(manualLeadId && drainAgentId);
+    const authHeader = req.headers.get("authorization") ?? "";
+    const isServiceKey = !!serviceKey && authHeader === `Bearer ${serviceKey}`;
+
+    if (isServiceKey) {
+      // pg_cron / admin script using the service-role key — allowed.
+    } else if (isManualTrigger) {
+      // P0-2 fix: previously any authenticated user could trigger any agent
+      // on any lead. Now requires admin role.
+      await requireRole(req, ["admin"]);
+    } else {
+      // Cron-shaped body but caller is not the service-role key — require admin.
+      await requireRole(req, ["admin"]);
+    }
+
+    log(FN, "info", "Drain started", { agentId: drainAgentId, triggerType, manual: isManualTrigger });
 
     // If manual trigger for a specific lead, enqueue then drain
     if (manualLeadId && drainAgentId) {

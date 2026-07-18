@@ -91,7 +91,7 @@ function leadToMessages(lead: DummyLead): Message[] {
 
 export default function ConsultantCockpitV5() {
   const navigate = useNavigate();
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [activeTab, setActiveTab] = useState<TabId>('chats');
   const [search, setSearch] = useState('');
   const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
@@ -131,8 +131,28 @@ export default function ConsultantCockpitV5() {
 
   const handleSendReply = () => {
     if (!replyText.trim() || !selectedLead) return;
+    // Phase 1 fix: optimistic local update so the message appears in the
+    // thread. In production this would also insert into the `touchpoints`
+    // table via Supabase and send via Postmark.
+    const newTouchpoint = {
+      id: `tp_${Date.now()}`,
+      lead_id: selectedLead.id,
+      stage: selectedLead.workflow_stage,
+      channel: 'portal' as const,
+      direction: 'outbound' as const,
+      summary: replyText,
+      timestamp: new Date().toISOString(),
+      actor: 'consultant' as const,
+    };
+    const updatedLead: DummyLead = {
+      ...selectedLead,
+      touchpoints: [...selectedLead.touchpoints, newTouchpoint],
+    };
+    setLeads((prev: DummyLead[]) => prev.map(l =>
+      l.id === selectedLead.id ? updatedLead : l
+    ));
+    setSelectedLead(updatedLead);
     setReplyText('');
-    // In production: insert into touchpoints + send via Postmark
   };
 
   const isChatView = activeTab === 'chats' || activeTab === 'leads';
@@ -228,8 +248,8 @@ export default function ConsultantCockpitV5() {
                   </div>
                   <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" asChild><a href={`tel:${selectedLead.phone}`}><Phone className="h-3.5 w-3.5" /></a></Button>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate('/lead-flow')}><ArrowRight className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" asChild><a href={`tel:${selectedLead.phone}`} aria-label="Call customer"><Phone className="h-3.5 w-3.5" /></a></Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/lead-flow/${selectedLead.id}`)} aria-label="Open in LeadFlow"><ArrowRight className="h-3.5 w-3.5" /></Button>
                 </div>
 
                 {/* Messages */}
@@ -282,7 +302,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Surveys — {surveyLeads.length} pending</h3>
                   {surveyLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate('/lead-flow')}>
+                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/lead-flow/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg"><Camera className="h-4 w-4 text-indigo-600" /></div>
                         <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()} · {lead.survey?.photo_count || 0}/8 photos</div></div>
@@ -315,7 +335,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Installations — {installLeads.length} active</h3>
                   {installLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate('/job')}>
+                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Wrench className="h-4 w-4 text-amber-600" /></div>
                         <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.assignment?.installer_name} · {lead.assignment?.scheduled_date ? new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE') : 'TBD'}</div></div>

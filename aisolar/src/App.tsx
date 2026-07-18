@@ -33,6 +33,7 @@ import InstallerPortalV5 from "./components/installer/InstallerPortalV5";
 import CustomerPortalV2 from "./components/customer/CustomerPortalV2";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import DemoBanner from "./components/DemoBanner";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { CookieConsentBanner } from "./lib/gdpr";
 import { isDemoMode } from "./lib/demoMode";
 
@@ -74,17 +75,17 @@ function AppRoutes() {
           <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
 
-          {/* Main views */}
-          <Route path="/owner" element={<PageTransition><OwnerCockpit /></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV5 /></PageTransition>} />
-          <Route path="/installer" element={<PageTransition><InstallerPortalV5 /></PageTransition>} />
-          <Route path="/my-projects" element={<PageTransition><CustomerPortalV2 /></PageTransition>} />
+          {/* Main views — auth-guarded */}
+          <Route path="/owner" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><OwnerCockpit /></ProtectedRoute></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute></PageTransition>} />
+          <Route path="/installer" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute></PageTransition>} />
+          <Route path="/my-projects" element={<PageTransition><ProtectedRoute><CustomerPortalV2 /></ProtectedRoute></PageTransition>} />
 
-          {/* Workflow */}
-          <Route path="/lead-flow" element={<PageTransition><LeadFlow /></PageTransition>} />
-          <Route path="/lead-flow/:leadId" element={<PageTransition><LeadFlow /></PageTransition>} />
-          <Route path="/job" element={<PageTransition><JobViewV2 /></PageTransition>} />
-          <Route path="/job/:leadId" element={<PageTransition><JobViewV2 /></PageTransition>} />
+          {/* Workflow — auth-guarded (staff-only) */}
+          <Route path="/lead-flow" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute></PageTransition>} />
+          <Route path="/lead-flow/:leadId" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute></PageTransition>} />
+          <Route path="/job" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute></PageTransition>} />
+          <Route path="/job/:leadId" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute></PageTransition>} />
 
           {/* Catch-all */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
