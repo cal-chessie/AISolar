@@ -13,6 +13,7 @@ import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 // Pages
 import PremiumIndex from "./pages/PremiumIndex";
+import InstallerLanding from "./pages/InstallerLanding";
 import NotFound from "./pages/NotFound";
 import ValueUpsell from "./pages/ValueUpsell";
 import AboutUs from "./pages/AboutUs";
@@ -24,7 +25,7 @@ import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
 
 // Components (current versions only — no legacy)
-import ConsultantCockpitV4 from "./components/ConsultantCockpitV4";
+import ConsultantCockpitV5 from "./components/ConsultantCockpitV5";
 import OwnerCockpit from "./components/OwnerCockpit";
 import LeadFlow from "./components/LeadFlow";
 import JobViewV2 from "./components/installer/JobViewV2";
@@ -61,7 +62,7 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public */}
-          <Route path="/" element={<PageTransition><PremiumIndex /></PageTransition>} />
+          <Route path="/" element={<PageTransition><InstallerLanding /></PageTransition>} />
           <Route path="/upsell" element={<PageTransition><ValueUpsell /></PageTransition>} />
           <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
           <Route path="/calculator" element={<PageTransition><ROICalculator /></PageTransition>} />
@@ -75,7 +76,7 @@ function AppRoutes() {
 
           {/* Main views */}
           <Route path="/owner" element={<PageTransition><OwnerCockpit /></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV4 /></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV5 /></PageTransition>} />
           <Route path="/installer" element={<PageTransition><InstallerPortalV5 /></PageTransition>} />
           <Route path="/my-projects" element={<PageTransition><CustomerPortalV2 /></PageTransition>} />
 
