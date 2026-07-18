@@ -43,6 +43,7 @@ import SystemSettings from "./components/SystemSettings";
 import CommunicationHub from "./components/CommunicationHub";
 import ConsultantDashboardV2 from "./components/ConsultantDashboardV2";
 import ConsultantCockpitV3 from "./components/ConsultantCockpitV3";
+import ConsultantCockpitV4 from "./components/ConsultantCockpitV4";
 import LeadFlow from "./components/LeadFlow";
 import CustomerIntelligenceProfile from "./components/CustomerIntelligenceProfile";
 import ROICalculator from "./pages/ROICalculator";
@@ -93,7 +94,7 @@ function AppRoutes() {
           <Route path="/auth-legacy" element={<PageTransition><Auth /></PageTransition>} />
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
           <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV3 /></PageTransition>} />
+          <Route path="/consultant" element={<PageTransition><ConsultantCockpitV4 /></PageTransition>} />
           <Route path="/owner" element={<PageTransition><OwnerCockpit /></PageTransition>} />
           <Route path="/owner-v1" element={<PageTransition><OwnerBirdseye /></PageTransition>} />
           <Route path="/lead-flow" element={<PageTransition><LeadFlow /></PageTransition>} />
