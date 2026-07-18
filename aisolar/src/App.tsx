@@ -46,6 +46,7 @@ import ConsultantCockpitV3 from "./components/ConsultantCockpitV3";
 import LeadFlow from "./components/LeadFlow";
 import CustomerIntelligenceProfile from "./components/CustomerIntelligenceProfile";
 import ROICalculator from "./pages/ROICalculator";
+import OwnerBirdseye from "./components/OwnerBirdseye";
 import InstallerIntelligenceBuilder from "./components/InstallerIntelligenceBuilder";
 import PrestigiousAuth from "./pages/PrestigiousAuth";
 import OnboardingMode from "./pages/OnboardingMode";
@@ -92,6 +93,7 @@ function AppRoutes() {
           <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
           <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
           <Route path="/consultant" element={<PageTransition><ConsultantCockpitV3 /></PageTransition>} />
+          <Route path="/owner" element={<PageTransition><OwnerBirdseye /></PageTransition>} />
           <Route path="/lead-flow" element={<PageTransition><LeadFlow /></PageTransition>} />
           <Route path="/lead-flow/:leadId" element={<PageTransition><LeadFlow /></PageTransition>} />
           <Route path="/customer-profile" element={<PageTransition><CustomerIntelligenceProfile /></PageTransition>} />

@@ -40,7 +40,7 @@ import {
   Search, Send, Phone, Mail, MessageSquare, Calendar, FileText,
   ArrowLeft, ArrowRight, Bot, User, Sparkles, ChevronRight,
   Zap, Sun, Clock, CheckCircle2, AlertCircle, Paperclip,
-  MoreVertical, Star, MapPin, Video, Navigation,
+  MoreVertical, Star, MapPin, Video, Navigation, Wrench, Building2,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
@@ -168,6 +168,12 @@ export default function ConsultantCockpitV3() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/owner')}>
+            <Building2 className="h-4 w-4 mr-1" /> Owner
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/installer')}>
+            <Wrench className="h-4 w-4 mr-1" /> Installer
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate('/pipeline')}>
             <Zap className="h-4 w-4 mr-1" /> Pipeline
           </Button>

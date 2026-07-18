@@ -67,7 +67,7 @@ export default function PrestigiousAuth() {
     } else if (userRoles.length === 1 && userRoles.includes('customer')) {
       navigate('/my-projects');
     } else if (userRoles.length > 1) {
-      navigate('/consultant'); // owner
+      navigate('/owner'); // owner with multiple roles → birdseye view
     } else {
       navigate('/consultant');
     }

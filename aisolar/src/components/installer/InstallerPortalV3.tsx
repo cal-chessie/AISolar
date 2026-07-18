@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Wrench, Sun, MapPin, Clock, ArrowRight, Package, Cloud, CloudRain,
   Wind, Calendar, Camera, CheckCircle2, AlertTriangle, Navigation,
+  Building2, Users,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { brand } from '@/config/brand';
@@ -54,6 +55,12 @@ export default function InstallerPortalV3() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/owner')}>
+              <Building2 className="h-4 w-4 mr-1" /> Owner
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/consultant')}>
+              <Users className="h-4 w-4 mr-1" /> Consultant
+            </Button>
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
               <Sun className="h-3 w-3 mr-1" /> Demo
             </Badge>
