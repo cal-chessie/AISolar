@@ -98,10 +98,10 @@ function AppRoutes() {
           <Route path="/calculator" element={<PageTransition><ROICalculator /></PageTransition>} />
           <Route path="/consultant-v2" element={<PageTransition><ConsultantDashboardV2 /></PageTransition>} />
           <Route path="/consultant-legacy" element={<PageTransition><ConsultantDashboard /></PageTransition>} />
-          <Route path="/installer" element={<PageTransition><InstallerPortal /></PageTransition>} />
+          <Route path="/installer" element={<PageTransition><InstallerPortalV3 /></PageTransition>} />
           <Route path="/installer-v2" element={<PageTransition><InstallerFirstDashboard /></PageTransition>} />
           <Route path="/installer-v3" element={<PageTransition><InstallerPortalV2 /></PageTransition>} />
-          <Route path="/installer-v4" element={<PageTransition><InstallerPortalV3 /></PageTransition>} />
+          <Route path="/installer-legacy" element={<PageTransition><InstallerPortal /></PageTransition>} />
           <Route path="/job/:leadId" element={<PageTransition><JobViewV2 /></PageTransition>} />
           <Route path="/job" element={<PageTransition><JobViewV2 /></PageTransition>} />
           <Route path="/job-v1" element={<PageTransition><JobView /></PageTransition>} />
@@ -110,6 +110,7 @@ function AppRoutes() {
           <Route path="/agents" element={<PageTransition><AgentsPage /></PageTransition>} />
           <Route path="/customer-mobile" element={<PageTransition><CustomerPortalV2 /></PageTransition>} />
           <Route path="/customer-mobile-v1" element={<PageTransition><CustomerMobilePortal /></PageTransition>} />
+          <Route path="/my-projects-legacy" element={<PageTransition><CustomerDashboard /></PageTransition>} />
           <Route path="/products" element={<PageTransition><ProductsPage /></PageTransition>} />
           <Route path="/intelligence" element={<PageTransition><IntelligencePage /></PageTransition>} />
           <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
@@ -122,7 +123,7 @@ function AppRoutes() {
           <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
-          <Route path="/my-projects" element={<PageTransition><CustomerDashboard /></PageTransition>} />
+          <Route path="/my-projects" element={<PageTransition><CustomerPortalV2 /></PageTransition>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
