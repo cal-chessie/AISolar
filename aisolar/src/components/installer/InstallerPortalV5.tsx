@@ -97,7 +97,7 @@ export default function InstallerPortalV5() {
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${tab === t.id ? 'bg-amber-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
                 <Icon className="h-3.5 w-3.5" /> {t.label}
-                {t.count > 0 && <span className={`text-[9px] px-1 rounded-full ${tab === t.id ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
+                {t.count > 0 && <span className={`text-[11px] px-1 rounded-full ${tab === t.id ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
               </button>
             );
           })}
@@ -128,21 +128,21 @@ export default function InstallerPortalV5() {
                     {/* Surveys */}
                     {surveyJobs.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Camera className="h-3 w-3" /> Surveys ({surveyJobs.length})</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Camera className="h-3 w-3" /> Surveys ({surveyJobs.length})</h3>
                         {surveyJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="survey" onClick={() => navigate(`/job/${lead.id}`)} />)}
                       </div>
                     )}
                     {/* Installs */}
                     {activeJobs.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Wrench className="h-3 w-3" /> Installs ({activeJobs.length})</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Wrench className="h-3 w-3" /> Installs ({activeJobs.length})</h3>
                         {activeJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="install" onClick={() => navigate(`/job/${lead.id}`)} />)}
                       </div>
                     )}
                     {/* Handovers */}
                     {handoverJobs.length > 0 && (
                       <div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Handovers ({handoverJobs.length})</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Handovers ({handoverJobs.length})</h3>
                         {handoverJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="handover" onClick={() => navigate(`/job/${lead.id}`)} />)}
                       </div>
                     )}
@@ -199,16 +199,16 @@ export default function InstallerPortalV5() {
                               <div className="font-medium text-sm">{lead.name}</div>
                               <div className="text-xs text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()} · {proposal?.system_size_kw}kWp</div>
                             </div>
-                            <Badge variant="outline" className="text-[10px]">{bomItems.length} items</Badge>
+                            <Badge variant="outline" className="text-[11px]">{bomItems.length} items</Badge>
                           </button>
                           {isExpanded && (
                             <div className="border-t p-3 space-y-1">
                               {bomItems.map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
                                   <input type="checkbox" className="h-3.5 w-3.5 rounded" />
-                                  <Badge variant="outline" className="text-[8px] flex-shrink-0">{item.category}</Badge>
+                                  <Badge variant="outline" className="text-[11px] flex-shrink-0">{item.category}</Badge>
                                   <span className="flex-1 truncate">{item.qty} × {item.item}</span>
-                                  {item.critical && <Badge variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">Critical</Badge>}
+                                  {item.critical && <Badge variant="outline" className="text-[11px] bg-red-50 text-red-700 border-red-200">Critical</Badge>}
                                 </div>
                               ))}
                               <Button size="sm" className="w-full mt-2 bg-amber-600 transition-colors hover:bg-amber-700" onClick={() => navigate(`/job/${lead.id}`)}>
@@ -244,7 +244,7 @@ export default function InstallerPortalV5() {
                               </div>
                               <div className="text-right">
                                 <div className={`font-bold ${available < 5 ? 'text-red-600' : 'text-emerald-600'}`}>{available}</div>
-                                <div className="text-[10px] text-muted-foreground">available</div>
+                                <div className="text-[11px] text-muted-foreground">available</div>
                               </div>
                             </div>
                             {row.low && (

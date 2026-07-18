@@ -97,7 +97,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         <div className="flex gap-1">
           {(['savings', 'bill', 'payback', 'score'] as const).map(s => (
             <button key={s} onClick={() => setSortBy(s)}
-              className={`px-2 py-1 rounded text-[10px] font-medium capitalize ${sortBy === s ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+              className={`px-2 py-1 rounded text-[11px] font-medium capitalize ${sortBy === s ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
               {s}
             </button>
           ))}
@@ -116,43 +116,43 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">{lead.name}</span>
-                      {lead.score > 80 && <Badge className="text-[8px] h-3.5 px-1 bg-red-500 text-white">Hot</Badge>}
+                      {lead.score > 80 && <Badge className="text-[11px] h-3.5 px-1 bg-red-500 text-white">Hot</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()} · MPRN: {lead.mprn}</div>
                   </div>
-                  <Badge variant="outline" className={`text-[9px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
+                  <Badge variant="outline" className={`text-[11px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
                 </div>
 
                 {/* Estimate grid */}
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2">
                   <div className="text-center p-1.5 bg-muted/30 rounded">
-                    <div className="text-[9px] text-muted-foreground">Bill/mo</div>
+                    <div className="text-[11px] text-muted-foreground">Bill/mo</div>
                     <div className="text-sm font-bold">€{lead.monthly_bill}</div>
                   </div>
                   <div className="text-center p-1.5 bg-muted/30 rounded">
-                    <div className="text-[9px] text-muted-foreground">kWh/yr</div>
+                    <div className="text-[11px] text-muted-foreground">kWh/yr</div>
                     <div className="text-sm font-bold">{(lead.annual_kwh || estimate.annualKwh).toLocaleString()}</div>
                   </div>
                   <div className="text-center p-1.5 bg-amber-50 dark:bg-amber-950/20 rounded">
-                    <div className="text-[9px] text-muted-foreground">System</div>
+                    <div className="text-[11px] text-muted-foreground">System</div>
                     <div className="text-sm font-bold text-amber-600">{estimate.systemSizeKw}kWp</div>
                   </div>
                   <div className="text-center p-1.5 bg-emerald-50 dark:bg-emerald-950/20 rounded">
-                    <div className="text-[9px] text-muted-foreground">Savings/yr</div>
+                    <div className="text-[11px] text-muted-foreground">Savings/yr</div>
                     <div className="text-sm font-bold text-emerald-600">{eur(estimate.annualSavings)}</div>
                   </div>
                   <div className="text-center p-1.5 bg-violet-50 dark:bg-violet-950/20 rounded">
-                    <div className="text-[9px] text-muted-foreground">SEAI grant</div>
+                    <div className="text-[11px] text-muted-foreground">SEAI grant</div>
                     <div className="text-sm font-bold text-violet-600">{eur(1800)}</div>
                   </div>
                   <div className="text-center p-1.5 bg-muted/30 rounded">
-                    <div className="text-[9px] text-muted-foreground">Payback</div>
+                    <div className="text-[11px] text-muted-foreground">Payback</div>
                     <div className="text-sm font-bold">{estimate.paybackYears}y</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[11px] text-muted-foreground">
                     Net cost: {eur(estimate.netCost)} · 20yr savings: {eur(estimate.twentyYearSavings)} · Offset: {estimate.solarOffsetPct}%
                   </div>
                   <Button size="sm" variant="ghost" className="h-6 text-xs">

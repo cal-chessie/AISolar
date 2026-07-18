@@ -191,7 +191,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
           </div>
           <div className="flex items-center gap-2">
             {filterRole && (
-              <Badge variant="outline" className="text-[10px] capitalize">
+              <Badge variant="outline" className="text-[11px] capitalize">
                 {filterRole} view
               </Badge>
             )}
@@ -217,7 +217,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                   'border-border hover:border-blue-300'
                 }`}
               >
-                <div className={`text-[10px] font-medium ${isToday ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                <div className={`text-[11px] font-medium ${isToday ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                   {day.toLocaleDateString('en-IE', { weekday: 'short' })}
                 </div>
                 <div className={`text-sm font-bold ${isToday ? 'text-emerald-700' : ''}`}>{day.getDate()}</div>
@@ -227,7 +227,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                       const meta = EVENT_META[e.type];
                       return <div key={e.id} className={`h-1.5 w-1.5 rounded-full bg-${meta.color}-500`} />;
                     })}
-                    {dayEvents.length > 4 && <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 4}</span>}
+                    {dayEvents.length > 4 && <span className="text-[11px] text-muted-foreground">+{dayEvents.length - 4}</span>}
                   </div>
                 )}
               </button>
@@ -261,7 +261,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium truncate">{event.title}</div>
-                          <div className="text-[10px] text-muted-foreground">
+                          <div className="text-[11px] text-muted-foreground">
                             {event.time} · {event.duration} · {event.assignee}
                           </div>
                         </div>
@@ -275,7 +275,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
         )}
 
         {/* Legend */}
-        <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-[10px] text-muted-foreground">
+        <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-[11px] text-muted-foreground">
           {Object.entries(EVENT_META).map(([type, meta]) => (
             <span key={type} className="flex items-center gap-1">
               <div className={`h-2 w-2 rounded-full bg-${meta.color}-500`} />

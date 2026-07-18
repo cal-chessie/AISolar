@@ -224,7 +224,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                 <Bot className="h-5 w-5 text-violet-600" />
                 Agent Foundation
                 {demo && (
-                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 ml-2">
+                  <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700 border-amber-200 ml-2">
                     Demo data
                   </Badge>
                 )}

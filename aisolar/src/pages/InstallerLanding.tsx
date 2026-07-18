@@ -7,23 +7,42 @@
  *
  * The homeowner funnel (bill upload → estimate → consultation booking)
  * still exists at /lead-flow but it's not the homepage anymore.
+ *
+ * Phase 6: added mobile hamburger menu (nav was overflowing on 375px).
  */
 
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot, Zap, Calendar, FileText, Wrench, Shield, Award, TrendingUp,
   ArrowRight, Check, Sun, Users, Clock, DollarSign, BarChart3,
-  Building2, Cpu, MessageSquare, Package, Camera,
+  Building2, Cpu, MessageSquare, Package, Camera, Menu, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function InstallerLanding() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const navItems = (
+    <>
+      <Button variant="ghost" size="sm" onClick={() => { navigate('/calculator'); setMenuOpen(false); }}>ROI Calculator</Button>
+      <Button variant="ghost" size="sm" onClick={() => { navigate('/about'); setMenuOpen(false); }}>About</Button>
+      <Button size="sm" onClick={() => { navigate('/auth'); setMenuOpen(false); }} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
+        Sign in
+      </Button>
+      <Button size="sm" variant="outline" onClick={() => { navigate('/demo'); setMenuOpen(false); }}>
+        <Bot className="h-3 w-3 mr-1" /> Demo
+      </Button>
+    </>
+  );
 
   return (
     <>
@@ -41,17 +60,40 @@ export default function InstallerLanding() {
             </div>
             <span className="font-bold text-lg">{brand.name}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/calculator')}>ROI Calculator</Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/about')}>About</Button>
-            <Button size="sm" onClick={() => navigate('/auth')} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
-              Sign in
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('/demo')}>
-              <Bot className="h-3 w-3 mr-1" /> Demo
-            </Button>
-          </div>
+          {/* Desktop nav */}
+          {!isMobile && (
+            <div className="flex items-center gap-2">
+              {navItems}
+            </div>
+          )}
+          {/* Mobile hamburger */}
+          {isMobile && (
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          )}
         </div>
+        {/* Mobile dropdown */}
+        <AnimatePresence>
+          {isMobile && menuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden overflow-hidden border-t bg-background"
+            >
+              <div className="container mx-auto px-4 py-3 flex flex-col gap-2">
+                {navItems}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Hero — for installers */}

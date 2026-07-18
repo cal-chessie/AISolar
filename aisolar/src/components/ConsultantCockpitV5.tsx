@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { staggerContainer, listItemFade, slideInRight } from '@/lib/motionPresets';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Progress } from '@/components/ui/progress';
 import {
   Users, MessageSquare, Calculator, Camera, FileText, Wrench,
@@ -88,6 +89,7 @@ const INBOX_FILTERS: Array<{ id: InboxFilter; label: string; emoji?: string }> =
 
 export default function ConsultantCockpitV5() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [activeTab, setActiveTab] = useState<TabId>('inbox');
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
@@ -98,6 +100,8 @@ export default function ConsultantCockpitV5() {
   const [customerTyping, setCustomerTyping] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string[] | null>(null);
+  // On mobile, the lead list is a drawer (closed by default). On desktop, always visible.
+  const [leadListOpen, setLeadListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const stats = useMemo(() => computePipelineStats(leads), [leads]);
@@ -161,15 +165,24 @@ export default function ConsultantCockpitV5() {
     setSummary(null);
   }, [selectedLead]);
 
-  // Escape key closes slide-out panel
+  // Escape key closes slide-out panel OR mobile lead-list drawer
   useEffect(() => {
-    if (!slideOutView) return;
+    if (!slideOutView && !leadListOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSlideOutView(null);
+      if (e.key === 'Escape') {
+        setSlideOutView(null);
+        setLeadListOpen(false);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [slideOutView]);
+  }, [slideOutView, leadListOpen]);
+
+  /** Select a lead and close the mobile drawer. */
+  const selectLead = (lead: DummyLead) => {
+    setSelectedLead(lead);
+    if (isMobile) setLeadListOpen(false);
+  };
 
   const handleSendReply = () => {
     if (!replyText.trim() || !selectedLead) return;
@@ -282,7 +295,7 @@ export default function ConsultantCockpitV5() {
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
                 <Icon className="h-3.5 w-3.5" /> {tab.label}
-                {count > 0 && <span className={`text-[9px] px-1 rounded-full ${isActive ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{count}</span>}
+                {count > 0 && <span className={`text-[11px] px-1 rounded-full ${isActive ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{count}</span>}
               </button>
             );
           })}
@@ -293,80 +306,61 @@ export default function ConsultantCockpitV5() {
       {isChatView ? (
         /* Chat layout: lead list + conversation thread */
         <div className="flex-1 flex overflow-hidden">
-          {/* Lead list (left) */}
-          <div className="w-72 lg:w-80 flex-shrink-0 border-r flex flex-col">
-            <div className="p-2 border-b space-y-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Search leads…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
-              </div>
-              {/* Filter chips — replaces the old Estimates/Surveys/Proposals/Installs/Follow-ups tabs */}
-              <div className="flex gap-1 flex-wrap">
-                {INBOX_FILTERS.map(f => {
-                  const isActive = inboxFilter === f.id;
-                  const chipCount = f.id === 'hot' ? hotLeads.length
-                    : f.id === 'stale' ? staleLeads.length
-                    : f.id === 'survey' ? leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage)).length
-                    : f.id === 'proposal' ? leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage)).length
-                    : f.id === 'install' ? leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)).length
-                    : leads.length;
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => setInboxFilter(f.id)}
-                      className={`text-[10px] px-2 py-1 rounded-full transition-colors ${
-                        isActive
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/70'
-                      }`}
-                    >
-                      {f.emoji ? `${f.emoji} ` : ''}{f.label}
-                      {chipCount > 0 && <span className={`ml-1 ${isActive ? 'opacity-80' : 'opacity-60'}`}>{chipCount}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <motion.div
-              className="flex-1 overflow-y-auto"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="show"
-              key={activeTab + inboxFilter + search}  // re-stagger when filter or search changes
-            >
-              {inboxLeads.length === 0 ? (
-                <div className="p-8 text-center text-xs text-muted-foreground">
-                  No leads match this filter.
-                </div>
-              ) : (
-                inboxLeads.map(lead => {
-                  const last = lead.touchpoints[lead.touchpoints.length - 1];
-                  const isSelected = selectedLead?.id === lead.id;
-                  return (
-                    <motion.button
-                      key={lead.id}
-                      variants={listItemFade}
-                      onClick={() => setSelectedLead(lead)}
-                      className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
-                    >
-                      <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-medium text-sm truncate">{lead.name}</span>
-                          {last && <span className="text-[9px] text-muted-foreground flex-shrink-0">{new Date(last.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Badge variant="outline" className={`text-[8px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
-                          {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
-                        </div>
-                      </div>
-                    </motion.button>
-                  );
-                })
+          {/* ====== Lead list ======
+              Desktop: inline w-72 lg:w-80 column
+              Mobile: drawer overlay (toggled by leadListOpen) */}
+          {isMobile ? (
+            <AnimatePresence>
+              {leadListOpen && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setLeadListOpen(false)}
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                  />
+                  <motion.div
+                    initial={{ x: '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                    className="fixed top-0 left-0 bottom-0 z-50 w-80 max-w-[85vw] bg-background border-r flex flex-col lg:hidden"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Lead list"
+                  >
+                    <LeadListContent
+                      search={search} setSearch={setSearch}
+                      inboxFilter={inboxFilter} setInboxFilter={setInboxFilter}
+                      inboxLeads={inboxLeads}
+                      selectedLead={selectedLead}
+                      onSelectLead={selectLead}
+                      activeTab={activeTab}
+                      hotLeadsCount={hotLeads.length}
+                      staleLeadsCount={staleLeads.length}
+                      leads={leads}
+                      onClose={() => setLeadListOpen(false)}
+                    />
+                  </motion.div>
+                </>
               )}
-            </motion.div>
-          </div>
+            </AnimatePresence>
+          ) : (
+            <div className="w-72 lg:w-80 flex-shrink-0 border-r flex flex-col hidden lg:flex">
+              <LeadListContent
+                search={search} setSearch={setSearch}
+                inboxFilter={inboxFilter} setInboxFilter={setInboxFilter}
+                inboxLeads={inboxLeads}
+                selectedLead={selectedLead}
+                onSelectLead={selectLead}
+                activeTab={activeTab}
+                hotLeadsCount={hotLeads.length}
+                staleLeadsCount={staleLeads.length}
+                leads={leads}
+              />
+            </div>
+          )}
 
           {/* Conversation thread (right) */}
           <div className="flex-1 flex flex-col">
@@ -376,19 +370,41 @@ export default function ConsultantCockpitV5() {
                   <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                   <h3 className="font-semibold text-muted-foreground">Select a lead to view conversation</h3>
                   <p className="text-xs text-muted-foreground mt-1">All emails, SMS, calls, AI chat, and agent actions in one thread.</p>
+                  {isMobile && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 lg:hidden"
+                      onClick={() => setLeadListOpen(true)}
+                    >
+                      <Users className="h-4 w-4 mr-2" /> Open lead list
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
               <>
                 {/* Conversation header */}
                 <div className="p-2.5 border-b flex items-center gap-2">
+                  {/* Mobile: open lead list drawer */}
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 lg:hidden"
+                      onClick={() => setLeadListOpen(true)}
+                      aria-label="Open lead list"
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm truncate">{selectedLead.name}</div>
                     <div className="text-xs text-muted-foreground truncate">{selectedLead.address.split(',').slice(-1)[0]?.trim()}</div>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 hidden sm:inline-flex" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7 hidden sm:inline-flex" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -418,7 +434,7 @@ export default function ConsultantCockpitV5() {
                         <Sparkles className="h-3 w-3 text-violet-700 dark:text-violet-300" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300 mb-1">AI Summary</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300 mb-1">AI Summary</div>
                         <ul className="space-y-1">
                           {summary.map((bullet, i) => (
                             <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
@@ -450,7 +466,7 @@ export default function ConsultantCockpitV5() {
                       className="flex justify-start"
                     >
                       <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2">
-                        <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px]">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                        <Avatar className="h-5 w-5"><AvatarFallback className="text-[11px]">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                         <span className="text-xs text-muted-foreground">{selectedLead.name.split(' ')[0]} is typing</span>
                         <span className="flex gap-0.5">
                           <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -518,7 +534,7 @@ export default function ConsultantCockpitV5() {
                       <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
-                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[8px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[8px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[8px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
+                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[11px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[11px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </CardContent>
                       </Card>
@@ -542,9 +558,9 @@ export default function ConsultantCockpitV5() {
                         const count = leads.filter(l => l.workflow_stage === s.id).length;
                         return (
                           <div key={s.id} className="flex items-center gap-2">
-                            <div className="w-24 text-[10px] truncate">{s.label}</div>
+                            <div className="w-24 text-[11px] truncate">{s.label}</div>
                             <div className="flex-1 h-4 bg-muted rounded relative overflow-hidden"><div className={`h-full bg-${s.color}-500`} style={{ width: `${Math.max(2, (count / leads.length) * 100)}%` }} /></div>
-                            <span className="text-[10px] font-bold w-6 text-right">{count}</span>
+                            <span className="text-[11px] font-bold w-6 text-right">{count}</span>
                           </div>
                         );
                       })}
@@ -598,9 +614,123 @@ export default function ConsultantCockpitV5() {
   );
 }
 
+/**
+ * Lead list content — shared between desktop inline column + mobile drawer.
+ * Phase 6 refactor: extracted so the same UI renders in both layouts.
+ */
+function LeadListContent({
+  search, setSearch,
+  inboxFilter, setInboxFilter,
+  inboxLeads,
+  selectedLead,
+  onSelectLead,
+  activeTab,
+  hotLeadsCount,
+  staleLeadsCount,
+  leads,
+  onClose,
+}: {
+  search: string;
+  setSearch: (s: string) => void;
+  inboxFilter: InboxFilter;
+  setInboxFilter: (f: InboxFilter) => void;
+  inboxLeads: DummyLead[];
+  selectedLead: DummyLead | null;
+  onSelectLead: (lead: DummyLead) => void;
+  activeTab: TabId;
+  hotLeadsCount: number;
+  staleLeadsCount: number;
+  leads: DummyLead[];
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      <div className="p-2 border-b space-y-2">
+        {onClose && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold">Leads</span>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 lg:hidden" onClick={onClose} aria-label="Close lead list">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search leads…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" aria-label="Search leads" />
+        </div>
+        {/* Filter chips */}
+        <div className="flex gap-1 flex-wrap">
+          {INBOX_FILTERS.map(f => {
+            const isActive = inboxFilter === f.id;
+            const chipCount = f.id === 'hot' ? hotLeadsCount
+              : f.id === 'stale' ? staleLeadsCount
+              : f.id === 'survey' ? leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage)).length
+              : f.id === 'proposal' ? leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage)).length
+              : f.id === 'install' ? leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)).length
+              : leads.length;
+            return (
+              <button
+                key={f.id}
+                onClick={() => setInboxFilter(f.id)}
+                className={`text-[11px] px-2 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                  isActive
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                }`}
+              >
+                {f.emoji ? `${f.emoji} ` : ''}{f.label}
+                {chipCount > 0 && <span className={`ml-1 ${isActive ? 'opacity-80' : 'opacity-60'}`}>{chipCount}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <motion.div
+        className="flex-1 overflow-y-auto"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        key={activeTab + inboxFilter + search}
+      >
+        {inboxLeads.length === 0 ? (
+          <div className="p-8 text-center text-xs text-muted-foreground">
+            No leads match this filter.
+          </div>
+        ) : (
+          inboxLeads.map(lead => {
+            const last = lead.touchpoints[lead.touchpoints.length - 1];
+            const isSelected = selectedLead?.id === lead.id;
+            return (
+              <motion.button
+                key={lead.id}
+                variants={listItemFade}
+                onClick={() => onSelectLead(lead)}
+                className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
+              >
+                <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-medium text-sm truncate">{lead.name}</span>
+                    {last && <span className="text-[11px] text-muted-foreground flex-shrink-0">{new Date(last.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Badge variant="outline" className={`text-[11px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
+                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                  </div>
+                </div>
+              </motion.button>
+            );
+          })
+        )}
+      </motion.div>
+    </>
+  );
+}
+
 function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?: (data?: string) => void }) {
   if (message.type === 'system') {
-    return <div className="flex justify-center"><div className="px-3 py-1 bg-muted/50 rounded-full text-[10px] text-muted-foreground text-center max-w-[85%]">{message.body}</div></div>;
+    return <div className="flex justify-center"><div className="px-3 py-1 bg-muted/50 rounded-full text-[11px] text-muted-foreground text-center max-w-[85%]">{message.body}</div></div>;
   }
   const isCustomer = message.type === 'customer';
   const isAI = message.type === 'ai';
@@ -613,7 +743,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[80%] ${isCustomer ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <div className={`flex items-center gap-1 text-[10px] ${isCustomer ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center gap-1 text-[11px] ${isCustomer ? 'flex-row-reverse' : ''}`}>
           <Icon className="h-2.5 w-2.5 text-muted-foreground" />
           <span className="text-muted-foreground font-medium">{label}</span>
           <span className="text-muted-foreground">·</span>
@@ -644,7 +774,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
               {message.card.kind === 'warranty' && <Award className="h-3.5 w-3.5 text-emerald-600" />}
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold truncate">{message.card.title}</div>
-                {message.card.subtitle && <div className="text-[10px] text-muted-foreground truncate">{message.card.subtitle}</div>}
+                {message.card.subtitle && <div className="text-[11px] text-muted-foreground truncate">{message.card.subtitle}</div>}
               </div>
             </div>
             {message.card.rows && message.card.rows.length > 0 && (
@@ -675,7 +805,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
 function StatBox({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Users; color: string }) {
   return (
     <Card><CardContent className="p-3">
-      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-${color}-100 dark:bg-${color}-950/40`}><Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} /></div><span className="text-[10px] text-muted-foreground">{label}</span></div>
+      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-${color}-100 dark:bg-${color}-950/40`}><Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} /></div><span className="text-[11px] text-muted-foreground">{label}</span></div>
       <div className="text-lg font-bold">{value}</div>
     </CardContent></Card>
   );
@@ -715,7 +845,7 @@ function PipelineKanban({
         <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
           Pipeline — {leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length} active
         </h3>
-        <span className="text-[10px] text-muted-foreground">Drag a card to advance stage</span>
+        <span className="text-[11px] text-muted-foreground">Drag a card to advance stage</span>
       </div>
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-2 min-w-max">
@@ -735,13 +865,13 @@ function PipelineKanban({
                 <div className="p-2 border-b flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full bg-${stage.color}-500`} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wide">{stage.label}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide">{stage.label}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-muted-foreground">{stageLeads.length}</span>
+                  <span className="text-[11px] font-bold text-muted-foreground">{stageLeads.length}</span>
                 </div>
                 <div className="p-1.5 space-y-1.5 max-h-96 overflow-y-auto">
                   {stageLeads.length === 0 ? (
-                    <div className="text-[10px] text-muted-foreground/60 text-center py-4">Drop here</div>
+                    <div className="text-[11px] text-muted-foreground/60 text-center py-4">Drop here</div>
                   ) : (
                     stageLeads.map(lead => (
                       <div
@@ -755,17 +885,17 @@ function PipelineKanban({
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
-                          <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                          <Avatar className="h-5 w-5"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                           <span className="text-xs font-medium truncate flex-1">{lead.name}</span>
                           {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 flex-shrink-0" />}
                         </div>
                         {lead.proposal && (
-                          <div className="text-[10px] text-muted-foreground mt-1">
+                          <div className="text-[11px] text-muted-foreground mt-1">
                             {lead.proposal.system_size_kw}kWp · {eur(lead.proposal.net_cost)}
                           </div>
                         )}
                         {!lead.proposal && lead.intake && (
-                          <div className="text-[10px] text-muted-foreground mt-1">
+                          <div className="text-[11px] text-muted-foreground mt-1">
                             €{lead.monthly_bill}/mo · est. {lead.intake.estimated_system_size_kw}kWp
                           </div>
                         )}

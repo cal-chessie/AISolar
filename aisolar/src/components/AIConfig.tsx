@@ -192,7 +192,7 @@ export default function AIConfig() {
                 <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <div>
                   <div>Connection successful — LLM is responding.</div>
-                  {testDetail && <div className="text-[10px] text-muted-foreground mt-0.5">{testDetail}</div>}
+                  {testDetail && <div className="text-[11px] text-muted-foreground mt-0.5">{testDetail}</div>}
                 </div>
               </div>
             )}
@@ -201,11 +201,11 @@ export default function AIConfig() {
                 <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <div>
                   <div>Connection failed — check your API key.</div>
-                  {testDetail && <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">{testDetail}</div>}
+                  {testDetail && <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">{testDetail}</div>}
                 </div>
               </div>
             )}
-            <p className="text-[10px] text-muted-foreground mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:underline">openrouter.ai/keys</a>.
               Stored in the <code>ai_config</code> table (admin-only RLS). The agent-drain edge function reads it via service role.
             </p>
@@ -229,9 +229,9 @@ export default function AIConfig() {
                       <span className="font-semibold text-sm">{m.name}</span>
                       {isSelected && <CheckCircle2 className="h-3 w-3 text-violet-600" />}
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{m.provider} · {m.context} context</div>
-                    <div className="text-[10px] text-muted-foreground">{m.cost}</div>
-                    <div className="text-[10px] text-violet-600 mt-0.5">{m.best}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{m.provider} · {m.context} context</div>
+                    <div className="text-[11px] text-muted-foreground">{m.cost}</div>
+                    <div className="text-[11px] text-violet-600 mt-0.5">{m.best}</div>
                   </button>
                 );
               })}
@@ -253,7 +253,7 @@ export default function AIConfig() {
               <div className="text-xs font-medium flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 text-violet-600" /> Enable LLM calls
               </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
+              <div className="text-[11px] text-muted-foreground mt-0.5">
                 Master switch. When off, agents fall back to deterministic logic (no LLM cost).
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function AIConfig() {
               onChange={e => setDailyCostCap(Number(e.target.value))}
               className="mt-1"
             />
-            <p className="text-[10px] text-muted-foreground mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               Agents stop calling the LLM when daily spend exceeds this. Current model ({model.name}) costs ~{model.cost}.
               At ${dailyCostCap}/day you get ~{Math.round(dailyCostCap / (0.30))} calls/day with the cheapest model.
             </p>

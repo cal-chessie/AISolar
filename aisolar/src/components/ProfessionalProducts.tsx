@@ -375,10 +375,10 @@ export default function ProfessionalProducts() {
                       <div className={`p-2 rounded-lg bg-${cat.color}-100 dark:bg-${cat.color}-950/40`}>
                         <Icon className={`h-4 w-4 text-${cat.color}-700 dark:text-${cat.color}-300`} />
                       </div>
-                      <Badge variant="outline" className="text-[10px]">{cat.label}</Badge>
+                      <Badge variant="outline" className="text-[11px]">{cat.label}</Badge>
                     </div>
                     {product.seaiApproved && (
-                      <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200">
                         <CheckCircle2 className="h-3 w-3 mr-0.5" /> SEAI
                       </Badge>
                     )}
@@ -454,7 +454,7 @@ function CategoryChip({ label, active, onClick, count, icon: Icon }: {
     >
       {Icon && <Icon className="h-3 w-3" />}
       {label}
-      <span className={`text-[10px] px-1.5 rounded-full ${active ? 'bg-white/20' : 'bg-background/60'}`}>{count}</span>
+      <span className={`text-[11px] px-1.5 rounded-full ${active ? 'bg-white/20' : 'bg-background/60'}`}>{count}</span>
     </button>
   );
 }

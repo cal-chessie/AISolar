@@ -206,7 +206,7 @@ export default function RealCalendar() {
                 {/* Day headers */}
                 <div className="grid grid-cols-7 gap-0.5 mb-1">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">{day}</div>
+                    <div key={day} className="text-center text-[11px] font-medium text-muted-foreground py-1">{day}</div>
                   ))}
                 </div>
                 {/* Day cells */}
@@ -232,13 +232,13 @@ export default function RealCalendar() {
                           {dayEvents.slice(0, 3).map(e => {
                             const meta = EVENT_META[e.type];
                             return (
-                              <div key={e.id} className={`text-[8px] px-1 py-0.5 rounded truncate ${meta.bg} ${meta.text}`} title={e.title}>
+                              <div key={e.id} className={`text-[11px] px-1 py-0.5 rounded truncate ${meta.bg} ${meta.text}`} title={e.title}>
                                 <meta.icon className="h-2 w-2 inline mr-0.5" />
                                 {e.time} {e.title.split(' — ')[0]}
                               </div>
                             );
                           })}
-                          {dayEvents.length > 3 && <div className="text-[8px] text-muted-foreground px-1">+{dayEvents.length - 3} more</div>}
+                          {dayEvents.length > 3 && <div className="text-[11px] text-muted-foreground px-1">+{dayEvents.length - 3} more</div>}
                         </div>
                       </button>
                     );
@@ -261,7 +261,7 @@ export default function RealCalendar() {
                           const meta = EVENT_META[e.type];
                           return (
                             <button key={e.id} onClick={() => setSelectedEvent(e)}
-                              className={`w-full text-left text-[9px] px-1.5 py-1 rounded ${meta.bg} ${meta.text} hover:ring-1 hover:ring-${meta.color}-400`}>
+                              className={`w-full text-left text-[11px] px-1.5 py-1 rounded ${meta.bg} ${meta.text} hover:ring-1 hover:ring-${meta.color}-400`}>
                               <div className="font-medium">{e.time}</div>
                               <div className="truncate">{e.title}</div>
                             </button>
@@ -292,7 +292,7 @@ export default function RealCalendar() {
                           <div className="text-sm font-medium">{e.title}</div>
                           <div className="text-xs text-muted-foreground">{e.time}{e.endTime ? ` — ${e.endTime}` : ''} · {e.assignee}</div>
                         </div>
-                        <Badge variant="outline" className="text-[9px]">{meta.label}</Badge>
+                        <Badge variant="outline" className="text-[11px]">{meta.label}</Badge>
                       </button>
                     );
                   })
@@ -326,7 +326,7 @@ export default function RealCalendar() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium truncate">{e.title}</div>
-                            <div className="text-[10px] text-muted-foreground">{e.time}{e.endTime ? ` — ${e.endTime}` : ''} · {e.assignee}</div>
+                            <div className="text-[11px] text-muted-foreground">{e.time}{e.endTime ? ` — ${e.endTime}` : ''} · {e.assignee}</div>
                           </div>
                         </button>
                       );
@@ -340,10 +340,10 @@ export default function RealCalendar() {
 
             {/* Legend */}
             <div className="mt-3 pt-3 border-t">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Event types</div>
+              <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5">Event types</div>
               <div className="grid grid-cols-2 gap-1">
                 {Object.entries(EVENT_META).map(([type, meta]) => (
-                  <div key={type} className="flex items-center gap-1 text-[9px]">
+                  <div key={type} className="flex items-center gap-1 text-[11px]">
                     <div className={`h-2 w-2 rounded ${meta.bg}`} />
                     {meta.label}
                   </div>
@@ -377,7 +377,7 @@ export default function RealCalendar() {
                         <div className={`p-3 rounded-xl ${meta.bg}`}><Icon className={`h-5 w-5 ${meta.text}`} /></div>
                         <div>
                           <h3 className="font-bold">{selectedEvent.title}</h3>
-                          <Badge variant="outline" className={`text-[10px] ${meta.bg} ${meta.text}`}>{meta.label}</Badge>
+                          <Badge variant="outline" className={`text-[11px] ${meta.bg} ${meta.text}`}>{meta.label}</Badge>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedEvent(null)}><X className="h-4 w-4" /></Button>

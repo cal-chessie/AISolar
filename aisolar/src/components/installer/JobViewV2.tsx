@@ -265,7 +265,7 @@ export default function JobViewV2() {
           ) : (
             <div className="text-right">
               <div className="text-sm font-bold">{overallProgress}%</div>
-              <div className="text-[10px] text-muted-foreground">complete</div>
+              <div className="text-[11px] text-muted-foreground">complete</div>
             </div>
           )}
         </div>
@@ -442,13 +442,13 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
               <Card key={phase.id} className={done ? 'border-emerald-400' : ''}>
                 <CardContent className="p-3 text-center">
                   <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-emerald-600' : 'text-muted-foreground'}`} />
-                  <div className="text-[10px] font-medium leading-tight">{phase.label}</div>
+                  <div className="text-[11px] font-medium leading-tight">{phase.label}</div>
                   {done ? (
-                    <Badge variant="outline" className="mt-1 text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <Badge variant="outline" className="mt-1 text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200">
                       <CheckCircle2 className="h-2 w-2 mr-0.5" /> Done
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="mt-1 text-[9px] bg-muted">Pending</Badge>
+                    <Badge variant="outline" className="mt-1 text-[11px] bg-muted">Pending</Badge>
                   )}
                 </CardContent>
               </Card>
@@ -744,6 +744,16 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
   const [showPad, setShowPad] = useState(false);
   const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && !!signature;
 
+  // Escape closes the signature pad
+  useEffect(() => {
+    if (!showPad) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowPad(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showPad]);
+
   return (
     <div className="space-y-4">
       <div>
@@ -930,11 +940,17 @@ function SignaturePad({ customerName, onSave, onCancel }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Signature pad for ${customerName}`}
+    >
       <div className="bg-background w-full max-w-md rounded-2xl p-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold">Customer signature</h3>
-          <Button variant="ghost" size="sm" onClick={onCancel}><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={onCancel} aria-label="Close signature pad"><X className="h-4 w-4" /></Button>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           I, {customerName}, confirm the solar installation is complete, commissioned, and I've been shown how to use the monitoring app.

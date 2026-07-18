@@ -271,7 +271,7 @@ export default function AgentTraining() {
             >
               <Bot className="h-3 w-3" />
               {a.name.replace(' Agent', '')}
-              <span className={`text-[8px] px-1 rounded ${al.successRate >= 95 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+              <span className={`text-[11px] px-1 rounded ${al.successRate >= 95 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
                 {al.successRate}%
               </span>
             </button>
@@ -301,8 +301,8 @@ export default function AgentTraining() {
                   : saved ? <><CheckCircle2 className="h-3 w-3 mr-1" /> Saved v{agentLearning.version}!</>
                   : <><Save className="h-3 w-3 mr-1" /> Save prompt</>}
               </Button>
-              {agentLearning.version > 0 && <span className="text-[10px] text-muted-foreground">v{agentLearning.version} active</span>}
-              <p className="text-[10px] text-muted-foreground">Last adjusted: {agentLearning.lastAdjusted}</p>
+              {agentLearning.version > 0 && <span className="text-[11px] text-muted-foreground">v{agentLearning.version} active</span>}
+              <p className="text-[11px] text-muted-foreground">Last adjusted: {agentLearning.lastAdjusted}</p>
             </CardContent>
           </Card>
 
@@ -365,15 +365,15 @@ export default function AgentTraining() {
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
                   <div className="text-2xl font-bold text-violet-600">{agentLearning.totalRuns}</div>
-                  <div className="text-[10px] text-muted-foreground">total runs</div>
+                  <div className="text-[11px] text-muted-foreground">total runs</div>
                 </div>
                 <div>
                   <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-emerald-600' : 'text-amber-600'}`}>{agentLearning.successRate}%</div>
-                  <div className="text-[10px] text-muted-foreground">success rate</div>
+                  <div className="text-[11px] text-muted-foreground">success rate</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{agentLearning.learnedPatterns.length}</div>
-                  <div className="text-[10px] text-muted-foreground">patterns learned</div>
+                  <div className="text-[11px] text-muted-foreground">patterns learned</div>
                 </div>
               </div>
             </CardContent>
@@ -395,7 +395,7 @@ export default function AgentTraining() {
                       <TrendingUp className="h-3 w-3 text-emerald-600 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="text-xs font-medium">{pattern.pattern}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
                           Confidence: {Math.round(pattern.confidence * 100)}% · Source: {pattern.source}
                         </div>
                       </div>
@@ -414,7 +414,7 @@ export default function AgentTraining() {
           <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
             <CardContent className="p-3">
               <h4 className="text-xs font-bold mb-2 flex items-center gap-1"><Bot className="h-3 w-3 text-violet-600" /> How agents learn</h4>
-              <div className="space-y-1 text-[10px] text-muted-foreground">
+              <div className="space-y-1 text-[11px] text-muted-foreground">
                 <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Manual:</strong> You set the system prompt + behavioural rules (left panel)</span></div>
                 <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Auto:</strong> Agents track outcomes (accepted/rejected proposals, opened emails, conversion rates)</span></div>
                 <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Pattern discovery:</strong> After 50+ runs, agents identify correlations (e.g. "battery proposals convert better")</span></div>

@@ -153,7 +153,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                   <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
                     <div className={`p-1 rounded ${meta.bg}`}><Icon className="h-3 w-3" /></div>
                     <span className="flex-1">{item.item}</span>
-                    <Badge variant="outline" className={`text-[9px] ${meta.bg}`}>{item.status}</Badge>
+                    <Badge variant="outline" className={`text-[11px] ${meta.bg}`}>{item.status}</Badge>
                   </div>
                 );
               })}
@@ -226,21 +226,21 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                   {(filter === 'all' || filter === 'seai') && (
                     <div className="flex items-center gap-1">
                       <Award className="h-3 w-3 text-violet-600" />
-                      <Badge variant="outline" className={`text-[9px] ${STATUS_META[c.seaiStatus].bg}`}>{STATUS_META[c.seaiStatus].label}</Badge>
+                      <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.seaiStatus].bg}`}>{STATUS_META[c.seaiStatus].label}</Badge>
                     </div>
                   )}
                   {/* ESB badge */}
                   {(filter === 'all' || filter === 'esb') && (
                     <div className="flex items-center gap-1">
                       <Zap className="h-3 w-3 text-amber-600" />
-                      <Badge variant="outline" className={`text-[9px] ${STATUS_META[c.esbStatus].bg}`}>{STATUS_META[c.esbStatus].label}</Badge>
+                      <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.esbStatus].bg}`}>{STATUS_META[c.esbStatus].label}</Badge>
                     </div>
                   )}
                   {/* RECI badge */}
                   {(filter === 'all' || filter === 'reci') && (
                     <div className="flex items-center gap-1">
                       <Shield className="h-3 w-3 text-blue-600" />
-                      <Badge variant="outline" className={`text-[9px] ${STATUS_META[c.reciStatus].bg}`}>{STATUS_META[c.reciStatus].label}</Badge>
+                      <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.reciStatus].bg}`}>{STATUS_META[c.reciStatus].label}</Badge>
                     </div>
                   )}
                   <span className="text-xs font-semibold text-violet-600">{eur(c.grantAmount)}</span>

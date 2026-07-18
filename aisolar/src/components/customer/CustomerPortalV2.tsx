@@ -141,7 +141,7 @@ export default function CustomerPortalV2() {
             <Sun className="h-7 w-7 text-emerald-600" />
             <div>
               <div className="font-bold text-sm">{brand.name}</div>
-              <div className="text-[10px] text-muted-foreground">My Solar Project</div>
+              <div className="text-[11px] text-muted-foreground">My Solar Project</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
   if (message.type === 'system') {
     return (
       <div className="flex justify-center">
-        <div className="px-3 py-1.5 bg-muted/50 rounded-full text-[10px] text-muted-foreground text-center max-w-[85%]">
+        <div className="px-3 py-1.5 bg-muted/50 rounded-full text-[11px] text-muted-foreground text-center max-w-[85%]">
           {message.body}
         </div>
       </div>
@@ -412,7 +412,7 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
     >
       <div className={`max-w-[85%] ${isCustomer ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
         {/* Actor label */}
-        <div className={`flex items-center gap-1 text-[10px] ${isCustomer ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center gap-1 text-[11px] ${isCustomer ? 'flex-row-reverse' : ''}`}>
           <Icon className="h-2.5 w-2.5 text-muted-foreground" />
           <span className="text-muted-foreground font-medium">{actorLabel}</span>
           <span className="text-muted-foreground">·</span>

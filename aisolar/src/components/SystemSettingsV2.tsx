@@ -210,7 +210,7 @@ export default function SystemSettingsV2() {
                       <div className="font-semibold text-sm">{integration.name}</div>
                       <div className="text-xs text-muted-foreground">{integration.description}</div>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] ${
+                    <Badge variant="outline" className={`text-[11px] ${
                       integration.status === 'connected' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                       integration.status === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
                       integration.status === 'connecting' ? 'bg-blue-50 text-blue-700 border-blue-200' :
@@ -310,7 +310,7 @@ export default function SystemSettingsV2() {
                   <option value="@">Staff</option>
                   <option value="customer">Customer</option>
                 </select>
-                <Badge variant="outline" className="text-[10px] h-7 px-2 flex items-center">
+                <Badge variant="outline" className="text-[11px] h-7 px-2 flex items-center">
                   {filteredAudit.length} events
                 </Badge>
               </div>
@@ -319,17 +319,17 @@ export default function SystemSettingsV2() {
               <div className="space-y-1 max-h-[500px] overflow-y-auto">
                 {filteredAudit.map((event, i) => (
                   <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs transition-colors hover:bg-muted/30">
-                    <Badge variant="outline" className={`text-[8px] flex-shrink-0 ${
+                    <Badge variant="outline" className={`text-[11px] flex-shrink-0 ${
                       event.severity === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
                       event.severity === 'warn' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                       'bg-blue-50 text-blue-700 border-blue-200'
                     }`}>
                       {event.severity}
                     </Badge>
-                    <span className="font-mono text-[10px] text-muted-foreground flex-shrink-0 w-32">{event.time}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground flex-shrink-0 w-32">{event.time}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-foreground">{event.action}</div>
-                      <div className="text-[9px] text-muted-foreground mt-0.5">
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
                         Actor: {event.actor}
                         {event.meta && Object.entries(event.meta).slice(0, 4).map(([k, v]) => ` · ${k}: ${String(v)}`).join('')}
                       </div>
@@ -340,10 +340,10 @@ export default function SystemSettingsV2() {
 
               {/* Summary stats */}
               <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-2 text-center text-xs">
-                <div><div className="font-bold text-blue-600">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[9px] text-muted-foreground">info</div></div>
-                <div><div className="font-bold text-amber-600">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[9px] text-muted-foreground">warnings</div></div>
-                <div><div className="font-bold text-red-600">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[9px] text-muted-foreground">errors</div></div>
-                <div><div className="font-bold">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[9px] text-muted-foreground">agent actions</div></div>
+                <div><div className="font-bold text-blue-600">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
+                <div><div className="font-bold text-amber-600">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[11px] text-muted-foreground">warnings</div></div>
+                <div><div className="font-bold text-red-600">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[11px] text-muted-foreground">errors</div></div>
+                <div><div className="font-bold">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[11px] text-muted-foreground">agent actions</div></div>
               </div>
             </CardContent>
           </Card>
@@ -358,7 +358,7 @@ export default function SystemSettingsV2() {
                 <div><span className="text-muted-foreground">Project URL:</span> <code className="font-mono">https://coxmtpnqjybwlrfwkols.supabase.co</code></div>
                 <div><span className="text-muted-foreground">Region:</span> Frankfurt (eu-west-1)</div>
                 <div><span className="text-muted-foreground">Postgres:</span> 15.6</div>
-                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700">Enabled</Badge></div>
+                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700">Enabled</Badge></div>
                 <div><span className="text-muted-foreground">Migrations:</span> 28 applied</div>
                 <div><span className="text-muted-foreground">pg_cron jobs:</span> 7 scheduled</div>
               </div>
@@ -374,7 +374,7 @@ export default function SystemSettingsV2() {
                     <tr key={s} className="border-b last:border-0">
                       <td className="py-2 font-mono">{s}</td>
                       <td>2026-07-17</td>
-                      <td className="text-right"><Badge variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
+                      <td className="text-right"><Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
                     </tr>
                   ))}
                 </tbody>
@@ -445,7 +445,7 @@ function BrandConfigFull() {
                 </div>
                 <div>
                   <div className="text-xs font-medium">{tp.label}</div>
-                  <div className="text-[9px] text-muted-foreground">{tp.desc}</div>
+                  <div className="text-[11px] text-muted-foreground">{tp.desc}</div>
                 </div>
                 <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />
               </div>
@@ -571,7 +571,7 @@ function SmsChannelConfig() {
           <div><Label className="text-xs">Account SID</Label><Input placeholder="AC..." className="mt-1 h-8 text-xs font-mono" /></div>
           <div><Label className="text-xs">Auth token</Label><Input type="password" placeholder="••••" className="mt-1 h-8 text-xs" /></div>
         </div>
-        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700"><AlertCircle className="h-3 w-3 mr-1" /> Not configured</Badge>
+        <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700"><AlertCircle className="h-3 w-3 mr-1" /> Not configured</Badge>
       </CardContent>
     </Card>
   );
@@ -606,7 +606,7 @@ function MarketingSequences() {
         ].map(seq => (
           <div key={seq.name} className="flex items-center justify-between p-2 border rounded text-xs">
             <div><span className="font-medium">{seq.name}</span><span className="text-muted-foreground ml-2">{seq.trigger} · {seq.emails} emails</span></div>
-            <div className="flex items-center gap-2"><span className={seq.open >= 60 ? 'text-emerald-600' : 'text-amber-600'}>{seq.open}% open</span><Badge variant="default" className="text-[9px]">{seq.status}</Badge></div>
+            <div className="flex items-center gap-2"><span className={seq.open >= 60 ? 'text-emerald-600' : 'text-amber-600'}>{seq.open}% open</span><Badge variant="default" className="text-[11px]">{seq.status}</Badge></div>
           </div>
         ))}
       </CardContent>

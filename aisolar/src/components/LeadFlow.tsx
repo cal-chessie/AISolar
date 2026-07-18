@@ -128,11 +128,11 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm truncate">{lead.name}</span>
               {lead.score > 80 && (
-                <Badge className="text-[9px] h-4 px-1 bg-red-500 text-white">
+                <Badge className="text-[11px] h-4 px-1 bg-red-500 text-white">
                   <Flame className="h-2 w-2 mr-0.5" /> Hot
                 </Badge>
               )}
-              <Badge variant="outline" className="text-[9px] h-4 px-1">
+              <Badge variant="outline" className="text-[11px] h-4 px-1">
                 {getStage(lead.workflow_stage).label}
               </Badge>
             </div>
@@ -719,7 +719,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
               </button>
             </div>
             {/* Orientation indicator */}
-            <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded backdrop-blur z-10">
+            <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded backdrop-blur z-10">
               <span className="font-bold">N ↑</span> · Orientation: {designData.roofOrientation}
             </div>
           </div>
@@ -1081,9 +1081,9 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
           <div className="aspect-[210/297] max-w-xs mx-auto bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30 rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-800 flex items-center justify-center">
             <div className="text-center p-4">
               <div className="text-xs font-bold mb-1">{brand.name}</div>
-              <div className="text-[10px] text-muted-foreground">Solar Investment Plan</div>
-              <div className="text-[10px] text-muted-foreground mt-2">Prepared for {lead.name}</div>
-              <div className="text-[10px] text-muted-foreground">{(designData.panelCount * 0.435).toFixed(1)} kWp · {eurFmt(netCost)}</div>
+              <div className="text-[11px] text-muted-foreground">Solar Investment Plan</div>
+              <div className="text-[11px] text-muted-foreground mt-2">Prepared for {lead.name}</div>
+              <div className="text-[11px] text-muted-foreground">{(designData.panelCount * 0.435).toFixed(1)} kWp · {eurFmt(netCost)}</div>
               <FileText className="h-8 w-8 text-emerald-400 mx-auto mt-3" />
             </div>
           </div>

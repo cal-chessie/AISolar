@@ -43,7 +43,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div>
-              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 mb-2">
+              <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200 mb-2">
                 {proposal.status === 'draft' ? 'DRAFT' : proposal.status === 'presented' ? 'SENT' : 'APPROVED'}
               </Badge>
               <h2 className="text-xl font-bold">Solar Proposal</h2>
@@ -97,7 +97,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
               <div className="text-xs text-muted-foreground">Net cost</div>
               <div className="text-xl font-bold text-emerald-700">{eurFmt(proposal.net_cost)}</div>
-              <div className="text-[10px] text-muted-foreground">after {eurFmt(proposal.seai_grant)} grant</div>
+              <div className="text-[11px] text-muted-foreground">after {eurFmt(proposal.seai_grant)} grant</div>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
               <div className="text-xs text-muted-foreground">Annual savings</div>
@@ -185,11 +185,11 @@ function ComplianceItem({ org, label, icon: Icon, status, details, prePopulated 
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">{details}</div>
         </div>
-        <Badge variant="outline" className={`text-[10px] ${statusMeta.bg}`}>{statusMeta.label}</Badge>
+        <Badge variant="outline" className={`text-[11px] ${statusMeta.bg}`}>{statusMeta.label}</Badge>
       </div>
       <div className="pl-9 space-y-0.5">
         {prePopulated.map((field, i) => (
-          <div key={i} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div key={i} className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <CheckCircle2 className="h-2.5 w-2.5 text-emerald-500" />
             <span>{field}</span>
           </div>

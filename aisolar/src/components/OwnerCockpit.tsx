@@ -17,7 +17,7 @@
  *   CRM — (placeholder for your CRM add-on)
  */
 
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,6 +40,7 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { staggerContainer, listItem } from '@/lib/motionPresets';
+import { useIsMobile } from '@/hooks/use-mobile';
 import UnifiedCalendar from './UnifiedCalendar';
 
 // Lazy-load heavy components only when their sidebar item is clicked
@@ -76,11 +77,35 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
 
 export default function OwnerCockpit() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [activeView, setActiveView] = useState<SidebarView>('overview');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // On mobile: sidebar is a drawer, closed by default. On desktop: collapsible, open by default.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
+
+  // On desktop, auto-open the sidebar on first mount
+  useEffect(() => {
+    if (!isMobile) setSidebarOpen(true);
+    else setSidebarOpen(false);
+  }, [isMobile]);
+
+  // Escape closes the mobile drawer
+  useEffect(() => {
+    if (!sidebarOpen || !isMobile) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [sidebarOpen, isMobile]);
+
+  /** Navigate to a sidebar view. On mobile, close the drawer after selecting. */
+  const selectView = (view: SidebarView) => {
+    setActiveView(view);
+    if (isMobile) setSidebarOpen(false);
+  };
 
   // Compute everything from real lead data
   const data = useMemo(() => {
@@ -184,73 +209,90 @@ export default function OwnerCockpit() {
 
   return (
     <div className="h-screen flex bg-background overflow-hidden">
-      {/* Left sidebar */}
-      <div className={`${sidebarOpen ? 'w-56' : 'w-0'} transition-all overflow-hidden border-r flex-shrink-0 bg-muted/30`}>
-        <div className="w-56 h-full flex flex-col">
-          {/* Logo */}
-          <div className="p-3 flex items-center gap-2 border-b">
-            <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-blue-600 rounded-lg">
-              <Building2 className="h-4 w-4 text-white" />
+      {/* ====== Mobile top bar (only on mobile) ====== */}
+      {isMobile && (
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b h-14 flex items-center gap-3 px-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 -ml-1 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="p-1 bg-gradient-to-br from-emerald-600 to-blue-600 rounded">
+              <Building2 className="h-3.5 w-3.5 text-white" />
             </div>
-            <div>
-              <div className="font-bold text-xs">{brand.name}</div>
-              <div className="text-[9px] text-muted-foreground">Owner Cockpit</div>
-            </div>
+            <span className="font-bold text-xs truncate">{brand.name}</span>
+            <span className="text-[11px] text-muted-foreground truncate">Owner</span>
           </div>
+          <DarkModeToggle />
+        </header>
+      )}
 
-          {/* Nav items */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-            {SIDEBAR_ITEMS.map(item => {
-              const Icon = item.icon;
-              const isActive = activeView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveView(item.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {item.id === 'agents' && data.agentFailures > 0 && (
-                    <span className="bg-red-500 text-white text-[8px] rounded-full h-3.5 min-w-3.5 px-0.5 flex items-center justify-center">{data.agentFailures}</span>
-                  )}
-                  {item.id === 'clients' && data.staleLeads.length > 0 && (
-                    <span className="bg-amber-500 text-white text-[8px] rounded-full h-3.5 min-w-3.5 px-0.5 flex items-center justify-center">{data.staleLeads.length}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Bottom: cross-view + dark mode */}
-          <div className="p-2 border-t space-y-0.5">
-            <button onClick={() => navigate('/consultant')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              <Users className="h-3.5 w-3.5" /> Consultant view
-            </button>
-            <button onClick={() => navigate('/installer')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-              <Wrench className="h-3.5 w-3.5" /> Installer view
-            </button>
-            <div className="flex items-center justify-between px-2 pt-1">
-              <span className="text-[9px] text-muted-foreground">Theme</span>
-              <DarkModeToggle />
-            </div>
-          </div>
+      {/* ====== Sidebar (desktop: collapsible column; mobile: drawer overlay) ====== */}
+      {isMobile ? (
+        /* Mobile drawer */
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSidebarOpen(false)}
+                className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+              />
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-muted/30 border-r flex flex-col lg:hidden"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Navigation menu"
+              >
+                <SidebarContent
+                  activeView={activeView}
+                  onSelectView={selectView}
+                  agentFailures={data.agentFailures}
+                  staleLeadsCount={data.staleLeads.length}
+                  onNavigate={navigate}
+                />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      ) : (
+        /* Desktop collapsible sidebar */
+        <div className={`${sidebarOpen ? 'w-56' : 'w-0'} transition-all overflow-hidden border-r flex-shrink-0 bg-muted/30 hidden lg:block`}>
+          <SidebarContent
+            activeView={activeView}
+            onSelectView={selectView}
+            agentFailures={data.agentFailures}
+            staleLeadsCount={data.staleLeads.length}
+            onNavigate={navigate}
+          />
         </div>
-      </div>
+      )}
 
-      {/* Toggle sidebar button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-background border rounded-r-lg p-1 shadow-md"
-        style={{ left: sidebarOpen ? '224px' : '0' }}
-      >
-        {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-      </button>
+      {/* Toggle sidebar button (desktop only) */}
+      {!isMobile && (
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-background border rounded-r-lg p-1 shadow-md hidden lg:block"
+          style={{ left: sidebarOpen ? '224px' : '0' }}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </button>
+      )}
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pt-14' : ''}`}>
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
@@ -281,6 +323,76 @@ export default function OwnerCockpit() {
   );
 }
 
+// ============= SIDEBAR CONTENT (shared between desktop + mobile drawer) =============
+function SidebarContent({
+  activeView,
+  onSelectView,
+  agentFailures,
+  staleLeadsCount,
+  onNavigate,
+}: {
+  activeView: SidebarView;
+  onSelectView: (view: SidebarView) => void;
+  agentFailures: number;
+  staleLeadsCount: number;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <div className="w-56 h-full flex flex-col">
+      {/* Logo */}
+      <div className="p-3 flex items-center gap-2 border-b">
+        <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-blue-600 rounded-lg">
+          <Building2 className="h-4 w-4 text-white" />
+        </div>
+        <div>
+          <div className="font-bold text-xs">{brand.name}</div>
+          <div className="text-[11px] text-muted-foreground">Owner Cockpit</div>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        {SIDEBAR_ITEMS.map(item => {
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectView(item.id)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.id === 'agents' && agentFailures > 0 && (
+                <span className="bg-red-500 text-white text-[11px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">{agentFailures}</span>
+              )}
+              {item.id === 'clients' && staleLeadsCount > 0 && (
+                <span className="bg-amber-500 text-white text-[11px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">{staleLeadsCount}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Bottom: cross-view + dark mode */}
+      <div className="p-2 border-t space-y-0.5">
+        <button onClick={() => onNavigate('/consultant')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+          <Users className="h-3.5 w-3.5" /> Consultant view
+        </button>
+        <button onClick={() => onNavigate('/installer')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+          <Wrench className="h-3.5 w-3.5" /> Installer view
+        </button>
+        <div className="flex items-center justify-between px-2 pt-1">
+          <span className="text-[11px] text-muted-foreground">Theme</span>
+          <DarkModeToggle />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============= OVERVIEW (the cockpit) =============
 function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setSelectedLead, setActiveView }: any) {
   return (
@@ -296,11 +408,11 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <Card className="border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Revenue</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Revenue</span>
               <TrendingUp className="h-3 w-3 text-emerald-600" />
             </div>
             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.revenueClosed)}</div>
-            <div className="text-[10px] text-muted-foreground">{eur(data.revenuePending)} pending</div>
+            <div className="text-[11px] text-muted-foreground">{eur(data.revenuePending)} pending</div>
             <div className="flex items-end gap-0.5 mt-1.5 h-6">
               {[40, 55, 48, 62, 70, 65, 78, 85, 72, 90, 88, 95].map((h, i) => (
                 <div key={i} className="flex-1 bg-emerald-400/60 rounded-sm" style={{ height: `${h}%` }} />
@@ -313,11 +425,11 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <Card className="border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
               <Activity className="h-3 w-3 text-emerald-600" />
             </div>
             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.stats.totalValue)}</div>
-            <div className="text-[10px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
+            <div className="text-[11px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
             <div className="flex gap-0.5 mt-1.5">
               {data.stageCounts.slice(0, 8).map((s: any) => (
                 <div key={s.id} className={`flex-1 h-1.5 rounded-full bg-${s.color}-400`} />
@@ -330,11 +442,11 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <Card className="border-amber-200 dark:border-amber-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Jobs</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Jobs</span>
               <Wrench className="h-3 w-3 text-amber-600" />
             </div>
             <div className="text-xl font-bold text-amber-700 dark:text-amber-400">{leads.filter((l: DummyLead) => l.assignment).length}</div>
-            <div className="text-[10px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
+            <div className="text-[11px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
             <div className="flex gap-0.5 mt-1.5">
               {leads.filter((l: DummyLead) => l.assignment).slice(0, 6).map((l: DummyLead, i: number) => (
                 <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
@@ -347,11 +459,11 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-violet-200 dark:border-violet-800'}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Agents</span>
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Agents</span>
               <Bot className="h-3 w-3 text-violet-600" />
             </div>
             <div className="text-xl font-bold text-violet-700 dark:text-violet-400">{data.totalAgentRuns}</div>
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-[11px] text-muted-foreground">
               {data.agentFailures > 0 ? <span className="text-red-600">⚠ {data.agentFailures} failed</span> : 'all healthy'} · runs/24h
             </div>
             <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -368,7 +480,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold">Pipeline — click any stage to see leads</h3>
             {data.bottleneck && (
-              <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+              <Badge variant="outline" className="text-[11px] bg-red-50 text-red-700 border-red-200">
                 <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
                 Bottleneck: {getStage(data.bottleneck.stage).label} ({data.bottleneck.rate}%)
               </Badge>
@@ -390,9 +502,9 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                     }`}
                   >
                     <div className={`text-2xl font-bold ${isBottleneck ? 'text-red-600' : `text-${stage.color}-600`}`}>{stage.count}</div>
-                    <div className="text-[9px] text-muted-foreground leading-tight mt-0.5">{stage.label}</div>
+                    <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">{stage.label}</div>
                     {i > 0 && stage.cumulative > 0 && (
-                      <div className="text-[8px] text-muted-foreground mt-1">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}% of total</div>
+                      <div className="text-[11px] text-muted-foreground mt-1">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}% of total</div>
                     )}
                   </button>
                   {i < data.stageCounts.length - 1 && <div className={`h-0.5 w-4 ${isBottleneck ? 'bg-red-300' : 'bg-muted-foreground/20'}`} />}
@@ -410,22 +522,22 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
                   <div key={lead.id} className="p-3 border rounded-lg transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
                     <div className="flex items-center gap-2 mb-1">
-                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium truncate">{lead.name}</span>
                           {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
                         </div>
-                        <div className="text-[10px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      {lead.proposal && <span className="text-[10px] font-semibold text-emerald-600">{eur(lead.proposal.net_cost)}</span>}
-                      <button className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                      {lead.proposal && <span className="text-[11px] font-semibold text-emerald-600">{eur(lead.proposal.net_cost)}</span>}
+                      <button className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
                         <Calculator className="h-2.5 w-2.5 inline mr-0.5" />Estimate
                       </button>
                       {lead.proposal && (
-                        <button className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                        <button className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
                           <FileText className="h-2.5 w-2.5 inline mr-0.5" />Proposal
                         </button>
                       )}
@@ -453,7 +565,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 const isCustomer = item.actor === 'customer';
                 return (
                   <div key={i} className="flex items-start gap-2 text-xs">
-                    <span className="text-[9px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
                     <div className={`p-0.5 rounded ${isAgent ? 'bg-violet-100 dark:bg-violet-950/30' : isCustomer ? 'bg-emerald-100 dark:bg-emerald-950/30' : 'bg-muted'}`}>
                       {isAgent && <Bot className="h-2.5 w-2.5 text-violet-600" />}
                       {isCustomer && <UserCircle className="h-2.5 w-2.5 text-emerald-600" />}
@@ -489,12 +601,12 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 : (event.type === 'install' ? '/job' : '/lead-flow');
               return (
                 <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(target)}>
-                  <span className="text-[10px] font-mono text-muted-foreground w-10">{event.time}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground w-10">{event.time}</span>
                   <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
                     {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
                   </div>
                   <span className="text-xs flex-1 truncate">{event.title}</span>
-                  <span className="text-[10px] text-muted-foreground">{event.assignee}</span>
+                  <span className="text-[11px] text-muted-foreground">{event.assignee}</span>
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 </div>
               );
@@ -534,7 +646,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
                   <div className="font-medium text-sm">{lead.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{lastTouch?.summary || 'No messages'}</div>
                 </div>
-                <Badge variant="outline" className="text-[9px]">{getStage(lead.workflow_stage).label}</Badge>
+                <Badge variant="outline" className="text-[11px]">{getStage(lead.workflow_stage).label}</Badge>
                 {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
                 {lead.proposal && <span className="text-xs text-muted-foreground">{eur(lead.proposal.net_cost)}</span>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -596,7 +708,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
                 <div className="font-medium text-sm">{lead.name}</div>
                 <div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.address.split(',').slice(-1)[0]?.trim()}</div>
               </div>
-              <Badge variant="outline" className="text-[9px] capitalize">{lead.assignment?.status}</Badge>
+              <Badge variant="outline" className="text-[11px] capitalize">{lead.assignment?.status}</Badge>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </div>
           ))}
@@ -652,8 +764,8 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold">{lead.name}</h1>
-                  <Badge className={`bg-${stage.color}-600 text-white text-[10px]`}>{stage.label}</Badge>
-                  {lead.score > 80 && <Badge className="bg-red-500 text-white text-[10px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
+                  <Badge className={`bg-${stage.color}-600 text-white text-[11px]`}>{stage.label}</Badge>
+                  {lead.score > 80 && <Badge className="bg-red-500 text-white text-[11px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
                   <div><span className="text-muted-foreground">Phone:</span> {lead.phone}</div>
@@ -697,10 +809,10 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {lead.touchpoints.map((tp, i) => (
                 <div key={i} className="flex items-center gap-2 p-1.5 border rounded text-xs">
-                  <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.channel}</Badge>
+                  <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                   <span className="text-muted-foreground flex-shrink-0 w-16">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                   <span className="flex-1 truncate">{tp.summary}</span>
-                  <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.actor}</Badge>
+                  <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.actor}</Badge>
                 </div>
               ))}
             </div>
@@ -740,7 +852,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
                 </div>
-                <Badge variant="outline" className={`text-[9px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
+                <Badge variant="outline" className={`text-[11px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
                 {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -810,10 +922,10 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {lead.touchpoints.map((tp, i) => (
                   <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
-                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.channel}</Badge>
+                    <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                     <span className="text-muted-foreground flex-shrink-0 w-20">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                     <span className="flex-1 truncate">{tp.summary}</span>
-                    <Badge variant="outline" className="text-[8px] flex-shrink-0">{tp.actor}</Badge>
+                    <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.actor}</Badge>
                   </div>
                 ))}
               </div>
@@ -842,9 +954,9 @@ function AlertItem({ icon: Icon, color, title, desc, cta, onClick }: any) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-xs font-medium">{title}</div>
-        <div className="text-[10px] text-muted-foreground">{desc}</div>
+        <div className="text-[11px] text-muted-foreground">{desc}</div>
       </div>
-      <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={onClick}>{cta}</Button>
+      <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={onClick}>{cta}</Button>
     </div>
   );
 }
@@ -857,10 +969,10 @@ function StatBox({ label, value, sub, color, icon: Icon }: any) {
           <div className={`p-0.5 rounded bg-${color}-100 dark:bg-${color}-950/40`}>
             <Icon className={`h-2.5 w-2.5 text-${color}-600`} />
           </div>
-          <span className="text-[9px] text-muted-foreground">{label}</span>
+          <span className="text-[11px] text-muted-foreground">{label}</span>
         </div>
         <div className="text-sm font-bold">{value}</div>
-        {sub && <div className="text-[9px] text-muted-foreground">{sub}</div>}
+        {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
       </CardContent>
     </Card>
   );

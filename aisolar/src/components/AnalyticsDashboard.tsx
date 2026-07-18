@@ -207,7 +207,7 @@ export default function AnalyticsDashboard() {
                     <span className="text-xs text-muted-foreground tabular-nums">{item.time}</span>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] ${
+                      className={`text-[11px] ${
                         item.type === 'hot' ? 'bg-red-50 text-red-700 border-red-200' :
                         item.type === 'won' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                         'bg-violet-50 text-violet-700 border-violet-200'
@@ -434,7 +434,7 @@ export default function AnalyticsDashboard() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-emerald-600">{eur(lead.proposal?.seai_grant || 0)}</div>
-                      <Badge variant="outline" className={`text-[10px] mt-1 ${
+                      <Badge variant="outline" className={`text-[11px] mt-1 ${
                         lead.workflow_stage === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                         ['final_paid'].includes(lead.workflow_stage) ? 'bg-blue-50 text-blue-700 border-blue-200' :
                         'bg-amber-50 text-amber-700 border-amber-200'

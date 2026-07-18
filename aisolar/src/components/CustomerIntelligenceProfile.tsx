@@ -159,7 +159,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {lead.touchpoints.map((tp, i) => (
               <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs">
-                <Badge variant="outline" className="text-[9px] flex-shrink-0">{tp.channel}</Badge>
+                <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                 <div className="flex-1">
                   <div className="text-foreground">{tp.summary}</div>
                   <div className="text-muted-foreground mt-0.5">
