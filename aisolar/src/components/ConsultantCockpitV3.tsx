@@ -28,7 +28,7 @@
  * Quick actions: Call, Book appointment, Open lead details (survey/proposal).
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,11 +41,16 @@ import {
   ArrowLeft, ArrowRight, Bot, User, Sparkles, ChevronRight,
   Zap, Sun, Clock, CheckCircle2, AlertCircle, Paperclip,
   MoreVertical, Star, MapPin, Video, Navigation, Wrench, Building2,
+  Calculator, TrendingUp, X,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+
+// Lazy-load estimate + proposal for the slide-out panel
+const EstimateView = lazy(() => import('./EstimateView'));
+const ProposalView = lazy(() => import('./ProposalView'));
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -128,6 +133,7 @@ export default function ConsultantCockpitV3() {
   const [replyText, setReplyText] = useState('');
   const [replyChannel, setReplyChannel] = useState<'email' | 'sms'>('email');
   const [mobileShowConversation, setMobileShowConversation] = useState(false);
+  const [slideOutView, setSlideOutView] = useState<'estimate' | 'proposal' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selectedLead = leads.find(l => l.id === selectedLeadId);
@@ -284,17 +290,20 @@ export default function ConsultantCockpitV3() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="p-2 text-xs" onClick={() => setSlideOutView('estimate')}>
+                    <Calculator className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Estimate</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="p-2 text-xs" onClick={() => setSlideOutView('proposal')}>
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Proposal</span>
+                  </Button>
                   <Button variant="ghost" size="sm" className="p-2" asChild>
                     <a href={`tel:${selectedLead.phone}`}><Phone className="h-4 w-4" /></a>
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
                   <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate('/lead-flow')}>
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <MoreVertical className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Flow</span>
                   </Button>
                 </div>
               </div>
@@ -367,6 +376,47 @@ export default function ConsultantCockpitV3() {
           )}
         </div>
       </div>
+
+      {/* Slide-out panel for Estimate / Proposal */}
+      <AnimatePresence>
+        {slideOutView && selectedLead && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30 }}
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 overflow-y-auto"
+          >
+            <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between z-10">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                {slideOutView === 'estimate' ? <><Calculator className="h-4 w-4 text-blue-600" /> Estimate</> : <><FileText className="h-4 w-4 text-emerald-600" /> Proposal</>}
+                <span className="text-muted-foreground font-normal">· {selectedLead.name}</span>
+              </h3>
+              <div className="flex items-center gap-1">
+                {slideOutView === 'estimate' && (
+                  <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}>
+                    Proposal <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+                {slideOutView === 'proposal' && (
+                  <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}>
+                    <ArrowLeft className="h-3 w-3 mr-1" /> Estimate
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="p-1.5" onClick={() => setSlideOutView(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="p-3">
+              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+                {slideOutView === 'estimate' && <EstimateView lead={selectedLead} onOpenProposal={() => setSlideOutView('proposal')} />}
+                {slideOutView === 'proposal' && <ProposalView lead={selectedLead} />}
+              </Suspense>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <RoleBasedAICoach />
     </div>

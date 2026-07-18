@@ -31,7 +31,7 @@ import {
   Star, Phone, Video, MapPin, FileText, Zap, Award, Activity,
   ChevronRight, Flame, Target, Percent, Navigation, Package,
   Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
-  Search,
+  Search, Calculator,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
@@ -382,13 +382,27 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate }
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-2 pt-2 border-t">
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
-                  <div key={lead.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
-                    <Avatar className="h-6 w-6"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium truncate block">{lead.name}</span>
-                      {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 inline" />}
+                  <div key={lead.id} className="p-2 border rounded-lg hover:bg-muted/30">
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-medium truncate block">{lead.name}</span>
+                        {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 inline" />}
+                      </div>
+                      {lead.proposal && <span className="text-[10px] text-muted-foreground">{eur(lead.proposal.net_cost)}</span>}
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     </div>
-                    {lead.proposal && <span className="text-[10px] text-muted-foreground">{eur(lead.proposal.net_cost)}</span>}
+                    {/* Quick access: Estimate + Proposal */}
+                    <div className="flex gap-1 mt-1 pl-8">
+                      <button onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300">
+                        <Calculator className="h-2 w-2 inline mr-0.5" />Estimate
+                      </button>
+                      {lead.proposal && (
+                        <button onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }} className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300">
+                          <FileText className="h-2 w-2 inline mr-0.5" />Proposal
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length === 0 && (
