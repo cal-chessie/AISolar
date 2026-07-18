@@ -81,7 +81,7 @@ export default function AIConfig() {
   const enabledTables = Object.entries(dbAccess).filter(([_, v]) => v).length;
 
   return (
-    <div className="p-4 space-y-4 max-w-3xl">
+    <div className="p-3 space-y-3">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-violet-600" /> AI Configuration</h2>
         <p className="text-sm text-muted-foreground mt-1">The brain behind all 10 agents. Configure your LLM, API keys, and database access.</p>

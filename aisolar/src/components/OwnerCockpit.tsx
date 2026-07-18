@@ -243,7 +243,7 @@ export default function OwnerCockpit() {
       <div className="flex-1 overflow-y-auto">
         <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
           {activeView === 'overview' && (
-            <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} />
+            <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
           )}
           {activeView === 'calendar' && <RealCalendar />}
           {activeView === 'consultants' && (
@@ -270,7 +270,7 @@ export default function OwnerCockpit() {
 }
 
 // ============= OVERVIEW (the cockpit) =============
-function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate }: any) {
+function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setSelectedLead, setActiveView }: any) {
   return (
     <div className="p-3 space-y-3">
       {/* Vital signs */}
@@ -337,11 +337,11 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate }
         </Card>
       </div>
 
-      {/* Pipeline flow */}
+      {/* Pipeline flow — the main attraction */}
       <Card>
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Pipeline flow — click to drill in</h3>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold">Pipeline — click any stage to see leads</h3>
             {data.bottleneck && (
               <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
                 <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
@@ -349,56 +349,62 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate }
               </Badge>
             )}
           </div>
-          <div className="flex gap-1 overflow-x-auto pb-2">
+          {/* Horizontal flow — bigger boxes */}
+          <div className="flex gap-1 overflow-x-auto pb-3">
             {data.stageCounts.map((stage: any, i: number) => {
               const isBottleneck = data.bottleneck?.stage === stage.id;
               const isExpanded = expandedStage === stage.id;
-              const stageLeads = leads.filter((l: DummyLead) => l.workflow_stage === stage.id);
               return (
                 <div key={stage.id} className="flex items-center flex-shrink-0">
                   <button
                     onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
-                    className={`p-2 rounded-lg border-2 text-center min-w-[70px] transition-all ${
+                    className={`p-3 rounded-lg border-2 text-center min-w-[85px] transition-all ${
                       isBottleneck ? 'border-red-400 bg-red-50 dark:bg-red-950/20' :
                       isExpanded ? `border-${stage.color}-500 bg-${stage.color}-50 dark:bg-${stage.color}-950/20` :
                       `border-${stage.color}-200 hover:border-${stage.color}-400`
                     }`}
                   >
-                    <div className={`text-xl font-bold ${isBottleneck ? 'text-red-600' : `text-${stage.color}-600`}`}>{stage.count}</div>
-                    <div className="text-[8px] text-muted-foreground leading-tight">{stage.label}</div>
+                    <div className={`text-2xl font-bold ${isBottleneck ? 'text-red-600' : `text-${stage.color}-600`}`}>{stage.count}</div>
+                    <div className="text-[9px] text-muted-foreground leading-tight mt-0.5">{stage.label}</div>
                     {i > 0 && stage.cumulative > 0 && (
-                      <div className="text-[7px] text-muted-foreground mt-0.5">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}%</div>
+                      <div className="text-[8px] text-muted-foreground mt-1">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}% of total</div>
                     )}
                   </button>
-                  {i < data.stageCounts.length - 1 && <div className={`h-0.5 w-3 ${isBottleneck ? 'bg-red-300' : 'bg-muted-foreground/20'}`} />}
+                  {i < data.stageCounts.length - 1 && <div className={`h-0.5 w-4 ${isBottleneck ? 'bg-red-300' : 'bg-muted-foreground/20'}`} />}
                 </div>
               );
             })}
           </div>
+          {/* Expanded leads */}
           {expandedStage && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-2 pt-2 border-t">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-3 pt-3 border-t">
+              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+                {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads (click to open)
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
-                  <div key={lead.id} className="p-2 border rounded-lg hover:bg-muted/30">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
-                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                  <div key={lead.id} className="p-3 border rounded-lg hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-medium truncate block">{lead.name}</span>
-                        {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 inline" />}
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium truncate">{lead.name}</span>
+                          {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
                       </div>
-                      {lead.proposal && <span className="text-[10px] text-muted-foreground">{eur(lead.proposal.net_cost)}</span>}
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     </div>
-                    {/* Quick access: Estimate + Proposal */}
-                    <div className="flex gap-1 mt-1 pl-8">
-                      <button onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300">
-                        <Calculator className="h-2 w-2 inline mr-0.5" />Estimate
+                    <div className="flex items-center gap-2 mt-1">
+                      {lead.proposal && <span className="text-[10px] font-semibold text-emerald-600">{eur(lead.proposal.net_cost)}</span>}
+                      <button className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                        <Calculator className="h-2.5 w-2.5 inline mr-0.5" />Estimate
                       </button>
                       {lead.proposal && (
-                        <button onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }} className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300">
-                          <FileText className="h-2 w-2 inline mr-0.5" />Proposal
+                        <button className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                          <FileText className="h-2.5 w-2.5 inline mr-0.5" />Proposal
                         </button>
                       )}
+                      <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto" />
                     </div>
                   </div>
                 ))}
