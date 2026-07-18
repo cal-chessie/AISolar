@@ -52,10 +52,11 @@ export default function SystemSettings() {
           <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit</TabsTrigger>
         </TabsList>
 
-        {/* CHANNELS — Email + SMS marketing infrastructure */}
+        {/* CHANNELS — Email + SMS + WhatsApp */}
         <TabsContent value="channels" className="space-y-4">
           <EmailChannelCard />
           <SmsChannelCard />
+          <WhatsAppChannelCard />
           <MarketingAutomationCard />
         </TabsContent>
 
@@ -213,6 +214,59 @@ function SmsChannelCard() {
         <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg text-xs text-amber-800 dark:text-amber-300">
           <AlertTriangle className="h-3 w-3 inline mr-1" />
           SMS is used for install reminders (T-7, T-1, T-day). Configure before enabling PostInstall Agent.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WhatsAppChannelCard() {
+  const [enabled, setEnabled] = useState(false);
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-green-600" />
+              WhatsApp Business
+            </CardTitle>
+            <CardDescription>Customer comms, install reminders, document sharing</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              <AlertCircle className="h-3 w-3 mr-1" /> Not configured
+            </Badge>
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Provider</Label>
+            <select className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
+              <option value="meta">Meta WhatsApp Business API (recommended)</option>
+              <option value="twilio">Twilio WhatsApp</option>
+              <option value="360dialog">360dialog</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Phone number</Label>
+            <Input placeholder="+353 1 234 5678" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Access token</Label>
+            <Input type="password" placeholder="EAAG..." className="mt-1 font-mono text-xs" />
+          </div>
+          <div>
+            <Label className="text-xs">Business ID</Label>
+            <Input placeholder="123456789012345" className="mt-1 font-mono text-xs" />
+          </div>
+        </div>
+        <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg text-xs text-green-800 dark:text-green-300">
+          <CheckCircle2 className="h-3 w-3 inline mr-1" />
+          <strong>WhatsApp use cases:</strong> Install reminders (T-7, T-1), document delivery (proposal PDF, warranty), customer support chat, review request after install. Customers can reply directly — messages appear in the Communication Hub.
         </div>
       </CardContent>
     </Card>

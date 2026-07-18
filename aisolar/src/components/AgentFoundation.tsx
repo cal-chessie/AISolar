@@ -18,10 +18,11 @@ import { isDemoMode } from '@/lib/demoMode';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Bot, Clock, CheckCircle2, AlertCircle, Pause, Play, Zap, Calendar,
-  ArrowRight, Shield, FileText, Loader2, Brain,
+  ArrowRight, Shield, FileText, Loader2, Brain, Cpu,
 } from 'lucide-react';
 
 const AgentTraining = lazy(() => import('./AgentTraining'));
+const AIConfig = lazy(() => import('./AIConfig'));
 
 interface AgentStatus {
   agentId: string;
@@ -136,7 +137,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(AGENTS.map(a => [a.id, a.enabledByDefault]))
   );
-  const [activeTab, setActiveTab] = useState<'agents' | 'training'>('agents');
+  const [activeTab, setActiveTab] = useState<'agents' | 'training' | 'ai_config'>('agents');
   const demo = isDemoMode();
 
   useEffect(() => {
@@ -180,7 +181,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
 
   return (
     <div className="space-y-4">
-      {/* Tab switcher — Agents + Training */}
+      {/* Tab switcher — Agents + Training + AI Config */}
       {!compact && (
         <div className="flex gap-1 border-b">
           <button onClick={() => setActiveTab('agents')}
@@ -191,6 +192,10 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'training' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <Brain className="h-4 w-4" /> Training
           </button>
+          <button onClick={() => setActiveTab('ai_config')}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ai_config' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <Cpu className="h-4 w-4" /> AI Config
+          </button>
         </div>
       )}
 
@@ -198,6 +203,13 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       {activeTab === 'training' && !compact && (
         <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}>
           <AgentTraining />
+        </Suspense>
+      )}
+
+      {/* AI Config tab */}
+      {activeTab === 'ai_config' && !compact && (
+        <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}>
+          <AIConfig />
         </Suspense>
       )}
 
