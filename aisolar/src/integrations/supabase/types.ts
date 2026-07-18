@@ -14,6 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
+      // Phase 4 tables — added manually (regenerate from Supabase when schema syncs)
+      ai_config: {
+        Row: {
+          key: string
+          value: string
+          description: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          key: string
+          value: string
+          description?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          key?: string
+          value?: string
+          description?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      agent_prompts: {
+        Row: {
+          id: string
+          agent_id: string
+          version: number
+          system_prompt: string
+          user_prompt_template: string
+          model: string | null
+          is_active: boolean
+          notes: string | null
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          version?: number
+          system_prompt: string
+          user_prompt_template: string
+          model?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          version?: number
+          system_prompt?: string
+          user_prompt_template?: string
+          model?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      agent_runs: {
+        Row: {
+          id: string
+          agent_id: string
+          trigger_type: string
+          trigger_detail: string | null
+          status: string
+          lead_id: string | null
+          inputs: unknown | null
+          outputs: unknown | null
+          error_message: string | null
+          started_at: string | null
+          completed_at: string | null
+          duration_ms: number | null
+          created_at: string
+          // Phase 4 LLM cost tracking
+          cost_usd: number | null
+          model: string | null
+          prompt_tokens: number | null
+          completion_tokens: number | null
+          worker_id: string | null
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          trigger_type: string
+          trigger_detail?: string | null
+          status: string
+          lead_id?: string | null
+          inputs?: unknown | null
+          outputs?: unknown | null
+          error_message?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          created_at?: string
+          cost_usd?: number | null
+          model?: string | null
+          prompt_tokens?: number | null
+          completion_tokens?: number | null
+          worker_id?: string | null
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          trigger_type?: string
+          trigger_detail?: string | null
+          status?: string
+          lead_id?: string | null
+          inputs?: unknown | null
+          outputs?: unknown | null
+          error_message?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          duration_ms?: number | null
+          created_at?: string
+          cost_usd?: number | null
+          model?: string | null
+          prompt_tokens?: number | null
+          completion_tokens?: number | null
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
+      agent_queue: {
+        Row: {
+          id: string
+          agent_id: string
+          lead_id: string | null
+          trigger_data: unknown | null
+          priority: number | null
+          status: string
+          attempts: number | null
+          max_attempts: number | null
+          run_after: string | null
+          locked_until: string | null
+          failed_at: string | null
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          lead_id?: string | null
+          trigger_data?: unknown | null
+          priority?: number | null
+          status?: string
+          attempts?: number | null
+          max_attempts?: number | null
+          run_after?: string | null
+          locked_until?: string | null
+          failed_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          lead_id?: string | null
+          trigger_data?: unknown | null
+          priority?: number | null
+          status?: string
+          attempts?: number | null
+          max_attempts?: number | null
+          run_after?: string | null
+          locked_until?: string | null
+          failed_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action_type: string
@@ -439,6 +615,8 @@ export type Database = {
           access_token: string | null
           address: string | null
           annual_consumption_kwh: number | null
+          assigned_consultant_id: string | null  // Phase 1 fix
+          owner_user_id: string | null  // Phase 1 fix
           created_at: string
           email: string
           id: string
@@ -450,6 +628,7 @@ export type Database = {
           phone: string | null
           property_type: string | null
           score: number | null
+          source: string | null
           updated_at: string
           workflow_stage: string | null
         }
@@ -457,6 +636,8 @@ export type Database = {
           access_token?: string | null
           address?: string | null
           annual_consumption_kwh?: number | null
+          assigned_consultant_id?: string | null
+          owner_user_id?: string | null
           created_at?: string
           email: string
           id?: string

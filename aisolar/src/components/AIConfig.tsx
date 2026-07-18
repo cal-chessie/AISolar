@@ -1,18 +1,19 @@
 /**
  * AIConfig — the AI interface before agents.
  *
- * Owner adds their OpenRouter account, picks their LLM, enters API keys,
- * and configures how agents query the database. This is the brain config
- * that all 10 agents use.
+ * Phase 4: WIRE TO REAL BACKEND.
+ *   - Loads config from `ai_config` table on mount
+ *   - handleSave upserts to `ai_config` (admin-only RLS)
+ *   - handleTest does a real `fetch('https://openrouter.ai/api/v1/models')`
+ *     with the entered key to verify it works
  *
- * Sections:
- *   1. LLM Provider — OpenRouter API key + model picker
- *   2. Database Access — what agents can query (tables, scopes)
- *   3. Agent Behaviour — global settings (temperature, max tokens, cost cap)
- *   4. Test Connection — verify the LLM responds
+ * The OpenRouter API key is stored in `ai_config` (admin-only RLS). The
+ * agent-drain edge function reads it via service role. Not as secure as
+ * Supabase Vault but avoids needing a separate vault-write edge function.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,67 +25,143 @@ import {
   Brain, Key, Database, Zap, Play, CheckCircle2, AlertTriangle,
   Loader2, Save, Cpu, Globe, DollarSign, Shield, Bot, Sparkles,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const AVAILABLE_MODELS = [
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', cost: '$3/1M in · $15/1M out', best: 'Complex reasoning, proposal drafting', context: '200K' },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', cost: '$0.075/1M in · $0.30/1M out', best: 'Cheapest, bill extraction, agent default', context: '1M' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', cost: '$1.25/1M in · $5/1M out', best: 'Vision + long context', context: '2M' },
   { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'OpenAI', cost: '$2.50/1M in · $10/1M out', best: 'General purpose, fast, vision', context: '128K' },
   { id: 'openai/gpt-4o-mini', name: 'GPT-4o mini', provider: 'OpenAI', cost: '$0.15/1M in · $0.60/1M out', best: 'Cheap, fast, follow-ups', context: '128K' },
-  { id: 'google/gemini-flash-1.5', name: 'Gemini 1.5 Flash', provider: 'Google', cost: '$0.075/1M in · $0.30/1M out', best: 'Cheapest, bill extraction', context: '1M' },
-  { id: 'google/gemini-pro-1.5', name: 'Gemini 1.5 Pro', provider: 'Google', cost: '$1.25/1M in · $5/1M out', best: 'Vision + long context', context: '2M' },
-  { id: 'meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', provider: 'Meta', cost: '$0.59/1M in · $0.79/1M out', best: 'Open source, private', context: '128K' },
-  { id: 'mistralai/mistral-large', name: 'Mistral Large', provider: 'Mistral', cost: '$2/1M in · $6/1M out', best: 'European, GDPR-friendly', context: '128K' },
-];
-
-const DB_TABLES = [
-  { name: 'leads', label: 'Leads', desc: 'Customer lead data', default: true },
-  { name: 'lead_intake', label: 'Lead Intake', desc: 'Bill-extracted data', default: true },
-  { name: 'site_surveys', label: 'Site Surveys', desc: 'Roof + electrical data', default: true },
-  { name: 'proposals', label: 'Proposals', desc: 'System design + pricing', default: true },
-  { name: 'contracts', label: 'Contracts', desc: 'Signed contracts', default: false },
-  { name: 'invoices', label: 'Invoices', desc: 'Payment status', default: true },
-  { name: 'assignments', label: 'Assignments', desc: 'Installer job assignments', default: true },
-  { name: 'touchpoints', label: 'Touchpoints', desc: 'Communication history', default: true },
-  { name: 'activity_logs', label: 'Activity Logs', desc: 'All system actions', default: false },
-  { name: 'agent_runs', label: 'Agent Runs', desc: 'Past agent executions', default: true },
-  { name: 'solar_products', label: 'Products', desc: 'Catalogue + pricing', default: true },
-  { name: 'installers', label: 'Installers', desc: 'Installer profiles + availability', default: true },
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', cost: '$3/1M in · $15/1M out', best: 'Complex reasoning, proposal drafting', context: '200K' },
+  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic', cost: '$0.80/1M in · $4/1M out', best: 'Fast + cheap Anthropic', context: '200K' },
+  { id: 'meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', provider: 'Meta', cost: '$0.35/1M in · $0.40/1M out', best: 'Open source, private', context: '128K' },
 ];
 
 export default function AIConfig() {
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('google/gemini-flash-1.5');
-  const [dbAccess, setDbAccess] = useState<Record<string, boolean>>(
-    Object.fromEntries(DB_TABLES.map(t => [t.name, t.default]))
-  );
-  const [temperature, setTemperature] = useState(0.3);
-  const [maxTokens, setMaxTokens] = useState(2000);
+  const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash');
   const [dailyCostCap, setDailyCostCap] = useState(5);
+  const [enableLLM, setEnableLLM] = useState(true);
   const [systemPrefix, setSystemPrefix] = useState('You are an AI assistant for AISOLAR, an Irish solar installation company. Always be professional, concise, and GDPR-compliant. Use Irish English spelling and euro (€) currency.');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'failed' | null>(null);
+  const [testDetail, setTestDetail] = useState<string>('');
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Load config from ai_config table on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_config')
+          .select('key, value')
+          .in('key', ['openrouter_api_key', 'openrouter_default_model', 'daily_cost_cap_usd', 'enable_llm_calls']);
+
+        if (error) throw error;
+
+        if (data) {
+          for (const row of data) {
+            if (row.key === 'openrouter_api_key' && row.value) setApiKey(row.value);
+            if (row.key === 'openrouter_default_model' && row.value) setSelectedModel(row.value);
+            if (row.key === 'daily_cost_cap_usd' && row.value) setDailyCostCap(parseFloat(row.value));
+            if (row.key === 'enable_llm_calls') setEnableLLM(row.value !== 'false');
+          }
+        }
+      } catch (err: any) {
+        // Table may not exist yet (migration not applied). Silent fail.
+        console.warn('Could not load ai_config:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  /** Real test — calls OpenRouter's /models endpoint with the entered key. */
   const handleTest = async () => {
+    if (!apiKey.trim()) {
+      toast.error('Enter your OpenRouter API key first');
+      return;
+    }
     setTesting(true);
     setTestResult(null);
-    await new Promise(r => setTimeout(r, 1500));
-    setTestResult(apiKey.length > 10 ? 'success' : 'failed');
-    setTesting(false);
+    setTestDetail('');
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey.trim()}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const modelCount = data.data?.length || 0;
+        setTestResult('success');
+        setTestDetail(`Connected. ${modelCount.toLocaleString()} models available on your account.`);
+        toast.success('OpenRouter connection verified', {
+          description: `${modelCount.toLocaleString()} models available.`,
+        });
+      } else {
+        const errText = await response.text();
+        setTestResult('failed');
+        setTestDetail(`HTTP ${response.status}: ${errText.slice(0, 200)}`);
+        toast.error(`Connection failed (HTTP ${response.status})`, {
+          description: errText.slice(0, 200),
+        });
+      }
+    } catch (err: any) {
+      setTestResult('failed');
+      setTestDetail(err.message);
+      toast.error('Connection failed', { description: err.message });
+    } finally {
+      setTesting(false);
+    }
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  /** Real save — upserts to ai_config table. */
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const updates = [
+        { key: 'openrouter_api_key', value: apiKey.trim(), description: 'OpenRouter API key. Set via AIConfig UI. Required for LLM calls in agent-drain.' },
+        { key: 'openrouter_default_model', value: selectedModel, description: 'Default model for agent LLM calls.' },
+        { key: 'daily_cost_cap_usd', value: String(dailyCostCap), description: 'Maximum USD spend per day on LLM calls.' },
+        { key: 'enable_llm_calls', value: enableLLM ? 'true' : 'false', description: 'Master switch for LLM calls.' },
+      ];
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('ai_config')
+          .upsert(update, { onConflict: 'key' });
+        if (error) throw error;
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      toast.success('AI configuration saved', {
+        description: `${selectedModel} · $${dailyCostCap}/day cap · LLM ${enableLLM ? 'enabled' : 'disabled'}`,
+      });
+    } catch (err: any) {
+      toast.error('Failed to save AI configuration', { description: err.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const model = AVAILABLE_MODELS.find(m => m.id === selectedModel)!;
-  const enabledTables = Object.entries(dbAccess).filter(([_, v]) => v).length;
+  const model = AVAILABLE_MODELS.find(m => m.id === selectedModel) || AVAILABLE_MODELS[0];
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-violet-600 mx-auto" />
+        <p className="text-xs text-muted-foreground mt-2">Loading AI configuration…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 space-y-3">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-violet-600" /> AI Configuration</h2>
-        <p className="text-sm text-muted-foreground mt-1">The brain behind all 10 agents. Configure your LLM, API keys, and database access.</p>
+        <p className="text-sm text-muted-foreground mt-1">The brain behind all 10 agents. Configure your LLM, API keys, and cost limits.</p>
       </div>
 
       {/* LLM Provider */}
@@ -105,20 +182,32 @@ export default function AIConfig() {
                 onChange={e => { setApiKey(e.target.value); setTestResult(null); }}
                 className="font-mono text-xs"
               />
-              <Button variant="outline" size="sm" onClick={handleTest} disabled={testing || !apiKey}>
+              <Button variant="outline" size="sm" onClick={handleTest} disabled={testing || !apiKey.trim()}>
                 {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3 mr-1" />}
                 {testing ? 'Testing…' : 'Test'}
               </Button>
             </div>
             {testResult === 'success' && (
-              <div className="mt-1 text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Connection successful — LLM is responding.</div>
+              <div className="mt-1 text-xs text-emerald-600 flex items-start gap-1">
+                <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div>Connection successful — LLM is responding.</div>
+                  {testDetail && <div className="text-[10px] text-muted-foreground mt-0.5">{testDetail}</div>}
+                </div>
+              </div>
             )}
             {testResult === 'failed' && (
-              <div className="mt-1 text-xs text-red-600 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Connection failed — check your API key.</div>
+              <div className="mt-1 text-xs text-red-600 flex items-start gap-1">
+                <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div>Connection failed — check your API key.</div>
+                  {testDetail && <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">{testDetail}</div>}
+                </div>
+              </div>
             )}
             <p className="text-[10px] text-muted-foreground mt-1">
-              Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">openrouter.ai/keys</a>.
-              Stored encrypted in Supabase Vault. Never exposed to the client.
+              Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:underline">openrouter.ai/keys</a>.
+              Stored in the <code>ai_config</code> table (admin-only RLS). The agent-drain edge function reads it via service role.
             </p>
           </div>
 
@@ -151,36 +240,6 @@ export default function AIConfig() {
         </CardContent>
       </Card>
 
-      {/* Database Access */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Database className="h-4 w-4 text-blue-600" /> Database Access</CardTitle>
-          <CardDescription>What agents can query. {enabledTables} tables enabled.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {DB_TABLES.map(table => (
-              <div key={table.name} className="flex items-center gap-2 p-2 border rounded-lg">
-                <Switch
-                  checked={dbAccess[table.name]}
-                  onCheckedChange={(v) => setDbAccess(prev => ({ ...prev, [table.name]: v }))}
-                />
-                <div className="flex-1">
-                  <div className="text-xs font-medium">{table.label}</div>
-                  <div className="text-[10px] text-muted-foreground">{table.desc}</div>
-                </div>
-                <code className="text-[9px] text-muted-foreground font-mono">{table.name}</code>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs text-blue-800 dark:text-blue-300">
-            <Shield className="h-3 w-3 inline mr-1" />
-            Agents query via a security-definer RPC with row-level security. They can only read, never write directly.
-            All queries are logged in <code>agent_runs.inputs</code>.
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Agent Behaviour */}
       <Card>
         <CardHeader>
@@ -188,46 +247,17 @@ export default function AIConfig() {
           <CardDescription>Global settings applied to all agents.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* System prefix */}
-          <div>
-            <Label className="text-xs">System prompt prefix (applied to all agents)</Label>
-            <Textarea
-              value={systemPrefix}
-              onChange={e => setSystemPrefix(e.target.value)}
-              rows={3}
-              className="text-xs mt-1"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">This is prepended to each agent's individual system prompt.</p>
-          </div>
-
-          {/* Temperature */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <Label className="text-xs">Temperature (creativity)</Label>
-              <span className="text-xs font-bold">{temperature}</span>
+          {/* LLM enable switch */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <div className="text-xs font-medium flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-violet-600" /> Enable LLM calls
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                Master switch. When off, agents fall back to deterministic logic (no LLM cost).
+              </div>
             </div>
-            <input
-              type="range" min="0" max="1" step="0.1"
-              value={temperature}
-              onChange={e => setTemperature(Number(e.target.value))}
-              className="w-full"
-            />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>0 = Precise (data extraction)</span>
-              <span>1 = Creative (email drafting)</span>
-            </div>
-          </div>
-
-          {/* Max tokens */}
-          <div>
-            <Label className="text-xs">Max tokens per response</Label>
-            <Input
-              type="number" min="100" max="8000" step="100"
-              value={maxTokens}
-              onChange={e => setMaxTokens(Number(e.target.value))}
-              className="mt-1"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">Higher = longer responses but more cost.</p>
+            <Switch checked={enableLLM} onCheckedChange={setEnableLLM} />
           </div>
 
           {/* Daily cost cap */}
@@ -241,7 +271,7 @@ export default function AIConfig() {
             />
             <p className="text-[10px] text-muted-foreground mt-1">
               Agents stop calling the LLM when daily spend exceeds this. Current model ({model.name}) costs ~{model.cost}.
-              At ${dailyCostCap}/day you get ~{Math.round(dailyCostCap / 0.30)} calls/day with {model.name}.
+              At ${dailyCostCap}/day you get ~{Math.round(dailyCostCap / (0.30))} calls/day with the cheapest model.
             </p>
           </div>
         </CardContent>
@@ -262,13 +292,11 @@ export default function AIConfig() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Model:</span> <span className="font-medium">{model.name}</span></div>
             <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Cost:</span> <span className="font-medium">{model.cost}</span></div>
-            <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Temperature:</span> <span className="font-medium">{temperature}</span></div>
-            <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Max tokens:</span> <span className="font-medium">{maxTokens}</span></div>
             <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Daily cap:</span> <span className="font-medium">${dailyCostCap}</span></div>
-            <div className="p-2 bg-background rounded"><span className="text-muted-foreground">DB tables:</span> <span className="font-medium">{enabledTables} enabled</span></div>
+            <div className="p-2 bg-background rounded"><span className="text-muted-foreground">LLM calls:</span> <span className="font-medium">{enableLLM ? 'Enabled' : 'Disabled'}</span></div>
           </div>
-          <Button onClick={handleSave} className="w-full mt-3 bg-violet-600 hover:bg-violet-700">
-            {saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save AI configuration</>}
+          <Button onClick={handleSave} disabled={saving} className="w-full mt-3 bg-violet-600 hover:bg-violet-700">
+            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save AI configuration</>}
           </Button>
         </CardContent>
       </Card>
