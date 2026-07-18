@@ -29,7 +29,7 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
 export default function InstallerPortalV3() {
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
-  const [view, setView] = useState<'jobs' | 'map' | 'stock'>('jobs');
+  const [view, setView] = useState<'jobs' | 'map' | 'materials' | 'stock'>('jobs');
 
   // Jobs relevant to installer: surveys + installs scheduled + in progress
   const myJobs = useMemo(() => leads.filter(l =>
@@ -88,12 +88,13 @@ export default function InstallerPortalV3() {
         </div>
       </header>
 
-      {/* View toggle — only 3 options */}
+      {/* View toggle — 4 options including Materials */}
       <nav className="sticky top-[73px] z-20 bg-background/95 backdrop-blur border-b">
-        <div className="grid grid-cols-3 gap-1 p-2">
+        <div className="grid grid-cols-4 gap-1 p-2">
           {[
             { id: 'jobs' as const, label: 'Jobs', icon: Calendar, count: myJobs.length + mySurveys.length },
             { id: 'map' as const, label: 'Map', icon: MapPin, count: myJobs.length },
+            { id: 'materials' as const, label: 'Materials', icon: Package, count: 0 },
             { id: 'stock' as const, label: 'Stock', icon: Package, count: 0 },
           ].map(tab => {
             const Icon = tab.icon;
@@ -167,6 +168,7 @@ export default function InstallerPortalV3() {
         )}
 
         {view === 'map' && <MapView jobs={myJobs} onJobClick={(lead) => navigate(`/job/${lead.id}`)} />}
+        {view === 'materials' && <MaterialsChecklistView jobs={[...displayToday, ...myJobs, ...mySurveys]} onJobClick={(lead) => navigate(`/job/${lead.id}`)} />}
         {view === 'stock' && <StockView />}
       </main>
 
@@ -266,6 +268,77 @@ function MapView({ jobs, onJobClick }: { jobs: DummyLead[]; onJobClick: (lead: D
             </CardContent>
           </Card>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ============= MATERIALS CHECKLIST PER CUSTOMER =============
+function MaterialsChecklistView({ jobs, onJobClick }: { jobs: DummyLead[]; onJobClick: (lead: DummyLead) => void }) {
+  const [expandedJob, setExpandedJob] = useState<string | null>(null);
+
+  return (
+    <div className="px-4 py-4">
+      <h2 className="text-lg font-bold mb-1">Materials per customer</h2>
+      <p className="text-xs text-muted-foreground mb-4">Auto-generated BOM for each job. Click to expand + check off loaded items.</p>
+
+      <div className="space-y-2">
+        {jobs.map(lead => {
+          const proposal = lead.proposal;
+          const isExpanded = expandedJob === lead.id;
+          const hasBattery = !!proposal?.battery_model;
+
+          // Generate BOM items
+          const bomItems = proposal ? [
+            { category: 'Panels', item: `${proposal.panel_count} × ${proposal.panel_model}`, qty: proposal.panel_count, critical: true },
+            { category: 'Inverter', item: proposal.inverter_model, qty: 1, critical: true },
+            ...(hasBattery ? [{ category: 'Battery', item: proposal.battery_model!, qty: 1, critical: true }] : []),
+            { category: 'Mounting', item: 'Rails + hooks + clamps', qty: Math.ceil(proposal.panel_count * 0.3), critical: true },
+            { category: 'Electrical', item: 'DC cable (6mm²)', qty: Math.ceil(8 + proposal.panel_count * 1.2), critical: true },
+            { category: 'Electrical', item: 'AC cable (T&E 4mm²)', qty: 15, critical: true },
+            { category: 'Electrical', item: 'DC + AC isolators', qty: 2, critical: true },
+            { category: 'Electrical', item: 'Type 2 SPD', qty: 1, critical: true },
+            { category: 'Safety', item: 'Fall arrest harness', qty: 2, critical: true },
+            { category: 'Tools', item: 'Impact driver + batteries', qty: 1, critical: true },
+          ] : [];
+
+          return (
+            <Card key={lead.id} className={isExpanded ? 'border-amber-400' : ''}>
+              <button
+                onClick={() => setExpandedJob(isExpanded ? null : lead.id)}
+                className="w-full p-3 flex items-center gap-3 text-left hover:bg-muted/30"
+              >
+                <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg">
+                  <Package className="h-4 w-4 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{lead.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()} · {proposal?.system_size_kw}kWp</div>
+                </div>
+                <Badge variant="outline" className="text-[10px]">{bomItems.length} items</Badge>
+              </button>
+
+              {isExpanded && (
+                <div className="border-t p-3 space-y-1">
+                  {bomItems.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
+                      <input type="checkbox" className="h-3.5 w-3.5 rounded" />
+                      <Badge variant="outline" className="text-[8px] flex-shrink-0">{item.category}</Badge>
+                      <span className="flex-1 truncate">{item.qty} × {item.item}</span>
+                      {item.critical && <Badge variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">Critical</Badge>}
+                    </div>
+                  ))}
+                  <Button size="sm" className="w-full mt-2 bg-amber-600 hover:bg-amber-700" onClick={() => onJobClick(lead)}>
+                    Open job <ChevronRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+        {jobs.length === 0 && (
+          <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No jobs with materials needed.</CardContent></Card>
+        )}
       </div>
     </div>
   );

@@ -49,18 +49,22 @@ const RealCalendar = lazy(() => import('./RealCalendar'));
 const EstimateView = lazy(() => import('./EstimateView'));
 const ProposalView = lazy(() => import('./ProposalView'));
 const AgentTraining = lazy(() => import('./AgentTraining'));
+const SEAIDashboard = lazy(() => import('./SEAIDashboard'));
+const EstimatesView = lazy(() => import('./EstimatesView'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail';
+type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
 
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
+  { id: 'estimates', label: 'Estimates', icon: Calculator },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'consultants', label: 'Consultants', icon: Users },
   { id: 'installers', label: 'Installers', icon: Wrench },
   { id: 'clients', label: 'Clients', icon: UserCircle },
   { id: 'products', label: 'Products', icon: Package },
+  { id: 'seai', label: 'SEAI & Compliance', icon: Award },
   { id: 'agents', label: 'Agents', icon: Bot },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -260,6 +264,8 @@ export default function OwnerCockpit() {
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <AnalyticsDashboard />}
           {activeView === 'crm' && <CrmPlaceholder />}
+          {activeView === 'seai' && <SEAIDashboard leads={leads} />}
+          {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
           {activeView === 'lead_detail' && selectedLead && (
             <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
           )}
