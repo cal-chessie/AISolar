@@ -202,7 +202,7 @@ export default function AgentTraining() {
                 rows={3}
                 className="text-xs"
               />
-              <Button size="sm" onClick={handleTest} disabled={testing || !testPrompt.trim()} className="bg-blue-600 hover:bg-blue-700">
+              <Button size="sm" onClick={handleTest} disabled={testing || !testPrompt.trim()} className="bg-emerald-600 hover:bg-emerald-700">
                 {testing ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Running…</> : <><Play className="h-3 w-3 mr-1" /> Test</>}
               </Button>
               {testResult && (

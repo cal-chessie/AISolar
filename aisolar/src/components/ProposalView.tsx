@@ -154,7 +154,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       <div className="flex gap-2">
         <Button variant="outline" className="flex-1"><Printer className="h-4 w-4 mr-2" /> Print PDF</Button>
         <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download</Button>
-        <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700"><FileText className="h-4 w-4 mr-2" /> Open in LeadFlow</Button>
+        <Button className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700"><FileText className="h-4 w-4 mr-2" /> Open in LeadFlow</Button>
       </div>
     </div>
   );

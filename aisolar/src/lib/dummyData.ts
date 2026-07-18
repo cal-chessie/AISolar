@@ -81,7 +81,7 @@ export interface DummyLead {
     completed_date?: string;
   };
   touchpoints: Array<{
-    id: string;
+    id?: string;
     stage: string;
     channel: 'email' | 'sms' | 'portal' | 'phone';
     direction: 'outbound' | 'inbound';
@@ -289,7 +289,7 @@ export function generateDummyLeads(): DummyLead[] {
         estimated_20yr_savings: estimate.twentyYearSavings,
         solar_offset_pct: estimate.solarOffsetPct,
       },
-      touchpoints: s.touchpoints,
+      touchpoints: s.touchpoints as DummyLead['touchpoints'],
     };
 
     // Add survey data for stages >= survey_scheduled

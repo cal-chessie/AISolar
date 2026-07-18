@@ -120,8 +120,16 @@ export default function InstallerIntelligenceBuilder() {
     }
   };
 
-  const addProduct = (product: Omit<CustomProduct, 'id'>) => {
-    const newProduct = { ...product, id: `p_${Date.now()}` };
+  const addProduct = (product: Partial<CustomProduct>) => {
+    const newProduct: CustomProduct = {
+      id: `p_${Date.now()}`,
+      category: product.category || 'panels',
+      manufacturer: product.manufacturer || '',
+      model: product.model || '',
+      cost: product.cost ?? 0,
+      rrp: product.rrp ?? 0,
+      stock: product.stock ?? 0,
+    };
     setProducts(prev => [...prev, newProduct]);
     setShowNewProduct(false);
   };

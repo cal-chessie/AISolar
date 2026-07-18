@@ -213,7 +213,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
       {/* Compliance list */}
       <div className="space-y-2">
         {complianceData.map(c => (
-          <Card key={c.lead.id} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedLead(c.lead)}>
+          <Card key={c.lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setSelectedLead(c.lead)}>
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{c.lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>

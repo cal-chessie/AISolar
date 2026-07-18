@@ -10,9 +10,9 @@ import { ThemeProvider } from 'next-themes';
 import PageTransition from "@/components/layout/PageTransition";
 import GlobalSearchModal from "@/components/search/GlobalSearchModal";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // Pages
-import PremiumIndex from "./pages/PremiumIndex";
 import InstallerLanding from "./pages/InstallerLanding";
 import NotFound from "./pages/NotFound";
 import ValueUpsell from "./pages/ValueUpsell";
@@ -54,6 +54,15 @@ function AppRoutes() {
 
   const useRoleCoach = isDemoMode();
 
+  // Wrap each route in an ErrorBoundary so a render crash in one view doesn't
+  // blank the whole app. The boundary renders a friendly "Something went wrong"
+  // card with a Reload button.
+  const wrap = (node: React.ReactNode) => (
+    <PageTransition>
+      <ErrorBoundary>{node}</ErrorBoundary>
+    </PageTransition>
+  );
+
   return (
     <>
       <DemoBanner />
@@ -63,32 +72,32 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public */}
-          <Route path="/" element={<PageTransition><InstallerLanding /></PageTransition>} />
-          <Route path="/upsell" element={<PageTransition><ValueUpsell /></PageTransition>} />
-          <Route path="/about" element={<PageTransition><AboutUs /></PageTransition>} />
-          <Route path="/calculator" element={<PageTransition><ROICalculator /></PageTransition>} />
-          <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-          <Route path="/terms" element={<PageTransition><TermsOfService /></PageTransition>} />
+          <Route path="/" element={wrap(<InstallerLanding />)} />
+          <Route path="/upsell" element={wrap(<ValueUpsell />)} />
+          <Route path="/about" element={wrap(<AboutUs />)} />
+          <Route path="/calculator" element={wrap(<ROICalculator />)} />
+          <Route path="/privacy" element={wrap(<PrivacyPolicy />)} />
+          <Route path="/terms" element={wrap(<TermsOfService />)} />
 
           {/* Auth + Onboarding */}
-          <Route path="/auth" element={<PageTransition><PrestigiousAuth /></PageTransition>} />
-          <Route path="/onboarding" element={<PageTransition><OnboardingMode /></PageTransition>} />
-          <Route path="/demo" element={<PageTransition><DemoIndex /></PageTransition>} />
+          <Route path="/auth" element={wrap(<PrestigiousAuth />)} />
+          <Route path="/onboarding" element={wrap(<OnboardingMode />)} />
+          <Route path="/demo" element={wrap(<DemoIndex />)} />
 
           {/* Main views — auth-guarded */}
-          <Route path="/owner" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><OwnerCockpit /></ProtectedRoute></PageTransition>} />
-          <Route path="/consultant" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute></PageTransition>} />
-          <Route path="/installer" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute></PageTransition>} />
-          <Route path="/my-projects" element={<PageTransition><ProtectedRoute><CustomerPortalV2 /></ProtectedRoute></PageTransition>} />
+          <Route path="/owner" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><OwnerCockpit /></ProtectedRoute>)} />
+          <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
+          <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
+          <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
 
           {/* Workflow — auth-guarded (staff-only) */}
-          <Route path="/lead-flow" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute></PageTransition>} />
-          <Route path="/lead-flow/:leadId" element={<PageTransition><ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute></PageTransition>} />
-          <Route path="/job" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute></PageTransition>} />
-          <Route path="/job/:leadId" element={<PageTransition><ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute></PageTransition>} />
+          <Route path="/lead-flow" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
+          <Route path="/lead-flow/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
+          <Route path="/job" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
+          <Route path="/job/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
 
           {/* Catch-all */}
-          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+          <Route path="*" element={wrap(<NotFound />)} />
         </Routes>
       </AnimatePresence>
     </>

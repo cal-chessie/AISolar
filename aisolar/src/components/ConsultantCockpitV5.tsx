@@ -23,6 +23,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
+import { staggerContainer, listItemFade, slideInRight } from '@/lib/motionPresets';
 import { Progress } from '@/components/ui/progress';
 import {
   Users, MessageSquare, Calculator, Camera, FileText, Wrench,
@@ -129,6 +132,16 @@ export default function ConsultantCockpitV5() {
     }
   }, [activeTab]);
 
+  // Escape key closes slide-out panel
+  useEffect(() => {
+    if (!slideOutView) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSlideOutView(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [slideOutView]);
+
   const handleSendReply = () => {
     if (!replyText.trim() || !selectedLead) return;
     // Phase 1 fix: optimistic local update so the message appears in the
@@ -163,7 +176,7 @@ export default function ConsultantCockpitV5() {
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sun className="h-5 w-5 text-blue-600" />
+            <Sun className="h-5 w-5 text-emerald-600" />
             <span className="font-bold text-sm">{brand.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>
@@ -181,7 +194,7 @@ export default function ConsultantCockpitV5() {
             const count = tab.id === 'leads' ? leads.length : tab.id === 'surveys' ? surveyLeads.length : tab.id === 'proposals' ? proposalLeads.length : tab.id === 'installations' ? installLeads.length : tab.id === 'followups' ? staleLeads.length : tab.id === 'chats' ? hotLeads.length : 0;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
                 <Icon className="h-3.5 w-3.5" /> {tab.label}
                 {count > 0 && <span className={`text-[9px] px-1 rounded-full ${isActive ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{count}</span>}
               </button>
@@ -202,13 +215,23 @@ export default function ConsultantCockpitV5() {
                 <Input placeholder="Search leads…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <motion.div
+              className="flex-1 overflow-y-auto"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              key={activeTab + search}  // re-stagger when tab or search changes
+            >
               {(activeTab === 'chats' ? hotLeads : filteredLeads).map(lead => {
                 const last = lead.touchpoints[lead.touchpoints.length - 1];
                 const isSelected = selectedLead?.id === lead.id;
                 return (
-                  <button key={lead.id} onClick={() => setSelectedLead(lead)}
-                    className={`w-full p-2.5 border-b flex items-start gap-2 text-left hover:bg-muted/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
+                  <motion.button
+                    key={lead.id}
+                    variants={listItemFade}
+                    onClick={() => setSelectedLead(lead)}
+                    className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
+                  >
                     <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
@@ -221,10 +244,10 @@ export default function ConsultantCockpitV5() {
                         {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
 
           {/* Conversation thread (right) */}
@@ -263,7 +286,7 @@ export default function ConsultantCockpitV5() {
                   <div className="flex gap-2">
                     <Input placeholder="Type a reply…" value={replyText} onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} className="h-9 text-xs" />
-                    <Button onClick={handleSendReply} disabled={!replyText.trim()} className="bg-blue-600 hover:bg-blue-700 h-9 px-3">
+                    <Button onClick={handleSendReply} disabled={!replyText.trim()} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-9 px-3">
                       <Send className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -284,7 +307,7 @@ export default function ConsultantCockpitV5() {
                   {leads.map(lead => {
                     const est = calculateSystemEstimate({ monthlyBill: lead.monthly_bill, annualKwh: lead.annual_kwh });
                     return (
-                      <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('estimate'); }}>
+                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('estimate'); }}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                           <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">€{lead.monthly_bill}/mo · {est.systemSizeKw}kWp · {eur(est.annualSavings)}/yr</div></div>
@@ -302,7 +325,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Surveys — {surveyLeads.length} pending</h3>
                   {surveyLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/lead-flow/${lead.id}`)}>
+                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/lead-flow/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg"><Camera className="h-4 w-4 text-indigo-600" /></div>
                         <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()} · {lead.survey?.photo_count || 0}/8 photos</div></div>
@@ -319,7 +342,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Proposals — {proposalLeads.length} active</h3>
                   {proposalLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-lg"><FileText className="h-4 w-4 text-violet-600" /></div>
                         <div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-medium text-sm">{lead.name}</span><Badge variant="outline" className="text-[9px]">{lead.proposal?.status}</Badge></div><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {eur(lead.proposal?.net_cost || 0)} · {lead.proposal?.payback_years}yr</div></div>
@@ -335,7 +358,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Installations — {installLeads.length} active</h3>
                   {installLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
+                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Wrench className="h-4 w-4 text-amber-600" /></div>
                         <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.assignment?.installer_name} · {lead.assignment?.scheduled_date ? new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE') : 'TBD'}</div></div>
@@ -349,7 +372,7 @@ export default function ConsultantCockpitV5() {
               )}
 
               {activeTab === 'calendar' && (
-                <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+                <Suspense fallback={<CardListSkeleton count={3} />}>
                   <UnifiedCalendar filterRole="consultant" />
                 </Suspense>
               )}
@@ -361,7 +384,7 @@ export default function ConsultantCockpitV5() {
                     const last = lead.touchpoints[lead.touchpoints.length - 1];
                     const days = last ? Math.round((Date.now() - new Date(last.timestamp).getTime()) / 86400000) : 0;
                     return (
-                      <Card key={lead.id} className="cursor-pointer hover:shadow-md border-l-4 border-l-amber-500" onClick={() => { setSelectedLead(lead); setActiveTab('chats'); }}>
+                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md border-l-4 border-l-amber-500" onClick={() => { setSelectedLead(lead); setActiveTab('chats'); }}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                           <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {days}d since last contact</div></div>
@@ -376,7 +399,7 @@ export default function ConsultantCockpitV5() {
               )}
 
               {activeTab === 'products' && (
-                <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+                <Suspense fallback={<CardListSkeleton count={3} />}>
                   <ProfessionalProducts />
                 </Suspense>
               )}
@@ -385,7 +408,7 @@ export default function ConsultantCockpitV5() {
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents — proposals, contracts, invoices</h3>
                   {leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
                         <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[8px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[8px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[8px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
@@ -431,8 +454,16 @@ export default function ConsultantCockpitV5() {
       {/* Slide-out panel */}
       <AnimatePresence>
         {slideOutView && selectedLead && (
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30 }}
-            className="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 overflow-y-auto">
+          <motion.div
+            variants={slideInRight}
+            initial="hidden"
+            animate="show"
+            exit="exit"
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${slideOutView} panel for ${selectedLead.name}`}
+          >
             <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between z-10">
               <h3 className="font-bold text-sm flex items-center gap-2">
                 {slideOutView === 'estimate' ? <><Calculator className="h-4 w-4 text-blue-600" /> Estimate</> : <><FileText className="h-4 w-4 text-emerald-600" /> Proposal</>}
@@ -445,7 +476,7 @@ export default function ConsultantCockpitV5() {
               </div>
             </div>
             <div className="p-3">
-              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+              <Suspense fallback={<CardListSkeleton count={3} />}>
                 {slideOutView === 'estimate' && <EstimateView lead={selectedLead} onOpenProposal={() => setSlideOutView('proposal')} />}
                 {slideOutView === 'proposal' && <ProposalView lead={selectedLead} />}
               </Suspense>
@@ -466,7 +497,7 @@ function MessageBubble({ message }: { message: Message }) {
   const isCustomer = message.type === 'customer';
   const isAI = message.type === 'ai';
   const isAgent = message.type === 'agent';
-  const bg = isCustomer ? 'bg-blue-600 text-white rounded-br-sm' : isAI ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm' : isAgent ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
+  const bg = isCustomer ? 'bg-emerald-600 text-white rounded-br-sm' : isAI ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm' : isAgent ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
   const label = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
   const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
   return (

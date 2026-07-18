@@ -306,12 +306,11 @@ export default function ProfessionalProducts() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <CategoryChip id="all" active={activeCategory === 'all'} onClick={() => setActiveCategory('all')} label="All" count={products.length} />
-        <CategoryChip id="bundles" active={activeCategory === 'bundles'} onClick={() => setActiveCategory('bundles')} label="Pre-configured Bundles" icon={Star} count={SAMPLE_BUNDLES.length} />
+        <CategoryChip active={activeCategory === 'all'} onClick={() => setActiveCategory('all')} label="All" count={products.length} />
+        <CategoryChip active={activeCategory === 'bundles'} onClick={() => setActiveCategory('bundles')} label="Pre-configured Bundles" icon={Star} count={SAMPLE_BUNDLES.length} />
         {(Object.keys(CATEGORY_META) as ProductCategory[]).map(cat => (
           <CategoryChip
             key={cat}
-            id={cat}
             active={activeCategory === cat}
             onClick={() => setActiveCategory(cat)}
             label={CATEGORY_META[cat].label}
@@ -354,7 +353,7 @@ export default function ProfessionalProducts() {
                     <div className="font-semibold">{bundle.includesBattery ? 'Included' : 'No'}</div>
                   </div>
                 </div>
-                <Button size="sm" className="mt-3 bg-amber-600 hover:bg-amber-700 text-white">
+                <Button size="sm" className="mt-3 bg-amber-600 transition-colors hover:bg-amber-700 text-white">
                   Add to proposal <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </CardContent>
@@ -422,7 +421,7 @@ export default function ProfessionalProducts() {
                     </div>
                   </div>
 
-                  <Button size="sm" className="mt-3 w-full bg-amber-600 hover:bg-amber-700 text-white" disabled={isOutOfStock}>
+                  <Button size="sm" className="mt-3 w-full bg-amber-600 transition-colors hover:bg-amber-700 text-white" disabled={isOutOfStock}>
                     Add to proposal <Plus className="h-3 w-3 ml-1" />
                   </Button>
                 </CardContent>
@@ -512,7 +511,7 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
+            <Button className="flex-1 bg-amber-600 transition-colors hover:bg-amber-700 text-white">
               Add to proposal <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
             <Button variant="outline">Datasheet</Button>
@@ -568,7 +567,7 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
             })}
           </div>
 
-          <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white h-12">
+          <Button className="w-full bg-amber-600 transition-colors hover:bg-amber-700 text-white h-12">
             Add bundle to proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>

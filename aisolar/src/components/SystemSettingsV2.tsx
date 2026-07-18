@@ -245,7 +245,7 @@ export default function SystemSettingsV2() {
                             </Button>
                           </>
                         ) : (
-                          <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => handleToggleIntegration(integration.id)}>
+                          <Button size="sm" className="h-7 text-xs bg-emerald-600 transition-colors hover:bg-emerald-700" onClick={() => handleToggleIntegration(integration.id)}>
                             {integration.status === 'connecting' ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Connecting…</> : <><Power className="h-3 w-3 mr-1" /> Connect</>}
                           </Button>
                         )}
@@ -318,7 +318,7 @@ export default function SystemSettingsV2() {
               {/* Event list */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto">
                 {filteredAudit.map((event, i) => (
-                  <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs hover:bg-muted/30">
+                  <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs transition-colors hover:bg-muted/30">
                     <Badge variant="outline" className={`text-[8px] flex-shrink-0 ${
                       event.severity === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
                       event.severity === 'warn' ? 'bg-amber-50 text-amber-700 border-amber-200' :
@@ -389,7 +389,16 @@ export default function SystemSettingsV2() {
 
 // ============= BRAND CONFIG — touches everything =============
 function BrandConfigFull() {
-  const [brandData, setBrandData] = useState({
+  const [brandData, setBrandData] = useState<{
+    name: string; tagline: string; domain: string;
+    primaryColor: string; accentColor: string;
+    logo: string | null;
+    emailFromName: string; emailFromAddress: string; emailFooter: string;
+    proposalHeaderColor: string; proposalShowLogo: boolean; proposalCompanyName: string;
+    portalTitle: string; portalColor: string;
+    landingHeadline: string; landingSubheadline: string;
+    smsSender: string; whatsappDisplayName: string;
+  }>({
     name: brand.name,
     tagline: brand.tagline,
     domain: brand.domain,
@@ -531,7 +540,7 @@ function BrandConfigFull() {
           </div>
         </div>
 
-        <Button className="w-full bg-violet-600 hover:bg-violet-700"><Save className="h-4 w-4 mr-2" /> Save all branding</Button>
+        <Button className="w-full bg-violet-600 transition-colors hover:bg-violet-700"><Save className="h-4 w-4 mr-2" /> Save all branding</Button>
       </CardContent>
     </Card>
   );

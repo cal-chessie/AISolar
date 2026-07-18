@@ -259,7 +259,7 @@ export default function PrestigiousAuth() {
                   {/* Customer path */}
                   <button
                     onClick={() => navigate('/upload')}
-                    className="w-full p-5 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 hover:border-emerald-400 hover:shadow-lg transition-all text-left group"
+                    className="w-full p-5 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 hover:border-emerald-400 transition-shadow hover:shadow-lg transition-all text-left group"
                   >
                     <div className="flex items-start gap-3">
                       <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
@@ -281,7 +281,7 @@ export default function PrestigiousAuth() {
                   {/* Staff path */}
                   <button
                     onClick={() => setMode('signin')}
-                    className="w-full p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 hover:shadow-lg transition-all text-left group"
+                    className="w-full p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 transition-shadow hover:shadow-lg transition-all text-left group"
                   >
                     <div className="flex items-start gap-3">
                       <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
@@ -331,7 +331,7 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 mb-3">
+                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-500 mb-3">
                         <Lock className="h-6 w-6 text-white" />
                       </div>
                       <h1 className="text-2xl font-bold">Staff sign in</h1>
@@ -372,7 +372,7 @@ export default function PrestigiousAuth() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-11 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-semibold shadow-lg"
+                        className="w-full h-11 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-semibold shadow-lg"
                       >
                         {loading ? 'Signing in…' : 'Sign in'}
                       </Button>

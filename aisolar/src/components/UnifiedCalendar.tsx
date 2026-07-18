@@ -212,7 +212,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                 key={i}
                 onClick={() => setSelectedDay(day)}
                 className={`p-2 rounded-lg border text-center transition-colors min-h-[80px] ${
-                  isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' :
+                  isSelected ? 'border-blue-500 bg-emerald-50 dark:bg-emerald-950/30' :
                   isToday ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20' :
                   'border-border hover:border-blue-300'
                 }`}

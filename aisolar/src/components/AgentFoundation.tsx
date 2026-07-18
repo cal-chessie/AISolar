@@ -269,7 +269,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
           const statusColor =
             run.status === 'success' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' :
             run.status === 'failed'  ? 'text-red-600 bg-red-50 dark:bg-red-950/30' :
-            run.status === 'running' ? 'text-blue-600 bg-blue-50 dark:bg-blue-950/30' :
+            run.status === 'running' ? 'text-blue-600 bg-emerald-50 dark:bg-emerald-950/30' :
                                        'text-slate-600 bg-slate-50 dark:bg-slate-900/30';
 
           return (

@@ -716,7 +716,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
       <Button
         onClick={onComplete}
         disabled={!allDone}
-        className="w-full h-12 bg-amber-600 hover:bg-amber-700 disabled:opacity-50"
+        className="w-full h-12 bg-amber-600 transition-colors hover:bg-amber-700 disabled:opacity-50"
       >
         {allDone ? (
           <>Phase complete — next <ChevronRight className="h-4 w-4 ml-1" /></>
@@ -775,7 +775,7 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
                         <Button size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setShowPad(true)}>Re-sign</Button>
                       </div>
                     ) : (
-                      <Button size="sm" onClick={() => setShowPad(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                      <Button size="sm" onClick={() => setShowPad(true)} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
                         <PenLine className="h-3 w-3 mr-1" /> Get signature
                       </Button>
                     )}
@@ -841,7 +841,7 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
                   All checks done, all photos uploaded, customer signed. Click below to finalize — PostInstall Agent will send warranty docs + schedule a review request.
                 </p>
                 <Button
-                  className="mt-4 bg-emerald-600 hover:bg-emerald-700 w-full h-12"
+                  className="mt-4 bg-emerald-600 transition-colors hover:bg-emerald-700 w-full h-12"
                   onClick={onMarkJobComplete}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" /> Mark job complete
@@ -952,7 +952,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
         />
         <div className="flex gap-2 mt-3">
           <Button variant="outline" className="flex-1" onClick={clear}>Clear</Button>
-          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={save}>
+          <Button className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700" onClick={save}>
             Save signature
           </Button>
         </div>

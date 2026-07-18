@@ -118,7 +118,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       <div className="flex gap-2">
         <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download estimate</Button>
         {onOpenProposal && (
-          <Button onClick={onOpenProposal} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={onOpenProposal} className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700">
             Open full proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         )}

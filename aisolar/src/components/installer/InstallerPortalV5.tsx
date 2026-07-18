@@ -193,7 +193,7 @@ export default function InstallerPortalV5() {
                       return (
                         <Card key={lead.id} className={isExpanded ? 'border-amber-400' : ''}>
                           <button onClick={() => setExpandedJob(isExpanded ? null : lead.id)}
-                            className="w-full p-3 flex items-center gap-3 text-left hover:bg-muted/30">
+                            className="w-full p-3 flex items-center gap-3 text-left transition-colors hover:bg-muted/30">
                             <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Package className="h-4 w-4 text-amber-600" /></div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm">{lead.name}</div>
@@ -211,7 +211,7 @@ export default function InstallerPortalV5() {
                                   {item.critical && <Badge variant="outline" className="text-[8px] bg-red-50 text-red-700 border-red-200">Critical</Badge>}
                                 </div>
                               ))}
-                              <Button size="sm" className="w-full mt-2 bg-amber-600 hover:bg-amber-700" onClick={() => navigate(`/job/${lead.id}`)}>
+                              <Button size="sm" className="w-full mt-2 bg-amber-600 transition-colors hover:bg-amber-700" onClick={() => navigate(`/job/${lead.id}`)}>
                                 Open job <ChevronRight className="h-3 w-3 ml-1" />
                               </Button>
                             </div>
@@ -279,7 +279,7 @@ export default function InstallerPortalV5() {
                 </Card>
                 <div className="space-y-2">
                   {activeJobs.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
+                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-950/40">
                           <MapPin className="h-4 w-4 text-amber-700" />

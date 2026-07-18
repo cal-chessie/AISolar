@@ -44,7 +44,7 @@ export default function InstallerLanding() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/calculator')}>ROI Calculator</Button>
             <Button variant="ghost" size="sm" onClick={() => navigate('/about')}>About</Button>
-            <Button size="sm" onClick={() => navigate('/auth')} className="bg-blue-600 hover:bg-blue-700">
+            <Button size="sm" onClick={() => navigate('/auth')} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
               Sign in
             </Button>
             <Button size="sm" variant="outline" onClick={() => navigate('/demo')}>
@@ -63,7 +63,7 @@ export default function InstallerLanding() {
             </Badge>
             <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight">
               Your crews install.<br />
-              <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
                 The platform does the rest.
               </span>
             </h1>
@@ -73,7 +73,7 @@ export default function InstallerLanding() {
               Built for Irish solar installers — SEAI, RECI, ESB, Met Éireann built in.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button size="lg" onClick={() => navigate('/auth')} className="bg-blue-600 hover:bg-blue-700">
+              <Button size="lg" onClick={() => navigate('/auth')} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
                 Start free trial <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => navigate('/demo')}>
@@ -127,7 +127,7 @@ export default function InstallerLanding() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 px-4 bg-blue-600 text-white">
+      <section className="py-12 px-4 bg-emerald-600 text-white">
         <div className="container mx-auto max-w-4xl">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
             <div><div className="text-4xl font-bold">10</div><div className="text-sm text-blue-100">Autonomous agents</div></div>
@@ -186,7 +186,7 @@ export default function InstallerLanding() {
               return (
                 <div key={i} className="text-center">
                   <div className="p-3 bg-background rounded-xl w-fit mx-auto mb-2 border">
-                    <Icon className="h-6 w-6 text-blue-600" />
+                    <Icon className="h-6 w-6 text-emerald-600" />
                   </div>
                   <div className="font-semibold text-sm">{item.label}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -198,7 +198,7 @@ export default function InstallerLanding() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-blue-600 to-violet-700 text-white">
+      <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-blue-700 text-white">
         <div className="container mx-auto max-w-3xl text-center">
           <Cpu className="h-12 w-12 mx-auto mb-4 opacity-80" />
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -208,10 +208,10 @@ export default function InstallerLanding() {
             14-day free trial. We'll have your first lead through the pipeline today.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-blue-700 hover:bg-white/90">
+            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-emerald-700 transition-colors hover:bg-white/90">
               Start free trial <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/demo')} className="border-white text-white hover:bg-white/10">
+            <Button size="lg" variant="outline" onClick={() => navigate('/demo')} className="border-white text-white transition-colors hover:bg-white/10">
               Browse all views
             </Button>
           </div>

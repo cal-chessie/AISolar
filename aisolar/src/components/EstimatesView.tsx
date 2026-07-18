@@ -97,7 +97,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         <div className="flex gap-1">
           {(['savings', 'bill', 'payback', 'score'] as const).map(s => (
             <button key={s} onClick={() => setSortBy(s)}
-              className={`px-2 py-1 rounded text-[10px] font-medium capitalize ${sortBy === s ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+              className={`px-2 py-1 rounded text-[10px] font-medium capitalize ${sortBy === s ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
               {s}
             </button>
           ))}
@@ -109,7 +109,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         {estimates.map(({ lead, estimate }) => {
           const stage = getStage(lead.workflow_stage);
           return (
-            <Card key={lead.id} className="cursor-pointer hover:shadow-md" onClick={() => onSelectLead(lead)}>
+            <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => onSelectLead(lead)}>
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>

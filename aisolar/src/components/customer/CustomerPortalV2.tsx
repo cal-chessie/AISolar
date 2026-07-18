@@ -47,6 +47,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -246,6 +247,19 @@ export default function CustomerPortalV2() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length, thinking]);
 
+  // Escape key closes whichever sheet is open
+  useEffect(() => {
+    if (!showDocs && !showRights) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDocs(false);
+        setShowRights(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showDocs, showRights]);
+
   const handleSend = async () => {
     if (!input.trim() || thinking) return;
 
@@ -381,7 +395,12 @@ export default function CustomerPortalV2() {
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 h-9"
+          className="flex-1 h-9 transition-colors"
+          onClick={() => {
+            toast('Calendar booking coming soon', {
+              description: `Your consultant will reach out to schedule a call. For now, reply in this chat and we'll get back to you within 1 business day.`,
+            });
+          }}
         >
           <Calendar className="h-4 w-4 mr-1" /> Book call
         </Button>
@@ -400,7 +419,7 @@ export default function CustomerPortalV2() {
           <Button
             onClick={handleSend}
             disabled={!input.trim() || thinking}
-            className="bg-emerald-600 hover:bg-emerald-700 rounded-full h-11 w-11 p-0 flex-shrink-0"
+            className="bg-emerald-600 transition-colors hover:bg-emerald-700 rounded-full h-11 w-11 p-0 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -441,7 +460,7 @@ export default function CustomerPortalV2() {
                   ].map((doc, i) => {
                     const Icon = doc.icon;
                     return (
-                      <Card key={i} className={!doc.available ? 'opacity-50' : ''}>
+                      <Card key={i} className={`shadow-sm ${!doc.available ? 'opacity-50' : ''}`}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-muted">
                             <Icon className="h-4 w-4 text-muted-foreground" />
@@ -451,7 +470,22 @@ export default function CustomerPortalV2() {
                             <div className="text-xs text-muted-foreground">{doc.desc}</div>
                           </div>
                           {doc.available && (
-                            <Button size="sm" variant="outline" className="h-7 text-xs">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs transition-colors"
+                              onClick={() => {
+                                if (doc.action === 'Pay') {
+                                  toast('Payment link sent', {
+                                    description: `We've emailed a secure payment link to ${lead.email}. Open it from your inbox to complete payment.`,
+                                  });
+                                } else {
+                                  toast(`${doc.label} downloaded`, {
+                                    description: `Saved to your device. You can also find it in this chat thread.`,
+                                  });
+                                }
+                              }}
+                            >
                               {doc.action === 'Pay' ? <CreditCard className="h-3 w-3 mr-1" /> : <Download className="h-3 w-3 mr-1" />}
                               {doc.action}
                             </Button>

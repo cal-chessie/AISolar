@@ -31,12 +31,15 @@ import {
   Star, Phone, Video, MapPin, FileText, Zap, Award, Activity,
   ChevronRight, Flame, Target, Percent, Navigation, Package,
   Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
-  Search, Calculator,
+  Search, Calculator, Shield,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
+import { staggerContainer, listItem } from '@/lib/motionPresets';
 import UnifiedCalendar from './UnifiedCalendar';
 
 // Lazy-load heavy components only when their sidebar item is clicked
@@ -119,18 +122,21 @@ export default function OwnerCockpit() {
         && !['completed', 'final_paid', 'installed', 'installing'].includes(l.workflow_stage);
     });
 
-    const todayEvents = leads
-      .filter(l => l.assignment?.scheduled_date)
-      .map(l => ({
-        id: l.id, time: '08:00', type: 'install' as const,
-        title: `${l.name} — ${l.proposal?.system_size_kw}kWp`,
-        assignee: l.assignment?.installer_name || 'Unassigned',
-      }))
-      .concat(leads.filter(l => ['proposal_sent'].includes(l.workflow_stage)).map(l => ({
-        id: l.id, time: '14:00', type: 'follow_up' as const,
-        title: `${l.name} — follow-up`, assignee: l.assigned_consultant,
-      })))
-      .slice(0, 6);
+    const todayEvents: Array<{ id: string; time: string; type: 'install' | 'follow_up'; title: string; assignee: string }> = [
+      ...leads
+        .filter(l => l.assignment?.scheduled_date)
+        .map(l => ({
+          id: l.id, time: '08:00', type: 'install' as const,
+          title: `${l.name} — ${l.proposal?.system_size_kw}kWp`,
+          assignee: l.assignment?.installer_name || 'Unassigned',
+        })),
+      ...leads
+        .filter(l => ['proposal_sent'].includes(l.workflow_stage))
+        .map(l => ({
+          id: l.id, time: '14:00', type: 'follow_up' as const,
+          title: `${l.name} — follow-up`, assignee: l.assigned_consultant,
+        })),
+    ].slice(0, 6);
 
     const conversionRate = leads.length > 0 ? Math.round((leads.filter(l => l.contract).length / leads.length) * 100) : 0;
     const totalAgentRuns = 47;
@@ -183,7 +189,7 @@ export default function OwnerCockpit() {
         <div className="w-56 h-full flex flex-col">
           {/* Logo */}
           <div className="p-3 flex items-center gap-2 border-b">
-            <div className="p-1.5 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg">
+            <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-blue-600 rounded-lg">
               <Building2 className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -202,7 +208,7 @@ export default function OwnerCockpit() {
                   key={item.id}
                   onClick={() => setActiveView(item.id)}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5 flex-shrink-0" />
@@ -220,10 +226,10 @@ export default function OwnerCockpit() {
 
           {/* Bottom: cross-view + dark mode */}
           <div className="p-2 border-t space-y-0.5">
-            <button onClick={() => navigate('/consultant')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+            <button onClick={() => navigate('/consultant')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <Users className="h-3.5 w-3.5" /> Consultant view
             </button>
-            <button onClick={() => navigate('/installer')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+            <button onClick={() => navigate('/installer')} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <Wrench className="h-3.5 w-3.5" /> Installer view
             </button>
             <div className="flex items-center justify-between px-2 pt-1">
@@ -245,7 +251,7 @@ export default function OwnerCockpit() {
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
+        <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
           )}
@@ -280,7 +286,13 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
   return (
     <div className="p-3 space-y-3">
       {/* Vital signs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      <motion.div
+        className="grid grid-cols-2 lg:grid-cols-4 gap-2"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={listItem}>
         <Card className="border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
@@ -296,13 +308,15 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             </div>
           </CardContent>
         </Card>
-        <Card className="border-blue-200 dark:border-blue-800">
+        </motion.div>
+        <motion.div variants={listItem}>
+        <Card className="border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
-              <Activity className="h-3 w-3 text-blue-600" />
+              <Activity className="h-3 w-3 text-emerald-600" />
             </div>
-            <div className="text-xl font-bold text-blue-700 dark:text-blue-400">{eur(data.stats.totalValue)}</div>
+            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.stats.totalValue)}</div>
             <div className="text-[10px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
             <div className="flex gap-0.5 mt-1.5">
               {data.stageCounts.slice(0, 8).map((s: any) => (
@@ -311,6 +325,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             </div>
           </CardContent>
         </Card>
+        </motion.div>
+        <motion.div variants={listItem}>
         <Card className="border-amber-200 dark:border-amber-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
@@ -326,6 +342,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             </div>
           </CardContent>
         </Card>
+        </motion.div>
+        <motion.div variants={listItem}>
         <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-violet-200 dark:border-violet-800'}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
@@ -341,7 +359,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             </div>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Pipeline flow — the main attraction */}
       <Card>
@@ -389,7 +408,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
-                  <div key={lead.id} className="p-3 border rounded-lg hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                  <div key={lead.id} className="p-3 border rounded-lg transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
                     <div className="flex items-center gap-2 mb-1">
                       <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                       <div className="flex-1 min-w-0">
@@ -438,7 +457,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                     <div className={`p-0.5 rounded ${isAgent ? 'bg-violet-100 dark:bg-violet-950/30' : isCustomer ? 'bg-emerald-100 dark:bg-emerald-950/30' : 'bg-muted'}`}>
                       {isAgent && <Bot className="h-2.5 w-2.5 text-violet-600" />}
                       {isCustomer && <UserCircle className="h-2.5 w-2.5 text-emerald-600" />}
-                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-blue-600" />}
+                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-emerald-600" />}
                     </div>
                     <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
                   </div>
@@ -469,7 +488,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 ? (event.type === 'install' ? `/job/${event.leadId}` : `/lead-flow/${event.leadId}`)
                 : (event.type === 'install' ? '/job' : '/lead-flow');
               return (
-                <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(target)}>
+                <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(target)}>
                   <span className="text-[10px] font-mono text-muted-foreground w-10">{event.time}</span>
                   <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
                     {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
@@ -509,7 +528,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
           {consultant.leads.map((lead: DummyLead) => {
             const lastTouch = lead.touchpoints[lead.touchpoints.length - 1];
             return (
-              <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/consultant?lead=${lead.id}`)}>
+              <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(`/consultant?lead=${lead.id}`)}>
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{lead.name}</div>
@@ -532,7 +551,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
       <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         {consultants.map(c => (
-          <Card key={c.name} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedConsultant(c.name)}>
+          <Card key={c.name} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setSelectedConsultant(c.name)}>
             <CardContent className="p-4 flex items-center gap-3">
               <Avatar className="h-12 w-12"><AvatarFallback>{c.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
@@ -569,7 +588,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
         <h3 className="text-sm font-bold mt-4">Their jobs</h3>
         <div className="space-y-2">
           {installer.jobs.map((lead: DummyLead) => (
-            <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/job/${lead.id}`)}>
+            <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(`/job/${lead.id}`)}>
               <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
                 <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'}`} />
               </div>
@@ -591,7 +610,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
       <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         {installers.map(i => (
-          <Card key={i.name} className="cursor-pointer hover:shadow-md" onClick={() => setSelectedInstaller(i.name)}>
+          <Card key={i.name} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setSelectedInstaller(i.name)}>
             <CardContent className="p-4 flex items-center gap-3">
               <Avatar className="h-12 w-12"><AvatarFallback>{i.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
@@ -701,24 +720,33 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         </div>
       </div>
       <div className="space-y-1">
-        {filtered.map(lead => {
-          const stage = getStage(lead.workflow_stage);
-          return (
-            <div key={lead.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer hover:bg-muted/30" onClick={() => setSelectedClient(lead)}>
-              <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">{lead.name}</span>
-                  {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No clients match your search"
+            description="Try a different name, email, or address — or clear the search to see all clients."
+            variant="compact"
+          />
+        ) : (
+          filtered.map(lead => {
+            const stage = getStage(lead.workflow_stage);
+            return (
+              <div key={lead.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => setSelectedClient(lead)}>
+                <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{lead.name}</span>
+                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
                 </div>
-                <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
+                <Badge variant="outline" className={`text-[9px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
+                {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
-              <Badge variant="outline" className={`text-[9px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
-              {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );
@@ -763,7 +791,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
           return (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-muted-foreground hover:text-foreground'
+                tab === t.id ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}>
               <Icon className="h-3 w-3" /> {t.label}
             </button>
@@ -772,7 +800,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
       </div>
 
       {/* Tab content */}
-      <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div></div>}>
+      <Suspense fallback={<CardListSkeleton count={4} />}>
         {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
         {tab === 'proposal' && <ProposalView lead={lead} />}
         {tab === 'compliance' && <ProposalView lead={lead} />}

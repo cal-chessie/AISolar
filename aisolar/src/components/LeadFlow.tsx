@@ -37,6 +37,7 @@ import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIn
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from 'sonner';
+import { SpinnerSkeleton } from '@/components/ui/SuspenseFallbacks';
 
 // Use the REAL SiteSurveyForm — not a stripped-down version
 const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
@@ -163,7 +164,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <button
                     onClick={() => i <= stepIndex && setStep(s.id)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      isActive ? 'bg-blue-600 text-white' :
+                      isActive ? 'bg-emerald-600 text-white' :
                       isDone ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
                       'text-muted-foreground'
                     }`}
@@ -192,7 +193,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <Card>
                     <CardContent className="p-4">
                       <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
-                        <Calculator className="h-5 w-5 text-blue-600" /> Estimate from bill
+                        <Calculator className="h-5 w-5 text-emerald-600" /> Estimate from bill
                       </h2>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between p-2 bg-muted/30 rounded">
@@ -207,7 +208,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           <span className="text-muted-foreground">MPRN</span>
                           <span className="font-mono text-xs">{lead.mprn || 'Not extracted'}</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-blue-50 dark:bg-blue-950/30 rounded">
+                        <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded">
                           <span className="text-muted-foreground">Recommended system</span>
                           <span className="font-bold text-blue-700 dark:text-blue-300">{estimate.systemSizeKw} kWp</span>
                         </div>
@@ -235,7 +236,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <Card>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-blue-600" /> Property location
+                        <MapPin className="h-4 w-4 text-emerald-600" /> Property location
                       </h3>
                       <Label className="text-xs">Eircode</Label>
                       <div className="flex gap-2 mt-1">
@@ -287,7 +288,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                         })}
                       </div>
                       <Button
-                        className="w-full mt-3 bg-amber-600 hover:bg-amber-700"
+                        className="w-full mt-3 bg-amber-600 transition-colors hover:bg-amber-700"
                         disabled={!surveyBooked}
                         onClick={() => {
                           if (!surveyBooked) return;
@@ -323,7 +324,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
               {/* Next button */}
               <div className="mt-6 flex justify-end">
-                <Button onClick={() => setStep('survey')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+                <Button onClick={() => setStep('survey')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
                   Continue to survey <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -333,7 +334,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
           {/* === STEP 2: SURVEY — uses the REAL SiteSurveyForm === */}
           {step === 'survey' && (
             <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Suspense fallback={<div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></div>}>
+              <Suspense fallback={<SpinnerSkeleton label="Loading survey form…" />}>
                 <SiteSurveyForm
                   leadId={lead.id}
                   onCreateProposal={(surveyData, leadData) => {
@@ -363,7 +364,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 <Button variant="outline" onClick={() => setStep('survey')} className="h-12">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button onClick={() => setStep('proposal')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+                <Button onClick={() => setStep('proposal')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
                   Continue to proposal <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -389,7 +390,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 <Button variant="outline" onClick={() => setStep('design')} className="h-12">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button onClick={() => setStep('send')} className="bg-blue-600 hover:bg-blue-700 h-12 px-6">
+                <Button onClick={() => setStep('send')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
                   Review & send <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -409,13 +410,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     <Button variant="outline" onClick={() => navigate(`/consultant`)} className="h-12">
                       <MessageSquare className="h-4 w-4 mr-2" /> Back to inbox
                     </Button>
-                    <Button onClick={() => navigate('/owner')} className="h-12 bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => navigate('/owner')} className="h-12 bg-emerald-600 transition-colors hover:bg-emerald-700">
                       View in pipeline <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 ) : (
                   <Button
-                    className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6"
+                    className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6"
                     onClick={() => {
                       setProposalSent(true);
                       toast.success('Proposal sent to customer', {
@@ -515,7 +516,7 @@ function SurveyStep({ lead, eircode, address, onDataCollected }: {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-blue-600" /> Property overview
+            <MapPin className="h-4 w-4 text-emerald-600" /> Property overview
           </h3>
           <SatelliteMap eircode={eircode || lead.mprn} address={address || lead.address} />
         </CardContent>
@@ -704,14 +705,14 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             <div className="absolute top-2 right-2 flex gap-1 z-10">
               <button
                 onClick={() => update('panelCount', designData.panelCount + 1)}
-                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
+                className="bg-white/90 transition-colors hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
                 title="Add panel"
               >
                 <Plus className="h-3 w-3" />
               </button>
               <button
                 onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
-                className="bg-white/90 hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
+                className="bg-white/90 transition-colors hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
                 title="Remove panel"
               >
                 <Minus className="h-3 w-3" />
@@ -879,7 +880,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-blue-600" /> Payment options
+            <CreditCard className="h-4 w-4 text-emerald-600" /> Payment options
           </h3>
           <div className="grid sm:grid-cols-3 gap-2">
             {[
@@ -894,10 +895,10 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
                   key={opt.id}
                   onClick={() => setFinanceOption(opt.id as 'cash' | 'finance' | 'lease')}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-border hover:border-blue-300'
+                    isSelected ? 'border-blue-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:border-blue-300'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-blue-600' : 'text-muted-foreground'}`} />
+                  <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-emerald-600' : 'text-muted-foreground'}`} />
                   <div className="font-semibold text-sm">{opt.label}</div>
                   <div className="text-xs text-muted-foreground">{opt.desc}</div>
                 </button>
@@ -930,7 +931,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
 
           {/* Finance breakdown */}
           {financeOption === 'finance' && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+            <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-xs text-muted-foreground">Monthly payment</div>
@@ -1072,7 +1073,7 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue-600" /> Professional proposal
+            <FileText className="h-4 w-4 text-emerald-600" /> Professional proposal
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
             4-page branded PDF: Cover page · System design + roof layout · Investment & savings (20-year cashflow) · Terms & acceptance
