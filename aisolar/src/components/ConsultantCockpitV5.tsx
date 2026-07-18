@@ -18,6 +18,7 @@
 import { useState, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,13 +33,14 @@ import {
   Calendar, Clock, Package, FolderOpen, BarChart3, Search,
   Phone, Mail, ArrowRight, ChevronRight, Flame, Star, Zap,
   TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
-  Building2, Sun, MapPin, Send, User, Sparkles, X,
+  Building2, Sun, MapPin, Send, User, Sparkles, X, Award,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
+import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';
 
 const EstimateView = lazy(() => import('./EstimateView'));
 const ProposalView = lazy(() => import('./ProposalView'));
@@ -47,63 +49,95 @@ const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type TabId = 'leads' | 'chats' | 'estimates' | 'surveys' | 'proposals' | 'installations' | 'calendar' | 'followups' | 'products' | 'documents' | 'analytics';
+/**
+ * Phase 3 refactor: collapsed 11 tabs → 6.
+ *
+ *   Inbox     — merged Leads + Chats + Follow-ups, with stage filter chips
+ *   Pipeline  — Kanban by stage (drag-to-advance)
+ *   Calendar  — full month/week/day
+ *   Products  — product catalogue
+ *   Documents — real document manager (proposals/contracts/invoices as rows)
+ *   Insights  — stripped-down analytics (full version in Owner Cockpit)
+ *
+ * The old Estimates/Surveys/Proposals/Installs/Follow-ups tabs were all the
+ * same surface (lead list) with different `leads.filter(...)` predicates.
+ * They're now filter chips inside Inbox.
+ */
+type TabId = 'inbox' | 'pipeline' | 'calendar' | 'products' | 'documents' | 'insights';
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof Users }> = [
-  { id: 'leads', label: 'Leads', icon: Users },
-  { id: 'chats', label: 'Chats', icon: MessageSquare },
-  { id: 'estimates', label: 'Estimates', icon: Calculator },
-  { id: 'surveys', label: 'Surveys', icon: Camera },
-  { id: 'proposals', label: 'Proposals', icon: FileText },
-  { id: 'installations', label: 'Installs', icon: Wrench },
+  { id: 'inbox', label: 'Inbox', icon: MessageSquare },
+  { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'followups', label: 'Follow-ups', icon: Clock },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 
-interface Message {
-  id: string;
-  type: 'system' | 'agent' | 'company' | 'customer' | 'ai';
-  body: string;
-  timestamp: string;
-}
+/** Stage filter chips shown inside the Inbox tab. */
+type InboxFilter = 'all' | 'hot' | 'stale' | 'survey' | 'proposal' | 'install';
 
-function leadToMessages(lead: DummyLead): Message[] {
-  const msgs: Message[] = [];
-  lead.touchpoints.forEach((tp, i) => {
-    if (tp.actor === 'agent') {
-      msgs.push({ id: `tp_${i}`, type: 'agent', body: tp.summary, timestamp: tp.timestamp });
-    } else if (tp.actor === 'consultant') {
-      msgs.push({ id: `tp_${i}`, type: 'company', body: tp.summary, timestamp: tp.timestamp });
-    } else if (tp.actor === 'customer') {
-      msgs.push({ id: `tp_${i}`, type: 'customer', body: tp.summary, timestamp: tp.timestamp });
-    } else {
-      msgs.push({ id: `tp_${i}`, type: 'system', body: tp.summary, timestamp: tp.timestamp });
-    }
-  });
-  if (['proposal_sent', 'approved', 'deposit_paid'].includes(lead.workflow_stage)) {
-    const last = lead.touchpoints[lead.touchpoints.length - 1];
-    const ts = last?.timestamp || new Date().toISOString();
-    msgs.push({ id: 'chat_q', type: 'customer', body: 'When will my installation happen?', timestamp: ts });
-    msgs.push({ id: 'chat_a', type: 'ai', body: 'Your installation is scheduled based on your deposit payment. Once you pay the 30% deposit, the Install Coordinator Agent will book your install within 4-6 weeks.', timestamp: ts });
-  }
-  return msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-}
+const INBOX_FILTERS: Array<{ id: InboxFilter; label: string; emoji?: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'hot', label: 'Hot', emoji: '🔥' },
+  { id: 'stale', label: 'Stale (5+ days)' },
+  { id: 'survey', label: 'Survey' },
+  { id: 'proposal', label: 'Proposal' },
+  { id: 'install', label: 'Install' },
+];
 
 export default function ConsultantCockpitV5() {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
-  const [activeTab, setActiveTab] = useState<TabId>('chats');
+  const [activeTab, setActiveTab] = useState<TabId>('inbox');
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
   const [slideOutView, setSlideOutView] = useState<'estimate' | 'proposal' | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [customerTyping, setCustomerTyping] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [summary, setSummary] = useState<string[] | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const stats = useMemo(() => computePipelineStats(leads), [leads]);
-  const messages = useMemo(() => selectedLead ? leadToMessages(selectedLead) : [], [selectedLead]);
+  const messages = useMemo(() => selectedLead ? buildConversation(selectedLead) : [], [selectedLead]);
+
+  // Stale + hot lead detection (used by Inbox filters + auto-select)
+  const staleLeads = useMemo(() => leads.filter(l => {
+    const last = l.touchpoints[l.touchpoints.length - 1];
+    if (!last) return false;
+    return (Date.now() - new Date(last.timestamp).getTime()) > 5 * 86400000
+      && !['completed', 'final_paid', 'installed', 'installing'].includes(l.workflow_stage);
+  }), [leads]);
+  const hotLeads = useMemo(() => leads.filter(l => l.score > 80), [leads]);
+
+  // Inbox filter logic — replaces the old Estimates/Surveys/Proposals/Installs/Follow-ups tabs
+  const inboxLeads = useMemo(() => {
+    let pool = leads;
+    switch (inboxFilter) {
+      case 'hot':
+        pool = hotLeads;
+        break;
+      case 'stale':
+        pool = staleLeads;
+        break;
+      case 'survey':
+        pool = leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage));
+        break;
+      case 'proposal':
+        pool = leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage));
+        break;
+      case 'install':
+        pool = leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage));
+        break;
+      default:
+        pool = leads;
+    }
+    if (!search) return pool;
+    const q = search.toLowerCase();
+    return pool.filter(l => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.address.toLowerCase().includes(q) || l.mprn.includes(q));
+  }, [leads, inboxFilter, search, hotLeads, staleLeads]);
 
   const filteredLeads = useMemo(() => {
     if (!search) return leads;
@@ -111,26 +145,21 @@ export default function ConsultantCockpitV5() {
     return leads.filter(l => l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.address.toLowerCase().includes(q) || l.mprn.includes(q));
   }, [leads, search]);
 
-  const surveyLeads = leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage));
-  const proposalLeads = leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage));
-  const installLeads = leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage));
-  const staleLeads = leads.filter(l => {
-    const last = l.touchpoints[l.touchpoints.length - 1];
-    if (!last) return false;
-    return (Date.now() - new Date(last.timestamp).getTime()) > 5 * 86400000 && !['completed', 'final_paid', 'installed', 'installing'].includes(l.workflow_stage);
-  });
-  const hotLeads = leads.filter(l => l.score > 80);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, customerTyping]);
 
-  // Auto-select first lead on Chats tab
+  // Auto-select first lead on Inbox tab — hot leads first, else first lead
   useEffect(() => {
-    if (activeTab === 'chats' && !selectedLead && hotLeads.length > 0) {
-      setSelectedLead(hotLeads[0]);
+    if (activeTab === 'inbox' && !selectedLead && inboxLeads.length > 0) {
+      setSelectedLead(inboxLeads[0]);
     }
-  }, [activeTab]);
+  }, [activeTab, inboxLeads]);
+
+  // Reset summary when switching leads
+  useEffect(() => {
+    setSummary(null);
+  }, [selectedLead]);
 
   // Escape key closes slide-out panel
   useEffect(() => {
@@ -166,9 +195,60 @@ export default function ConsultantCockpitV5() {
     ));
     setSelectedLead(updatedLead);
     setReplyText('');
+
+    // Simulate the customer typing back after a brief delay (demo only).
+    // In production this would come from Supabase Realtime presence.
+    setTimeout(() => {
+      setCustomerTyping(true);
+      setTimeout(() => {
+        setCustomerTyping(false);
+        // Append a simulated customer reply
+        const customerReply = {
+          id: `tp_${Date.now()}_c`,
+          lead_id: updatedLead.id,
+          stage: updatedLead.workflow_stage,
+          channel: 'portal' as const,
+          direction: 'inbound' as const,
+          summary: 'Thanks for getting back to me. Let me think about it.',
+          timestamp: new Date().toISOString(),
+          actor: 'customer' as const,
+        };
+        const reUpdated: DummyLead = {
+          ...updatedLead,
+          touchpoints: [...updatedLead.touchpoints, customerReply],
+        };
+        setLeads(prev => prev.map(l => l.id === reUpdated.id ? reUpdated : l));
+        setSelectedLead(reUpdated);
+      }, 2200);
+    }, 800);
   };
 
-  const isChatView = activeTab === 'chats' || activeTab === 'leads';
+  /** Ask AI to summarize the conversation — Phase 3 feature. */
+  const handleSummarize = () => {
+    if (!selectedLead) return;
+    setSummarizing(true);
+    setSummary(null);
+    // Phase 4 will replace this with a real LLM call via OpenRouter.
+    setTimeout(() => {
+      setSummary(summarizeConversation(messages, selectedLead));
+      setSummarizing(false);
+    }, 900);
+  };
+
+  /** Move a lead to the next pipeline stage (used by Kanban drag-to-advance). */
+  const advanceLeadStage = (leadId: string, targetStage: string) => {
+    setLeads(prev => prev.map(l =>
+      l.id === leadId ? { ...l, workflow_stage: targetStage } : l
+    ));
+    if (selectedLead?.id === leadId) {
+      setSelectedLead(prev => prev ? { ...prev, workflow_stage: targetStage } : prev);
+    }
+    toast.success(`Moved to ${getStage(targetStage).label}`, {
+      description: `${selectedLead?.name || 'Lead'} is now in the ${getStage(targetStage).label} stage.`,
+    });
+  };
+
+  const isChatView = activeTab === 'inbox';
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -186,12 +266,18 @@ export default function ConsultantCockpitV5() {
             <DarkModeToggle />
           </div>
         </div>
-        {/* 11 tabs */}
+        {/* 6 tabs */}
         <div className="flex gap-0.5 px-2 pb-1.5 overflow-x-auto">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            const count = tab.id === 'leads' ? leads.length : tab.id === 'surveys' ? surveyLeads.length : tab.id === 'proposals' ? proposalLeads.length : tab.id === 'installations' ? installLeads.length : tab.id === 'followups' ? staleLeads.length : tab.id === 'chats' ? hotLeads.length : 0;
+            const count = tab.id === 'inbox'
+              ? leads.length
+              : tab.id === 'pipeline'
+              ? leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length
+              : tab.id === 'documents'
+              ? leads.filter(l => l.proposal || l.contract || l.invoice).length
+              : 0;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
@@ -209,10 +295,36 @@ export default function ConsultantCockpitV5() {
         <div className="flex-1 flex overflow-hidden">
           {/* Lead list (left) */}
           <div className="w-72 lg:w-80 flex-shrink-0 border-r flex flex-col">
-            <div className="p-2 border-b">
+            <div className="p-2 border-b space-y-2">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input placeholder="Search leads…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
+              </div>
+              {/* Filter chips — replaces the old Estimates/Surveys/Proposals/Installs/Follow-ups tabs */}
+              <div className="flex gap-1 flex-wrap">
+                {INBOX_FILTERS.map(f => {
+                  const isActive = inboxFilter === f.id;
+                  const chipCount = f.id === 'hot' ? hotLeads.length
+                    : f.id === 'stale' ? staleLeads.length
+                    : f.id === 'survey' ? leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage)).length
+                    : f.id === 'proposal' ? leads.filter(l => ['proposal_drafted', 'proposal_sent'].includes(l.workflow_stage)).length
+                    : f.id === 'install' ? leads.filter(l => ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)).length
+                    : leads.length;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setInboxFilter(f.id)}
+                      className={`text-[10px] px-2 py-1 rounded-full transition-colors ${
+                        isActive
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                      }`}
+                    >
+                      {f.emoji ? `${f.emoji} ` : ''}{f.label}
+                      {chipCount > 0 && <span className={`ml-1 ${isActive ? 'opacity-80' : 'opacity-60'}`}>{chipCount}</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <motion.div
@@ -220,33 +332,39 @@ export default function ConsultantCockpitV5() {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              key={activeTab + search}  // re-stagger when tab or search changes
+              key={activeTab + inboxFilter + search}  // re-stagger when filter or search changes
             >
-              {(activeTab === 'chats' ? hotLeads : filteredLeads).map(lead => {
-                const last = lead.touchpoints[lead.touchpoints.length - 1];
-                const isSelected = selectedLead?.id === lead.id;
-                return (
-                  <motion.button
-                    key={lead.id}
-                    variants={listItemFade}
-                    onClick={() => setSelectedLead(lead)}
-                    className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
-                  >
-                    <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-medium text-sm truncate">{lead.name}</span>
-                        {last && <span className="text-[9px] text-muted-foreground flex-shrink-0">{new Date(last.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>}
+              {inboxLeads.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No leads match this filter.
+                </div>
+              ) : (
+                inboxLeads.map(lead => {
+                  const last = lead.touchpoints[lead.touchpoints.length - 1];
+                  const isSelected = selectedLead?.id === lead.id;
+                  return (
+                    <motion.button
+                      key={lead.id}
+                      variants={listItemFade}
+                      onClick={() => setSelectedLead(lead)}
+                      className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-medium text-sm truncate">{lead.name}</span>
+                          {last && <span className="text-[9px] text-muted-foreground flex-shrink-0">{new Date(last.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Badge variant="outline" className={`text-[8px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
+                          {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Badge variant="outline" className={`text-[8px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
-                        {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
-                      </div>
-                    </div>
-                  </motion.button>
-                );
-              })}
+                    </motion.button>
+                  );
+                })
+              )}
             </motion.div>
           </div>
 
@@ -271,13 +389,77 @@ export default function ConsultantCockpitV5() {
                   </div>
                   <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={handleSummarize}
+                    disabled={summarizing || messages.length === 0}
+                    aria-label="Ask AI to summarize conversation"
+                    title="Ask AI to summarize"
+                  >
+                    <Sparkles className={`h-3.5 w-3.5 mr-1 ${summarizing ? 'animate-pulse text-violet-600' : 'text-violet-600'}`} />
+                    {summarizing ? 'Summarizing…' : 'Summarize'}
+                  </Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7" asChild><a href={`tel:${selectedLead.phone}`} aria-label="Call customer"><Phone className="h-3.5 w-3.5" /></a></Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/lead-flow/${selectedLead.id}`)} aria-label="Open in LeadFlow"><ArrowRight className="h-3.5 w-3.5" /></Button>
                 </div>
 
+                {/* AI summary card (shown when summary is ready) */}
+                {summary && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="border-b bg-violet-50 dark:bg-violet-950/20 p-3"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex-shrink-0">
+                        <Sparkles className="h-3 w-3 text-violet-700 dark:text-violet-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300 mb-1">AI Summary</div>
+                        <ul className="space-y-1">
+                          {summary.map((bullet, i) => (
+                            <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
+                              <span className="text-violet-600 mt-0.5">•</span>
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSummary(null)} aria-label="Dismiss summary">
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-muted/10">
-                  {messages.map(msg => <MessageBubble key={msg.id} message={msg} />)}
+                  {messages.map(msg => <MessageBubble key={msg.id} message={msg} onAction={(data) => {
+                    if (data === 'estimate') setSlideOutView('estimate');
+                    else if (data === 'proposal') setSlideOutView('proposal');
+                    else toast(`Opening ${data}…`);
+                  }} />)}
+                  {/* Customer typing indicator */}
+                  {customerTyping && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start"
+                    >
+                      <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2">
+                        <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px]">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                        <span className="text-xs text-muted-foreground">{selectedLead.name.split(' ')[0]} is typing</span>
+                        <span className="flex gap-0.5">
+                          <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -301,101 +483,18 @@ export default function ConsultantCockpitV5() {
           <AnimatePresence mode="wait">
             <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="p-3 space-y-2">
 
-              {activeTab === 'estimates' && (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Estimates — {leads.length} leads</h3>
-                  {leads.map(lead => {
-                    const est = calculateSystemEstimate({ monthlyBill: lead.monthly_bill, annualKwh: lead.annual_kwh });
-                    return (
-                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('estimate'); }}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">€{lead.monthly_bill}/mo · {est.systemSizeKw}kWp · {eur(est.annualSavings)}/yr</div></div>
-                          <Badge variant="outline" className="text-[9px] text-amber-600">{est.systemSizeKw} kWp</Badge>
-                          <Badge variant="outline" className="text-[9px] text-emerald-600">{eur(est.annualSavings)}</Badge>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </>
-              )}
-
-              {activeTab === 'surveys' && (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Surveys — {surveyLeads.length} pending</h3>
-                  {surveyLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/lead-flow/${lead.id}`)}>
-                      <CardContent className="p-3 flex items-center gap-3">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg"><Camera className="h-4 w-4 text-indigo-600" /></div>
-                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.address.split(',').slice(-1)[0]?.trim()} · {lead.survey?.photo_count || 0}/8 photos</div></div>
-                        <Progress value={((lead.survey?.photo_count || 0) / 8) * 100} className="h-1.5 w-16" />
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {surveyLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No surveys pending.</p>}
-                </>
-              )}
-
-              {activeTab === 'proposals' && (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Proposals — {proposalLeads.length} active</h3>
-                  {proposalLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
-                      <CardContent className="p-3 flex items-center gap-3">
-                        <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-lg"><FileText className="h-4 w-4 text-violet-600" /></div>
-                        <div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="font-medium text-sm">{lead.name}</span><Badge variant="outline" className="text-[9px]">{lead.proposal?.status}</Badge></div><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {eur(lead.proposal?.net_cost || 0)} · {lead.proposal?.payback_years}yr</div></div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {proposalLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active proposals.</p>}
-                </>
-              )}
-
-              {activeTab === 'installations' && (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Installations — {installLeads.length} active</h3>
-                  {installLeads.map(lead => (
-                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
-                      <CardContent className="p-3 flex items-center gap-3">
-                        <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Wrench className="h-4 w-4 text-amber-600" /></div>
-                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw}kWp · {lead.assignment?.installer_name} · {lead.assignment?.scheduled_date ? new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE') : 'TBD'}</div></div>
-                        <Badge variant="outline" className="text-[9px] capitalize">{lead.assignment?.status}</Badge>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {installLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active installations.</p>}
-                </>
+              {activeTab === 'pipeline' && (
+                <PipelineKanban
+                  leads={leads}
+                  onAdvance={advanceLeadStage}
+                  onSelectLead={(lead) => { setSelectedLead(lead); setActiveTab('inbox'); }}
+                />
               )}
 
               {activeTab === 'calendar' && (
                 <Suspense fallback={<CardListSkeleton count={3} />}>
                   <UnifiedCalendar filterRole="consultant" />
                 </Suspense>
-              )}
-
-              {activeTab === 'followups' && (
-                <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-amber-600" /> Follow-ups — {staleLeads.length} stale (5+ days)</h3>
-                  {staleLeads.map(lead => {
-                    const last = lead.touchpoints[lead.touchpoints.length - 1];
-                    const days = last ? Math.round((Date.now() - new Date(last.timestamp).getTime()) / 86400000) : 0;
-                    return (
-                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md border-l-4 border-l-amber-500" onClick={() => { setSelectedLead(lead); setActiveTab('chats'); }}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {days}d since last contact</div></div>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" asChild><a href={`tel:${lead.phone}`}><Phone className="h-3 w-3 mr-1" /> Call</a></Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" asChild><a href={`mailto:${lead.email}`}><Mail className="h-3 w-3 mr-1" /> Email</a></Button>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  {staleLeads.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">All caught up — no stale leads!</p>}
-                </>
               )}
 
               {activeTab === 'products' && (
@@ -407,19 +506,28 @@ export default function ConsultantCockpitV5() {
               {activeTab === 'documents' && (
                 <>
                   <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents — proposals, contracts, invoices</h3>
-                  {leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => (
-                    <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
-                      <CardContent className="p-3 flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
-                        <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[8px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[8px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[8px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {leads.filter(l => l.proposal || l.contract || l.invoice).length === 0 ? (
+                    <EmptyState
+                      icon={FolderOpen}
+                      title="No documents yet"
+                      description="Proposals, contracts, and invoices will appear here once leads progress through the pipeline."
+                      variant="compact"
+                    />
+                  ) : (
+                    leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => (
+                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
+                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[8px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[8px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[8px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </>
               )}
 
-              {activeTab === 'analytics' && (
+              {activeTab === 'insights' && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <StatBox label="Active leads" value={String(stats.activeLeads)} icon={Users} color="blue" />
@@ -490,7 +598,7 @@ export default function ConsultantCockpitV5() {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?: (data?: string) => void }) {
   if (message.type === 'system') {
     return <div className="flex justify-center"><div className="px-3 py-1 bg-muted/50 rounded-full text-[10px] text-muted-foreground text-center max-w-[85%]">{message.body}</div></div>;
   }
@@ -498,8 +606,10 @@ function MessageBubble({ message }: { message: Message }) {
   const isAI = message.type === 'ai';
   const isAgent = message.type === 'agent';
   const bg = isCustomer ? 'bg-emerald-600 text-white rounded-br-sm' : isAI ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm' : isAgent ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
-  const label = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
+  const label = isCustomer ? 'Customer' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
   const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
+  const ActionIcon = message.actionIcon;
+  const CardIcon = message.card?.ctaIcon;
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[80%] ${isCustomer ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
@@ -509,9 +619,54 @@ function MessageBubble({ message }: { message: Message }) {
           <span className="text-muted-foreground">·</span>
           <span className="text-muted-foreground">{new Date(message.timestamp).toLocaleString('en-IE', { dateStyle: 'short', timeStyle: 'short' })}</span>
         </div>
+        {/* Bubble body */}
         <div className={`rounded-2xl px-4 py-2.5 ${bg}`}>
           <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+          {/* Inline action button */}
+          {message.actionLabel && ActionIcon && (
+            <button
+              onClick={() => onAction?.(message.actionData)}
+              className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-emerald-700 dark:text-emerald-300'} hover:underline`}
+            >
+              <ActionIcon className="h-3 w-3" />
+              {message.actionLabel}
+              <ArrowRight className="h-2 w-2" />
+            </button>
+          )}
         </div>
+        {/* Rich card (proposal / contract / install / warranty) */}
+        {message.card && (
+          <div className={`mt-1 rounded-xl border bg-background shadow-sm overflow-hidden ${isCustomer ? 'ml-auto' : ''}`}>
+            <div className="px-3 py-2 border-b bg-muted/30 flex items-center gap-2">
+              {message.card.kind === 'proposal' && <FileText className="h-3.5 w-3.5 text-emerald-600" />}
+              {message.card.kind === 'contract' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+              {message.card.kind === 'install' && <Calendar className="h-3.5 w-3.5 text-amber-600" />}
+              {message.card.kind === 'warranty' && <Award className="h-3.5 w-3.5 text-emerald-600" />}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold truncate">{message.card.title}</div>
+                {message.card.subtitle && <div className="text-[10px] text-muted-foreground truncate">{message.card.subtitle}</div>}
+              </div>
+            </div>
+            {message.card.rows && message.card.rows.length > 0 && (
+              <div className="px-3 py-2 space-y-1">
+                {message.card.rows.map((row, i) => (
+                  <div key={i} className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground">{row.label}</span>
+                    <span className="font-medium">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => onAction?.(message.card?.ctaData)}
+              className="w-full px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center justify-center gap-1 border-t"
+            >
+              {CardIcon && <CardIcon className="h-3 w-3" />}
+              {message.card.ctaLabel}
+              <ArrowRight className="h-2 w-2" />
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -523,5 +678,106 @@ function StatBox({ label, value, icon: Icon, color }: { label: string; value: st
       <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-${color}-100 dark:bg-${color}-950/40`}><Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} /></div><span className="text-[10px] text-muted-foreground">{label}</span></div>
       <div className="text-lg font-bold">{value}</div>
     </CardContent></Card>
+  );
+}
+
+/**
+ * Kanban Pipeline — drag a lead card to the next stage column.
+ * Phase 3 feature: replaces the old "Estimates/Surveys/Proposals/Installs" tab
+ * soup with one visual workflow surface.
+ *
+ * Uses native HTML5 drag-and-drop. Each column maps to a PIPELINE_STAGES entry.
+ * Drop a card on a column → onAdvance(leadId, targetStageId) is called.
+ */
+function PipelineKanban({
+  leads,
+  onAdvance,
+  onSelectLead,
+}: {
+  leads: DummyLead[];
+  onAdvance: (leadId: string, targetStage: string) => void;
+  onSelectLead: (lead: DummyLead) => void;
+}) {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [hoverStage, setHoverStage] = useState<string | null>(null);
+
+  const handleDrop = (stageId: string) => {
+    if (draggedId) {
+      onAdvance(draggedId, stageId);
+    }
+    setDraggedId(null);
+    setHoverStage(null);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          Pipeline — {leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length} active
+        </h3>
+        <span className="text-[10px] text-muted-foreground">Drag a card to advance stage</span>
+      </div>
+      <div className="overflow-x-auto pb-2">
+        <div className="flex gap-2 min-w-max">
+          {PIPELINE_STAGES.map(stage => {
+            const stageLeads = leads.filter(l => l.workflow_stage === stage.id);
+            const isHover = hoverStage === stage.id;
+            return (
+              <div
+                key={stage.id}
+                onDragOver={(e) => { e.preventDefault(); setHoverStage(stage.id); }}
+                onDragLeave={() => setHoverStage(prev => prev === stage.id ? null : prev)}
+                onDrop={() => handleDrop(stage.id)}
+                className={`w-56 flex-shrink-0 rounded-lg border-2 transition-colors ${
+                  isHover ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20' : 'border-border bg-muted/20'
+                }`}
+              >
+                <div className="p-2 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full bg-${stage.color}-500`} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wide">{stage.label}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground">{stageLeads.length}</span>
+                </div>
+                <div className="p-1.5 space-y-1.5 max-h-96 overflow-y-auto">
+                  {stageLeads.length === 0 ? (
+                    <div className="text-[10px] text-muted-foreground/60 text-center py-4">Drop here</div>
+                  ) : (
+                    stageLeads.map(lead => (
+                      <div
+                        key={lead.id}
+                        draggable
+                        onDragStart={() => setDraggedId(lead.id)}
+                        onDragEnd={() => { setDraggedId(null); setHoverStage(null); }}
+                        onClick={() => onSelectLead(lead)}
+                        className={`p-2 bg-background rounded-md border cursor-pointer transition-shadow hover:shadow-md ${
+                          draggedId === lead.id ? 'opacity-40' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Avatar className="h-5 w-5"><AvatarFallback className="text-[8px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                          <span className="text-xs font-medium truncate flex-1">{lead.name}</span>
+                          {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 flex-shrink-0" />}
+                        </div>
+                        {lead.proposal && (
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            {lead.proposal.system_size_kw}kWp · {eur(lead.proposal.net_cost)}
+                          </div>
+                        )}
+                        {!lead.proposal && lead.intake && (
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            €{lead.monthly_bill}/mo · est. {lead.intake.estimated_system_size_kw}kWp
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
