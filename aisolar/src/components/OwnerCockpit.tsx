@@ -49,10 +49,11 @@ const RealCalendar = lazy(() => import('./RealCalendar'));
 const EstimateView = lazy(() => import('./EstimateView'));
 const ProposalView = lazy(() => import('./ProposalView'));
 const AgentTraining = lazy(() => import('./AgentTraining'));
+const AIConfig = lazy(() => import('./AIConfig'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'training' | 'lead_detail';
+type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'ai_config';
 
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -62,8 +63,8 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
   { id: 'clients', label: 'Clients', icon: UserCircle },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'agents', label: 'Agents', icon: Bot },
-  { id: 'training', label: 'Agent Training', icon: Zap },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'ai_config', label: 'AI Config', icon: Zap },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
 ];
@@ -247,7 +248,6 @@ export default function OwnerCockpit() {
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} />
           )}
           {activeView === 'calendar' && <RealCalendar />}
-          {activeView === 'training' && <div className="p-4"><AgentTraining /></div>}
           {activeView === 'consultants' && (
             <ConsultantsView consultants={data.consultants} navigate={navigate} />
           )}
@@ -262,6 +262,7 @@ export default function OwnerCockpit() {
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <AnalyticsDashboard />}
           {activeView === 'crm' && <CrmPlaceholder />}
+          {activeView === 'ai_config' && <AIConfig />}
           {activeView === 'lead_detail' && selectedLead && (
             <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
           )}

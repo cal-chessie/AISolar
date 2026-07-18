@@ -7,7 +7,7 @@
  * - All numbers are real (or clearly demo)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,10 @@ import { isDemoMode } from '@/lib/demoMode';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Bot, Clock, CheckCircle2, AlertCircle, Pause, Play, Zap, Calendar,
-  ArrowRight, Shield, FileText, Loader2,
+  ArrowRight, Shield, FileText, Loader2, Brain,
 } from 'lucide-react';
+
+const AgentTraining = lazy(() => import('./AgentTraining'));
 
 interface AgentStatus {
   agentId: string;
@@ -134,6 +136,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(AGENTS.map(a => [a.id, a.enabledByDefault]))
   );
+  const [activeTab, setActiveTab] = useState<'agents' | 'training'>('agents');
   const demo = isDemoMode();
 
   useEffect(() => {
@@ -177,6 +180,30 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
 
   return (
     <div className="space-y-4">
+      {/* Tab switcher — Agents + Training */}
+      {!compact && (
+        <div className="flex gap-1 border-b">
+          <button onClick={() => setActiveTab('agents')}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'agents' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <Bot className="h-4 w-4" /> Agents
+          </button>
+          <button onClick={() => setActiveTab('training')}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'training' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <Brain className="h-4 w-4" /> Training
+          </button>
+        </div>
+      )}
+
+      {/* Training tab */}
+      {activeTab === 'training' && !compact && (
+        <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}>
+          <AgentTraining />
+        </Suspense>
+      )}
+
+      {/* Agents tab */}
+      {activeTab === 'agents' && (
+        <>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -350,6 +377,8 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
             idempotency — agents never send the same email twice.
           </CardContent>
         </Card>
+      )}
+      </>
       )}
     </div>
   );
