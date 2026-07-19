@@ -57,27 +57,41 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an expert at extracting data from Irish electricity bills (Electric Ireland, Energia, SSE Airtricity, Bord Gáis Energy, etc.).
+            content: `You are an expert at extracting data from Irish electricity bills (Electric Ireland, Energia, SSE Airtricity, Bord Gáis Energy, Pinergy, PrepayPower, Yuno, Community Power, etc.).
 
-Extract the following information from the bill image:
-1. MPRN (Meter Point Reference Number) - This is a 11-digit number unique to the property
-2. Total bill amount in EUR (the amount due/payable)
-3. Annual consumption in kWh (estimated annual usage or usage for the billing period)
-4. Account holder name if visible
-5. Property address if visible
+Extract EVERYTHING visible on the bill. Every field feeds the solar system design, so completeness matters.
 
-IMPORTANT: The MPRN is critical - it's usually labeled as "MPRN", "Meter Point Reference Number", or "Metering Point Reference". It's always 11 digits.
+IMPORTANT: The MPRN is critical - usually labeled "MPRN", "Meter Point Reference Number", or "Metering Point Reference". Always 11 digits.
 
-Respond ONLY with valid JSON in this exact format:
+Respond ONLY with valid JSON in this exact format (null for anything not visible):
 {
   "mprn": "12345678901" or null,
   "billAmount": 150.50 or null,
   "annualKwh": 4500 or null,
+  "billingPeriodKwh": 380 or null,
   "accountName": "John Smith" or null,
   "address": "123 Main St, Dublin" or null,
+  "eircode": "D18A4K9" or null,
+  "provider": "Electric Ireland" or null,
+  "tariffName": "Home Electric+ Night Boost" or null,
+  "billingPeriod": "1 Dec 2025 - 31 Dec 2025" or null,
+  "unitRate": 0.42 or null,
+  "nightRate": 0.23 or null,
+  "standingCharge": 0.75 or null,
+  "standingChargeUnit": "per day" | "per month" | null,
+  "vatRate": 9 or null,
+  "dayNightMeter": true | false | null,
+  "dayUsageKwh": 250 or null,
+  "nightUsageKwh": 130 or null,
+  "estimatedReading": true | false | null,
   "confidence": "high" | "medium" | "low",
   "notes": "any issues or observations"
-}`
+}
+
+Rules:
+- If only billing-period usage is shown, still report it in billingPeriodKwh and annualise into annualKwh (multiply by periods per year).
+- Rates in euros (0.42, not 42 cents).
+- estimatedReading true if the reading is marked E/estimated.`
           },
           {
             role: "user",
@@ -170,8 +184,22 @@ Respond ONLY with valid JSON in this exact format:
         mprn: extractedData.mprn || null,
         billAmount: extractedData.billAmount || null,
         annualKwh: extractedData.annualKwh || null,
+        billingPeriodKwh: extractedData.billingPeriodKwh || null,
         accountName: extractedData.accountName || null,
         address: extractedData.address || null,
+        eircode: extractedData.eircode || null,
+        provider: extractedData.provider || null,
+        tariffName: extractedData.tariffName || null,
+        billingPeriod: extractedData.billingPeriod || null,
+        unitRate: extractedData.unitRate || null,
+        nightRate: extractedData.nightRate || null,
+        standingCharge: extractedData.standingCharge || null,
+        standingChargeUnit: extractedData.standingChargeUnit || null,
+        vatRate: extractedData.vatRate || null,
+        dayNightMeter: extractedData.dayNightMeter ?? null,
+        dayUsageKwh: extractedData.dayUsageKwh || null,
+        nightUsageKwh: extractedData.nightUsageKwh || null,
+        estimatedReading: extractedData.estimatedReading ?? null,
         confidence: extractedData.confidence || 'low',
         notes: extractedData.notes || null
       }

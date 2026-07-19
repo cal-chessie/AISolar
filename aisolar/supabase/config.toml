@@ -55,3 +55,9 @@ verify_jwt = true
 # --- AGENT RUNTIME (verify_jwt=true, invoked by pg_cron + manual UI) ---
 [functions.agent-drain]
 verify_jwt = true
+
+# --- EXTERNAL SITE INGESTION (verify_jwt=false, x-ingest-key verified inside) ---
+# Called server-to-server by solarireland.com / renewableireland.ie lead routes.
+# Auth = INGEST_API_KEY shared secret, same pattern as the payment webhooks.
+[functions.ingest-lead]
+verify_jwt = false

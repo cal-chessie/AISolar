@@ -77,7 +77,6 @@ serve(async (req) => {
     // Authz: cron path (empty body) accepts the service-role key.
     // Manual trigger path (lead_id + agent_id in body) requires admin role.
     const isManualTrigger = !!(manualLeadId && drainAgentId);
-    const authHeader = req.headers.get("authorization") ?? "";
     const isServiceKey = !!serviceKey && authHeader === `Bearer ${serviceKey}`;
 
     if (isServiceKey) {
@@ -258,9 +257,17 @@ async function handleLeadIntake({ supabase, leadId }: AgentRunParams): Promise<A
 
   if (intakeError) return { success: false, error: intakeError.message };
 
+  // Advance the pipeline: intake_complete fires trg_enqueue_stage_agent,
+  // which enqueues survey_scheduler. Without this the chain dead-ends here
+  // and every ingested lead waits for a human. Duplicates stay at 'new'
+  // for a consultant to merge manually.
+  if (!duplicateOf) {
+    await supabase.from("leads").update({ workflow_stage: "intake_complete" }).eq("id", leadId).eq("workflow_stage", "new");
+  }
+
   await supabase.from("activity_logs").insert({
     lead_id: leadId, action_type: "lead_intake_processed",
-    description: `Lead Intake Agent normalized data. Score: ${score}. Est: ${systemSize}kWp. Dupe: ${duplicateOf ? "yes" : "no"}.`,
+    description: `Lead Intake Agent normalized data. Score: ${score}. Est: ${systemSize}kWp. Dupe: ${duplicateOf ? "yes" : "no"}.${duplicateOf ? "" : " Stage → intake_complete (survey scheduling queued)."}`,
   });
 
   await supabase.from("touchpoints").insert({
@@ -315,8 +322,16 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
 
   const { data: lead } = await supabase.from("leads").select("assigned_consultant_id, name, address, monthly_bill, annual_kwh").eq("id", leadId).single();
 
-  const systemSize = survey.confirmed_system_size_kw || intake.estimated_system_size_kw || 6;
-  const panelCount = survey.confirmed_panel_count || systemSize * 2;
+  // Source-of-truth order: lead_intake.confirmed_* (written by the
+  // survey-handoff trigger) → raw survey columns → intake estimates.
+  const systemSize =
+    intake.confirmed_system_size_kw || survey.recommended_system_size ||
+    intake.estimated_system_size_kw || 6;
+  const panelCount =
+    intake.confirmed_panel_count || survey.recommended_panel_count ||
+    Math.ceil((systemSize * 1000) / 435);
+  const batteryKwh = intake.confirmed_battery_kwh || survey.recommended_battery_kwh || null;
+  const inverterType = intake.confirmed_inverter_type || survey.recommended_inverter_type || "SolarEdge SE5K";
   const grossCost = systemSize * 1800;
   const seaiGrant = Math.min(1800, Math.min(systemSize, 2) * 900);
   const netCost = grossCost - seaiGrant;
@@ -334,8 +349,8 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
       system_size_kw: systemSize,
       panel_count: panelCount,
       panel_model: "Longi Hi-MO 6 435W",
-      inverter_model: "SolarEdge SE5K",
-      battery_model: survey.confirmed_battery_kwh ? "Tesla Powerwall 3 (13.5kWh)" : "None",
+      inverter_model: inverterType,
+      battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : "None",
       gross_cost: grossCost,
       seai_grant: seaiGrant,
       net_cost: netCost,
@@ -367,8 +382,8 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
     lead_id: leadId, consultant_id: lead?.assigned_consultant_id,
     status: "draft", // CRITICAL: never auto-send
     system_size_kw: systemSize, panel_count: panelCount,
-    panel_model: "Longi Hi-MO 6 435W", inverter_model: "SolarEdge SE5K",
-    battery_model: survey.confirmed_battery_kwh ? "Tesla Powerwall 3 (13.5kWh)" : null,
+    panel_model: "Longi Hi-MO 6 435W", inverter_model: inverterType,
+    battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
     gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
     annual_savings: intake.estimated_annual_savings,
     payback_years: intake.estimated_payback_years,
@@ -383,8 +398,8 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
         lead_id: leadId, consultant_id: lead?.assigned_consultant_id,
         status: "draft",
         system_size_kw: systemSize, panel_count: panelCount,
-        panel_model: "Longi Hi-MO 6 435W", inverter_model: "SolarEdge SE5K",
-        battery_model: survey.confirmed_battery_kwh ? "Tesla Powerwall 3 (13.5kWh)" : null,
+        panel_model: "Longi Hi-MO 6 435W", inverter_model: inverterType,
+        battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
         gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
         annual_savings: intake.estimated_annual_savings,
         payback_years: intake.estimated_payback_years,
