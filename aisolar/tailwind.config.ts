@@ -91,6 +91,49 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Instrument scale (see src/styles/instrument.css)
+        xs: "var(--radius-xs)",
+        panel: "var(--radius-lg)",
+        modal: "var(--radius-xl)",
+      },
+      // ---- Instrument design system -------------------------------------
+      // Single source of truth lives in src/styles/instrument.css; these just
+      // expose the tokens as Tailwind utilities so components stop inventing
+      // their own sizes (the root cause of the cramped/tiny installer views).
+      fontSize: {
+        "2xs":  ["var(--text-2xs)",  { lineHeight: "1" }],
+        xs:     ["var(--text-xs)",   { lineHeight: "var(--leading-ui)" }],
+        sm:     ["var(--text-sm)",   { lineHeight: "var(--leading-ui)" }],
+        base:   ["var(--text-base)", { lineHeight: "var(--leading-body)" }],
+        md:     ["var(--text-md)",   { lineHeight: "var(--leading-ui)" }],
+        lg:     ["var(--text-lg)",   { lineHeight: "var(--leading-tight)" }],
+        xl:     ["var(--text-xl)",   { lineHeight: "var(--leading-tight)" }],
+        "2xl":  ["var(--text-2xl)",  { lineHeight: "1.15" }],
+        "3xl":  ["var(--text-3xl)",  { lineHeight: "1.1" }],
+      },
+      spacing: {
+        control: "var(--control-h)",
+        "control-sm": "var(--control-h-sm)",
+        "control-lg": "var(--control-h-lg)",
+        row: "var(--row-h)",
+        header: "var(--header-h)",
+        page: "var(--pad-page)",
+        card: "var(--pad-card)",
+      },
+      boxShadow: {
+        "elev-1": "var(--elev-1)",
+        "elev-2": "var(--elev-2)",
+        "elev-3": "var(--elev-3)",
+        focus: "var(--focus-ring)",
+      },
+      transitionDuration: {
+        instant: "var(--motion-instant)",
+        fast: "var(--motion-fast)",
+        base: "var(--motion-base)",
+      },
+      transitionTimingFunction: {
+        out: "var(--ease-out)",
+        smooth: "var(--ease-in-out)",
       },
       keyframes: {
         "accordion-down": {
