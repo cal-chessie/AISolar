@@ -19,7 +19,8 @@
        Instrument-dense. Base UI text is 13px (Linear sits here); reading text
        is 14px. Tight line-heights, slight negative tracking on larger sizes so
        headings feel engineered rather than airy. */
-    --text-2xs:   0.6875rem; /* 11px — meta, table micro-labels */
+    --text-2xs:   0.6875rem; /* 11px — UPPERCASE micro-labels ONLY, never body text
+                                (below the 12px body floor; uppercase+tracking keeps it legible) */
     --text-xs:    0.75rem;   /* 12px — labels, captions, badges */
     --text-sm:    0.8125rem; /* 13px — DEFAULT UI text */
     --text-base:  0.875rem;  /* 14px — body / reading */
@@ -88,9 +89,9 @@
 
     /* ---- MOTION -----------------------------------------------------------
        Fast. An instrument responds; it doesn't animate at you. */
-    --motion-instant: 90ms;
-    --motion-fast:    140ms;
-    --motion-base:    200ms;
+    --motion-instant: 120ms; /* micro-feedback (hover/press) */
+    --motion-fast:    160ms; /* state changes — 150ms+ per WCAG/HIG guidance */
+    --motion-base:    220ms; /* entrances, panels */
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -102,10 +103,10 @@
   /* Field mode: bigger targets for installers on phones/tablets, gloves on,
      one hand free. Set data-density="comfortable" on the installer shell. */
   [data-density="comfortable"] {
-    --control-h-sm: 2rem;     /* 32 */
-    --control-h:    2.5rem;   /* 40 — meets touch-target guidance */
-    --control-h-lg: 2.75rem;  /* 44 */
-    --row-h:        3rem;     /* 48 */
+    --control-h-sm: 2.5rem;   /* 40 */
+    --control-h:    2.75rem;  /* 44 — Apple HIG / Material minimum touch target */
+    --control-h-lg: 3rem;     /* 48 — primary actions, gloved hands */
+    --row-h:        3.25rem;  /* 52 */
     --text-sm:      0.875rem; /* 14 — step up from 13 for outdoor legibility */
     --text-base:    0.9375rem;/* 15 */
     --gap-default:  var(--space-4);
@@ -122,8 +123,9 @@
   }
 
   html {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+    /* NOTE: deliberately NOT setting text-size-adjust — it blocks users who
+       need larger text from scaling it (Dynamic Type / a11y). Density comes
+       from the token scale, never from preventing user zoom. */
   }
 
   body {
