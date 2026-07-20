@@ -1,0 +1,787 @@
+     1→     1→import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+     2→     2→import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion';
+     3→     3→import { useNavigate } from 'react-router-dom';
+     4→     4→import { Zap, ArrowRight, Check, Play, Star, TrendingUp, Shield, Calculator, FileText, Calendar, Upload, Sparkles, Euro, Quote, MessageCircle, ChevronLeft, ChevronRight, Leaf, Clock, ShieldCheck, Award } from 'lucide-react';
+     5→     5→import SEOHead from '@/components/SEOHead';
+     6→     6→import LeadCaptureForm from '@/components/LeadCaptureForm';
+     7→     7→import SiteNavigation from '@/components/layout/SiteNavigation';
+     8→     8→import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+     9→     9→import { MobileHomeNav } from '@/components/landing/MobileHomeNav';
+    10→    10→import { ScrollIndicator } from '@/components/ui/ScrollIndicator';
+    11→    11→import { brand } from '@/config/brand';
+    12→    12→import { Card3D } from '@/components/ui/Card3D';
+    13→    13→export default function PremiumIndex() {
+    14→    14→  const navigate = useNavigate();
+    15→    15→  const [showVideo, setShowVideo] = useState(false);
+    16→    16→  const [isSticky, setIsSticky] = useState(false);
+    17→    17→  const [estimatedBill, setEstimatedBill] = useState(200);
+    18→    18→  const heroRef = useRef(null);
+    19→    19→  const {
+    20→    20→    scrollYProgress
+    21→    21→  } = useScroll();
+    22→    22→  const opacity = useTransform(scrollYProgress, [0, 0.15, 0.25], [1, 1, 0]);
+    23→    23→  const scale = useTransform(scrollYProgress, [0, 0.2, 0.3], [1, 1, 0.9]);
+    24→    24→  useEffect(() => {
+    25→    25→    const handleScroll = () => {
+    26→    26→      setIsSticky(window.scrollY > 100);
+    27→    27→    };
+    28→    28→    window.addEventListener('scroll', handleScroll);
+    29→    29→    return () => window.removeEventListener('scroll', handleScroll);
+    30→    30→  }, []);
+    31→    31→  const annualSavings = Math.round(estimatedBill * 12 * 0.7);
+    32→    32→  return <>
+    33→    33→      <SEOHead title={brand.seo.title} description={brand.seo.description} keywords={brand.seo.keywords} />
+    34→    34→      
+    35→    35→      <div className="premium-sales-page">
+    36→    36→        {/* Site Navigation */}
+    37→    37→        <SiteNavigation />
+    38→    38→
+    39→    39→        {/* Sticky CTA Header */}
+    40→    40→        <AnimatePresence>
+    41→    41→          {isSticky && <motion.header initial={{
+    42→    42→          y: -100
+    43→    43→        }} animate={{
+    44→    44→          y: 0
+    45→    45→        }} exit={{
+    46→    46→          y: -100
+    47→    47→        }} className="sticky-cta-header">
+    48→    48→              <div className="sticky-content">
+    49→    49→                <div className="sticky-text">
+    50→    50→                  <Zap size={20} />
+    51→    51→                  <span>Get Your Instant Solar Proposal - Save Up To 70% On Electricity</span>
+    52→    52→                </div>
+    53→    53→                <div className="sticky-actions flex items-center gap-2">
+    54→    54→                  <div className="hidden md:block">
+    55→    55→                    <DarkModeToggle />
+    56→    56→                  </div>
+    57→    57→                  <button className="sticky-cta" onClick={() => navigate('/upload')}>
+    58→    58→                    Upload Bill Now <ArrowRight size={16} />
+    59→    59→                  </button>
+    60→    60→                  <button className="consultant-login-btn small" onClick={() => navigate('/auth')}>
+    61→    61→                    Consultant Login
+    62→    62→                  </button>
+    63→    63→                </div>
+    64→    64→              </div>
+    65→    65→            </motion.header>}
+    66→    66→        </AnimatePresence>
+    67→    67→
+    68→    68→        {/* Hero Section */}
+    69→    69→        <section ref={heroRef} className="hero-section">
+    70→    70→          <div className="hero-background">
+    71→    71→            <div className="hero-glow"></div>
+    72→    72→          </div>
+    73→    73→          
+    74→    74→          <motion.div className="hero-content" style={{
+    75→    75→          opacity,
+    76→    76→          scale
+    77→    77→        }}>
+    78→    78→            <div className="hero-badge">
+    79→    79→              <TrendingUp size={16} />
+    80→    80→              <span>Solar installer operating system — for crews, not consumers</span>
+    81→    81→            </div>
+    82→    82→
+    83→    83→            <h1 className="hero-title">
+    84→    84→              Run your solar business on
+    85→    85→              <span className="gradient-text"> autopilot</span>
+    86→    86→            </h1>
+    87→    87→            
+    88→    88→            <p className="hero-subtitle">
+    89→    89→              Bill extract at the front door. Autonomous agents handle survey scheduling,
+    90→    90→              proposal drafting, SEAI grant paperwork, install coordination, and customer follow-ups.
+    91→    91→              Your crews install. The platform does the rest.
+    92→    92→            </p>
+    93→    93→
+    94→    94→            <div className="hero-stats">
+    95→    95→              <div className="stat">
+    96→    96→                <div className="stat-number">10</div>
+    97→    97→                <div className="stat-label">Autonomous agents working 24/7</div>
+    98→    98→              </div>
+    99→    99→              <div className="stat">
+   100→   100→                <div className="stat-number">3 hrs</div>
+   101→   101→                <div className="stat-label">Saved per consultant per day</div>
+   102→   102→              </div>
+   103→   103→              <div className="stat">
+   104→   104→                <div className="stat-number">42%</div>
+   105→   105→                <div className="stat-label">Lift in survey→proposal conversion</div>
+   106→   106→              </div>
+   107→   107→            </div>
+   108→   108→
+   109→   109→            {/* Main CTA */}
+   110→   110→            <div className="hero-cta">
+   111→   111→              <button className="primary-cta" onClick={() => navigate('/installer')}>
+   112→   112→                <FileText size={20} />
+   113→   113→                Open installer cockpit
+   114→   114→                <ArrowRight size={16} />
+   115→   115→              </button>
+   116→   116→              
+   117→   117→              <button className="secondary-cta" onClick={() => navigate('/pipeline')}>
+   118→   118→                <Play size={16} />
+   119→   119→                See the live pipeline
+   120→   120→              </button>
+   121→   121→            </div>
+   122→   122→
+   123→   123→            {/* Trust Indicators */}
+   124→   124→            <div className="trust-pills">
+   125→   125→              <div className="trust-pill">
+   126→   126→                <Check size={14} />
+   127→   127→                SEAI grant auto-filed
+   128→   128→              </div>
+   129→   129→              <div className="trust-pill">
+   130→   130→                <Shield size={14} />
+   131→   131→                RECI sign-off built in
+   132→   132→              </div>
+   133→   133→              <div className="trust-pill">
+   134→   134→                <Calculator size={14} />
+   135→   135→                Bill extract → proposal in 30s
+   136→   136→              </div>
+   137→   137→            </div>
+   138→   138→          </motion.div>
+   139→   139→
+   140→   140→          {/* Hero Visual - Live Product Preview */}
+   141→   141→          <div className="hero-visual self-start mt-0 ml-6">
+   142→   142→            <div className="flex flex-col gap-5 w-full max-w-lg">
+   143→   143→              {/* Card 1: Project Snapshot */}
+   144→   144→              <motion.div initial={{
+   145→   145→              opacity: 0,
+   146→   146→              y: 20
+   147→   147→            }} animate={{
+   148→   148→              opacity: 1,
+   149→   149→              y: 0
+   150→   150→            }} transition={{
+   151→   151→              delay: 0.2,
+   152→   152→              duration: 0.5
+   153→   153→            }} whileHover={{
+   154→   154→              y: -4,
+   155→   155→              transition: {
+   156→   156→                duration: 0.2
+   157→   157→              }
+   158→   158→            }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
+   159→   159→                <div className="flex items-center justify-between mb-4">
+   160→   160→                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Project Snapshot</h3>
+   161→   161→                  <div className="flex items-center gap-1.5">
+   162→   162→                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+   163→   163→                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Active</span>
+   164→   164→                  </div>
+   165→   165→                </div>
+   166→   166→                <div className="space-y-3">
+   167→   167→                  <div className="flex justify-between items-center">
+   168→   168→                    <span className="text-xs text-slate-500 dark:text-slate-400">System Size</span>
+   169→   169→                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">6.4 kWp</span>
+   170→   170→                  </div>
+   171→   171→                  <div className="flex justify-between items-center">
+   172→   172→                    <span className="text-xs text-slate-500 dark:text-slate-400">Annual Production</span>
+   173→   173→                    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">5,890 kWh</span>
+   174→   174→                  </div>
+   175→   175→                  <div className="flex justify-between items-center">
+   176→   176→                    <span className="text-xs text-slate-500 dark:text-slate-400">SEAI Grant</span>
+   177→   177→                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">€1,800</span>
+   178→   178→                  </div>
+   179→   179→                </div>
+   180→   180→              </motion.div>
+   181→   181→
+   182→   182→              {/* Card 2: AI Insight (Emphasized) */}
+   183→   183→              <motion.div initial={{
+   184→   184→              opacity: 0,
+   185→   185→              y: 20
+   186→   186→            }} animate={{
+   187→   187→              opacity: 1,
+   188→   188→              y: 0
+   189→   189→            }} transition={{
+   190→   190→              delay: 0.4,
+   191→   191→              duration: 0.5
+   192→   192→            }} whileHover={{
+   193→   193→              y: -4,
+   194→   194→              transition: {
+   195→   195→                duration: 0.2
+   196→   196→              }
+   197→   197→            }} className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-2xl p-6 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 cursor-pointer hover:shadow-xl hover:shadow-emerald-300/60 dark:hover:shadow-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-600/50 transition-all duration-300 hover:ring-2 hover:ring-emerald-400/30 dark:hover:ring-emerald-500/20">
+   198→   198→                <div className="flex items-center gap-2 mb-3">
+   199→   199→                  <div className="p-1.5 bg-emerald-500 rounded-lg">
+   200→   200→                    <Sparkles size={14} className="text-white" />
+   201→   201→                  </div>
+   202→   202→                  <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">AI Analysis</h3>
+   203→   203→                  <motion.div className="ml-auto px-2 py-0.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full ring-1 ring-emerald-400/30 dark:ring-emerald-500/30" animate={{
+   204→   204→                  boxShadow: ['0 0 0 0 rgba(16, 185, 129, 0)', '0 0 8px 2px rgba(16, 185, 129, 0.3)', '0 0 0 0 rgba(16, 185, 129, 0)']
+   205→   205→                }} transition={{
+   206→   206→                  duration: 2,
+   207→   207→                  repeat: Infinity,
+   208→   208→                  ease: 'easeInOut'
+   209→   209→                }}>
+   210→   210→                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">94% confidence</span>
+   211→   211→                  </motion.div>
+   212→   212→                </div>
+   213→   213→                <p className="text-sm text-emerald-900/80 dark:text-emerald-100/80 leading-relaxed">
+   214→   214→                  Based on your electricity usage of 4,200 kWh annually, a south-facing roof orientation provides optimal solar generation. Estimated payback period is 7.2 years with current energy prices.
+   215→   215→                </p>
+   216→   216→              </motion.div>
+   217→   217→
+   218→   218→              {/* Card 3: Next Actions */}
+   219→   219→              <motion.div initial={{
+   220→   220→              opacity: 0,
+   221→   221→              y: 20
+   222→   222→            }} animate={{
+   223→   223→              opacity: 1,
+   224→   224→              y: 0
+   225→   225→            }} transition={{
+   226→   226→              delay: 0.6,
+   227→   227→              duration: 0.5
+   228→   228→            }} whileHover={{
+   229→   229→              y: -4,
+   230→   230→              transition: {
+   231→   231→                duration: 0.2
+   232→   232→              }
+   233→   233→            }} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-xl hover:shadow-slate-300/50 dark:hover:shadow-slate-800/50 transition-shadow duration-200">
+   234→   234→                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Next Steps</h3>
+   235→   235→                <div className="space-y-3">
+   236→   236→                  {[{
+   237→   237→                  text: 'Upload electricity bill',
+   238→   238→                  completed: true,
+   239→   239→                  delay: 0.8
+   240→   240→                }, {
+   241→   241→                  text: 'AI analysis complete',
+   242→   242→                  completed: true,
+   243→   243→                  delay: 1.0
+   244→   244→                }, {
+   245→   245→                  text: 'Review savings proposal',
+   246→   246→                  completed: false,
+   247→   247→                  current: true,
+   248→   248→                  delay: 1.2
+   249→   249→                }, {
+   250→   250→                  text: 'Schedule site survey',
+   251→   251→                  completed: false,
+   252→   252→                  delay: 1.4
+   253→   253→                }].map((item, index) => <motion.div key={index} initial={{
+   254→   254→                  opacity: 0,
+   255→   255→                  x: -10
+   256→   256→                }} animate={{
+   257→   257→                  opacity: 1,
+   258→   258→                  x: 0
+   259→   259→                }} transition={{
+   260→   260→                  delay: item.delay,
+   261→   261→                  duration: 0.3
+   262→   262→                }} className="flex items-center gap-3">
+   263→   263→                      <motion.div initial={item.completed ? {
+   264→   264→                    scale: 0
+   265→   265→                  } : {}} animate={item.completed ? {
+   266→   266→                    scale: 1
+   267→   267→                  } : {}} transition={{
+   268→   268→                    delay: item.delay + 0.15,
+   269→   269→                    duration: 0.2,
+   270→   270→                    type: 'spring'
+   271→   271→                  }} className={`w-5 h-5 rounded-full flex items-center justify-center ${item.completed ? 'bg-emerald-100 dark:bg-emerald-900/50' : item.current ? 'border-2 border-emerald-500' : 'border-2 border-slate-200 dark:border-slate-700'}`}>
+   272→   272→                        {item.completed && <motion.div initial={{
+   273→   273→                      scale: 0
+   274→   274→                    }} animate={{
+   275→   275→                      scale: 1
+   276→   276→                    }} transition={{
+   277→   277→                      delay: item.delay + 0.2,
+   278→   278→                      duration: 0.2
+   279→   279→                    }}>
+   280→   280→                            <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+   281→   281→                          </motion.div>}
+   282→   282→                        {item.current && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+   283→   283→                      </motion.div>
+   284→   284→                      <span className={`text-sm ${item.completed ? 'text-slate-500 dark:text-slate-400 line-through' : item.current ? 'text-slate-800 dark:text-slate-100 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
+   285→   285→                        {item.text}
+   286→   286→                      </span>
+   287→   287→                    </motion.div>)}
+   288→   288→                </div>
+   289→   289→              </motion.div>
+   290→   290→
+   291→   291→              {/* Trust element under cards */}
+   292→   292→              <motion.div initial={{
+   293→   293→              opacity: 0,
+   294→   294→              y: 20
+   295→   295→            }} animate={{
+   296→   296→              opacity: 1,
+   297→   297→              y: 0
+   298→   298→            }} transition={{
+   299→   299→              delay: 1.6,
+   300→   300→              duration: 0.5
+   301→   301→            }} className="flex items-center gap-3 p-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+   302→   302→                <div className="flex -space-x-2">
+   303→   303→                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">SM</div>
+   304→   304→                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">JO</div>
+   305→   305→                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-xs font-semibold text-white shadow-md ring-2 ring-white dark:ring-slate-900">KF</div>
+   306→   306→                </div>
+   307→   307→                <div>
+   308→   308→                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+   309→   309→                    500+ Irish homes
+   310→   310→                  </div>
+   311→   311→                  <div className="text-xs text-slate-500 dark:text-slate-400">
+   312→   312→                    switched to solar this year
+   313→   313→                  </div>
+   314→   314→                </div>
+   315→   315→              </motion.div>
+   316→   316→            </div>
+   317→   317→          </div>
+   318→   318→        </section>
+   319→   319→
+   320→   320→        {/* Video Modal */}
+   321→   321→        <AnimatePresence>
+   322→   322→          {showVideo && <motion.div initial={{
+   323→   323→          opacity: 0
+   324→   324→        }} animate={{
+   325→   325→          opacity: 1
+   326→   326→        }} exit={{
+   327→   327→          opacity: 0
+   328→   328→        }} className="video-modal" onClick={() => setShowVideo(false)}>
+   329→   329→              <motion.div initial={{
+   330→   330→            scale: 0.8,
+   331→   331→            opacity: 0
+   332→   332→          }} animate={{
+   333→   333→            scale: 1,
+   334→   334→            opacity: 1
+   335→   335→          }} className="modal-content" onClick={e => e.stopPropagation()}>
+   336→   336→                <button className="close-button" onClick={() => setShowVideo(false)}>
+   337→   337→                  ×
+   338→   338→                </button>
+   339→   339→                <div className="video-container">
+   340→   340→                  <div className="video-placeholder">
+   341→   341→                    <Play size={48} />
+   342→   342→                    <p>How It Works Video</p>
+   343→   343→                  </div>
+   344→   344→                </div>
+   345→   345→              </motion.div>
+   346→   346→            </motion.div>}
+   347→   347→        </AnimatePresence>
+   348→   348→
+   349→   349→        <SocialProofSection />
+   350→   350→        <HowItWorksSection />
+   351→   351→        <LeadCaptureSection />
+   352→   352→        <SavingsCalculatorSection estimatedBill={estimatedBill} setEstimatedBill={setEstimatedBill} annualSavings={annualSavings} />
+   353→   353→        
+   354→   354→        {/* Mobile Bottom Navigation */}
+   355→   355→        <MobileHomeNav />
+   356→   356→        <FinalCTASection navigate={navigate} />
+   357→   357→      </div>
+   358→   358→    </>;
+   359→   359→}
+   360→   360→function SocialProofSection() {
+   361→   361→  const scrollContainerRef = useRef<HTMLDivElement>(null);
+   362→   362→  const testimonials = [{
+   363→   363→    name: "Sarah Murphy",
+   364→   364→    location: "Dublin",
+   365→   365→    systemInfo: "System installed · 4.2 kW · SEAI grant applied",
+   366→   366→    savings: "€1,450",
+   367→   367→    rating: 5,
+   368→   368→    text: "The AI proposal matched our actual bills almost exactly. We're saving about €1,450 a year, and the installation just… happened.",
+   369→   369→    initials: "SM",
+   370→   370→    gradient: "from-emerald-400 to-teal-500"
+   371→   371→  }, {
+   372→   372→    name: "John O'Brien",
+   373→   373→    location: "Cork",
+   374→   374→    systemInfo: "Bill uploaded → proposal → install in 21 days",
+   375→   375→    savings: "€1,280",
+   376→   376→    rating: 5,
+   377→   377→    text: "I uploaded my bill at 8 PM and had a clear proposal by the next morning. No back-and-forth. No pressure.",
+   378→   378→    initials: "JO",
+   379→   379→    gradient: "from-blue-400 to-indigo-500"
+   380→   380→  }, {
+   381→   381→    name: "The Kelly Family",
+   382→   382→    location: "Galway",
+   383→   383→    systemInfo: "SEAI paperwork handled in full",
+   384→   384→    savings: "€1,650",
+   385→   385→    rating: 5,
+   386→   386→    text: "The SEAI grant was handled for us from start to finish. Between that and solar, our electricity costs are close to zero.",
+   387→   387→    initials: "KF",
+   388→   388→    gradient: "from-purple-400 to-pink-500"
+   389→   389→  }];
+   390→   390→  return <section className="social-proof-section">
+   391→   391→      <div className="container">
+   392→   392→        <motion.div initial={{
+   393→   393→        opacity: 0,
+   394→   394→        y: 50
+   395→   395→      }} whileInView={{
+   396→   396→        opacity: 1,
+   397→   397→        y: 0
+   398→   398→      }} viewport={{
+   399→   399→        once: true
+   400→   400→      }} className="section-header">
+   401→   401→          <h2>Trusted by Hundreds of Irish Homeowners — With Verified Savings</h2>
+   402→   402→          <p>Real customers. Real bills. Real installations — from upload to switch-on.</p>
+   403→   403→        </motion.div>
+   404→   404→
+   405→   405→        <div ref={scrollContainerRef} className="testimonials-grid">
+   406→   406→          {testimonials.map((testimonial, index) => <motion.div key={index} initial={{
+   407→   407→          opacity: 0,
+   408→   408→          y: 30
+   409→   409→        }} whileInView={{
+   410→   410→          opacity: 1,
+   411→   411→          y: 0
+   412→   412→        }} viewport={{
+   413→   413→          once: true
+   414→   414→        }} transition={{
+   415→   415→          delay: index * 0.1
+   416→   416→        }} className="testimonial-card">
+   417→   417→              <div className="testimonial-header">
+   418→   418→                <div className={`customer-avatar bg-gradient-to-br ${testimonial.gradient} text-white font-semibold text-lg shadow-lg`}>
+   419→   419→                  {testimonial.initials}
+   420→   420→                </div>
+   421→   421→                <div className="customer-info">
+   422→   422→                  <div className="customer-name">{testimonial.name}</div>
+   423→   423→                  <div className="customer-location">{testimonial.location}</div>
+   424→   424→                </div>
+   425→   425→              </div>
+   426→   426→
+   427→   427→              <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+   428→   428→                {testimonial.systemInfo}
+   429→   429→              </div>
+   430→   430→
+   431→   431→              <div className="testimonial-rating">
+   432→   432→                {[...Array(testimonial.rating)].map((_, i) => <motion.div key={i} initial={{
+   433→   433→              opacity: 0,
+   434→   434→              scale: 0
+   435→   435→            }} whileInView={{
+   436→   436→              opacity: 1,
+   437→   437→              scale: 1
+   438→   438→            }} viewport={{
+   439→   439→              once: true
+   440→   440→            }} transition={{
+   441→   441→              delay: index * 0.1 + 0.3 + i * 0.1,
+   442→   442→              duration: 0.2,
+   443→   443→              type: 'spring',
+   444→   444→              stiffness: 500
+   445→   445→            }}>
+   446→   446→                    <Star size={16} fill="currentColor" />
+   447→   447→                  </motion.div>)}
+   448→   448→              </div>
+   449→   449→
+   450→   450→              <div className="testimonial-text">
+   451→   451→                <Quote size={20} className="quote-icon" />
+   452→   452→                {testimonial.text}
+   453→   453→              </div>
+   454→   454→
+   455→   455→              <div className="mt-4 flex items-center gap-2">
+   456→   456→                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+   457→   457→                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+   458→   458→                  Estimated savings · {testimonial.savings}/year
+   459→   459→                </span>
+   460→   460→              </div>
+   461→   461→            </motion.div>)}
+   462→   462→        </div>
+   463→   463→        
+   464→   464→        {/* Scroll Indicator */}
+   465→   465→        <div className="md:hidden">
+   466→   466→          <ScrollIndicator containerRef={scrollContainerRef as React.RefObject<HTMLElement>} itemCount={testimonials.length} />
+   467→   467→        </div>
+   468→   468→
+   469→   469→        {/* Trust Line */}
+   470→   470→        <motion.p initial={{
+   471→   471→        opacity: 0
+   472→   472→      }} whileInView={{
+   473→   473→        opacity: 1
+   474→   474→      }} viewport={{
+   475→   475→        once: true
+   476→   476→      }} className="text-center text-xs text-slate-500 dark:text-slate-400 mt-6 max-w-2xl mx-auto">
+   477→   477→          Savings estimates are based on historical utility bills, system size, and current tariffs. Individual results may vary.
+   478→   478→        </motion.p>
+   479→   479→
+   480→   480→        {/* Soft CTA */}
+   481→   481→        <motion.div initial={{
+   482→   482→        opacity: 0,
+   483→   483→        y: 10
+   484→   484→      }} whileInView={{
+   485→   485→        opacity: 1,
+   486→   486→        y: 0
+   487→   487→      }} viewport={{
+   488→   488→        once: true
+   489→   489→      }} className="text-center mt-6">
+   490→   490→          <a href="/upload" className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+   491→   491→            See what your bill could look like
+   492→   492→            <ArrowRight size={16} />
+   493→   493→          </a>
+   494→   494→          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+   495→   495→            Most customers upload their bill in under 2 minutes.
+   496→   496→          </p>
+   497→   497→        </motion.div>
+   498→   498→
+   499→   499→        <div className="trust-logos">
+   500→   500→          <div className="certification-badge">
+   501→   501→            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+   502→   502→            <span>SEAI Registered</span>
+   503→   503→          </div>
+   504→   504→          <div className="certification-badge">
+   505→   505→            <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+   506→   506→            <span>RECI Certified</span>
+   507→   507→          </div>
+   508→   508→          <div className="certification-badge">
+   509→   509→            <Euro className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+   510→   510→            <span>€1,800 Grant</span>
+   511→   511→          </div>
+   512→   512→          <div className="certification-badge">
+   513→   513→            <Star className="w-5 h-5 text-yellow-500" fill="currentColor" />
+   514→   514→            <span>4.9★ Rating</span>
+   515→   515→          </div>
+   516→   516→        </div>
+   517→   517→      </div>
+   518→   518→    </section>;
+   519→   519→}
+   520→   520→function HowItWorksSection() {
+   521→   521→  const scrollContainerRef = useRef<HTMLDivElement>(null);
+   522→   522→  const steps = [{
+   523→   523→    icon: Upload,
+   524→   524→    title: "Upload Your Bill",
+   525→   525→    description: "Simply upload your latest electricity bill - PDF, image, or screenshot",
+   526→   526→    color: "#10b981"
+   527→   527→  }, {
+   528→   528→    icon: Sparkles,
+   529→   529→    title: "AI Analysis",
+   530→   530→    description: "Our AI analyzes your consumption patterns and calculates optimal solar system size",
+   531→   531→    color: "#6366f1"
+   532→   532→  }, {
+   533→   533→    icon: FileText,
+   534→   534→    title: "Get Your Proposal",
+   535→   535→    description: "Receive a detailed proposal with savings breakdown, system specs, and SEAI grant info",
+   536→   536→    color: "#f59e0b"
+   537→   537→  }, {
+   538→   538→    icon: Calendar,
+   539→   539→    title: "Book Consultation",
+   540→   540→    description: "Schedule a free consultation with our certified solar experts",
+   541→   541→    color: "#ec4899"
+   542→   542→  }];
+   543→   543→  return <section className="how-it-works-section">
+   544→   544→      <div className="container">
+   545→   545→        <motion.div initial={{
+   546→   546→        opacity: 0,
+   547→   547→        y: 50
+   548→   548→      }} whileInView={{
+   549→   549→        opacity: 1,
+   550→   550→        y: 0
+   551→   551→      }} viewport={{
+   552→   552→        once: true
+   553→   553→      }} className="section-header">
+   554→   554→          <h2>Get Your Solar Proposal in 4 Simple Steps</h2>
+   555→   555→          <p>From upload to installation - we make going solar effortless</p>
+   556→   556→        </motion.div>
+   557→   557→
+   558→   558→        <div ref={scrollContainerRef} className="steps-grid">
+   559→   559→          {steps.map((step, index) => <motion.div key={index} initial={{
+   560→   560→          opacity: 0,
+   561→   561→          x: -30
+   562→   562→        }} whileInView={{
+   563→   563→          opacity: 1,
+   564→   564→          x: 0
+   565→   565→        }} viewport={{
+   566→   566→          once: true
+   567→   567→        }} transition={{
+   568→   568→          delay: index * 0.15
+   569→   569→        }} className="step-card">
+   570→   570→              <div className="step-number">{index + 1}</div>
+   571→   571→              <div className="step-icon" style={{
+   572→   572→            color: step.color
+   573→   573→          }}>
+   574→   574→                <step.icon size={32} />
+   575→   575→              </div>
+   576→   576→              <h3>{step.title}</h3>
+   577→   577→              <p>{step.description}</p>
+   578→   578→            </motion.div>)}
+   579→   579→        </div>
+   580→   580→        
+   581→   581→        {/* Scroll Indicator */}
+   582→   582→        <div className="md:hidden">
+   583→   583→          <ScrollIndicator containerRef={scrollContainerRef as React.RefObject<HTMLElement>} itemCount={steps.length} />
+   584→   584→        </div>
+   585→   585→      </div>
+   586→   586→    </section>;
+   587→   587→}
+   588→   588→function LeadCaptureSection() {
+   589→   589→  return <section className="savings-calculator-section">
+   590→   590→      <div className="container">
+   591→   591→        <motion.div initial={{
+   592→   592→        opacity: 0,
+   593→   593→        y: 50
+   594→   594→      }} whileInView={{
+   595→   595→        opacity: 1,
+   596→   596→        y: 0
+   597→   597→      }} viewport={{
+   598→   598→        once: true
+   599→   599→      }} className="section-header">
+   600→   600→          <h2>Start Your Solar Journey Today</h2>
+   601→   601→          <p>Fill out the form below and we'll contact you with a personalized solar proposal</p>
+   602→   602→        </motion.div>
+   603→   603→
+   604→   604→        <div className="max-w-2xl mx-auto">
+   605→   605→          <LeadCaptureForm />
+   606→   606→        </div>
+   607→   607→      </div>
+   608→   608→    </section>;
+   609→   609→}
+   610→   610→// Simple Counter Component - displays value directly
+   611→   611→function AnimatedCounter({ 
+   612→   612→  value, 
+   613→   613→  prefix = '', 
+   614→   614→  suffix = '',
+   615→   615→}: { 
+   616→   616→  value: number; 
+   617→   617→  prefix?: string; 
+   618→   618→  suffix?: string;
+   619→   619→  isInView?: boolean;
+   620→   620→}) {
+   621→   621→  return (
+   622→   622→    <span className="tabular-nums">
+   623→   623→      {prefix}{value.toLocaleString()}{suffix}
+   624→   624→    </span>
+   625→   625→  );
+   626→   626→}
+   627→   627→
+   628→   628→function SavingsCalculatorSection({
+   629→   629→  estimatedBill,
+   630→   630→  setEstimatedBill,
+   631→   631→  annualSavings
+   632→   632→}: {
+   633→   633→  estimatedBill: number;
+   634→   634→  setEstimatedBill: (value: number) => void;
+   635→   635→  annualSavings: number;
+   636→   636→}) {
+   637→   637→  const sectionRef = useRef(null);
+   638→   638→  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+   639→   639→  
+   640→   640→
+   641→   641→  // Calculate additional metrics
+   642→   642→  const twentyFiveYearSavings = annualSavings * 25;
+   643→   643→  
+   644→   644→  return (
+   645→   645→    <section className="savings-calculator-section" ref={sectionRef}>
+   646→   646→      <div className="container">
+   647→   647→        <motion.div 
+   648→   648→          initial={{ opacity: 0, y: 50 }} 
+   649→   649→          whileInView={{ opacity: 1, y: 0 }} 
+   650→   650→          viewport={{ once: true }} 
+   651→   651→          className="section-header"
+   652→   652→        >
+   653→   653→          <h2>Calculate Your Potential Savings</h2>
+   654→   654→          <p>Drag the slider to see your personalized solar savings</p>
+   655→   655→        </motion.div>
+   656→   656→
+   657→   657→        <motion.div 
+   658→   658→          className="calculator-card enhanced"
+   659→   659→          initial={{ opacity: 0, scale: 0.95 }}
+   660→   660→          whileInView={{ opacity: 1, scale: 1 }}
+   661→   661→          viewport={{ once: true }}
+   662→   662→          transition={{ delay: 0.2 }}
+   663→   663→        >
+   664→   664→          {/* Interactive Slider Section */}
+   665→   665→          <div className="calculator-input minimal">
+   666→   666→            <label>
+   667→   667→              <Euro size={20} />
+   668→   668→              Monthly Electricity Bill
+   669→   669→            </label>
+   670→   670→            <div className="slider-container minimal">
+   671→   671→              {/* Value bubble - accurately positioned above thumb */}
+   672→   672→              <div 
+   673→   673→                className="slider-value-bubble"
+   674→   674→                style={{ left: `calc(${((estimatedBill - 50) / 450) * 100}% * 0.92 + 4%)` }}
+   675→   675→              >
+   676→   676→                €{estimatedBill}
+   677→   677→              </div>
+   678→   678→              
+   679→   679→              <input 
+   680→   680→                type="range" 
+   681→   681→                min="50" 
+   682→   682→                max="500" 
+   683→   683→                step="10"
+   684→   684→                value={estimatedBill} 
+   685→   685→                onChange={e => setEstimatedBill(Number(e.target.value))} 
+   686→   686→                className="minimal-slider" 
+   687→   687→              />
+   688→   688→              
+   689→   689→              <div className="slider-range-labels">
+   690→   690→                <span>€50</span>
+   691→   691→                <span>€500</span>
+   692→   692→              </div>
+   693→   693→            </div>
+   694→   694→          </div>
+   695→   695→
+   696→   696→          {/* Results Grid - 3 cards side by side */}
+   697→   697→          <div className="calculator-results-row">
+   698→   698→            <Card3D className="result-card-3d" intensity={8}>
+   699→   699→              <div className="result-card glass">
+   700→   700→                <div className="result-icon-mini">
+   701→   701→                  <TrendingUp size={20} />
+   702→   702→                </div>
+   703→   703→                <div className="result-label">Annual Savings</div>
+   704→   704→                <div className="result-value">
+   705→   705→                  €<AnimatedCounter value={annualSavings} isInView={isInView} />
+   706→   706→                </div>
+   707→   707→              </div>
+   708→   708→            </Card3D>
+   709→   709→
+   710→   710→            <Card3D className="result-card-3d" intensity={8}>
+   711→   711→              <div className="result-card glass">
+   712→   712→                <div className="result-icon-mini">
+   713→   713→                  <Calculator size={20} />
+   714→   714→                </div>
+   715→   715→                <div className="result-label">25-Year Savings</div>
+   716→   716→                <div className="result-value">
+   717→   717→                  €<AnimatedCounter value={twentyFiveYearSavings} isInView={isInView} />
+   718→   718→                </div>
+   719→   719→              </div>
+   720→   720→            </Card3D>
+   721→   721→
+   722→   722→            <Card3D className="result-card-3d" intensity={8}>
+   723→   723→              <div className="result-card glass">
+   724→   724→                <div className="result-icon-mini">
+   725→   725→                  <Clock size={20} />
+   726→   726→                </div>
+   727→   727→                <div className="result-label">Payback Period</div>
+   728→   728→                <div className="result-value">5-7 years</div>
+   729→   729→              </div>
+   730→   730→            </Card3D>
+   731→   731→          </div>
+   732→   732→        </motion.div>
+   733→   733→      </div>
+   734→   734→    </section>
+   735→   735→  );
+   736→   736→}
+   737→   737→function FinalCTASection({
+   738→   738→  navigate
+   739→   739→}: {
+   740→   740→  navigate: (path: string) => void;
+   741→   741→}) {
+   742→   742→  return <section className="final-cta-section">
+   743→   743→      <div className="container">
+   744→   744→        <motion.div initial={{
+   745→   745→        opacity: 0,
+   746→   746→        scale: 0.9
+   747→   747→      }} whileInView={{
+   748→   748→        opacity: 1,
+   749→   749→        scale: 1
+   750→   750→      }} viewport={{
+   751→   751→        once: true
+   752→   752→      }} className="cta-card">
+   753→   753→          <div className="cta-content">
+   754→   754→            <h2>Ready to Start Saving on Your Electricity Bills?</h2>
+   755→   755→            <p>Upload your bill now and get your free solar proposal in 30 seconds</p>
+   756→   756→            
+   757→   757→            <div className="cta-buttons">
+   758→   758→              <button className="primary-cta" onClick={() => navigate('/upload')}>
+   759→   759→                <Upload size={20} />
+   760→   760→                Upload Your Bill Now
+   761→   761→                <ArrowRight size={16} />
+   762→   762→              </button>
+   763→   763→              <button className="secondary-cta">
+   764→   764→                <MessageCircle size={16} />
+   765→   765→                Chat with an Expert
+   766→   766→              </button>
+   767→   767→            </div>
+   768→   768→
+   769→   769→            <div className="cta-benefits">
+   770→   770→              <div className="benefit">
+   771→   771→                <Check size={16} />
+   772→   772→                <span>100% Free Analysis</span>
+   773→   773→              </div>
+   774→   774→              <div className="benefit">
+   775→   775→                <Check size={16} />
+   776→   776→                <span>No Sales Pressure</span>
+   777→   777→              </div>
+   778→   778→              <div className="benefit">
+   779→   779→                <Check size={16} />
+   780→   780→                <span>SEAI Grant Support</span>
+   781→   781→              </div>
+   782→   782→            </div>
+   783→   783→          </div>
+   784→   784→        </motion.div>
+   785→   785→      </div>
+   786→   786→    </section>;
+   787→   787→}

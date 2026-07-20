@@ -1,0 +1,1813 @@
+     1→@tailwind base;
+     2→@tailwind components;
+     3→@tailwind utilities;
+     4→
+     5→/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+     6→All colors MUST be HSL.
+     7→*/
+     8→
+     9→@layer base {
+    10→  :root {
+    11→    --background: 210 20% 98%;
+    12→    --foreground: 222.2 84% 4.9%;
+    13→
+    14→    --card: 0 0% 100%;
+    15→    --card-foreground: 222.2 84% 4.9%;
+    16→
+    17→    --popover: 0 0% 100%;
+    18→    --popover-foreground: 222.2 84% 4.9%;
+    19→
+    20→    --primary: 142 71% 45%;
+    21→    --primary-foreground: 210 40% 98%;
+    22→
+    23→    --secondary: 210 40% 96.1%;
+    24→    --secondary-foreground: 222.2 47.4% 11.2%;
+    25→
+    26→    --muted: 210 40% 96.1%;
+    27→    --muted-foreground: 215.4 16.3% 46.9%;
+    28→
+    29→    --accent: 142 76% 36%;
+    30→    --accent-foreground: 210 40% 98%;
+    31→
+    32→    --destructive: 0 84.2% 60.2%;
+    33→    --destructive-foreground: 210 40% 98%;
+    34→
+    35→    --border: 214.3 31.8% 91.4%;
+    36→    --input: 214.3 31.8% 91.4%;
+    37→    --ring: 142 71% 45%;
+    38→
+    39→    --radius: 1rem;
+    40→
+    41→    --sidebar-background: 0 0% 98%;
+    42→    --sidebar-foreground: 240 5.3% 26.1%;
+    43→    --sidebar-primary: 240 5.9% 10%;
+    44→    --sidebar-primary-foreground: 0 0% 98%;
+    45→    --sidebar-accent: 240 4.8% 95.9%;
+    46→    --sidebar-accent-foreground: 240 5.9% 10%;
+    47→    --sidebar-border: 220 13% 91%;
+    48→    --sidebar-ring: 217.2 91.2% 59.8%;
+    49→
+    50→    /* Premium Design Tokens */
+    51→    --primary-50: 152 81% 96%;
+    52→    --primary-100: 149 80% 90%;
+    53→    --primary-500: 142 71% 45%;
+    54→    --primary-600: 142 76% 36%;
+    55→    --primary-700: 142 72% 29%;
+    56→
+    57→    --slate-50: 210 40% 98%;
+    58→    --slate-100: 210 40% 96.1%;
+    59→    --slate-200: 214.3 31.8% 91.4%;
+    60→    --slate-300: 212.7 26.8% 83.9%;
+    61→    --slate-400: 215 20.2% 65.1%;
+    62→    --slate-500: 215.4 16.3% 46.9%;
+    63→    --slate-600: 215.3 19.3% 34.5%;
+    64→    --slate-700: 215.3 25% 26.7%;
+    65→    --slate-800: 217.2 32.6% 17.5%;
+    66→    --slate-900: 222.2 47.4% 11.2%;
+    67→
+    68→    /* Shadows */
+    69→    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    70→    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    71→    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    72→    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    73→
+    74→    /* Transitions */
+    75→    --transition-spring: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    76→    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    77→  }
+    78→
+    79→  .dark {
+    80→    --background: 222.2 84% 4.9%;
+    81→    --foreground: 210 40% 98%;
+    82→
+    83→    --card: 222.2 84% 4.9%;
+    84→    --card-foreground: 210 40% 98%;
+    85→
+    86→    --popover: 222.2 84% 4.9%;
+    87→    --popover-foreground: 210 40% 98%;
+    88→
+    89→    --primary: 142 71% 45%;
+    90→    --primary-foreground: 210 40% 98%;
+    91→
+    92→    --secondary: 217.2 32.6% 17.5%;
+    93→    --secondary-foreground: 210 40% 98%;
+    94→
+    95→    --muted: 217.2 32.6% 17.5%;
+    96→    --muted-foreground: 215 20.2% 65.1%;
+    97→
+    98→    --accent: 142 76% 36%;
+    99→    --accent-foreground: 210 40% 98%;
+   100→
+   101→    --destructive: 0 62.8% 30.6%;
+   102→    --destructive-foreground: 210 40% 98%;
+   103→
+   104→    --border: 217.2 32.6% 17.5%;
+   105→    --input: 217.2 32.6% 17.5%;
+   106→    --ring: 142 71% 45%;
+   107→    
+   108→    --sidebar-background: 240 5.9% 10%;
+   109→    --sidebar-foreground: 240 4.8% 95.9%;
+   110→    --sidebar-primary: 142 71% 45%;
+   111→    --sidebar-primary-foreground: 0 0% 100%;
+   112→    --sidebar-accent: 240 3.7% 15.9%;
+   113→    --sidebar-accent-foreground: 240 4.8% 95.9%;
+   114→    --sidebar-border: 240 3.7% 15.9%;
+   115→    --sidebar-ring: 142 71% 45%;
+   116→  }
+   117→}
+   118→
+   119→@layer base {
+   120→  * {
+   121→    @apply border-border;
+   122→  }
+   123→
+   124→  body {
+   125→    @apply bg-background text-foreground;
+   126→    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+   127→  }
+   128→
+   129→  h1, h2, h3, h4, h5, h6 {
+   130→    font-weight: 600;
+   131→  }
+   132→}
+   133→
+   134→@layer utilities {
+   135→  .transition-spring {
+   136→    transition-timing-function: var(--transition-spring);
+   137→  }
+   138→
+   139→  .transition-smooth {
+   140→    transition-timing-function: var(--transition-smooth);
+   141→  }
+   142→
+   143→  .shadow-premium {
+   144→    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+   145→  }
+   146→
+   147→  .gradient-primary {
+   148→    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+   149→  }
+   150→
+   151→  .gradient-background {
+   152→    background: linear-gradient(135deg, hsl(var(--slate-50)), hsl(var(--slate-100)));
+   153→  }
+   154→
+   155→  .dark .gradient-background {
+   156→    background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--secondary)));
+   157→  }
+   158→
+   159→  /* Mobile safe area utilities */
+   160→  .safe-area-bottom {
+   161→    padding-bottom: env(safe-area-inset-bottom, 0px);
+   162→  }
+   163→
+   164→  .safe-area-inset-top {
+   165→    padding-top: env(safe-area-inset-top, 0px);
+   166→  }
+   167→
+   168→  .pt-safe {
+   169→    padding-top: env(safe-area-inset-top, 0px);
+   170→  }
+   171→
+   172→  .pb-safe {
+   173→    padding-bottom: env(safe-area-inset-bottom, 0px);
+   174→  }
+   175→
+   176→  /* Dynamic viewport height for mobile */
+   177→  .min-h-dvh {
+   178→    min-height: 100dvh;
+   179→  }
+   180→
+   181→  .h-dvh {
+   182→    height: 100dvh;
+   183→  }
+   184→
+   185→  /* Hide scrollbar but keep functionality */
+   186→  .scrollbar-hide {
+   187→    -ms-overflow-style: none;
+   188→    scrollbar-width: none;
+   189→  }
+   190→  .scrollbar-hide::-webkit-scrollbar {
+   191→    display: none;
+   192→  }
+   193→
+   194→  /* Touch-friendly targets */
+   195→  .touch-target {
+   196→    min-height: 44px;
+   197→    min-width: 44px;
+   198→  }
+   199→
+   200→  .touch-manipulation {
+   201→    touch-action: manipulation;
+   202→  }
+   203→
+   204→  /* Mobile input sizing to prevent zoom */
+   205→  @media (max-width: 768px) {
+   206→    input, select, textarea {
+   207→      font-size: 16px !important;
+   208→    }
+   209→  }
+   210→
+   211→  /* XS breakpoint helper */
+   212→  @media (min-width: 400px) {
+   213→    .xs\:inline {
+   214→      display: inline;
+   215→    }
+   216→    .xs\:hidden {
+   217→      display: none;
+   218→    }
+   219→  }
+   220→}
+   221→
+   222→/* Shimmer animation for skeletons */
+   223→@keyframes shimmer {
+   224→  100% {
+   225→    transform: translateX(100%);
+   226→  }
+   227→}
+   228→
+   229→/* Premium Sales Page Styles */
+   230→.premium-sales-page {
+   231→  overflow-x: hidden;
+   232→  background: hsl(var(--background));
+   233→}
+   234→
+   235→/* Top Navigation */
+   236→.top-nav {
+   237→  position: fixed;
+   238→  top: 0;
+   239→  left: 0;
+   240→  right: 0;
+   241→  background: hsl(var(--background) / 0.95);
+   242→  backdrop-filter: blur(10px);
+   243→  border-bottom: 1px solid hsl(var(--border));
+   244→  z-index: 999;
+   245→  padding: 1rem 0;
+   246→}
+   247→
+   248→.dark .top-nav {
+   249→  background: hsl(var(--background) / 0.95);
+   250→}
+   251→
+   252→.nav-content {
+   253→  max-width: 1400px;
+   254→  margin: 0 auto;
+   255→  padding: 0 2rem;
+   256→  display: flex;
+   257→  align-items: center;
+   258→  justify-content: space-between;
+   259→}
+   260→
+   261→.nav-logo {
+   262→  display: flex;
+   263→  align-items: center;
+   264→  gap: 0.5rem;
+   265→  font-size: 1.25rem;
+   266→  font-weight: 700;
+   267→  color: hsl(var(--primary));
+   268→}
+   269→
+   270→.consultant-login-btn {
+   271→  background: transparent;
+   272→  color: hsl(var(--muted-foreground));
+   273→  border: 1px solid hsl(var(--border));
+   274→  padding: 0.625rem 1.5rem;
+   275→  border-radius: 8px;
+   276→  font-weight: 500;
+   277→  cursor: pointer;
+   278→  transition: all 0.2s ease;
+   279→}
+   280→
+   281→.consultant-login-btn:hover {
+   282→  background: hsl(var(--accent));
+   283→  border-color: hsl(var(--primary));
+   284→  color: hsl(var(--primary));
+   285→}
+   286→
+   287→.consultant-login-btn.small {
+   288→  padding: 0.5rem 1rem;
+   289→  font-size: 0.875rem;
+   290→}
+   291→
+   292→.sticky-cta-header {
+   293→  position: fixed;
+   294→  top: 0;
+   295→  left: 0;
+   296→  right: 0;
+   297→  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+   298→  color: hsl(var(--primary-foreground));
+   299→  padding: 1rem 0;
+   300→  z-index: 1000;
+   301→  box-shadow: 0 4px 20px hsl(var(--primary) / 0.3);
+   302→}
+   303→
+   304→.sticky-content {
+   305→  max-width: 1200px;
+   306→  margin: 0 auto;
+   307→  display: flex;
+   308→  align-items: center;
+   309→  justify-content: space-between;
+   310→  padding: 0 2rem;
+   311→}
+   312→
+   313→.sticky-actions {
+   314→  display: flex;
+   315→  align-items: center;
+   316→  gap: 1rem;
+   317→}
+   318→
+   319→.sticky-actions .consultant-login-btn {
+   320→  background: rgba(255, 255, 255, 0.2);
+   321→  color: hsl(var(--primary-foreground));
+   322→  border: 1px solid rgba(255, 255, 255, 0.3);
+   323→}
+   324→
+   325→.sticky-actions .consultant-login-btn:hover {
+   326→  background: rgba(255, 255, 255, 0.3);
+   327→  border-color: hsl(var(--primary-foreground));
+   328→}
+   329→
+   330→.sticky-text {
+   331→  display: flex;
+   332→  align-items: center;
+   333→  gap: 0.5rem;
+   334→  font-weight: 600;
+   335→}
+   336→
+   337→.sticky-cta {
+   338→  background: hsl(var(--background));
+   339→  color: hsl(var(--primary));
+   340→  border: none;
+   341→  padding: 0.75rem 1.5rem;
+   342→  border-radius: 50px;
+   343→  font-weight: 600;
+   344→  display: flex;
+   345→  align-items: center;
+   346→  gap: 0.5rem;
+   347→  cursor: pointer;
+   348→  transition: all 0.3s ease;
+   349→}
+   350→
+   351→.sticky-cta:hover {
+   352→  transform: translateY(-2px);
+   353→  box-shadow: 0 8px 20px hsl(var(--background) / 0.3);
+   354→}
+   355→
+   356→.hero-section {
+   357→  min-height: 100vh;
+   358→  display: grid;
+   359→  grid-template-columns: 1fr 1fr;
+   360→  align-items: center;
+   361→  gap: 4rem;
+   362→  padding: 8rem 2rem 6rem;
+   363→  max-width: 1400px;
+   364→  margin: 0 auto;
+   365→  position: relative;
+   366→}
+   367→
+   368→.hero-background {
+   369→  position: absolute;
+   370→  top: 0;
+   371→  left: 0;
+   372→  right: 0;
+   373→  bottom: 0;
+   374→  background: 
+   375→    radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.1) 0%, transparent 50%),
+   376→    radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.1) 0%, transparent 50%),
+   377→    radial-gradient(circle at 40% 40%, hsl(var(--secondary) / 0.05) 0%, transparent 50%);
+   378→  z-index: -1;
+   379→}
+   380→
+   381→.hero-glow {
+   382→  position: absolute;
+   383→  width: 500px;
+   384→  height: 500px;
+   385→  background: radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%);
+   386→  filter: blur(40px);
+   387→  top: 50%;
+   388→  left: 50%;
+   389→  transform: translate(-50%, -50%);
+   390→}
+   391→
+   392→.hero-content {
+   393→  position: relative;
+   394→  z-index: 2;
+   395→}
+   396→
+   397→.hero-badge {
+   398→  display: inline-flex;
+   399→  align-items: center;
+   400→  gap: 0.5rem;
+   401→  background: hsl(var(--primary) / 0.1);
+   402→  color: hsl(var(--primary));
+   403→  padding: 0.5rem 1rem;
+   404→  border-radius: 50px;
+   405→  font-size: 0.875rem;
+   406→  font-weight: 600;
+   407→  margin-bottom: 2rem;
+   408→  border: 1px solid hsl(var(--primary) / 0.2);
+   409→}
+   410→
+   411→.hero-title {
+   412→  font-size: 4rem;
+   413→  font-weight: 700;
+   414→  line-height: 1.1;
+   415→  color: hsl(var(--foreground));
+   416→  margin-bottom: 1.5rem;
+   417→}
+   418→
+   419→.gradient-text {
+   420→  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+   421→  -webkit-background-clip: text;
+   422→  -webkit-text-fill-color: transparent;
+   423→  background-clip: text;
+   424→}
+   425→
+   426→.hero-subtitle {
+   427→  font-size: 1.25rem;
+   428→  line-height: 1.6;
+   429→  color: hsl(var(--muted-foreground));
+   430→  margin-bottom: 3rem;
+   431→  max-width: 500px;
+   432→}
+   433→
+   434→.hero-stats {
+   435→  display: flex;
+   436→  gap: 2rem;
+   437→  margin-bottom: 3rem;
+   438→}
+   439→
+   440→.stat {
+   441→  text-align: center;
+   442→}
+   443→
+   444→.stat-number {
+   445→  font-size: 2rem;
+   446→  font-weight: 700;
+   447→  color: hsl(var(--primary));
+   448→  line-height: 1;
+   449→}
+   450→
+   451→.stat-label {
+   452→  font-size: 0.875rem;
+   453→  color: hsl(var(--muted-foreground));
+   454→  margin-top: 0.5rem;
+   455→}
+   456→
+   457→.hero-cta {
+   458→  display: flex;
+   459→  flex-direction: column;
+   460→  gap: 1rem;
+   461→  margin-bottom: 2rem;
+   462→}
+   463→
+   464→.primary-cta {
+   465→  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+   466→  color: hsl(var(--primary-foreground));
+   467→  border: none;
+   468→  padding: 1.25rem 2.5rem;
+   469→  border-radius: 16px;
+   470→  font-size: 1.125rem;
+   471→  font-weight: 600;
+   472→  display: flex;
+   473→  align-items: center;
+   474→  justify-content: center;
+   475→  gap: 0.75rem;
+   476→  cursor: pointer;
+   477→  transition: all 0.3s ease;
+   478→  box-shadow: 
+   479→    0 8px 25px hsl(var(--primary) / 0.3),
+   480→    0 4px 6px -1px hsl(var(--primary) / 0.1);
+   481→}
+   482→
+   483→.primary-cta:hover {
+   484→  transform: translateY(-2px);
+   485→  box-shadow: 
+   486→    0 15px 35px hsl(var(--primary) / 0.4),
+   487→    0 5px 15px hsl(var(--primary) / 0.2);
+   488→}
+   489→
+   490→.secondary-cta {
+   491→  background: transparent;
+   492→  color: hsl(var(--foreground));
+   493→  border: 1px solid hsl(var(--border));
+   494→  padding: 1rem 2rem;
+   495→  border-radius: 12px;
+   496→  font-weight: 500;
+   497→  display: flex;
+   498→  align-items: center;
+   499→  justify-content: center;
+   500→  gap: 0.5rem;
+   501→  cursor: pointer;
+   502→  transition: all 0.3s ease;
+   503→}
+   504→
+   505→.secondary-cta:hover {
+   506→  background: hsl(var(--secondary));
+   507→  border-color: hsl(var(--border));
+   508→}
+   509→
+   510→.trust-pills {
+   511→  display: flex;
+   512→  gap: 1rem;
+   513→  flex-wrap: wrap;
+   514→}
+   515→
+   516→.trust-pill {
+   517→  display: flex;
+   518→  align-items: center;
+   519→  gap: 0.5rem;
+   520→  background: hsl(var(--card));
+   521→  padding: 0.5rem 1rem;
+   522→  border-radius: 50px;
+   523→  font-size: 0.875rem;
+   524→  color: hsl(var(--card-foreground));
+   525→  border: 1px solid hsl(var(--border));
+   526→  box-shadow: 0 2px 4px hsl(var(--foreground) / 0.05);
+   527→}
+   528→
+   529→.hero-visual {
+   530→  position: relative;
+   531→  height: 500px;
+   532→}
+   533→
+   534→.floating-card {
+   535→  position: absolute;
+   536→  background: hsl(var(--card));
+   537→  padding: 1rem 1.5rem;
+   538→  border-radius: 16px;
+   539→  box-shadow: 0 10px 25px hsl(var(--foreground) / 0.1);
+   540→  display: flex;
+   541→  align-items: center;
+   542→  gap: 0.75rem;
+   543→  font-weight: 600;
+   544→  border: 1px solid hsl(var(--border));
+   545→  animation: float 3s ease-in-out infinite;
+   546→}
+   547→
+   548→.floating-card.bill-upload {
+   549→  top: 10%;
+   550→  left: 10%;
+   551→  animation-delay: 0s;
+   552→}
+   553→
+   554→.floating-card.ai-analysis {
+   555→  top: 60%;
+   556→  left: 5%;
+   557→  animation-delay: 1s;
+   558→}
+   559→
+   560→.floating-card.proposal {
+   561→  top: 30%;
+   562→  right: 10%;
+   563→  animation-delay: 2s;
+   564→}
+   565→
+   566→@keyframes float {
+   567→  0%, 100% { transform: translateY(0px); }
+   568→  50% { transform: translateY(-10px); }
+   569→}
+   570→
+   571→.main-visual {
+   572→  position: absolute;
+   573→  top: 50%;
+   574→  left: 50%;
+   575→  transform: translate(-50%, -50%);
+   576→  width: 300px;
+   577→  height: 200px;
+   578→}
+   579→
+   580→.mockup-dashboard {
+   581→  background: hsl(var(--card));
+   582→  border-radius: 16px;
+   583→  box-shadow: 
+   584→    0 25px 50px -12px hsl(var(--foreground) / 0.25),
+   585→    0 0 0 1px hsl(var(--border));
+   586→  overflow: hidden;
+   587→}
+   588→
+   589→.mockup-header {
+   590→  height: 40px;
+   591→  background: hsl(var(--secondary));
+   592→  border-bottom: 1px solid hsl(var(--border));
+   593→}
+   594→
+   595→.mockup-content {
+   596→  padding: 1.5rem;
+   597→  display: flex;
+   598→  gap: 1rem;
+   599→}
+   600→
+   601→.savings-graph {
+   602→  flex: 1;
+   603→  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+   604→  border-radius: 8px;
+   605→  position: relative;
+   606→  overflow: hidden;
+   607→}
+   608→
+   609→.savings-graph::after {
+   610→  content: '';
+   611→  position: absolute;
+   612→  top: 0;
+   613→  left: 0;
+   614→  right: 0;
+   615→  bottom: 0;
+   616→  background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.2), transparent);
+   617→  animation: shimmer 2s infinite;
+   618→}
+   619→
+   620→@keyframes shimmer {
+   621→  0% { transform: translateX(-100%); }
+   622→  100% { transform: translateX(100%); }
+   623→}
+   624→
+   625→.proposal-card {
+   626→  background: hsl(var(--primary) / 0.1);
+   627→  padding: 1rem;
+   628→  border-radius: 8px;
+   629→  text-align: center;
+   630→  border: 1px solid hsl(var(--primary) / 0.2);
+   631→}
+   632→
+   633→.proposal-amount {
+   634→  font-size: 1.5rem;
+   635→  font-weight: 700;
+   636→  color: hsl(var(--primary));
+   637→}
+   638→
+   639→.proposal-label {
+   640→  font-size: 0.75rem;
+   641→  color: hsl(var(--primary));
+   642→}
+   643→
+   644→.video-modal {
+   645→  position: fixed;
+   646→  top: 0;
+   647→  left: 0;
+   648→  right: 0;
+   649→  bottom: 0;
+   650→  background: hsl(var(--background) / 0.8);
+   651→  display: flex;
+   652→  align-items: center;
+   653→  justify-content: center;
+   654→  z-index: 10000;
+   655→  backdrop-filter: blur(8px);
+   656→}
+   657→
+   658→.modal-content {
+   659→  background: hsl(var(--card));
+   660→  border-radius: 24px;
+   661→  padding: 2rem;
+   662→  position: relative;
+   663→  max-width: 800px;
+   664→  width: 90%;
+   665→  max-height: 90vh;
+   666→}
+   667→
+   668→.close-button {
+   669→  position: absolute;
+   670→  top: 1rem;
+   671→  right: 1rem;
+   672→  background: none;
+   673→  border: none;
+   674→  font-size: 2rem;
+   675→  cursor: pointer;
+   676→  color: hsl(var(--muted-foreground));
+   677→  width: 40px;
+   678→  height: 40px;
+   679→  border-radius: 50%;
+   680→  display: flex;
+   681→  align-items: center;
+   682→  justify-content: center;
+   683→}
+   684→
+   685→.close-button:hover {
+   686→  background: hsl(var(--secondary));
+   687→}
+   688→
+   689→.video-container {
+   690→  width: 100%;
+   691→  aspect-ratio: 16/9;
+   692→  background: hsl(var(--muted));
+   693→  border-radius: 12px;
+   694→  display: flex;
+   695→  flex-direction: column;
+   696→  align-items: center;
+   697→  justify-content: center;
+   698→  color: hsl(var(--muted-foreground));
+   699→}
+   700→
+   701→.video-placeholder {
+   702→  display: flex;
+   703→  flex-direction: column;
+   704→  align-items: center;
+   705→  gap: 1rem;
+   706→}
+   707→
+   708→.social-proof-section {
+   709→  padding: 6rem 2rem;
+   710→  background: hsl(var(--secondary) / 0.3);
+   711→}
+   712→
+   713→.container {
+   714→  max-width: 1200px;
+   715→  margin: 0 auto;
+   716→}
+   717→
+   718→.section-header {
+   719→  text-align: center;
+   720→  margin-bottom: 3rem;
+   721→}
+   722→
+   723→.section-header h2 {
+   724→  font-size: 2.5rem;
+   725→  font-weight: 700;
+   726→  color: hsl(var(--foreground));
+   727→  margin-bottom: 1rem;
+   728→}
+   729→
+   730→.section-header p {
+   731→  font-size: 1.125rem;
+   732→  color: hsl(var(--muted-foreground));
+   733→}
+   734→
+   735→.testimonials-grid {
+   736→  display: grid;
+   737→  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+   738→  gap: 2rem;
+   739→  margin: 3rem 0;
+   740→}
+   741→
+   742→/* Mobile horizontal scroll for testimonials */
+   743→@media (max-width: 768px) {
+   744→  .testimonials-grid {
+   745→    display: flex;
+   746→    overflow-x: auto;
+   747→    scroll-snap-type: x mandatory;
+   748→    -webkit-overflow-scrolling: touch;
+   749→    scrollbar-width: none;
+   750→    gap: 1rem;
+   751→    padding: 0.5rem;
+   752→    margin: 1.5rem -1rem;
+   753→  }
+   754→  
+   755→  .testimonials-grid::-webkit-scrollbar {
+   756→    display: none;
+   757→  }
+   758→  
+   759→  .testimonials-grid .testimonial-card {
+   760→    flex: 0 0 85%;
+   761→    min-width: 280px;
+   762→    max-width: 320px;
+   763→    scroll-snap-align: center;
+   764→  }
+   765→}
+   766→
+   767→.testimonial-card {
+   768→  background: hsl(var(--card));
+   769→  padding: 2rem;
+   770→  border-radius: 16px;
+   771→  box-shadow: 0 4px 6px -1px hsl(var(--foreground) / 0.1);
+   772→  border: 1px solid hsl(var(--border));
+   773→}
+   774→
+   775→.testimonial-header {
+   776→  display: flex;
+   777→  align-items: center;
+   778→  gap: 1rem;
+   779→  margin-bottom: 1rem;
+   780→}
+   781→
+   782→.customer-avatar {
+   783→  width: 50px;
+   784→  height: 50px;
+   785→  border-radius: 50%;
+   786→  background: hsl(var(--primary) / 0.1);
+   787→  display: flex;
+   788→  align-items: center;
+   789→  justify-content: center;
+   790→  font-size: 1.5rem;
+   791→}
+   792→
+   793→.customer-info {
+   794→  flex: 1;
+   795→}
+   796→
+   797→.customer-name {
+   798→  font-weight: 600;
+   799→  color: hsl(var(--foreground));
+   800→}
+   801→
+   802→.customer-location {
+   803→  font-size: 0.875rem;
+   804→  color: hsl(var(--muted-foreground));
+   805→}
+   806→
+   807→.savings-badge {
+   808→  background: hsl(var(--primary) / 0.1);
+   809→  color: hsl(var(--primary));
+   810→  padding: 0.25rem 0.75rem;
+   811→  border-radius: 20px;
+   812→  font-size: 0.75rem;
+   813→  font-weight: 600;
+   814→}
+   815→
+   816→.testimonial-rating {
+   817→  display: flex;
+   818→  gap: 0.25rem;
+   819→  color: hsl(var(--primary));
+   820→  margin-bottom: 1rem;
+   821→}
+   822→
+   823→.testimonial-text {
+   824→  color: hsl(var(--muted-foreground));
+   825→  line-height: 1.6;
+   826→  position: relative;
+   827→  padding-left: 1.5rem;
+   828→}
+   829→
+   830→.quote-icon {
+   831→  position: absolute;
+   832→  top: -0.5rem;
+   833→  left: -0.5rem;
+   834→  color: hsl(var(--border));
+   835→  transform: rotate(180deg);
+   836→}
+   837→
+   838→.trust-logos {
+   839→  display: flex;
+   840→  justify-content: center;
+   841→  gap: 1rem;
+   842→  flex-wrap: wrap;
+   843→  margin-top: 3rem;
+   844→}
+   845→
+   846→.logo-item {
+   847→  background: hsl(var(--card));
+   848→  padding: 1rem 2rem;
+   849→  border-radius: 12px;
+   850→  font-weight: 600;
+   851→  color: hsl(var(--foreground));
+   852→  border: 1px solid hsl(var(--border));
+   853→  box-shadow: 0 2px 4px hsl(var(--foreground) / 0.05);
+   854→}
+   855→
+   856→.certification-badge {
+   857→  display: flex;
+   858→  align-items: center;
+   859→  gap: 0.5rem;
+   860→  background: hsl(var(--card));
+   861→  padding: 0.75rem 1.25rem;
+   862→  border-radius: 999px;
+   863→  font-weight: 600;
+   864→  font-size: 0.875rem;
+   865→  color: hsl(var(--foreground));
+   866→  border: 1px solid hsl(var(--border));
+   867→  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+   868→  transition: all 0.2s ease;
+   869→}
+   870→
+   871→.certification-badge:hover {
+   872→  transform: translateY(-2px);
+   873→  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+   874→}
+   875→
+   876→.how-it-works-section {
+   877→  padding: 6rem 2rem;
+   878→  background: hsl(var(--background));
+   879→}
+   880→
+   881→.steps-grid {
+   882→  display: grid;
+   883→  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+   884→  gap: 2rem;
+   885→}
+   886→
+   887→/* Mobile horizontal scroll for steps */
+   888→@media (max-width: 768px) {
+   889→  .steps-grid {
+   890→    display: flex;
+   891→    overflow-x: auto;
+   892→    scroll-snap-type: x mandatory;
+   893→    -webkit-overflow-scrolling: touch;
+   894→    scrollbar-width: none;
+   895→    gap: 1rem;
+   896→    padding: 1.5rem 0.5rem 0.5rem;
+   897→    margin: 0 -1rem;
+   898→  }
+   899→  
+   900→  .steps-grid::-webkit-scrollbar {
+   901→    display: none;
+   902→  }
+   903→  
+   904→  .steps-grid .step-card {
+   905→    flex: 0 0 80%;
+   906→    min-width: 240px;
+   907→    max-width: 280px;
+   908→    scroll-snap-align: center;
+   909→  }
+   910→}
+   911→
+   912→.step-card {
+   913→  position: relative;
+   914→  background: hsl(var(--card));
+   915→  padding: 2rem;
+   916→  border-radius: 16px;
+   917→  border: 1px solid hsl(var(--border));
+   918→  text-align: center;
+   919→  transition: all 0.3s ease;
+   920→}
+   921→
+   922→.step-card:hover {
+   923→  transform: translateY(-5px);
+   924→  box-shadow: 0 10px 25px hsl(var(--foreground) / 0.1);
+   925→}
+   926→
+   927→.step-number {
+   928→  position: absolute;
+   929→  top: -1rem;
+   930→  left: 1.5rem;
+   931→  width: 2rem;
+   932→  height: 2rem;
+   933→  background: hsl(var(--primary));
+   934→  color: hsl(var(--primary-foreground));
+   935→  border-radius: 50%;
+   936→  display: flex;
+   937→  align-items: center;
+   938→  justify-content: center;
+   939→  font-weight: 700;
+   940→}
+   941→
+   942→.step-icon {
+   943→  margin: 0 auto 1rem;
+   944→  width: fit-content;
+   945→}
+   946→
+   947→.step-card h3 {
+   948→  font-size: 1.25rem;
+   949→  font-weight: 600;
+   950→  color: hsl(var(--foreground));
+   951→  margin-bottom: 0.5rem;
+   952→}
+   953→
+   954→.step-card p {
+   955→  color: hsl(var(--muted-foreground));
+   956→  line-height: 1.6;
+   957→}
+   958→
+   959→.savings-calculator-section {
+   960→  padding: 6rem 2rem;
+   961→  background: linear-gradient(180deg, hsl(var(--secondary) / 0.3), hsl(var(--background)));
+   962→  position: relative;
+   963→  overflow: hidden;
+   964→}
+   965→
+   966→.savings-calculator-section::before {
+   967→  content: '';
+   968→  position: absolute;
+   969→  top: 0;
+   970→  left: 50%;
+   971→  transform: translateX(-50%);
+   972→  width: 600px;
+   973→  height: 600px;
+   974→  background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%);
+   975→  pointer-events: none;
+   976→}
+   977→
+   978→.calculator-card {
+   979→  background: hsl(var(--card));
+   980→  padding: 3rem;
+   981→  border-radius: 24px;
+   982→  border: 1px solid hsl(var(--border));
+   983→  box-shadow: 0 10px 30px hsl(var(--foreground) / 0.1);
+   984→}
+   985→
+   986→.calculator-card.enhanced {
+   987→  background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--card) / 0.8));
+   988→  backdrop-filter: blur(20px);
+   989→  border: 1px solid hsl(var(--border) / 0.5);
+   990→  box-shadow: 
+   991→    0 20px 50px hsl(var(--foreground) / 0.1),
+   992→    inset 0 1px 0 hsl(var(--card) / 0.8);
+   993→}
+   994→
+   995→.calculator-input label {
+   996→  display: flex;
+   997→  align-items: center;
+   998→  gap: 0.5rem;
+   999→  font-weight: 600;
+  1000→  color: hsl(var(--foreground));
+  1001→  margin-bottom: 1.5rem;
+  1002→  font-size: 1.125rem;
+  1003→}
+  1004→
+  1005→/* Minimal Slider Styles */
+  1006→.slider-container.minimal {
+  1007→  position: relative;
+  1008→  padding: 2.5rem 0 0.5rem;
+  1009→}
+  1010→
+  1011→.slider-value-bubble {
+  1012→  position: absolute;
+  1013→  top: 0;
+  1014→  transform: translateX(-50%);
+  1015→  background: hsl(var(--primary));
+  1016→  color: hsl(var(--primary-foreground));
+  1017→  padding: 0.375rem 0.75rem;
+  1018→  border-radius: 8px;
+  1019→  font-size: 1rem;
+  1020→  font-weight: 600;
+  1021→  white-space: nowrap;
+  1022→}
+  1023→
+  1024→.slider-value-bubble::after {
+  1025→  content: '';
+  1026→  position: absolute;
+  1027→  bottom: -6px;
+  1028→  left: 50%;
+  1029→  transform: translateX(-50%);
+  1030→  border: 6px solid transparent;
+  1031→  border-top-color: hsl(var(--primary));
+  1032→}
+  1033→
+  1034→.minimal-slider {
+  1035→  width: 100%;
+  1036→  height: 6px;
+  1037→  background: hsl(var(--border));
+  1038→  border-radius: 3px;
+  1039→  -webkit-appearance: none;
+  1040→  appearance: none;
+  1041→  cursor: pointer;
+  1042→  outline: none;
+  1043→}
+  1044→
+  1045→.minimal-slider::-webkit-slider-thumb {
+  1046→  -webkit-appearance: none;
+  1047→  appearance: none;
+  1048→  width: 24px;
+  1049→  height: 24px;
+  1050→  background: hsl(var(--primary));
+  1051→  border-radius: 50%;
+  1052→  border: 3px solid hsl(var(--card));
+  1053→  box-shadow: 0 2px 6px hsl(var(--foreground) / 0.2);
+  1054→  cursor: grab;
+  1055→  transition: transform 0.15s ease;
+  1056→}
+  1057→
+  1058→.minimal-slider::-webkit-slider-thumb:hover {
+  1059→  transform: scale(1.1);
+  1060→}
+  1061→
+  1062→.minimal-slider::-webkit-slider-thumb:active {
+  1063→  cursor: grabbing;
+  1064→  transform: scale(1.05);
+  1065→}
+  1066→
+  1067→.minimal-slider::-moz-range-thumb {
+  1068→  width: 24px;
+  1069→  height: 24px;
+  1070→  background: hsl(var(--primary));
+  1071→  border-radius: 50%;
+  1072→  border: 3px solid hsl(var(--card));
+  1073→  box-shadow: 0 2px 6px hsl(var(--foreground) / 0.2);
+  1074→  cursor: grab;
+  1075→}
+  1076→
+  1077→.slider-range-labels {
+  1078→  display: flex;
+  1079→  justify-content: space-between;
+  1080→  font-size: 0.75rem;
+  1081→  color: hsl(var(--muted-foreground));
+  1082→  margin-top: 0.5rem;
+  1083→}
+  1084→
+  1085→/* Mobile minimal slider */
+  1086→@media (max-width: 768px) {
+  1087→  .slider-container.minimal {
+  1088→    padding: 2rem 0 0.25rem;
+  1089→  }
+  1090→  
+  1091→  .slider-value-bubble {
+  1092→    font-size: 0.875rem;
+  1093→    padding: 0.25rem 0.5rem;
+  1094→    border-radius: 6px;
+  1095→  }
+  1096→  
+  1097→  .slider-value-bubble::after {
+  1098→    border-width: 5px;
+  1099→    bottom: -5px;
+  1100→  }
+  1101→  
+  1102→  .minimal-slider::-webkit-slider-thumb {
+  1103→    width: 28px;
+  1104→    height: 28px;
+  1105→  }
+  1106→  
+  1107→  .minimal-slider::-moz-range-thumb {
+  1108→    width: 28px;
+  1109→    height: 28px;
+  1110→  }
+  1111→}
+  1112→
+  1113→.calculator-results {
+  1114→  display: grid;
+  1115→  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  1116→  gap: 1.5rem;
+  1117→  margin-top: 2rem;
+  1118→}
+  1119→
+  1120→.calculator-results-row {
+  1121→  display: grid;
+  1122→  grid-template-columns: repeat(3, 1fr);
+  1123→  gap: 1.5rem;
+  1124→  margin-top: 2rem;
+  1125→}
+  1126→
+  1127→/* Mobile: horizontal scroll for results */
+  1128→@media (max-width: 768px) {
+  1129→  .calculator-results-row {
+  1130→    display: flex;
+  1131→    overflow-x: auto;
+  1132→    scroll-snap-type: x mandatory;
+  1133→    -webkit-overflow-scrolling: touch;
+  1134→    scrollbar-width: none;
+  1135→    gap: 0.75rem;
+  1136→    margin: 1rem -0.5rem 0;
+  1137→    padding: 0.5rem;
+  1138→  }
+  1139→  
+  1140→  .calculator-results-row::-webkit-scrollbar {
+  1141→    display: none;
+  1142→  }
+  1143→  
+  1144→  .calculator-results-row .result-card-3d {
+  1145→    flex: 0 0 auto;
+  1146→    min-width: 140px;
+  1147→    scroll-snap-align: start;
+  1148→  }
+  1149→  
+  1150→  .calculator-results-row .result-card {
+  1151→    padding: 1rem;
+  1152→  }
+  1153→  
+  1154→  .calculator-results-row .result-card .result-label {
+  1155→    font-size: 0.6875rem;
+  1156→  }
+  1157→  
+  1158→  .calculator-results-row .result-card .result-value {
+  1159→    font-size: 1.25rem;
+  1160→  }
+  1161→  
+  1162→  .calculator-results-row .result-card .result-icon-mini {
+  1163→    width: 28px;
+  1164→    height: 28px;
+  1165→  }
+  1166→  
+  1167→  .calculator-results-row .result-card .result-icon-mini svg {
+  1168→    width: 14px;
+  1169→    height: 14px;
+  1170→  }
+  1171→}
+  1172→
+  1173→.result-card-3d {
+  1174→  border-radius: 20px;
+  1175→}
+  1176→
+  1177→.result-card {
+  1178→  background: hsl(var(--secondary) / 0.5);
+  1179→  padding: 1.5rem;
+  1180→  border-radius: 16px;
+  1181→  border: 1px solid hsl(var(--border));
+  1182→}
+  1183→
+  1184→.result-card.glass {
+  1185→  background: hsl(var(--card) / 0.7);
+  1186→  backdrop-filter: blur(10px);
+  1187→  border: 1px solid hsl(var(--border) / 0.5);
+  1188→  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  1189→}
+  1190→
+  1191→.result-card.glass:hover {
+  1192→  box-shadow: 0 10px 30px hsl(var(--foreground) / 0.08);
+  1193→}
+  1194→
+  1195→.result-card.primary {
+  1196→  background: hsl(var(--primary) / 0.1);
+  1197→  border-color: hsl(var(--primary) / 0.2);
+  1198→  display: flex;
+  1199→  gap: 1rem;
+  1200→}
+  1201→
+  1202→.result-card.primary.glass {
+  1203→  background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
+  1204→  border: 1px solid hsl(var(--primary) / 0.3);
+  1205→  padding: 2rem;
+  1206→  position: relative;
+  1207→  overflow: hidden;
+  1208→}
+  1209→
+  1210→.result-card.eco {
+  1211→  background: linear-gradient(135deg, hsl(142 76% 36% / 0.1), hsl(142 76% 36% / 0.05));
+  1212→  border-color: hsl(142 76% 36% / 0.2);
+  1213→}
+  1214→
+  1215→.result-icon-wrapper {
+  1216→  flex-shrink: 0;
+  1217→}
+  1218→
+  1219→.result-icon {
+  1220→  width: 48px;
+  1221→  height: 48px;
+  1222→  background: hsl(var(--primary));
+  1223→  color: hsl(var(--primary-foreground));
+  1224→  border-radius: 12px;
+  1225→  display: flex;
+  1226→  align-items: center;
+  1227→  justify-content: center;
+  1228→}
+  1229→
+  1230→.result-icon-wrapper .result-icon {
+  1231→  width: 56px;
+  1232→  height: 56px;
+  1233→  border-radius: 16px;
+  1234→  background: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--accent)));
+  1235→  box-shadow: 0 8px 20px hsl(var(--primary) / 0.3);
+  1236→}
+  1237→
+  1238→.result-icon-mini {
+  1239→  width: 36px;
+  1240→  height: 36px;
+  1241→  background: hsl(var(--primary) / 0.1);
+  1242→  color: hsl(var(--primary));
+  1243→  border-radius: 10px;
+  1244→  display: flex;
+  1245→  align-items: center;
+  1246→  justify-content: center;
+  1247→  margin-bottom: 0.75rem;
+  1248→}
+  1249→
+  1250→.result-content {
+  1251→  flex: 1;
+  1252→}
+  1253→
+  1254→.result-label {
+  1255→  font-size: 0.875rem;
+  1256→  color: hsl(var(--muted-foreground));
+  1257→  margin-bottom: 0.5rem;
+  1258→}
+  1259→
+  1260→.result-value {
+  1261→  font-size: 1.75rem;
+  1262→  font-weight: 700;
+  1263→  color: hsl(var(--primary));
+  1264→  line-height: 1;
+  1265→}
+  1266→
+  1267→.result-value.large {
+  1268→  font-size: 2.5rem;
+  1269→}
+  1270→
+  1271→.result-subtext {
+  1272→  font-size: 0.875rem;
+  1273→  font-weight: 500;
+  1274→  opacity: 0.7;
+  1275→  margin-left: 0.25rem;
+  1276→}
+  1277→
+  1278→.result-sparkle {
+  1279→  position: absolute;
+  1280→  top: 1rem;
+  1281→  right: 1rem;
+  1282→  color: hsl(var(--primary) / 0.5);
+  1283→}
+  1284→
+  1285→.final-cta-section {
+  1286→  padding: 6rem 2rem;
+  1287→  background: hsl(var(--background));
+  1288→}
+  1289→
+  1290→/* Add bottom padding for mobile nav */
+  1291→@media (max-width: 768px) {
+  1292→  .final-cta-section {
+  1293→    padding: 3rem 1rem 8rem;
+  1294→  }
+  1295→  
+  1296→  .social-proof-section {
+  1297→    padding: 3rem 1rem;
+  1298→  }
+  1299→  
+  1300→  .how-it-works-section {
+  1301→    padding: 3rem 1rem;
+  1302→  }
+  1303→  
+  1304→  .savings-calculator-section {
+  1305→    padding: 3rem 1rem;
+  1306→  }
+  1307→}
+  1308→
+  1309→.cta-card {
+  1310→  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--accent) / 0.1));
+  1311→  padding: 4rem 3rem;
+  1312→  border-radius: 24px;
+  1313→  border: 1px solid hsl(var(--border));
+  1314→  text-align: center;
+  1315→}
+  1316→
+  1317→.cta-content h2 {
+  1318→  font-size: 2.5rem;
+  1319→  font-weight: 700;
+  1320→  color: hsl(var(--foreground));
+  1321→  margin-bottom: 1rem;
+  1322→}
+  1323→
+  1324→.cta-content p {
+  1325→  font-size: 1.125rem;
+  1326→  color: hsl(var(--muted-foreground));
+  1327→  margin-bottom: 2rem;
+  1328→}
+  1329→
+  1330→.cta-buttons {
+  1331→  display: flex;
+  1332→  gap: 1rem;
+  1333→  justify-content: center;
+  1334→  margin-bottom: 2rem;
+  1335→  flex-wrap: wrap;
+  1336→}
+  1337→
+  1338→.cta-benefits {
+  1339→  display: flex;
+  1340→  gap: 2rem;
+  1341→  justify-content: center;
+  1342→  flex-wrap: wrap;
+  1343→}
+  1344→
+  1345→.benefit {
+  1346→  display: flex;
+  1347→  align-items: center;
+  1348→  gap: 0.5rem;
+  1349→  color: hsl(var(--foreground));
+  1350→  font-weight: 500;
+  1351→}
+  1352→
+  1353→.benefit svg {
+  1354→  color: hsl(var(--primary));
+  1355→}
+  1356→
+  1357→/* ===== MOBILE RESPONSIVE STYLES ===== */
+  1358→
+  1359→/* Extra small phones (320px-374px) */
+  1360→@media (max-width: 374px) {
+  1361→  .hero-section {
+  1362→    grid-template-columns: 1fr;
+  1363→    text-align: center;
+  1364→    padding: 1.5rem 0.75rem 2rem;
+  1365→    gap: 1.5rem;
+  1366→    min-height: auto;
+  1367→  }
+  1368→
+  1369→  .hero-title {
+  1370→    font-size: 1.625rem;
+  1371→    line-height: 1.2;
+  1372→    margin-bottom: 0.75rem;
+  1373→  }
+  1374→
+  1375→  .hero-subtitle {
+  1376→    font-size: 0.875rem;
+  1377→    margin-bottom: 1.5rem;
+  1378→    max-width: 100%;
+  1379→  }
+  1380→
+  1381→  .hero-badge {
+  1382→    font-size: 0.7rem;
+  1383→    padding: 0.375rem 0.75rem;
+  1384→    margin-bottom: 1rem;
+  1385→  }
+  1386→
+  1387→  .hero-stats {
+  1388→    gap: 0.5rem;
+  1389→    margin-bottom: 1.5rem;
+  1390→    flex-wrap: wrap;
+  1391→    justify-content: center;
+  1392→  }
+  1393→
+  1394→  .stat {
+  1395→    flex: 1;
+  1396→    min-width: 80px;
+  1397→    padding: 0.5rem;
+  1398→  }
+  1399→
+  1400→  .stat-number {
+  1401→    font-size: 1.125rem;
+  1402→  }
+  1403→
+  1404→  .stat-label {
+  1405→    font-size: 0.65rem;
+  1406→    line-height: 1.2;
+  1407→  }
+  1408→
+  1409→  .primary-cta {
+  1410→    padding: 1rem 1.25rem;
+  1411→    font-size: 0.9375rem;
+  1412→    min-height: 52px;
+  1413→  }
+  1414→
+  1415→  .secondary-cta {
+  1416→    padding: 0.875rem 1rem;
+  1417→    font-size: 0.875rem;
+  1418→    min-height: 48px;
+  1419→  }
+  1420→
+  1421→  .trust-pills {
+  1422→    gap: 0.5rem;
+  1423→    justify-content: center;
+  1424→  }
+  1425→
+  1426→  .trust-pill {
+  1427→    font-size: 0.7rem;
+  1428→    padding: 0.375rem 0.625rem;
+  1429→  }
+  1430→
+  1431→  .sticky-cta-header {
+  1432→    padding: 0.5rem 0;
+  1433→  }
+  1434→
+  1435→  .sticky-content {
+  1436→    flex-direction: row;
+  1437→    gap: 0.5rem;
+  1438→    padding: 0 0.75rem;
+  1439→    justify-content: space-between;
+  1440→  }
+  1441→
+  1442→  .sticky-text {
+  1443→    font-size: 0.625rem;
+  1444→    display: none;
+  1445→  }
+  1446→
+  1447→  .sticky-cta {
+  1448→    padding: 0.5rem 0.75rem;
+  1449→    font-size: 0.75rem;
+  1450→    min-height: 36px;
+  1451→    white-space: nowrap;
+  1452→  }
+  1453→
+  1454→  .sticky-actions {
+  1455→    flex-direction: row;
+  1456→    gap: 0.375rem;
+  1457→    width: auto;
+  1458→  }
+  1459→
+  1460→  .sticky-actions .consultant-login-btn {
+  1461→    padding: 0.375rem 0.5rem;
+  1462→    font-size: 0.625rem;
+  1463→    min-height: 32px;
+  1464→  }
+  1465→}
+  1466→
+  1467→/* Small phones (375px-639px) */
+  1468→@media (min-width: 375px) and (max-width: 639px) {
+  1469→  .hero-section {
+  1470→    grid-template-columns: 1fr;
+  1471→    text-align: center;
+  1472→    padding: 2rem 1rem 2.5rem;
+  1473→    gap: 2rem;
+  1474→    min-height: auto;
+  1475→  }
+  1476→
+  1477→  .hero-title {
+  1478→    font-size: 1.875rem;
+  1479→    line-height: 1.15;
+  1480→    margin-bottom: 1rem;
+  1481→  }
+  1482→
+  1483→  .hero-subtitle {
+  1484→    font-size: 0.9375rem;
+  1485→    margin-bottom: 2rem;
+  1486→    max-width: 100%;
+  1487→  }
+  1488→
+  1489→  .hero-badge {
+  1490→    font-size: 0.75rem;
+  1491→    padding: 0.5rem 0.875rem;
+  1492→    margin-bottom: 1.25rem;
+  1493→  }
+  1494→
+  1495→  .hero-stats {
+  1496→    gap: 0.75rem;
+  1497→    margin-bottom: 2rem;
+  1498→    justify-content: center;
+  1499→  }
+  1500→
+  1501→  .stat {
+  1502→    flex: 1;
+  1503→    min-width: 85px;
+  1504→    padding: 0.75rem;
+  1505→    background: hsl(var(--card));
+  1506→    border-radius: 12px;
+  1507→    border: 1px solid hsl(var(--border));
+  1508→  }
+  1509→
+  1510→  .stat-number {
+  1511→    font-size: 1.25rem;
+  1512→  }
+  1513→
+  1514→  .stat-label {
+  1515→    font-size: 0.6875rem;
+  1516→    line-height: 1.3;
+  1517→  }
+  1518→
+  1519→  .primary-cta {
+  1520→    padding: 1.125rem 1.5rem;
+  1521→    font-size: 1rem;
+  1522→    min-height: 56px;
+  1523→  }
+  1524→
+  1525→  .secondary-cta {
+  1526→    padding: 1rem 1.25rem;
+  1527→    font-size: 0.9375rem;
+  1528→    min-height: 52px;
+  1529→  }
+  1530→
+  1531→  .trust-pills {
+  1532→    gap: 0.625rem;
+  1533→    justify-content: center;
+  1534→  }
+  1535→
+  1536→  .trust-pill {
+  1537→    font-size: 0.75rem;
+  1538→    padding: 0.5rem 0.75rem;
+  1539→  }
+  1540→
+  1541→  .sticky-cta-header {
+  1542→    padding: 0.5rem 0;
+  1543→    padding-top: max(0.5rem, env(safe-area-inset-top));
+  1544→  }
+  1545→
+  1546→  .sticky-content {
+  1547→    flex-direction: row;
+  1548→    gap: 0.5rem;
+  1549→    padding: 0 1rem;
+  1550→    justify-content: space-between;
+  1551→  }
+  1552→
+  1553→  .sticky-text {
+  1554→    font-size: 0.6875rem;
+  1555→    display: none;
+  1556→  }
+  1557→
+  1558→  .sticky-cta {
+  1559→    padding: 0.75rem 1.25rem;
+  1560→    font-size: 0.875rem;
+  1561→    min-height: 48px;
+  1562→    width: 100%;
+  1563→  }
+  1564→
+  1565→  .sticky-actions {
+  1566→    flex-direction: column;
+  1567→    gap: 0.5rem;
+  1568→    width: 100%;
+  1569→  }
+  1570→
+  1571→  .sticky-actions .consultant-login-btn {
+  1572→    width: 100%;
+  1573→    min-height: 44px;
+  1574→  }
+  1575→}
+  1576→
+  1577→/* Tablets (640px-1023px) - Two column hero layout */
+  1578→@media (min-width: 640px) and (max-width: 1023px) {
+  1579→  .hero-section {
+  1580→    grid-template-columns: 1fr 1fr;
+  1581→    text-align: left;
+  1582→    padding: 6rem 1.5rem 4rem;
+  1583→    gap: 2rem;
+  1584→    align-items: start;
+  1585→  }
+  1586→
+  1587→  .hero-title {
+  1588→    font-size: 2rem;
+  1589→  }
+  1590→
+  1591→  .hero-subtitle {
+  1592→    font-size: 0.9375rem;
+  1593→    max-width: 100%;
+  1594→    margin-bottom: 1.5rem;
+  1595→  }
+  1596→
+  1597→  .hero-badge {
+  1598→    margin-bottom: 1rem;
+  1599→  }
+  1600→
+  1601→  .hero-stats {
+  1602→    gap: 0.75rem;
+  1603→    margin-bottom: 1.5rem;
+  1604→  }
+  1605→
+  1606→  .stat {
+  1607→    padding: 0.75rem;
+  1608→    background: hsl(var(--card));
+  1609→    border-radius: 10px;
+  1610→    border: 1px solid hsl(var(--border));
+  1611→  }
+  1612→
+  1613→  .stat-number {
+  1614→    font-size: 1.25rem;
+  1615→  }
+  1616→
+  1617→  .stat-label {
+  1618→    font-size: 0.6875rem;
+  1619→  }
+  1620→
+  1621→  .hero-cta {
+  1622→    max-width: 100%;
+  1623→    margin-bottom: 1.5rem;
+  1624→  }
+  1625→
+  1626→  .primary-cta {
+  1627→    padding: 1rem 1.5rem;
+  1628→    font-size: 0.9375rem;
+  1629→  }
+  1630→
+  1631→  .secondary-cta {
+  1632→    padding: 0.875rem 1.25rem;
+  1633→    font-size: 0.875rem;
+  1634→  }
+  1635→
+  1636→  .trust-pills {
+  1637→    gap: 0.5rem;
+  1638→  }
+  1639→
+  1640→  .trust-pill {
+  1641→    font-size: 0.6875rem;
+  1642→    padding: 0.375rem 0.625rem;
+  1643→  }
+  1644→
+  1645→  .hero-visual {
+  1646→    display: flex;
+  1647→    margin-top: 0;
+  1648→  }
+  1649→
+  1650→  .hero-visual > div {
+  1651→    gap: 0.75rem;
+  1652→  }
+  1653→
+  1654→  .hero-visual .bg-white,
+  1655→  .hero-visual .bg-gradient-to-br {
+  1656→    padding: 1rem;
+  1657→  }
+  1658→
+  1659→  .hero-visual h3 {
+  1660→    font-size: 0.75rem;
+  1661→  }
+  1662→
+  1663→  .hero-visual .text-xs {
+  1664→    font-size: 0.6875rem;
+  1665→  }
+  1666→
+  1667→  .hero-visual .text-sm {
+  1668→    font-size: 0.75rem;
+  1669→  }
+  1670→}
+  1671→
+  1672→/* General mobile only (max-width: 639px) - hide hero visual */
+  1673→@media (max-width: 639px) {
+  1674→  .hero-visual {
+  1675→    display: none;
+  1676→  }
+  1677→
+  1678→  .steps-grid {
+  1679→    grid-template-columns: 1fr;
+  1680→    gap: 1rem;
+  1681→  }
+  1682→
+  1683→  .cta-buttons {
+  1684→    flex-direction: column;
+  1685→    gap: 0.75rem;
+  1686→  }
+  1687→
+  1688→  .calculator-results {
+  1689→    grid-template-columns: 1fr;
+  1690→  }
+  1691→
+  1692→  .testimonials-grid {
+  1693→    grid-template-columns: 1fr;
+  1694→    gap: 1rem;
+  1695→  }
+  1696→
+  1697→  .section-header h2 {
+  1698→    font-size: 1.5rem;
+  1699→    line-height: 1.2;
+  1700→  }
+  1701→
+  1702→  .section-header p {
+  1703→    font-size: 0.9375rem;
+  1704→  }
+  1705→
+  1706→  .step-card {
+  1707→    padding: 1.25rem;
+  1708→  }
+  1709→
+  1710→  .testimonial-card {
+  1711→    padding: 1.25rem;
+  1712→  }
+  1713→
+  1714→  .calculator-card {
+  1715→    padding: 1.25rem;
+  1716→  }
+  1717→
+  1718→  .cta-card {
+  1719→    padding: 1.5rem;
+  1720→    border-radius: 16px;
+  1721→  }
+  1722→
+  1723→  .cta-card h2 {
+  1724→    font-size: 1.375rem;
+  1725→    line-height: 1.3;
+  1726→  }
+  1727→
+  1728→  .cta-benefits {
+  1729→    flex-direction: column;
+  1730→    gap: 0.5rem;
+  1731→  }
+  1732→}
+  1733→
+  1734→/* ===== MOBILE OPTIMIZATIONS ===== */
+  1735→
+  1736→/* Safe area insets for iOS notch/home indicator */
+  1737→.safe-area-inset-top {
+  1738→  padding-top: env(safe-area-inset-top, 0px);
+  1739→}
+  1740→
+  1741→.pb-safe {
+  1742→  padding-bottom: env(safe-area-inset-bottom, 0px);
+  1743→}
+  1744→
+  1745→.pt-safe {
+  1746→  padding-top: env(safe-area-inset-top, 0px);
+  1747→}
+  1748→
+  1749→/* Mobile-friendly touch targets */
+  1750→@layer utilities {
+  1751→  .touch-target {
+  1752→    min-height: 44px;
+  1753→    min-width: 44px;
+  1754→  }
+  1755→  
+  1756→  .touch-target-sm {
+  1757→    min-height: 36px;
+  1758→    min-width: 36px;
+  1759→  }
+  1760→
+  1761→  .touch-target-lg {
+  1762→    min-height: 52px;
+  1763→    min-width: 52px;
+  1764→  }
+  1765→}
+  1766→
+  1767→/* Prevent text selection on interactive elements */
+  1768→.no-select {
+  1769→  -webkit-user-select: none;
+  1770→  user-select: none;
+  1771→  -webkit-tap-highlight-color: transparent;
+  1772→}
+  1773→
+  1774→/* Smooth momentum scrolling on iOS */
+  1775→.scroll-smooth-ios {
+  1776→  -webkit-overflow-scrolling: touch;
+  1777→}
+  1778→
+  1779→/* Hide scrollbar but keep functionality */
+  1780→.scrollbar-hide {
+  1781→  -ms-overflow-style: none;
+  1782→  scrollbar-width: none;
+  1783→}
+  1784→
+  1785→.scrollbar-hide::-webkit-scrollbar {
+  1786→  display: none;
+  1787→}
+  1788→
+  1789→/* Full viewport height accounting for mobile browser chrome */
+  1790→.min-h-dvh {
+  1791→  min-height: 100dvh;
+  1792→}
+  1793→
+  1794→.h-dvh {
+  1795→  height: 100dvh;
+  1796→}
+  1797→
+  1798→/* Touch manipulation for smooth interactions */
+  1799→.touch-manipulation {
+  1800→  touch-action: manipulation;
+  1801→}
+  1802→
+  1803→/* Reduce motion for accessibility */
+  1804→@media (prefers-reduced-motion: reduce) {
+  1805→  *,
+  1806→  *::before,
+  1807→  *::after {
+  1808→    animation-duration: 0.01ms !important;
+  1809→    animation-iteration-count: 1 !important;
+  1810→    transition-duration: 0.01ms !important;
+  1811→  }
+  1812→}
+  1813→

@@ -1,0 +1,919 @@
+     1→import { useState, useEffect, useRef, useCallback } from 'react';
+     2→import { useForm } from 'react-hook-form';
+     3→import { zodResolver } from '@hookform/resolvers/zod';
+     4→import { z } from 'zod';
+     5→import { supabase } from '@/integrations/supabase/client';
+     6→import { Button } from '@/components/ui/button';
+     7→import { Input } from '@/components/ui/input';
+     8→import { Textarea } from '@/components/ui/textarea';
+     9→import { Label } from '@/components/ui/label';
+    10→import { Card, CardContent } from '@/components/ui/card';
+    11→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+    12→import { Switch } from '@/components/ui/switch';
+    13→import { toast } from '@/hooks/use-toast';
+    14→import { Loader2, Save, CheckCircle, FileText, ArrowRight, Info, MapPin } from 'lucide-react';
+    15→import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
+    16→import SurveyStepProgress, { SURVEY_STEPS, SurveyStepNavigation } from '@/components/survey/SurveyStepProgress';
+    17→import GuidedPhotoCapture from '@/components/survey/GuidedPhotoCapture';
+    18→import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
+    19→import { logActivity } from '@/lib/activityLog';
+    20→import { sendStageChangeNotification } from '@/lib/stageNotifications';
+    21→import { motion, AnimatePresence } from 'framer-motion';
+    22→import { cn } from '@/lib/utils';
+    23→
+    24→const surveySchema = z.object({
+    25→  // Property & energy info (key fields for proposals)
+    26→  property_type: z.string().optional().default('residential'),
+    27→  annual_consumption_kwh: z.string().optional(),
+    28→  current_tariff: z.string().optional(),
+    29→  // Customer goals (moved to top)
+    30→  battery_storage: z.boolean().optional(),
+    31→  hot_water_diverter: z.boolean().optional(),
+    32→  ev_charger: z.boolean().optional(),
+    33→  customer_priorities: z.string().optional(),
+    34→  // Roof details
+    35→  roof_type: z.string().min(1, 'Roof type is required'),
+    36→  roof_condition: z.string().min(1, 'Roof condition is required'),
+    37→  roof_orientation: z.string().optional(),
+    38→  roof_pitch: z.string().optional(),
+    39→  roof_material: z.string().optional(),
+    40→  // Environmental
+    41→  shading_analysis: z.string().optional(),
+    42→  nearby_obstructions: z.string().optional(),
+    43→  // Electrical
+    44→  electrical_panel_capacity: z.string().optional(),
+    45→  meter_location: z.string().optional(),
+    46→  grid_connection_type: z.string().optional(),
+    47→  // System recommendations
+    48→  recommended_system_size: z.string().optional(),
+    49→  recommended_panel_count: z.string().optional(),
+    50→  // Installation & logistics (merged)
+    51→  property_storeys: z.string().optional(),
+    52→  scaffolding_required: z.string().optional(),
+    53→  parking_situation: z.string().optional(),
+    54→  attic_access: z.string().optional(),
+    55→  access_notes: z.string().optional(),
+    56→  customer_availability: z.string().optional(),
+    57→  existing_solar: z.boolean().optional(),
+    58→  installation_notes: z.string().optional(),
+    59→  special_requirements: z.string().optional(),
+    60→  status: z.string().default('draft'),
+    61→});
+    62→
+    63→type SurveyFormData = z.infer<typeof surveySchema>;
+    64→
+    65→interface SiteSurveyFormProps {
+    66→  leadId: string;
+    67→  onCreateProposal?: (surveyData: any, leadData: any) => void;
+    68→}
+    69→
+    70→export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyFormProps) {
+    71→  const [loading, setLoading] = useState(false);
+    72→  const [existingSurvey, setExistingSurvey] = useState<any>(null);
+    73→  const [leadData, setLeadData] = useState<any>(null);
+    74→  const [fetchingData, setFetchingData] = useState(true);
+    75→  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; type: string; description: string }>>([]);
+    76→  const [currentStep, setCurrentStep] = useState(1);
+    77→  
+    78→  // Ref for scrolling to survey top
+    79→  const surveyContainerRef = useRef<HTMLDivElement>(null);
+    80→  
+    81→  // Swipe gesture state
+    82→  const touchStartX = useRef<number>(0);
+    83→  const touchEndX = useRef<number>(0);
+    84→  const minSwipeDistance = 50;
+    85→
+    86→  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    87→    touchStartX.current = e.touches[0].clientX;
+    88→  }, []);
+    89→
+    90→  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    91→    touchEndX.current = e.touches[0].clientX;
+    92→  }, []);
+    93→
+    94→  const handleTouchEnd = useCallback(() => {
+    95→    const swipeDistance = touchStartX.current - touchEndX.current;
+    96→    
+    97→    if (Math.abs(swipeDistance) > minSwipeDistance) {
+    98→      if (swipeDistance > 0 && currentStep < SURVEY_STEPS.length) {
+    99→        // Swipe left = next step
+   100→        setCurrentStep(prev => prev + 1);
+   101→      } else if (swipeDistance < 0 && currentStep > 1) {
+   102→        // Swipe right = previous step
+   103→        setCurrentStep(prev => prev - 1);
+   104→      }
+   105→    }
+   106→    
+   107→    // Reset
+   108→    touchStartX.current = 0;
+   109→    touchEndX.current = 0;
+   110→  }, [currentStep]);
+   111→
+   112→  const { register, handleSubmit, formState: { errors }, setValue, watch, getValues } = useForm<SurveyFormData>({
+   113→    resolver: zodResolver(surveySchema),
+   114→    defaultValues: {
+   115→      status: 'draft',
+   116→      property_type: 'residential',
+   117→      current_tariff: '0.35',
+   118→      existing_solar: false,
+   119→      battery_storage: false,
+   120→      hot_water_diverter: false,
+   121→      ev_charger: false,
+   122→    },
+   123→  });
+   124→
+   125→  const formValues = watch();
+   126→
+   127→  // Calculate completion status
+   128→  const completionStatus = validateSurveyCompletion(formValues, uploadedPhotos.length);
+   129→
+   130→  const getCompletedSteps = () => {
+   131→    const completed: string[] = [];
+   132→    // Customer info is always "complete" since it comes from lead data
+   133→    if (leadData?.name && leadData?.email) completed.push('customer');
+   134→    // Goals complete if property type set and consumption entered
+   135→    if (formValues.property_type && formValues.annual_consumption_kwh) {
+   136→      completed.push('goals');
+   137→    }
+   138→    if (completionStatus.sections.roof.complete) completed.push('roof');
+   139→    if (formValues.shading_analysis) completed.push('environmental');
+   140→    if (completionStatus.sections.electrical.complete) completed.push('electrical');
+   141→    if (formValues.property_storeys || formValues.scaffolding_required) completed.push('installation');
+   142→    if (completionStatus.sections.photos.complete) completed.push('photos');
+   143→    return completed;
+   144→  };
+   145→
+   146→  useEffect(() => {
+   147→    fetchExistingSurvey();
+   148→  }, [leadId]);
+   149→
+   150→  // Scroll to survey top when step changes
+   151→  useEffect(() => {
+   152→    if (surveyContainerRef.current) {
+   153→      surveyContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+   154→    }
+   155→  }, [currentStep]);
+   156→
+   157→  const fetchExistingSurvey = async () => {
+   158→    try {
+   159→      // Fetch lead data
+   160→      const { data: lead } = await supabase
+   161→        .from('leads')
+   162→        .select('*')
+   163→        .eq('id', leadId)
+   164→        .single();
+   165→      
+   166→      if (lead) {
+   167→        setLeadData(lead);
+   168→      }
+   169→
+   170→      const { data, error } = await supabase
+   171→        .from('site_surveys')
+   172→        .select('*')
+   173→        .eq('lead_id', leadId)
+   174→        .maybeSingle();
+   175→
+   176→      if (error && error.code !== 'PGRST116') throw error;
+   177→
+   178→      if (data) {
+   179→        setExistingSurvey(data);
+   180→        // Populate form with existing data
+   181→        Object.keys(data).forEach((key) => {
+   182→          if (data[key] !== null && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+   183→            if (['existing_solar', 'battery_storage', 'hot_water_diverter', 'ev_charger'].includes(key)) {
+   184→              setValue(key as any, Boolean(data[key]));
+   185→            } else {
+   186→              setValue(key as any, String(data[key]));
+   187→            }
+   188→          }
+   189→        });
+   190→
+   191→        // Load existing photos
+   192→        const { data: photos } = await supabase
+   193→          .from('survey_photos')
+   194→          .select('*')
+   195→          .eq('survey_id', data.id);
+   196→        
+   197→        if (photos) {
+   198→          setUploadedPhotos(photos.map(p => ({
+   199→            url: p.photo_url,
+   200→            type: p.photo_type || 'other',
+   201→            description: p.description || '',
+   202→          })));
+   203→        }
+   204→      }
+   205→    } catch (error: any) {
+   206→      console.error('Error fetching survey:', error);
+   207→      toast({
+   208→        title: 'Error',
+   209→        description: 'Failed to load existing survey data',
+   210→        variant: 'destructive',
+   211→      });
+   212→    } finally {
+   213→      setFetchingData(false);
+   214→    }
+   215→  };
+   216→
+   217→  const onSubmit = async (data: SurveyFormData, shouldComplete: boolean = false) => {
+   218→    if (shouldComplete && !completionStatus.isComplete) {
+   219→      toast({
+   220→        title: 'Cannot Complete Survey',
+   221→        description: `Please fill in all required fields: ${completionStatus.missingFields.slice(0, 3).join(', ')}${completionStatus.missingFields.length > 3 ? '...' : ''}`,
+   222→        variant: 'destructive',
+   223→      });
+   224→      return;
+   225→    }
+   226→
+   227→    setLoading(true);
+   228→    try {
+   229→      const { data: { user } } = await supabase.auth.getUser();
+   230→      if (!user) throw new Error('Not authenticated');
+   231→
+   232→      const autoStatus = calculateSurveyStatus(data, uploadedPhotos.length);
+   233→      const finalStatus = shouldComplete ? 'completed' : autoStatus;
+   234→
+   235→      const surveyData = {
+   236→        lead_id: leadId,
+   237→        surveyor_id: user.id,
+   238→        roof_type: data.roof_type,
+   239→        roof_condition: data.roof_condition,
+   240→        roof_orientation: data.roof_orientation || null,
+   241→        roof_pitch: data.roof_pitch ? parseFloat(data.roof_pitch) : null,
+   242→        roof_material: data.roof_material || null,
+   243→        shading_analysis: data.shading_analysis || null,
+   244→        nearby_obstructions: data.nearby_obstructions || null,
+   245→        electrical_panel_capacity: data.electrical_panel_capacity || null,
+   246→        meter_location: data.meter_location || null,
+   247→        grid_connection_type: data.grid_connection_type || null,
+   248→        recommended_system_size: data.recommended_system_size ? parseFloat(data.recommended_system_size) : null,
+   249→        recommended_panel_count: data.recommended_panel_count ? parseInt(data.recommended_panel_count) : null,
+   250→        installation_notes: data.installation_notes || null,
+   251→        special_requirements: data.special_requirements || null,
+   252→        status: finalStatus,
+   253→        completed_at: finalStatus === 'completed' ? new Date().toISOString() : null,
+   254→        property_storeys: data.property_storeys ? parseInt(data.property_storeys) : null,
+   255→        scaffolding_required: data.scaffolding_required || null,
+   256→        parking_situation: data.parking_situation || null,
+   257→        attic_access: data.attic_access || null,
+   258→        access_notes: data.access_notes || null,
+   259→        customer_availability: data.customer_availability || null,
+   260→        existing_solar: data.existing_solar || false,
+   261→      };
+   262→
+   263→      let surveyId;
+   264→      if (existingSurvey) {
+   265→        const { error } = await supabase
+   266→          .from('site_surveys')
+   267→          .update(surveyData)
+   268→          .eq('id', existingSurvey.id);
+   269→        if (error) throw error;
+   270→        surveyId = existingSurvey.id;
+   271→      } else {
+   272→        const { data: newSurvey, error } = await supabase
+   273→          .from('site_surveys')
+   274→          .insert([surveyData])
+   275→          .select()
+   276→          .single();
+   277→        if (error) throw error;
+   278→        surveyId = newSurvey.id;
+   279→        setExistingSurvey(newSurvey);
+   280→      }
+   281→
+   282→      // Save photos to survey_photos table
+   283→      if (uploadedPhotos.length > 0 && surveyId) {
+   284→        await supabase
+   285→          .from('survey_photos')
+   286→          .delete()
+   287→          .eq('survey_id', surveyId);
+   288→
+   289→        const photoInserts = uploadedPhotos.map(photo => ({
+   290→          survey_id: surveyId,
+   291→          photo_url: photo.url,
+   292→          photo_type: photo.type,
+   293→          description: photo.description,
+   294→        }));
+   295→
+   296→        const { error: photoError } = await supabase
+   297→          .from('survey_photos')
+   298→          .insert(photoInserts);
+   299→
+   300→        if (photoError) throw photoError;
+   301→      }
+   302→
+   303→      // Update lead workflow stage
+   304→      if (finalStatus === 'completed') {
+   305→        await supabase
+   306→          .from('leads')
+   307→          .update({ workflow_stage: 'survey_complete' })
+   308→          .eq('id', leadId);
+   309→        
+   310→        await sendStageChangeNotification(leadId, leadData?.workflow_stage || 'new', 'survey_complete');
+   311→      } else if (finalStatus === 'in_progress') {
+   312→        await supabase
+   313→          .from('leads')
+   314→          .update({ workflow_stage: 'survey_in_progress' })
+   315→          .eq('id', leadId);
+   316→      }
+   317→
+   318→      // Log activity
+   319→      if (finalStatus === 'completed') {
+   320→        await logActivity({
+   321→          leadId,
+   322→          actionType: 'survey_completed',
+   323→          description: `Site survey completed for ${leadData?.name || 'lead'}`,
+   324→          metadata: {
+   325→            recommended_system_size: data.recommended_system_size,
+   326→            panel_count: data.recommended_panel_count,
+   327→            roof_type: data.roof_type
+   328→          }
+   329→        });
+   330→      } else if (!existingSurvey) {
+   331→        await logActivity({
+   332→          leadId,
+   333→          actionType: 'survey_started',
+   334→          description: `Site survey started for ${leadData?.name || 'lead'}`
+   335→        });
+   336→      }
+   337→
+   338→      toast({
+   339→        title: 'Success',
+   340→        description: `Site survey ${existingSurvey ? 'updated' : 'created'} successfully${finalStatus === 'completed' ? ' and marked as complete' : ''}`,
+   341→      });
+   342→
+   343→      fetchExistingSurvey();
+   344→    } catch (error: any) {
+   345→      console.error('Error saving survey:', error);
+   346→      toast({
+   347→        title: 'Error',
+   348→        description: error.message || 'Failed to save survey',
+   349→        variant: 'destructive',
+   350→      });
+   351→    } finally {
+   352→      setLoading(false);
+   353→    }
+   354→  };
+   355→
+   356→  const handleCompleteAndCreateProposal = async () => {
+   357→    const formData = getValues();
+   358→    await onSubmit(formData, true);
+   359→    
+   360→    if (completionStatus.isComplete && onCreateProposal) {
+   361→      const proposalData = mapSurveyToProposal(formData, leadData);
+   362→      onCreateProposal(proposalData, leadData);
+   363→    }
+   364→  };
+   365→
+   366→  if (fetchingData) {
+   367→    return (
+   368→      <div className="flex items-center justify-center py-12">
+   369→        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+   370→      </div>
+   371→    );
+   372→  }
+   373→
+   374→  // Step content components
+   375→  const renderStepContent = () => {
+   376→    switch (currentStep) {
+   377→      case 1: // Customer Info (read-only from lead)
+   378→        return (
+   379→          <Card>
+   380→            <CardContent className="pt-6 space-y-4">
+   381→              <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20 mb-4">
+   382→                <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+   383→                <p className="text-sm text-muted-foreground">
+   384→                  Customer information is automatically populated from the lead record.
+   385→                </p>
+   386→              </div>
+   387→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   388→                <div>
+   389→                  <Label>Customer Name</Label>
+   390→                  <div className="p-3 bg-muted rounded-lg font-medium">{leadData?.name || 'Not available'}</div>
+   391→                </div>
+   392→                <div>
+   393→                  <Label>Email</Label>
+   394→                  <div className="p-3 bg-muted rounded-lg">{leadData?.email || 'Not available'}</div>
+   395→                </div>
+   396→                <div>
+   397→                  <Label>Phone</Label>
+   398→                  <div className="p-3 bg-muted rounded-lg">{leadData?.phone || 'Not provided'}</div>
+   399→                </div>
+   400→                <div>
+   401→                  <Label>Monthly Bill</Label>
+   402→                  <div className="p-3 bg-muted rounded-lg">
+   403→                    {leadData?.monthly_bill ? `€${leadData.monthly_bill}` : 'Not provided'}
+   404→                  </div>
+   405→                </div>
+   406→                <div className="sm:col-span-2">
+   407→                  <Label>Address</Label>
+   408→                  <div className="p-3 bg-muted rounded-lg">{leadData?.address || 'Not provided'}</div>
+   409→                </div>
+   410→              </div>
+   411→            </CardContent>
+   412→          </Card>
+   413→        );
+   414→
+   415→      case 2: // Customer Goals & Preferences (moved up)
+   416→        return (
+   417→          <Card>
+   418→            <CardContent className="pt-6 space-y-4">
+   419→              {/* Property Type - Key field for SEAI grant calculations */}
+   420→              <div>
+   421→                <Label htmlFor="property_type" className="font-medium">Property Type *</Label>
+   422→                <Select onValueChange={(value) => setValue('property_type', value)} value={watch('property_type') || 'residential'}>
+   423→                  <SelectTrigger className="w-full mt-1.5 h-12">
+   424→                    <SelectValue placeholder="Select property type" />
+   425→                  </SelectTrigger>
+   426→                  <SelectContent>
+   427→                    <SelectItem value="residential">Residential</SelectItem>
+   428→                    <SelectItem value="commercial">Commercial</SelectItem>
+   429→                    <SelectItem value="industrial">Industrial</SelectItem>
+   430→                  </SelectContent>
+   431→                </Select>
+   432→                <p className="text-xs text-muted-foreground mt-1">Determines SEAI grant eligibility</p>
+   433→              </div>
+   434→
+   435→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   436→                <div>
+   437→                  <Label htmlFor="annual_consumption_kwh">Annual Consumption (kWh) *</Label>
+   438→                  <Input 
+   439→                    {...register('annual_consumption_kwh')} 
+   440→                    type="number" 
+   441→                    placeholder="e.g., 4500" 
+   442→                    className="w-full mt-1.5 h-12" 
+   443→                  />
+   444→                  <p className="text-xs text-muted-foreground mt-1">From electricity bill</p>
+   445→                </div>
+   446→                <div>
+   447→                  <Label htmlFor="current_tariff">Current Tariff (€/kWh)</Label>
+   448→                  <Input 
+   449→                    {...register('current_tariff')} 
+   450→                    type="number" 
+   451→                    step="0.01"
+   452→                    placeholder="0.35" 
+   453→                    className="w-full mt-1.5 h-12" 
+   454→                  />
+   455→                  <p className="text-xs text-muted-foreground mt-1">Avg €0.35/kWh in Ireland</p>
+   456→                </div>
+   457→              </div>
+   458→
+   459→              <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+   460→                <Label className="font-semibold text-base">What are you looking to achieve?</Label>
+   461→                <div className="grid grid-cols-1 gap-3">
+   462→                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
+   463→                    <Switch
+   464→                      checked={watch('battery_storage') || false}
+   465→                      onCheckedChange={(checked) => setValue('battery_storage', checked)}
+   466→                    />
+   467→                    <div className="flex-1">
+   468→                      <Label className="cursor-pointer font-medium text-base">Battery Storage</Label>
+   469→                      <p className="text-sm text-muted-foreground">Store excess solar energy for nighttime use</p>
+   470→                    </div>
+   471→                  </div>
+   472→                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
+   473→                    <Switch
+   474→                      checked={watch('hot_water_diverter') || false}
+   475→                      onCheckedChange={(checked) => setValue('hot_water_diverter', checked)}
+   476→                    />
+   477→                    <div className="flex-1">
+   478→                      <Label className="cursor-pointer font-medium text-base">Hot Water Diverter</Label>
+   479→                      <p className="text-sm text-muted-foreground">Eddi/iBoost to heat water with excess solar</p>
+   480→                    </div>
+   481→                  </div>
+   482→                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
+   483→                    <Switch
+   484→                      checked={watch('ev_charger') || false}
+   485→                      onCheckedChange={(checked) => setValue('ev_charger', checked)}
+   486→                    />
+   487→                    <div className="flex-1">
+   488→                      <Label className="cursor-pointer font-medium text-base">EV Charger</Label>
+   489→                      <p className="text-sm text-muted-foreground">Charge your electric vehicle with solar power</p>
+   490→                    </div>
+   491→                  </div>
+   492→                </div>
+   493→              </div>
+   494→
+   495→              <div>
+   496→                <Label htmlFor="customer_priorities">Customer Priorities & Notes</Label>
+   497→                <Textarea 
+   498→                  {...register('customer_priorities')} 
+   499→                  placeholder="What's most important to the customer? (e.g., maximise savings, energy independence, reduce carbon footprint)" 
+   500→                  rows={3} 
+   501→                  className="w-full mt-1.5" 
+   502→                />
+   503→              </div>
+   504→            </CardContent>
+   505→          </Card>
+   506→        );
+   507→
+   508→      case 3: // Roof Details
+   509→        return (
+   510→          <Card>
+   511→            <CardContent className="pt-6 space-y-4">
+   512→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   513→                <div>
+   514→                  <Label htmlFor="roof_type">Roof Type *</Label>
+   515→                  <Select onValueChange={(value) => setValue('roof_type', value)} value={watch('roof_type')}>
+   516→                    <SelectTrigger className="w-full mt-1.5">
+   517→                      <SelectValue placeholder="Select roof type" />
+   518→                    </SelectTrigger>
+   519→                    <SelectContent>
+   520→                      <SelectItem value="pitched">Pitched</SelectItem>
+   521→                      <SelectItem value="flat">Flat</SelectItem>
+   522→                      <SelectItem value="mixed">Mixed</SelectItem>
+   523→                    </SelectContent>
+   524→                  </Select>
+   525→                  {errors.roof_type && <p className="text-sm text-destructive mt-1">{errors.roof_type.message}</p>}
+   526→                </div>
+   527→
+   528→                <div>
+   529→                  <Label htmlFor="roof_condition">Roof Condition *</Label>
+   530→                  <Select onValueChange={(value) => setValue('roof_condition', value)} value={watch('roof_condition')}>
+   531→                    <SelectTrigger className="w-full mt-1.5">
+   532→                      <SelectValue placeholder="Select condition" />
+   533→                    </SelectTrigger>
+   534→                    <SelectContent>
+   535→                      <SelectItem value="excellent">Excellent</SelectItem>
+   536→                      <SelectItem value="good">Good</SelectItem>
+   537→                      <SelectItem value="fair">Fair</SelectItem>
+   538→                      <SelectItem value="poor">Poor</SelectItem>
+   539→                    </SelectContent>
+   540→                  </Select>
+   541→                  {errors.roof_condition && <p className="text-sm text-destructive mt-1">{errors.roof_condition.message}</p>}
+   542→                </div>
+   543→
+   544→                <div>
+   545→                  <Label htmlFor="roof_orientation">Roof Orientation</Label>
+   546→                  <Select onValueChange={(value) => setValue('roof_orientation', value)} value={watch('roof_orientation')}>
+   547→                    <SelectTrigger className="w-full mt-1.5">
+   548→                      <SelectValue placeholder="Select orientation" />
+   549→                    </SelectTrigger>
+   550→                    <SelectContent>
+   551→                      <SelectItem value="South">South</SelectItem>
+   552→                      <SelectItem value="South-East">South-East</SelectItem>
+   553→                      <SelectItem value="South-West">South-West</SelectItem>
+   554→                      <SelectItem value="East">East</SelectItem>
+   555→                      <SelectItem value="West">West</SelectItem>
+   556→                      <SelectItem value="North">North (not ideal)</SelectItem>
+   557→                    </SelectContent>
+   558→                  </Select>
+   559→                </div>
+   560→
+   561→                <div>
+   562→                  <Label htmlFor="roof_pitch">Roof Pitch (degrees)</Label>
+   563→                  <Input {...register('roof_pitch')} type="number" step="1" placeholder="e.g., 30" className="w-full mt-1.5" />
+   564→                </div>
+   565→
+   566→                <div className="sm:col-span-2">
+   567→                  <Label htmlFor="roof_material">Roof Material</Label>
+   568→                  <Select onValueChange={(value) => setValue('roof_material', value)} value={watch('roof_material')}>
+   569→                    <SelectTrigger className="w-full mt-1.5">
+   570→                      <SelectValue placeholder="Select material" />
+   571→                    </SelectTrigger>
+   572→                    <SelectContent>
+   573→                      <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
+   574→                      <SelectItem value="Clay tiles">Clay tiles</SelectItem>
+   575→                      <SelectItem value="Slate">Slate</SelectItem>
+   576→                      <SelectItem value="Metal">Metal</SelectItem>
+   577→                      <SelectItem value="Felt/Membrane">Felt/Membrane (flat)</SelectItem>
+   578→                      <SelectItem value="Other">Other</SelectItem>
+   579→                    </SelectContent>
+   580→                  </Select>
+   581→                </div>
+   582→              </div>
+   583→            </CardContent>
+   584→          </Card>
+   585→        );
+   586→
+   587→      case 4: // Environmental
+   588→        return (
+   589→          <Card>
+   590→            <CardContent className="pt-6 space-y-4">
+   591→              <div>
+   592→                <Label htmlFor="shading_analysis">Shading Analysis</Label>
+   593→                <Select onValueChange={(value) => setValue('shading_analysis', value)} value={watch('shading_analysis')}>
+   594→                  <SelectTrigger className="w-full mt-1.5">
+   595→                    <SelectValue placeholder="Select shading level" />
+   596→                  </SelectTrigger>
+   597→                  <SelectContent>
+   598→                    <SelectItem value="None">No shading</SelectItem>
+   599→                    <SelectItem value="Minimal">Minimal (early morning/late evening only)</SelectItem>
+   600→                    <SelectItem value="Partial">Partial (some hours affected)</SelectItem>
+   601→                    <SelectItem value="Significant">Significant (major obstruction)</SelectItem>
+   602→                  </SelectContent>
+   603→                </Select>
+   604→              </div>
+   605→
+   606→              <div>
+   607→                <Label htmlFor="nearby_obstructions">Nearby Obstructions</Label>
+   608→                <Textarea 
+   609→                  {...register('nearby_obstructions')} 
+   610→                  placeholder="Trees, chimneys, neighboring buildings, dormer windows..." 
+   611→                  rows={3} 
+   612→                  className="w-full mt-1.5" 
+   613→                />
+   614→              </div>
+   615→            </CardContent>
+   616→          </Card>
+   617→        );
+   618→
+   619→      case 5: // Electrical
+   620→        return (
+   621→          <Card>
+   622→            <CardContent className="pt-6 space-y-4">
+   623→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   624→                <div>
+   625→                  <Label htmlFor="electrical_panel_capacity">Panel Capacity</Label>
+   626→                  <Select onValueChange={(value) => setValue('electrical_panel_capacity', value)} value={watch('electrical_panel_capacity')}>
+   627→                    <SelectTrigger className="w-full mt-1.5">
+   628→                      <SelectValue placeholder="Select capacity" />
+   629→                    </SelectTrigger>
+   630→                    <SelectContent>
+   631→                      <SelectItem value="40A">40A (older property)</SelectItem>
+   632→                      <SelectItem value="63A">63A (standard)</SelectItem>
+   633→                      <SelectItem value="80A">80A (modern)</SelectItem>
+   634→                      <SelectItem value="100A">100A (large property)</SelectItem>
+   635→                      <SelectItem value="3-phase">3-phase (commercial)</SelectItem>
+   636→                    </SelectContent>
+   637→                  </Select>
+   638→                </div>
+   639→
+   640→                <div>
+   641→                  <Label htmlFor="grid_connection_type">Grid Connection</Label>
+   642→                  <Select onValueChange={(value) => setValue('grid_connection_type', value)} value={watch('grid_connection_type')}>
+   643→                    <SelectTrigger className="w-full mt-1.5">
+   644→                      <SelectValue placeholder="Select type" />
+   645→                    </SelectTrigger>
+   646→                    <SelectContent>
+   647→                      <SelectItem value="Single phase">Single phase</SelectItem>
+   648→                      <SelectItem value="Three phase">Three phase</SelectItem>
+   649→                    </SelectContent>
+   650→                  </Select>
+   651→                </div>
+   652→
+   653→                <div className="sm:col-span-2">
+   654→                  <Label htmlFor="meter_location">Meter Location</Label>
+   655→                  <Input {...register('meter_location')} placeholder="e.g., Outside front, utility room, garage" className="w-full mt-1.5" />
+   656→                </div>
+   657→
+   658→                <div>
+   659→                  <Label htmlFor="recommended_system_size">Recommended System Size (kW)</Label>
+   660→                  <Input {...register('recommended_system_size')} type="number" step="0.1" placeholder="e.g., 6.5" className="w-full mt-1.5" />
+   661→                </div>
+   662→
+   663→                <div>
+   664→                  <Label htmlFor="recommended_panel_count">Recommended Panel Count</Label>
+   665→                  <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full mt-1.5" />
+   666→                </div>
+   667→              </div>
+   668→            </CardContent>
+   669→          </Card>
+   670→        );
+   671→
+   672→      case 6: // Installation & Logistics (merged)
+   673→        return (
+   674→          <Card>
+   675→            <CardContent className="pt-6 space-y-4">
+   676→              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-4">
+   677→                <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+   678→                <p className="text-sm text-amber-800 dark:text-amber-200">
+   679→                  These details help installers prepare for the site visit and reduce second visits.
+   680→                </p>
+   681→              </div>
+   682→
+   683→              {/* Address Lookup with Map */}
+   684→              <div className="mb-4">
+   685→                <div className="flex items-center gap-2 mb-2">
+   686→                  <MapPin className="h-4 w-4 text-primary" />
+   687→                  <Label className="font-medium">Property Location</Label>
+   688→                </div>
+   689→                <EircodeAddressLookup 
+   690→                  value={leadData?.address || ''}
+   691→                  onChange={(address) => {
+   692→                    if (address && leadData) {
+   693→                      supabase
+   694→                        .from('leads')
+   695→                        .update({ address })
+   696→                        .eq('id', leadId)
+   697→                        .then(() => {
+   698→                          setLeadData({ ...leadData, address });
+   699→                        });
+   700→                    }
+   701→                  }}
+   702→                  showMap={true}
+   703→                />
+   704→              </div>
+   705→
+   706→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   707→                <div>
+   708→                  <Label htmlFor="property_storeys">Property Storeys</Label>
+   709→                  <Select onValueChange={(value) => setValue('property_storeys', value)} value={watch('property_storeys')}>
+   710→                    <SelectTrigger className="w-full mt-1.5">
+   711→                      <SelectValue placeholder="Select storeys" />
+   712→                    </SelectTrigger>
+   713→                    <SelectContent>
+   714→                      <SelectItem value="1">1-storey (bungalow)</SelectItem>
+   715→                      <SelectItem value="2">2-storey</SelectItem>
+   716→                      <SelectItem value="3">3+ storey</SelectItem>
+   717→                    </SelectContent>
+   718→                  </Select>
+   719→                </div>
+   720→
+   721→                <div>
+   722→                  <Label htmlFor="scaffolding_required">Scaffolding Required</Label>
+   723→                  <Select onValueChange={(value) => setValue('scaffolding_required', value)} value={watch('scaffolding_required')}>
+   724→                    <SelectTrigger className="w-full mt-1.5">
+   725→                      <SelectValue placeholder="Select option" />
+   726→                    </SelectTrigger>
+   727→                    <SelectContent>
+   728→                      <SelectItem value="yes">Yes - Full scaffolding</SelectItem>
+   729→                      <SelectItem value="partial">Partial - Some walls only</SelectItem>
+   730→                      <SelectItem value="no">No - Ladder access OK</SelectItem>
+   731→                    </SelectContent>
+   732→                  </Select>
+   733→                </div>
+   734→
+   735→                <div>
+   736→                  <Label htmlFor="attic_access">Attic Access</Label>
+   737→                  <Select onValueChange={(value) => setValue('attic_access', value)} value={watch('attic_access')}>
+   738→                    <SelectTrigger className="w-full mt-1.5">
+   739→                      <SelectValue placeholder="Select access type" />
+   740→                    </SelectTrigger>
+   741→                    <SelectContent>
+   742→                      <SelectItem value="easy">Easy hatch access</SelectItem>
+   743→                      <SelectItem value="difficult">Difficult access</SelectItem>
+   744→                      <SelectItem value="none">No attic access</SelectItem>
+   745→                    </SelectContent>
+   746→                  </Select>
+   747→                </div>
+   748→
+   749→                <div>
+   750→                  <Label htmlFor="parking_situation">Parking Situation</Label>
+   751→                  <Input {...register('parking_situation')} placeholder="e.g., Driveway, street parking" className="w-full mt-1.5" />
+   752→                </div>
+   753→
+   754→                <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-muted rounded-lg">
+   755→                  <Switch
+   756→                    checked={watch('existing_solar') || false}
+   757→                    onCheckedChange={(checked) => setValue('existing_solar', checked)}
+   758→                  />
+   759→                  <Label htmlFor="existing_solar" className="cursor-pointer">
+   760→                    Property has existing solar system
+   761→                  </Label>
+   762→                </div>
+   763→
+   764→                <div className="sm:col-span-2">
+   765→                  <Label htmlFor="customer_availability">Customer Availability</Label>
+   766→                  <Textarea {...register('customer_availability')} placeholder="Best days/times for installation, any date restrictions..." rows={2} className="w-full mt-1.5" />
+   767→                </div>
+   768→
+   769→                <div className="sm:col-span-2">
+   770→                  <Label htmlFor="access_notes">Access Notes</Label>
+   771→                  <Textarea {...register('access_notes')} placeholder="Gate codes, dog in garden, ring doorbell, etc..." rows={2} className="w-full mt-1.5" />
+   772→                </div>
+   773→
+   774→                <div className="sm:col-span-2">
+   775→                  <Label htmlFor="installation_notes">Installation Notes</Label>
+   776→                  <Textarea {...register('installation_notes')} placeholder="Special considerations, cable routing preferences..." rows={2} className="w-full mt-1.5" />
+   777→                </div>
+   778→
+   779→                <div className="sm:col-span-2">
+   780→                  <Label htmlFor="special_requirements">Special Requirements</Label>
+   781→                  <Textarea {...register('special_requirements')} placeholder="Permits, planning permission, HOA restrictions..." rows={2} className="w-full mt-1.5" />
+   782→                </div>
+   783→              </div>
+   784→            </CardContent>
+   785→          </Card>
+   786→        );
+   787→
+   788→      case 7: // Photos
+   789→        return (
+   790→          <Card>
+   791→            <CardContent className="pt-6">
+   792→              <GuidedPhotoCapture
+   793→                leadId={leadId}
+   794→                existingPhotos={uploadedPhotos.map((p, i) => ({ 
+   795→                  id: `photo-${i}`, 
+   796→                  url: p.url, 
+   797→                  type: p.type 
+   798→                }))}
+   799→                onPhotosChange={(photos) => {
+   800→                  setUploadedPhotos(photos.map(p => ({
+   801→                    url: p.url,
+   802→                    type: p.type,
+   803→                    description: p.type
+   804→                  })));
+   805→                }}
+   806→              />
+   807→            </CardContent>
+   808→          </Card>
+   809→        );
+   810→
+   811→      default:
+   812→        return null;
+   813→    }
+   814→  };
+   815→
+   816→  return (
+   817→    <div ref={surveyContainerRef} className="space-y-4 pb-40">
+   818→      {/* Progress Indicator - Sticky on mobile */}
+   819→      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+   820→        <SurveyStepProgress 
+   821→          currentStep={currentStep} 
+   822→          completedSteps={getCompletedSteps()}
+   823→          onStepChange={setCurrentStep}
+   824→          showNavigation={false}
+   825→        />
+   826→      </div>
+   827→
+   828→      {/* Step Content with Animation and Swipe Gestures */}
+   829→      <AnimatePresence mode="wait">
+   830→        <motion.div
+   831→          key={currentStep}
+   832→          initial={{ opacity: 0, x: 20 }}
+   833→          animate={{ opacity: 1, x: 0 }}
+   834→          exit={{ opacity: 0, x: -20 }}
+   835→          transition={{ duration: 0.2 }}
+   836→          onTouchStart={handleTouchStart}
+   837→          onTouchMove={handleTouchMove}
+   838→          onTouchEnd={handleTouchEnd}
+   839→        >
+   840→          {renderStepContent()}
+   841→        </motion.div>
+   842→      </AnimatePresence>
+   843→
+   844→      {/* Survey Status Indicator */}
+   845→      <Card>
+   846→        <CardContent className="pt-6">
+   847→          <div className="flex items-center justify-between">
+   848→            <div>
+   849→              <Label className="mb-1 block">Survey Status</Label>
+   850→              <p className="text-xs text-muted-foreground">Auto-calculated based on completion</p>
+   851→            </div>
+   852→            <div className={cn(
+   853→              "px-3 py-1.5 rounded-full text-sm font-medium",
+   854→              calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' 
+   855→                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+   856→                : calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress'
+   857→                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+   858→                : 'bg-muted text-muted-foreground'
+   859→            )}>
+   860→              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' && (
+   861→                <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Completed</span>
+   862→              )}
+   863→              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress' && 'In Progress'}
+   864→              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'draft' && 'Draft'}
+   865→            </div>
+   866→          </div>
+   867→        </CardContent>
+   868→      </Card>
+   869→
+   870→      {/* Sticky Action Buttons - Mobile Safe Area */}
+   871→      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
+   872→        <div className="max-w-4xl mx-auto space-y-3">
+   873→          {/* Step Navigation - Previous/Next */}
+   874→          <SurveyStepNavigation 
+   875→            currentStep={currentStep}
+   876→            totalSteps={SURVEY_STEPS.length}
+   877→            onStepChange={setCurrentStep}
+   878→          />
+   879→          
+   880→          {/* Save/Complete Actions */}
+   881→          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+   882→            <Button 
+   883→              onClick={handleSubmit((data) => onSubmit(data, false))} 
+   884→              disabled={loading} 
+   885→              variant="outline"
+   886→              className="flex-1 h-11"
+   887→            >
+   888→              {loading ? (
+   889→                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+   890→              ) : (
+   891→                <><Save className="mr-2 h-4 w-4" /> Save Survey</>
+   892→              )}
+   893→            </Button>
+   894→
+   895→            {onCreateProposal && (
+   896→              <Button
+   897→                type="button"
+   898→                onClick={handleCompleteAndCreateProposal}
+   899→                disabled={loading || !completionStatus.isComplete}
+   900→                className="flex-1 h-11 bg-green-600 hover:bg-green-700"
+   901→              >
+   902→                <FileText className="mr-2 h-4 w-4" />
+   903→                Complete & Create Proposal
+   904→                <ArrowRight className="ml-2 h-4 w-4" />
+   905→              </Button>
+   906→            )}
+   907→          </div>
+   908→          
+   909→          {!completionStatus.isComplete && onCreateProposal && (
+   910→            <p className="text-xs text-muted-foreground text-center">
+   911→              Complete all required fields ({completionStatus.completionPercentage}%) to create a proposal
+   912→            </p>
+   913→          )}
+   914→        </div>
+   915→      </div>
+   916→    </div>
+   917→  );
+   918→}
+   919→

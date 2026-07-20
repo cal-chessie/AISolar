@@ -1,0 +1,1349 @@
+     1→export type Json =
+     2→  | string
+     3→  | number
+     4→  | boolean
+     5→  | null
+     6→  | { [key: string]: Json | undefined }
+     7→  | Json[]
+     8→
+     9→export type Database = {
+    10→  // Allows to automatically instantiate createClient with right options
+    11→  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+    12→  __InternalSupabase: {
+    13→    PostgrestVersion: "13.0.5"
+    14→  }
+    15→  public: {
+    16→    Tables: {
+    17→      activity_logs: {
+    18→        Row: {
+    19→          action_type: string
+    20→          created_at: string
+    21→          description: string
+    22→          id: string
+    23→          lead_id: string | null
+    24→          metadata: Json | null
+    25→          user_id: string | null
+    26→        }
+    27→        Insert: {
+    28→          action_type: string
+    29→          created_at?: string
+    30→          description: string
+    31→          id?: string
+    32→          lead_id?: string | null
+    33→          metadata?: Json | null
+    34→          user_id?: string | null
+    35→        }
+    36→        Update: {
+    37→          action_type?: string
+    38→          created_at?: string
+    39→          description?: string
+    40→          id?: string
+    41→          lead_id?: string | null
+    42→          metadata?: Json | null
+    43→          user_id?: string | null
+    44→        }
+    45→        Relationships: [
+    46→          {
+    47→            foreignKeyName: "activity_logs_lead_id_fkey"
+    48→            columns: ["lead_id"]
+    49→            isOneToOne: false
+    50→            referencedRelation: "leads"
+    51→            referencedColumns: ["id"]
+    52→          },
+    53→        ]
+    54→      }
+    55→      assignments: {
+    56→        Row: {
+    57→          assigned_by: string
+    58→          assignment_type: string
+    59→          completed_date: string | null
+    60→          created_at: string
+    61→          id: string
+    62→          installer_id: string
+    63→          lead_id: string
+    64→          notes: string | null
+    65→          priority: string | null
+    66→          proposal_id: string | null
+    67→          scheduled_date: string | null
+    68→          status: string | null
+    69→          updated_at: string
+    70→        }
+    71→        Insert: {
+    72→          assigned_by: string
+    73→          assignment_type: string
+    74→          completed_date?: string | null
+    75→          created_at?: string
+    76→          id?: string
+    77→          installer_id: string
+    78→          lead_id: string
+    79→          notes?: string | null
+    80→          priority?: string | null
+    81→          proposal_id?: string | null
+    82→          scheduled_date?: string | null
+    83→          status?: string | null
+    84→          updated_at?: string
+    85→        }
+    86→        Update: {
+    87→          assigned_by?: string
+    88→          assignment_type?: string
+    89→          completed_date?: string | null
+    90→          created_at?: string
+    91→          id?: string
+    92→          installer_id?: string
+    93→          lead_id?: string
+    94→          notes?: string | null
+    95→          priority?: string | null
+    96→          proposal_id?: string | null
+    97→          scheduled_date?: string | null
+    98→          status?: string | null
+    99→          updated_at?: string
+   100→        }
+   101→        Relationships: [
+   102→          {
+   103→            foreignKeyName: "assignments_installer_id_fkey"
+   104→            columns: ["installer_id"]
+   105→            isOneToOne: false
+   106→            referencedRelation: "installers"
+   107→            referencedColumns: ["id"]
+   108→          },
+   109→          {
+   110→            foreignKeyName: "assignments_lead_id_fkey"
+   111→            columns: ["lead_id"]
+   112→            isOneToOne: false
+   113→            referencedRelation: "leads"
+   114→            referencedColumns: ["id"]
+   115→          },
+   116→          {
+   117→            foreignKeyName: "assignments_proposal_id_fkey"
+   118→            columns: ["proposal_id"]
+   119→            isOneToOne: false
+   120→            referencedRelation: "proposals"
+   121→            referencedColumns: ["id"]
+   122→          },
+   123→        ]
+   124→      }
+   125→      contracts: {
+   126→        Row: {
+   127→          created_at: string
+   128→          gdpr_consent: boolean
+   129→          gdpr_consent_text: string | null
+   130→          id: string
+   131→          lead_id: string
+   132→          proposal_id: string
+   133→          signature_data: string | null
+   134→          signed_at: string
+   135→          signed_by_email: string
+   136→          signed_by_name: string
+   137→        }
+   138→        Insert: {
+   139→          created_at?: string
+   140→          gdpr_consent?: boolean
+   141→          gdpr_consent_text?: string | null
+   142→          id?: string
+   143→          lead_id: string
+   144→          proposal_id: string
+   145→          signature_data?: string | null
+   146→          signed_at?: string
+   147→          signed_by_email: string
+   148→          signed_by_name: string
+   149→        }
+   150→        Update: {
+   151→          created_at?: string
+   152→          gdpr_consent?: boolean
+   153→          gdpr_consent_text?: string | null
+   154→          id?: string
+   155→          lead_id?: string
+   156→          proposal_id?: string
+   157→          signature_data?: string | null
+   158→          signed_at?: string
+   159→          signed_by_email?: string
+   160→          signed_by_name?: string
+   161→        }
+   162→        Relationships: []
+   163→      }
+   164→      follow_up_settings: {
+   165→        Row: {
+   166→          created_at: string
+   167→          id: string
+   168→          threshold_days: number
+   169→          updated_at: string
+   170→          workflow_stage: string
+   171→        }
+   172→        Insert: {
+   173→          created_at?: string
+   174→          id?: string
+   175→          threshold_days?: number
+   176→          updated_at?: string
+   177→          workflow_stage: string
+   178→        }
+   179→        Update: {
+   180→          created_at?: string
+   181→          id?: string
+   182→          threshold_days?: number
+   183→          updated_at?: string
+   184→          workflow_stage?: string
+   185→        }
+   186→        Relationships: []
+   187→      }
+   188→      installation_checklists: {
+   189→        Row: {
+   190→          battery_installed: boolean | null
+   191→          cable_routing_complete: boolean | null
+   192→          completion_notes: string | null
+   193→          created_at: string
+   194→          ct_clamp_location: string | null
+   195→          customer_app_setup: boolean | null
+   196→          customer_signature: string | null
+   197→          customer_signed_at: string | null
+   198→          earth_bond_confirmed: boolean | null
+   199→          export_limiter_required: boolean | null
+   200→          flashing_installed: boolean | null
+   201→          id: string
+   202→          installer_id: string | null
+   203→          installer_signature: string | null
+   204→          installer_signed_at: string | null
+   205→          inverter_installed: boolean | null
+   206→          isolator_installed: boolean | null
+   207→          lead_id: string
+   208→          main_fuse_size: string | null
+   209→          monitoring_online: boolean | null
+   210→          myenergi_setup: boolean | null
+   211→          network_provider: string | null
+   212→          panels_installed: boolean | null
+   213→          proposal_id: string
+   214→          rcd_present_tested: boolean | null
+   215→          roof_tiles_secure: boolean | null
+   216→          status: string | null
+   217→          updated_at: string
+   218→          weatherproofing_complete: boolean | null
+   219→        }
+   220→        Insert: {
+   221→          battery_installed?: boolean | null
+   222→          cable_routing_complete?: boolean | null
+   223→          completion_notes?: string | null
+   224→          created_at?: string
+   225→          ct_clamp_location?: string | null
+   226→          customer_app_setup?: boolean | null
+   227→          customer_signature?: string | null
+   228→          customer_signed_at?: string | null
+   229→          earth_bond_confirmed?: boolean | null
+   230→          export_limiter_required?: boolean | null
+   231→          flashing_installed?: boolean | null
+   232→          id?: string
+   233→          installer_id?: string | null
+   234→          installer_signature?: string | null
+   235→          installer_signed_at?: string | null
+   236→          inverter_installed?: boolean | null
+   237→          isolator_installed?: boolean | null
+   238→          lead_id: string
+   239→          main_fuse_size?: string | null
+   240→          monitoring_online?: boolean | null
+   241→          myenergi_setup?: boolean | null
+   242→          network_provider?: string | null
+   243→          panels_installed?: boolean | null
+   244→          proposal_id: string
+   245→          rcd_present_tested?: boolean | null
+   246→          roof_tiles_secure?: boolean | null
+   247→          status?: string | null
+   248→          updated_at?: string
+   249→          weatherproofing_complete?: boolean | null
+   250→        }
+   251→        Update: {
+   252→          battery_installed?: boolean | null
+   253→          cable_routing_complete?: boolean | null
+   254→          completion_notes?: string | null
+   255→          created_at?: string
+   256→          ct_clamp_location?: string | null
+   257→          customer_app_setup?: boolean | null
+   258→          customer_signature?: string | null
+   259→          customer_signed_at?: string | null
+   260→          earth_bond_confirmed?: boolean | null
+   261→          export_limiter_required?: boolean | null
+   262→          flashing_installed?: boolean | null
+   263→          id?: string
+   264→          installer_id?: string | null
+   265→          installer_signature?: string | null
+   266→          installer_signed_at?: string | null
+   267→          inverter_installed?: boolean | null
+   268→          isolator_installed?: boolean | null
+   269→          lead_id?: string
+   270→          main_fuse_size?: string | null
+   271→          monitoring_online?: boolean | null
+   272→          myenergi_setup?: boolean | null
+   273→          network_provider?: string | null
+   274→          panels_installed?: boolean | null
+   275→          proposal_id?: string
+   276→          rcd_present_tested?: boolean | null
+   277→          roof_tiles_secure?: boolean | null
+   278→          status?: string | null
+   279→          updated_at?: string
+   280→          weatherproofing_complete?: boolean | null
+   281→        }
+   282→        Relationships: [
+   283→          {
+   284→            foreignKeyName: "installation_checklists_installer_id_fkey"
+   285→            columns: ["installer_id"]
+   286→            isOneToOne: false
+   287→            referencedRelation: "installers"
+   288→            referencedColumns: ["id"]
+   289→          },
+   290→          {
+   291→            foreignKeyName: "installation_checklists_lead_id_fkey"
+   292→            columns: ["lead_id"]
+   293→            isOneToOne: false
+   294→            referencedRelation: "leads"
+   295→            referencedColumns: ["id"]
+   296→          },
+   297→          {
+   298→            foreignKeyName: "installation_checklists_proposal_id_fkey"
+   299→            columns: ["proposal_id"]
+   300→            isOneToOne: false
+   301→            referencedRelation: "proposals"
+   302→            referencedColumns: ["id"]
+   303→          },
+   304→        ]
+   305→      }
+   306→      installation_photos: {
+   307→        Row: {
+   308→          checklist_id: string
+   309→          created_at: string
+   310→          description: string | null
+   311→          id: string
+   312→          photo_type: string
+   313→          photo_url: string
+   314→          uploaded_by: string | null
+   315→        }
+   316→        Insert: {
+   317→          checklist_id: string
+   318→          created_at?: string
+   319→          description?: string | null
+   320→          id?: string
+   321→          photo_type: string
+   322→          photo_url: string
+   323→          uploaded_by?: string | null
+   324→        }
+   325→        Update: {
+   326→          checklist_id?: string
+   327→          created_at?: string
+   328→          description?: string | null
+   329→          id?: string
+   330→          photo_type?: string
+   331→          photo_url?: string
+   332→          uploaded_by?: string | null
+   333→        }
+   334→        Relationships: [
+   335→          {
+   336→            foreignKeyName: "installation_photos_checklist_id_fkey"
+   337→            columns: ["checklist_id"]
+   338→            isOneToOne: false
+   339→            referencedRelation: "installation_checklists"
+   340→            referencedColumns: ["id"]
+   341→          },
+   342→        ]
+   343→      }
+   344→      installers: {
+   345→        Row: {
+   346→          availability_status: string | null
+   347→          certification_level: string | null
+   348→          created_at: string
+   349→          id: string
+   350→          specialization: string | null
+   351→          updated_at: string
+   352→          user_id: string
+   353→          years_experience: number | null
+   354→        }
+   355→        Insert: {
+   356→          availability_status?: string | null
+   357→          certification_level?: string | null
+   358→          created_at?: string
+   359→          id?: string
+   360→          specialization?: string | null
+   361→          updated_at?: string
+   362→          user_id: string
+   363→          years_experience?: number | null
+   364→        }
+   365→        Update: {
+   366→          availability_status?: string | null
+   367→          certification_level?: string | null
+   368→          created_at?: string
+   369→          id?: string
+   370→          specialization?: string | null
+   371→          updated_at?: string
+   372→          user_id?: string
+   373→          years_experience?: number | null
+   374→        }
+   375→        Relationships: []
+   376→      }
+   377→      invoices: {
+   378→        Row: {
+   379→          contract_id: string | null
+   380→          created_at: string
+   381→          deposit_amount: number | null
+   382→          deposit_paid: boolean | null
+   383→          deposit_paid_at: string | null
+   384→          due_date: string | null
+   385→          final_amount: number | null
+   386→          final_paid: boolean | null
+   387→          final_paid_at: string | null
+   388→          id: string
+   389→          invoice_number: string
+   390→          lead_id: string
+   391→          notes: string | null
+   392→          proposal_id: string
+   393→          status: string | null
+   394→          total_amount: number
+   395→          updated_at: string
+   396→        }
+   397→        Insert: {
+   398→          contract_id?: string | null
+   399→          created_at?: string
+   400→          deposit_amount?: number | null
+   401→          deposit_paid?: boolean | null
+   402→          deposit_paid_at?: string | null
+   403→          due_date?: string | null
+   404→          final_amount?: number | null
+   405→          final_paid?: boolean | null
+   406→          final_paid_at?: string | null
+   407→          id?: string
+   408→          invoice_number: string
+   409→          lead_id: string
+   410→          notes?: string | null
+   411→          proposal_id: string
+   412→          status?: string | null
+   413→          total_amount: number
+   414→          updated_at?: string
+   415→        }
+   416→        Update: {
+   417→          contract_id?: string | null
+   418→          created_at?: string
+   419→          deposit_amount?: number | null
+   420→          deposit_paid?: boolean | null
+   421→          deposit_paid_at?: string | null
+   422→          due_date?: string | null
+   423→          final_amount?: number | null
+   424→          final_paid?: boolean | null
+   425→          final_paid_at?: string | null
+   426→          id?: string
+   427→          invoice_number?: string
+   428→          lead_id?: string
+   429→          notes?: string | null
+   430→          proposal_id?: string
+   431→          status?: string | null
+   432→          total_amount?: number
+   433→          updated_at?: string
+   434→        }
+   435→        Relationships: []
+   436→      }
+   437→      leads: {
+   438→        Row: {
+   439→          access_token: string | null
+   440→          address: string | null
+   441→          annual_consumption_kwh: number | null
+   442→          created_at: string
+   443→          email: string
+   444→          id: string
+   445→          last_contacted_at: string | null
+   446→          monthly_bill: number | null
+   447→          mprn: string | null
+   448→          name: string
+   449→          notes: string | null
+   450→          phone: string | null
+   451→          property_type: string | null
+   452→          score: number | null
+   453→          updated_at: string
+   454→          workflow_stage: string | null
+   455→        }
+   456→        Insert: {
+   457→          access_token?: string | null
+   458→          address?: string | null
+   459→          annual_consumption_kwh?: number | null
+   460→          created_at?: string
+   461→          email: string
+   462→          id?: string
+   463→          last_contacted_at?: string | null
+   464→          monthly_bill?: number | null
+   465→          mprn?: string | null
+   466→          name: string
+   467→          notes?: string | null
+   468→          phone?: string | null
+   469→          property_type?: string | null
+   470→          score?: number | null
+   471→          updated_at?: string
+   472→          workflow_stage?: string | null
+   473→        }
+   474→        Update: {
+   475→          access_token?: string | null
+   476→          address?: string | null
+   477→          annual_consumption_kwh?: number | null
+   478→          created_at?: string
+   479→          email?: string
+   480→          id?: string
+   481→          last_contacted_at?: string | null
+   482→          monthly_bill?: number | null
+   483→          mprn?: string | null
+   484→          name?: string
+   485→          notes?: string | null
+   486→          phone?: string | null
+   487→          property_type?: string | null
+   488→          score?: number | null
+   489→          updated_at?: string
+   490→          workflow_stage?: string | null
+   491→        }
+   492→        Relationships: []
+   493→      }
+   494→      notification_preferences: {
+   495→        Row: {
+   496→          created_at: string
+   497→          digest_enabled: boolean | null
+   498→          digest_frequency: string | null
+   499→          digest_time: string | null
+   500→          email_contract_signed: boolean | null
+   501→          email_installation_scheduled: boolean | null
+   502→          email_payment_received: boolean | null
+   503→          email_proposal_approved: boolean | null
+   504→          email_stage_changes: boolean | null
+   505→          email_survey_completed: boolean | null
+   506→          id: string
+   507→          inapp_contract_signed: boolean | null
+   508→          inapp_installation_scheduled: boolean | null
+   509→          inapp_payment_received: boolean | null
+   510→          inapp_proposal_approved: boolean | null
+   511→          inapp_stage_changes: boolean | null
+   512→          inapp_survey_completed: boolean | null
+   513→          last_digest_sent_at: string | null
+   514→          updated_at: string
+   515→          user_id: string
+   516→        }
+   517→        Insert: {
+   518→          created_at?: string
+   519→          digest_enabled?: boolean | null
+   520→          digest_frequency?: string | null
+   521→          digest_time?: string | null
+   522→          email_contract_signed?: boolean | null
+   523→          email_installation_scheduled?: boolean | null
+   524→          email_payment_received?: boolean | null
+   525→          email_proposal_approved?: boolean | null
+   526→          email_stage_changes?: boolean | null
+   527→          email_survey_completed?: boolean | null
+   528→          id?: string
+   529→          inapp_contract_signed?: boolean | null
+   530→          inapp_installation_scheduled?: boolean | null
+   531→          inapp_payment_received?: boolean | null
+   532→          inapp_proposal_approved?: boolean | null
+   533→          inapp_stage_changes?: boolean | null
+   534→          inapp_survey_completed?: boolean | null
+   535→          last_digest_sent_at?: string | null
+   536→          updated_at?: string
+   537→          user_id: string
+   538→        }
+   539→        Update: {
+   540→          created_at?: string
+   541→          digest_enabled?: boolean | null
+   542→          digest_frequency?: string | null
+   543→          digest_time?: string | null
+   544→          email_contract_signed?: boolean | null
+   545→          email_installation_scheduled?: boolean | null
+   546→          email_payment_received?: boolean | null
+   547→          email_proposal_approved?: boolean | null
+   548→          email_stage_changes?: boolean | null
+   549→          email_survey_completed?: boolean | null
+   550→          id?: string
+   551→          inapp_contract_signed?: boolean | null
+   552→          inapp_installation_scheduled?: boolean | null
+   553→          inapp_payment_received?: boolean | null
+   554→          inapp_proposal_approved?: boolean | null
+   555→          inapp_stage_changes?: boolean | null
+   556→          inapp_survey_completed?: boolean | null
+   557→          last_digest_sent_at?: string | null
+   558→          updated_at?: string
+   559→          user_id?: string
+   560→        }
+   561→        Relationships: []
+   562→      }
+   563→      notifications: {
+   564→        Row: {
+   565→          created_at: string
+   566→          id: string
+   567→          lead_id: string | null
+   568→          message: string
+   569→          metadata: Json | null
+   570→          read: boolean | null
+   571→          title: string
+   572→          type: string
+   573→          user_id: string | null
+   574→        }
+   575→        Insert: {
+   576→          created_at?: string
+   577→          id?: string
+   578→          lead_id?: string | null
+   579→          message: string
+   580→          metadata?: Json | null
+   581→          read?: boolean | null
+   582→          title: string
+   583→          type: string
+   584→          user_id?: string | null
+   585→        }
+   586→        Update: {
+   587→          created_at?: string
+   588→          id?: string
+   589→          lead_id?: string | null
+   590→          message?: string
+   591→          metadata?: Json | null
+   592→          read?: boolean | null
+   593→          title?: string
+   594→          type?: string
+   595→          user_id?: string | null
+   596→        }
+   597→        Relationships: [
+   598→          {
+   599→            foreignKeyName: "notifications_lead_id_fkey"
+   600→            columns: ["lead_id"]
+   601→            isOneToOne: false
+   602→            referencedRelation: "leads"
+   603→            referencedColumns: ["id"]
+   604→          },
+   605→        ]
+   606→      }
+   607→      profiles: {
+   608→        Row: {
+   609→          avatar_url: string | null
+   610→          created_at: string
+   611→          full_name: string | null
+   612→          id: string
+   613→          phone: string | null
+   614→          role: Database["public"]["Enums"]["app_role"] | null
+   615→          updated_at: string
+   616→          user_id: string
+   617→        }
+   618→        Insert: {
+   619→          avatar_url?: string | null
+   620→          created_at?: string
+   621→          full_name?: string | null
+   622→          id?: string
+   623→          phone?: string | null
+   624→          role?: Database["public"]["Enums"]["app_role"] | null
+   625→          updated_at?: string
+   626→          user_id: string
+   627→        }
+   628→        Update: {
+   629→          avatar_url?: string | null
+   630→          created_at?: string
+   631→          full_name?: string | null
+   632→          id?: string
+   633→          phone?: string | null
+   634→          role?: Database["public"]["Enums"]["app_role"] | null
+   635→          updated_at?: string
+   636→          user_id?: string
+   637→        }
+   638→        Relationships: []
+   639→      }
+   640→      project_documents: {
+   641→        Row: {
+   642→          category: string | null
+   643→          created_at: string
+   644→          description: string | null
+   645→          file_name: string
+   646→          file_path: string
+   647→          file_size: number | null
+   648→          file_type: string | null
+   649→          id: string
+   650→          lead_id: string | null
+   651→          uploaded_by: string | null
+   652→        }
+   653→        Insert: {
+   654→          category?: string | null
+   655→          created_at?: string
+   656→          description?: string | null
+   657→          file_name: string
+   658→          file_path: string
+   659→          file_size?: number | null
+   660→          file_type?: string | null
+   661→          id?: string
+   662→          lead_id?: string | null
+   663→          uploaded_by?: string | null
+   664→        }
+   665→        Update: {
+   666→          category?: string | null
+   667→          created_at?: string
+   668→          description?: string | null
+   669→          file_name?: string
+   670→          file_path?: string
+   671→          file_size?: number | null
+   672→          file_type?: string | null
+   673→          id?: string
+   674→          lead_id?: string | null
+   675→          uploaded_by?: string | null
+   676→        }
+   677→        Relationships: [
+   678→          {
+   679→            foreignKeyName: "project_documents_lead_id_fkey"
+   680→            columns: ["lead_id"]
+   681→            isOneToOne: false
+   682→            referencedRelation: "leads"
+   683→            referencedColumns: ["id"]
+   684→          },
+   685→        ]
+   686→      }
+   687→      proposals: {
+   688→        Row: {
+   689→          approved_at: string | null
+   690→          assigned_installer_id: string | null
+   691→          battery_capacity_kwh: number | null
+   692→          battery_storage: boolean | null
+   693→          confirmed_install_date: string | null
+   694→          consultant_id: string
+   695→          created_at: string
+   696→          current_annual_consumption_kwh: number | null
+   697→          current_panel_capacity: string | null
+   698→          electrical_panel_upgrade_needed: boolean | null
+   699→          energy_offset_percentage: number | null
+   700→          estimated_annual_production_kwh: number | null
+   701→          id: string
+   702→          installation_cost: number | null
+   703→          installation_notes: string | null
+   704→          installation_status: string | null
+   705→          installation_timeline_weeks: number | null
+   706→          inverter_type: string | null
+   707→          lead_id: string
+   708→          monthly_savings: number | null
+   709→          net_cost: number | null
+   710→          new_panel_capacity: string | null
+   711→          panel_count: number | null
+   712→          panel_type: string | null
+   713→          payback_period_years: number | null
+   714→          preferred_install_dates: Json | null
+   715→          presented_at: string | null
+   716→          property_type: string | null
+   717→          requires_review: boolean | null
+   718→          reviewed_at: string | null
+   719→          reviewed_by: string | null
+   720→          roof_condition: string | null
+   721→          roof_material: string | null
+   722→          roof_orientation: string | null
+   723→          roof_pitch: number | null
+   724→          roof_type: string | null
+   725→          seai_grant: number | null
+   726→          selected_products: Json | null
+   727→          shading_level: string | null
+   728→          special_requirements: string | null
+   729→          status: string | null
+   730→          system_cost: number | null
+   731→          system_size_kw: number | null
+   732→          updated_at: string
+   733→        }
+   734→        Insert: {
+   735→          approved_at?: string | null
+   736→          assigned_installer_id?: string | null
+   737→          battery_capacity_kwh?: number | null
+   738→          battery_storage?: boolean | null
+   739→          confirmed_install_date?: string | null
+   740→          consultant_id: string
+   741→          created_at?: string
+   742→          current_annual_consumption_kwh?: number | null
+   743→          current_panel_capacity?: string | null
+   744→          electrical_panel_upgrade_needed?: boolean | null
+   745→          energy_offset_percentage?: number | null
+   746→          estimated_annual_production_kwh?: number | null
+   747→          id?: string
+   748→          installation_cost?: number | null
+   749→          installation_notes?: string | null
+   750→          installation_status?: string | null
+   751→          installation_timeline_weeks?: number | null
+   752→          inverter_type?: string | null
+   753→          lead_id: string
+   754→          monthly_savings?: number | null
+   755→          net_cost?: number | null
+   756→          new_panel_capacity?: string | null
+   757→          panel_count?: number | null
+   758→          panel_type?: string | null
+   759→          payback_period_years?: number | null
+   760→          preferred_install_dates?: Json | null
+   761→          presented_at?: string | null
+   762→          property_type?: string | null
+   763→          requires_review?: boolean | null
+   764→          reviewed_at?: string | null
+   765→          reviewed_by?: string | null
+   766→          roof_condition?: string | null
+   767→          roof_material?: string | null
+   768→          roof_orientation?: string | null
+   769→          roof_pitch?: number | null
+   770→          roof_type?: string | null
+   771→          seai_grant?: number | null
+   772→          selected_products?: Json | null
+   773→          shading_level?: string | null
+   774→          special_requirements?: string | null
+   775→          status?: string | null
+   776→          system_cost?: number | null
+   777→          system_size_kw?: number | null
+   778→          updated_at?: string
+   779→        }
+   780→        Update: {
+   781→          approved_at?: string | null
+   782→          assigned_installer_id?: string | null
+   783→          battery_capacity_kwh?: number | null
+   784→          battery_storage?: boolean | null
+   785→          confirmed_install_date?: string | null
+   786→          consultant_id?: string
+   787→          created_at?: string
+   788→          current_annual_consumption_kwh?: number | null
+   789→          current_panel_capacity?: string | null
+   790→          electrical_panel_upgrade_needed?: boolean | null
+   791→          energy_offset_percentage?: number | null
+   792→          estimated_annual_production_kwh?: number | null
+   793→          id?: string
+   794→          installation_cost?: number | null
+   795→          installation_notes?: string | null
+   796→          installation_status?: string | null
+   797→          installation_timeline_weeks?: number | null
+   798→          inverter_type?: string | null
+   799→          lead_id?: string
+   800→          monthly_savings?: number | null
+   801→          net_cost?: number | null
+   802→          new_panel_capacity?: string | null
+   803→          panel_count?: number | null
+   804→          panel_type?: string | null
+   805→          payback_period_years?: number | null
+   806→          preferred_install_dates?: Json | null
+   807→          presented_at?: string | null
+   808→          property_type?: string | null
+   809→          requires_review?: boolean | null
+   810→          reviewed_at?: string | null
+   811→          reviewed_by?: string | null
+   812→          roof_condition?: string | null
+   813→          roof_material?: string | null
+   814→          roof_orientation?: string | null
+   815→          roof_pitch?: number | null
+   816→          roof_type?: string | null
+   817→          seai_grant?: number | null
+   818→          selected_products?: Json | null
+   819→          shading_level?: string | null
+   820→          special_requirements?: string | null
+   821→          status?: string | null
+   822→          system_cost?: number | null
+   823→          system_size_kw?: number | null
+   824→          updated_at?: string
+   825→        }
+   826→        Relationships: [
+   827→          {
+   828→            foreignKeyName: "proposals_assigned_installer_id_fkey"
+   829→            columns: ["assigned_installer_id"]
+   830→            isOneToOne: false
+   831→            referencedRelation: "installers"
+   832→            referencedColumns: ["id"]
+   833→          },
+   834→          {
+   835→            foreignKeyName: "proposals_lead_id_fkey"
+   836→            columns: ["lead_id"]
+   837→            isOneToOne: false
+   838→            referencedRelation: "leads"
+   839→            referencedColumns: ["id"]
+   840→          },
+   841→        ]
+   842→      }
+   843→      seai_applications: {
+   844→        Row: {
+   845→          application_number: string | null
+   846→          approved_at: string | null
+   847→          ber_cert_uploaded: boolean | null
+   848→          completion_cert_uploaded: boolean | null
+   849→          created_at: string
+   850→          engineer_email: string | null
+   851→          engineer_notes: string | null
+   852→          engineer_reviewed_at: string | null
+   853→          grant_amount: number | null
+   854→          id: string
+   855→          invoice_uploaded: boolean | null
+   856→          lead_id: string
+   857→          notes: string | null
+   858→          photos_uploaded: boolean | null
+   859→          property_type: string | null
+   860→          proposal_id: string
+   861→          rejected_at: string | null
+   862→          rejection_reason: string | null
+   863→          requires_engineer_review: boolean | null
+   864→          status: string | null
+   865→          submitted_at: string | null
+   866→          system_size_kw: number | null
+   867→          updated_at: string
+   868→        }
+   869→        Insert: {
+   870→          application_number?: string | null
+   871→          approved_at?: string | null
+   872→          ber_cert_uploaded?: boolean | null
+   873→          completion_cert_uploaded?: boolean | null
+   874→          created_at?: string
+   875→          engineer_email?: string | null
+   876→          engineer_notes?: string | null
+   877→          engineer_reviewed_at?: string | null
+   878→          grant_amount?: number | null
+   879→          id?: string
+   880→          invoice_uploaded?: boolean | null
+   881→          lead_id: string
+   882→          notes?: string | null
+   883→          photos_uploaded?: boolean | null
+   884→          property_type?: string | null
+   885→          proposal_id: string
+   886→          rejected_at?: string | null
+   887→          rejection_reason?: string | null
+   888→          requires_engineer_review?: boolean | null
+   889→          status?: string | null
+   890→          submitted_at?: string | null
+   891→          system_size_kw?: number | null
+   892→          updated_at?: string
+   893→        }
+   894→        Update: {
+   895→          application_number?: string | null
+   896→          approved_at?: string | null
+   897→          ber_cert_uploaded?: boolean | null
+   898→          completion_cert_uploaded?: boolean | null
+   899→          created_at?: string
+   900→          engineer_email?: string | null
+   901→          engineer_notes?: string | null
+   902→          engineer_reviewed_at?: string | null
+   903→          grant_amount?: number | null
+   904→          id?: string
+   905→          invoice_uploaded?: boolean | null
+   906→          lead_id?: string
+   907→          notes?: string | null
+   908→          photos_uploaded?: boolean | null
+   909→          property_type?: string | null
+   910→          proposal_id?: string
+   911→          rejected_at?: string | null
+   912→          rejection_reason?: string | null
+   913→          requires_engineer_review?: boolean | null
+   914→          status?: string | null
+   915→          submitted_at?: string | null
+   916→          system_size_kw?: number | null
+   917→          updated_at?: string
+   918→        }
+   919→        Relationships: [
+   920→          {
+   921→            foreignKeyName: "seai_applications_lead_id_fkey"
+   922→            columns: ["lead_id"]
+   923→            isOneToOne: false
+   924→            referencedRelation: "leads"
+   925→            referencedColumns: ["id"]
+   926→          },
+   927→          {
+   928→            foreignKeyName: "seai_applications_proposal_id_fkey"
+   929→            columns: ["proposal_id"]
+   930→            isOneToOne: false
+   931→            referencedRelation: "proposals"
+   932→            referencedColumns: ["id"]
+   933→          },
+   934→        ]
+   935→      }
+   936→      seai_documents: {
+   937→        Row: {
+   938→          application_id: string
+   939→          created_at: string
+   940→          document_type: string
+   941→          file_name: string
+   942→          file_size: number | null
+   943→          file_url: string
+   944→          id: string
+   945→          uploaded_by: string | null
+   946→        }
+   947→        Insert: {
+   948→          application_id: string
+   949→          created_at?: string
+   950→          document_type: string
+   951→          file_name: string
+   952→          file_size?: number | null
+   953→          file_url: string
+   954→          id?: string
+   955→          uploaded_by?: string | null
+   956→        }
+   957→        Update: {
+   958→          application_id?: string
+   959→          created_at?: string
+   960→          document_type?: string
+   961→          file_name?: string
+   962→          file_size?: number | null
+   963→          file_url?: string
+   964→          id?: string
+   965→          uploaded_by?: string | null
+   966→        }
+   967→        Relationships: [
+   968→          {
+   969→            foreignKeyName: "seai_documents_application_id_fkey"
+   970→            columns: ["application_id"]
+   971→            isOneToOne: false
+   972→            referencedRelation: "seai_applications"
+   973→            referencedColumns: ["id"]
+   974→          },
+   975→        ]
+   976→      }
+   977→      site_surveys: {
+   978→        Row: {
+   979→          access_notes: string | null
+   980→          attic_access: string | null
+   981→          completed_at: string | null
+   982→          created_at: string
+   983→          customer_availability: string | null
+   984→          electrical_panel_capacity: string | null
+   985→          electrical_panel_condition: string | null
+   986→          estimated_installation_cost: number | null
+   987→          existing_solar: boolean | null
+   988→          grid_connection_type: string | null
+   989→          id: string
+   990→          installation_notes: string | null
+   991→          lead_id: string
+   992→          meter_location: string | null
+   993→          nearby_obstructions: string | null
+   994→          parking_situation: string | null
+   995→          property_storeys: number | null
+   996→          recommended_panel_count: number | null
+   997→          recommended_system_size: number | null
+   998→          roof_condition: string | null
+   999→          roof_material: string | null
+  1000→          roof_orientation: string | null
+  1001→          roof_pitch: number | null
+  1002→          roof_type: string | null
+  1003→          scaffolding_required: string | null
+  1004→          shading_analysis: string | null
+  1005→          special_requirements: string | null
+  1006→          status: string | null
+  1007→          survey_date: string | null
+  1008→          surveyor_id: string
+  1009→          updated_at: string
+  1010→        }
+  1011→        Insert: {
+  1012→          access_notes?: string | null
+  1013→          attic_access?: string | null
+  1014→          completed_at?: string | null
+  1015→          created_at?: string
+  1016→          customer_availability?: string | null
+  1017→          electrical_panel_capacity?: string | null
+  1018→          electrical_panel_condition?: string | null
+  1019→          estimated_installation_cost?: number | null
+  1020→          existing_solar?: boolean | null
+  1021→          grid_connection_type?: string | null
+  1022→          id?: string
+  1023→          installation_notes?: string | null
+  1024→          lead_id: string
+  1025→          meter_location?: string | null
+  1026→          nearby_obstructions?: string | null
+  1027→          parking_situation?: string | null
+  1028→          property_storeys?: number | null
+  1029→          recommended_panel_count?: number | null
+  1030→          recommended_system_size?: number | null
+  1031→          roof_condition?: string | null
+  1032→          roof_material?: string | null
+  1033→          roof_orientation?: string | null
+  1034→          roof_pitch?: number | null
+  1035→          roof_type?: string | null
+  1036→          scaffolding_required?: string | null
+  1037→          shading_analysis?: string | null
+  1038→          special_requirements?: string | null
+  1039→          status?: string | null
+  1040→          survey_date?: string | null
+  1041→          surveyor_id: string
+  1042→          updated_at?: string
+  1043→        }
+  1044→        Update: {
+  1045→          access_notes?: string | null
+  1046→          attic_access?: string | null
+  1047→          completed_at?: string | null
+  1048→          created_at?: string
+  1049→          customer_availability?: string | null
+  1050→          electrical_panel_capacity?: string | null
+  1051→          electrical_panel_condition?: string | null
+  1052→          estimated_installation_cost?: number | null
+  1053→          existing_solar?: boolean | null
+  1054→          grid_connection_type?: string | null
+  1055→          id?: string
+  1056→          installation_notes?: string | null
+  1057→          lead_id?: string
+  1058→          meter_location?: string | null
+  1059→          nearby_obstructions?: string | null
+  1060→          parking_situation?: string | null
+  1061→          property_storeys?: number | null
+  1062→          recommended_panel_count?: number | null
+  1063→          recommended_system_size?: number | null
+  1064→          roof_condition?: string | null
+  1065→          roof_material?: string | null
+  1066→          roof_orientation?: string | null
+  1067→          roof_pitch?: number | null
+  1068→          roof_type?: string | null
+  1069→          scaffolding_required?: string | null
+  1070→          shading_analysis?: string | null
+  1071→          special_requirements?: string | null
+  1072→          status?: string | null
+  1073→          survey_date?: string | null
+  1074→          surveyor_id?: string
+  1075→          updated_at?: string
+  1076→        }
+  1077→        Relationships: [
+  1078→          {
+  1079→            foreignKeyName: "site_surveys_lead_id_fkey"
+  1080→            columns: ["lead_id"]
+  1081→            isOneToOne: false
+  1082→            referencedRelation: "leads"
+  1083→            referencedColumns: ["id"]
+  1084→          },
+  1085→        ]
+  1086→      }
+  1087→      solar_products: {
+  1088→        Row: {
+  1089→          active: boolean | null
+  1090→          cost: number
+  1091→          created_at: string
+  1092→          currency: string | null
+  1093→          datasheet_url: string | null
+  1094→          description: string | null
+  1095→          efficiency_percentage: number | null
+  1096→          id: string
+  1097→          image_url: string | null
+  1098→          in_stock: boolean | null
+  1099→          lead_time_days: number | null
+  1100→          manufacturer: string
+  1101→          model: string
+  1102→          power_rating: number | null
+  1103→          product_type: string
+  1104→          specifications: Json | null
+  1105→          updated_at: string
+  1106→          warranty_years: number | null
+  1107→        }
+  1108→        Insert: {
+  1109→          active?: boolean | null
+  1110→          cost: number
+  1111→          created_at?: string
+  1112→          currency?: string | null
+  1113→          datasheet_url?: string | null
+  1114→          description?: string | null
+  1115→          efficiency_percentage?: number | null
+  1116→          id?: string
+  1117→          image_url?: string | null
+  1118→          in_stock?: boolean | null
+  1119→          lead_time_days?: number | null
+  1120→          manufacturer: string
+  1121→          model: string
+  1122→          power_rating?: number | null
+  1123→          product_type: string
+  1124→          specifications?: Json | null
+  1125→          updated_at?: string
+  1126→          warranty_years?: number | null
+  1127→        }
+  1128→        Update: {
+  1129→          active?: boolean | null
+  1130→          cost?: number
+  1131→          created_at?: string
+  1132→          currency?: string | null
+  1133→          datasheet_url?: string | null
+  1134→          description?: string | null
+  1135→          efficiency_percentage?: number | null
+  1136→          id?: string
+  1137→          image_url?: string | null
+  1138→          in_stock?: boolean | null
+  1139→          lead_time_days?: number | null
+  1140→          manufacturer?: string
+  1141→          model?: string
+  1142→          power_rating?: number | null
+  1143→          product_type?: string
+  1144→          specifications?: Json | null
+  1145→          updated_at?: string
+  1146→          warranty_years?: number | null
+  1147→        }
+  1148→        Relationships: []
+  1149→      }
+  1150→      survey_photos: {
+  1151→        Row: {
+  1152→          created_at: string
+  1153→          description: string | null
+  1154→          id: string
+  1155→          photo_type: string | null
+  1156→          photo_url: string
+  1157→          survey_id: string
+  1158→        }
+  1159→        Insert: {
+  1160→          created_at?: string
+  1161→          description?: string | null
+  1162→          id?: string
+  1163→          photo_type?: string | null
+  1164→          photo_url: string
+  1165→          survey_id: string
+  1166→        }
+  1167→        Update: {
+  1168→          created_at?: string
+  1169→          description?: string | null
+  1170→          id?: string
+  1171→          photo_type?: string | null
+  1172→          photo_url?: string
+  1173→          survey_id?: string
+  1174→        }
+  1175→        Relationships: [
+  1176→          {
+  1177→            foreignKeyName: "survey_photos_survey_id_fkey"
+  1178→            columns: ["survey_id"]
+  1179→            isOneToOne: false
+  1180→            referencedRelation: "site_surveys"
+  1181→            referencedColumns: ["id"]
+  1182→          },
+  1183→        ]
+  1184→      }
+  1185→      user_roles: {
+  1186→        Row: {
+  1187→          id: string
+  1188→          role: Database["public"]["Enums"]["app_role"]
+  1189→          user_id: string
+  1190→        }
+  1191→        Insert: {
+  1192→          id?: string
+  1193→          role: Database["public"]["Enums"]["app_role"]
+  1194→          user_id: string
+  1195→        }
+  1196→        Update: {
+  1197→          id?: string
+  1198→          role?: Database["public"]["Enums"]["app_role"]
+  1199→          user_id?: string
+  1200→        }
+  1201→        Relationships: []
+  1202→      }
+  1203→    }
+  1204→    Views: {
+  1205→      [_ in never]: never
+  1206→    }
+  1207→    Functions: {
+  1208→      has_role: {
+  1209→        Args: {
+  1210→          _role: Database["public"]["Enums"]["app_role"]
+  1211→          _user_id: string
+  1212→        }
+  1213→        Returns: boolean
+  1214→      }
+  1215→    }
+  1216→    Enums: {
+  1217→      app_role: "admin" | "consultant" | "installer" | "customer"
+  1218→    }
+  1219→    CompositeTypes: {
+  1220→      [_ in never]: never
+  1221→    }
+  1222→  }
+  1223→}
+  1224→
+  1225→type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+  1226→
+  1227→type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+  1228→
+  1229→export type Tables<
+  1230→  DefaultSchemaTableNameOrOptions extends
+  1231→    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  1232→    | { schema: keyof DatabaseWithoutInternals },
+  1233→  TableName extends DefaultSchemaTableNameOrOptions extends {
+  1234→    schema: keyof DatabaseWithoutInternals
+  1235→  }
+  1236→    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+  1237→        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  1238→    : never = never,
+  1239→> = DefaultSchemaTableNameOrOptions extends {
+  1240→  schema: keyof DatabaseWithoutInternals
+  1241→}
+  1242→  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+  1243→      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  1244→      Row: infer R
+  1245→    }
+  1246→    ? R
+  1247→    : never
+  1248→  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+  1249→        DefaultSchema["Views"])
+  1250→    ? (DefaultSchema["Tables"] &
+  1251→        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  1252→        Row: infer R
+  1253→      }
+  1254→      ? R
+  1255→      : never
+  1256→    : never
+  1257→
+  1258→export type TablesInsert<
+  1259→  DefaultSchemaTableNameOrOptions extends
+  1260→    | keyof DefaultSchema["Tables"]
+  1261→    | { schema: keyof DatabaseWithoutInternals },
+  1262→  TableName extends DefaultSchemaTableNameOrOptions extends {
+  1263→    schema: keyof DatabaseWithoutInternals
+  1264→  }
+  1265→    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  1266→    : never = never,
+  1267→> = DefaultSchemaTableNameOrOptions extends {
+  1268→  schema: keyof DatabaseWithoutInternals
+  1269→}
+  1270→  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  1271→      Insert: infer I
+  1272→    }
+  1273→    ? I
+  1274→    : never
+  1275→  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  1276→    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  1277→        Insert: infer I
+  1278→      }
+  1279→      ? I
+  1280→      : never
+  1281→    : never
+  1282→
+  1283→export type TablesUpdate<
+  1284→  DefaultSchemaTableNameOrOptions extends
+  1285→    | keyof DefaultSchema["Tables"]
+  1286→    | { schema: keyof DatabaseWithoutInternals },
+  1287→  TableName extends DefaultSchemaTableNameOrOptions extends {
+  1288→    schema: keyof DatabaseWithoutInternals
+  1289→  }
+  1290→    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  1291→    : never = never,
+  1292→> = DefaultSchemaTableNameOrOptions extends {
+  1293→  schema: keyof DatabaseWithoutInternals
+  1294→}
+  1295→  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  1296→      Update: infer U
+  1297→    }
+  1298→    ? U
+  1299→    : never
+  1300→  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  1301→    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  1302→        Update: infer U
+  1303→      }
+  1304→      ? U
+  1305→      : never
+  1306→    : never
+  1307→
+  1308→export type Enums<
+  1309→  DefaultSchemaEnumNameOrOptions extends
+  1310→    | keyof DefaultSchema["Enums"]
+  1311→    | { schema: keyof DatabaseWithoutInternals },
+  1312→  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  1313→    schema: keyof DatabaseWithoutInternals
+  1314→  }
+  1315→    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  1316→    : never = never,
+  1317→> = DefaultSchemaEnumNameOrOptions extends {
+  1318→  schema: keyof DatabaseWithoutInternals
+  1319→}
+  1320→  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  1321→  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  1322→    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  1323→    : never
+  1324→
+  1325→export type CompositeTypes<
+  1326→  PublicCompositeTypeNameOrOptions extends
+  1327→    | keyof DefaultSchema["CompositeTypes"]
+  1328→    | { schema: keyof DatabaseWithoutInternals },
+  1329→  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  1330→    schema: keyof DatabaseWithoutInternals
+  1331→  }
+  1332→    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  1333→    : never = never,
+  1334→> = PublicCompositeTypeNameOrOptions extends {
+  1335→  schema: keyof DatabaseWithoutInternals
+  1336→}
+  1337→  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  1338→  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  1339→    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  1340→    : never
+  1341→
+  1342→export const Constants = {
+  1343→  public: {
+  1344→    Enums: {
+  1345→      app_role: ["admin", "consultant", "installer", "customer"],
+  1346→    },
+  1347→  },
+  1348→} as const
+  1349→

@@ -1,0 +1,601 @@
+     1→import { useState, useEffect } from 'react';
+     2→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+     3→import { Button } from '@/components/ui/button';
+     4→import { Badge } from '@/components/ui/badge';
+     5→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+     6→import { Progress } from '@/components/ui/progress';
+     7→import { supabase } from '@/integrations/supabase/client';
+     8→import { 
+     9→  CheckCircle2, 
+    10→  XCircle, 
+    11→  AlertTriangle, 
+    12→  Database, 
+    13→  Shield, 
+    14→  Package, 
+    15→  Image, 
+    16→  TrendingUp,
+    17→  RefreshCw,
+    18→  Download,
+    19→  ArrowLeft
+    20→} from 'lucide-react';
+    21→import { useNavigate } from 'react-router-dom';
+    22→import { toast } from 'sonner';
+    23→
+    24→interface AuditResult {
+    25→  check: string;
+    26→  status: 'pass' | 'fail' | 'warning';
+    27→  count?: number;
+    28→  details?: string;
+    29→}
+    30→
+    31→interface WorkflowStats {
+    32→  stage: string;
+    33→  count: number;
+    34→}
+    35→
+    36→interface PhotoStats {
+    37→  type: string;
+    38→  count: number;
+    39→}
+    40→
+    41→export default function AuditDashboard() {
+    42→  const navigate = useNavigate();
+    43→  const [loading, setLoading] = useState(true);
+    44→  const [dataIntegrity, setDataIntegrity] = useState<AuditResult[]>([]);
+    45→  const [workflowStats, setWorkflowStats] = useState<WorkflowStats[]>([]);
+    46→  const [photoStats, setPhotoStats] = useState<PhotoStats[]>([]);
+    47→  const [productStats, setProductStats] = useState({ panels: 0, inverters: 0, batteries: 0, total: 0 });
+    48→  const [entityCounts, setEntityCounts] = useState({
+    49→    leads: 0,
+    50→    surveys: 0,
+    51→    proposals: 0,
+    52→    invoices: 0,
+    53→    contracts: 0,
+    54→    installers: 0,
+    55→    users: 0
+    56→  });
+    57→  const [lastAudit, setLastAudit] = useState<Date>(new Date());
+    58→
+    59→  const runAudit = async () => {
+    60→    setLoading(true);
+    61→    const results: AuditResult[] = [];
+    62→
+    63→    try {
+    64→      // 1. Check for duplicate leads (same email)
+    65→      const { data: leads } = await supabase.from('leads').select('email');
+    66→      const emailCounts = leads?.reduce((acc, l) => {
+    67→        acc[l.email] = (acc[l.email] || 0) + 1;
+    68→        return acc;
+    69→      }, {} as Record<string, number>) || {};
+    70→      const duplicateEmails = Object.values(emailCounts).filter(c => c > 1).length;
+    71→      results.push({
+    72→        check: 'Duplicate Leads (same email)',
+    73→        status: duplicateEmails === 0 ? 'pass' : 'warning',
+    74→        count: duplicateEmails,
+    75→        details: duplicateEmails > 0 ? `${duplicateEmails} duplicate email addresses found` : 'No duplicates'
+    76→      });
+    77→
+    78→      // 2. Orphan proposals (no lead)
+    79→      const { data: proposals } = await supabase.from('proposals').select('id, lead_id');
+    80→      const { data: allLeads } = await supabase.from('leads').select('id');
+    81→      const leadIds = new Set(allLeads?.map(l => l.id) || []);
+    82→      const orphanProposals = proposals?.filter(p => !leadIds.has(p.lead_id)) || [];
+    83→      results.push({
+    84→        check: 'Orphan Proposals (missing lead)',
+    85→        status: orphanProposals.length === 0 ? 'pass' : 'fail',
+    86→        count: orphanProposals.length,
+    87→        details: orphanProposals.length > 0 ? `${orphanProposals.length} proposals without valid lead` : 'All proposals linked'
+    88→      });
+    89→
+    90→      // 3. Orphan surveys
+    91→      const { data: surveys } = await supabase.from('site_surveys').select('id, lead_id');
+    92→      const orphanSurveys = surveys?.filter(s => !leadIds.has(s.lead_id)) || [];
+    93→      results.push({
+    94→        check: 'Orphan Surveys (missing lead)',
+    95→        status: orphanSurveys.length === 0 ? 'pass' : 'fail',
+    96→        count: orphanSurveys.length,
+    97→        details: orphanSurveys.length > 0 ? `${orphanSurveys.length} surveys without valid lead` : 'All surveys linked'
+    98→      });
+    99→
+   100→      // 4. Invoices without proposals
+   101→      const { data: invoices } = await supabase.from('invoices').select('id, proposal_id');
+   102→      const proposalIds = new Set(proposals?.map(p => p.id) || []);
+   103→      const orphanInvoices = invoices?.filter(i => !proposalIds.has(i.proposal_id)) || [];
+   104→      results.push({
+   105→        check: 'Orphan Invoices (missing proposal)',
+   106→        status: orphanInvoices.length === 0 ? 'pass' : 'warning',
+   107→        count: orphanInvoices.length,
+   108→        details: orphanInvoices.length > 0 ? `${orphanInvoices.length} invoices without valid proposal` : 'All invoices linked'
+   109→      });
+   110→
+   111→      // 5. Surveys missing required photos
+   112→      const { data: surveyPhotos } = await supabase.from('survey_photos').select('survey_id, photo_type');
+   113→      const surveyPhotoCount = surveys?.map(s => ({
+   114→        id: s.id,
+   115→        photoCount: surveyPhotos?.filter(p => p.survey_id === s.id).length || 0
+   116→      })) || [];
+   117→      const surveysWithoutPhotos = surveyPhotoCount.filter(s => s.photoCount < 2);
+   118→      results.push({
+   119→        check: 'Surveys with insufficient photos (<2)',
+   120→        status: surveysWithoutPhotos.length === 0 ? 'pass' : 'warning',
+   121→        count: surveysWithoutPhotos.length,
+   122→        details: `${surveysWithoutPhotos.length} surveys need more photos`
+   123→      });
+   124→
+   125→      // 6. Products availability
+   126→      const { data: products } = await supabase.from('solar_products').select('product_type, active, in_stock');
+   127→      const activeProducts = products?.filter(p => p.active) || [];
+   128→      const inStockProducts = activeProducts.filter(p => p.in_stock);
+   129→      results.push({
+   130→        check: 'Product Catalog Status',
+   131→        status: activeProducts.length >= 10 ? 'pass' : activeProducts.length > 0 ? 'warning' : 'fail',
+   132→        count: activeProducts.length,
+   133→        details: `${activeProducts.length} active, ${inStockProducts.length} in stock`
+   134→      });
+   135→
+   136→      // 7. Installer availability
+   137→      const { data: installers } = await supabase.from('installers').select('id, availability_status');
+   138→      const availableInstallers = installers?.filter(i => i.availability_status === 'available') || [];
+   139→      results.push({
+   140→        check: 'Available Installers',
+   141→        status: availableInstallers.length > 0 ? 'pass' : 'fail',
+   142→        count: availableInstallers.length,
+   143→        details: `${availableInstallers.length} of ${installers?.length || 0} installers available`
+   144→      });
+   145→
+   146→      setDataIntegrity(results);
+   147→
+   148→      // Workflow stats
+   149→      const workflowCounts: WorkflowStats[] = [
+   150→        { stage: 'new', count: allLeads?.filter((l: any) => l.workflow_stage === 'new').length || 0 },
+   151→        { stage: 'survey', count: allLeads?.filter((l: any) => l.workflow_stage === 'survey').length || 0 },
+   152→        { stage: 'proposal', count: allLeads?.filter((l: any) => l.workflow_stage === 'proposal').length || 0 },
+   153→        { stage: 'approved', count: allLeads?.filter((l: any) => l.workflow_stage === 'approved').length || 0 },
+   154→        { stage: 'scheduled', count: allLeads?.filter((l: any) => l.workflow_stage === 'scheduled').length || 0 },
+   155→        { stage: 'installed', count: allLeads?.filter((l: any) => l.workflow_stage === 'installed').length || 0 }
+   156→      ];
+   157→      
+   158→      // Get actual workflow stage counts
+   159→      const { data: leadsWithStage } = await supabase.from('leads').select('workflow_stage');
+   160→      const stageCounts = leadsWithStage?.reduce((acc, l) => {
+   161→        const stage = l.workflow_stage || 'new';
+   162→        acc[stage] = (acc[stage] || 0) + 1;
+   163→        return acc;
+   164→      }, {} as Record<string, number>) || {};
+   165→      
+   166→      setWorkflowStats([
+   167→        { stage: 'New', count: stageCounts['new'] || 0 },
+   168→        { stage: 'Survey', count: stageCounts['survey'] || 0 },
+   169→        { stage: 'Proposal', count: stageCounts['proposal'] || 0 },
+   170→        { stage: 'Approved', count: stageCounts['approved'] || 0 },
+   171→        { stage: 'Scheduled', count: stageCounts['scheduled'] || 0 },
+   172→        { stage: 'Installed', count: stageCounts['installed'] || 0 }
+   173→      ]);
+   174→
+   175→      // Photo stats
+   176→      const photoTypeCounts = surveyPhotos?.reduce((acc, p) => {
+   177→        const type = p.photo_type || 'uncategorized';
+   178→        acc[type] = (acc[type] || 0) + 1;
+   179→        return acc;
+   180→      }, {} as Record<string, number>) || {};
+   181→      
+   182→      setPhotoStats(Object.entries(photoTypeCounts).map(([type, count]) => ({ type, count })));
+   183→
+   184→      // Product stats
+   185→      const panels = products?.filter(p => p.product_type === 'panel' && p.active).length || 0;
+   186→      const inverters = products?.filter(p => p.product_type === 'inverter' && p.active).length || 0;
+   187→      const batteries = products?.filter(p => p.product_type === 'battery' && p.active).length || 0;
+   188→      setProductStats({ panels, inverters, batteries, total: panels + inverters + batteries });
+   189→
+   190→      // Entity counts
+   191→      const { count: leadCount } = await supabase.from('leads').select('*', { count: 'exact', head: true });
+   192→      const { count: surveyCount } = await supabase.from('site_surveys').select('*', { count: 'exact', head: true });
+   193→      const { count: proposalCount } = await supabase.from('proposals').select('*', { count: 'exact', head: true });
+   194→      const { count: invoiceCount } = await supabase.from('invoices').select('*', { count: 'exact', head: true });
+   195→      const { count: contractCount } = await supabase.from('contracts').select('*', { count: 'exact', head: true });
+   196→      const { count: installerCount } = await supabase.from('installers').select('*', { count: 'exact', head: true });
+   197→      const { count: profileCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+   198→
+   199→      setEntityCounts({
+   200→        leads: leadCount || 0,
+   201→        surveys: surveyCount || 0,
+   202→        proposals: proposalCount || 0,
+   203→        invoices: invoiceCount || 0,
+   204→        contracts: contractCount || 0,
+   205→        installers: installerCount || 0,
+   206→        users: profileCount || 0
+   207→      });
+   208→
+   209→      setLastAudit(new Date());
+   210→      toast.success('Audit completed successfully');
+   211→    } catch (error) {
+   212→      console.error('Audit error:', error);
+   213→      toast.error('Failed to complete audit');
+   214→    } finally {
+   215→      setLoading(false);
+   216→    }
+   217→  };
+   218→
+   219→  useEffect(() => {
+   220→    runAudit();
+   221→  }, []);
+   222→
+   223→  const exportReport = () => {
+   224→    const report = {
+   225→      timestamp: lastAudit.toISOString(),
+   226→      dataIntegrity,
+   227→      workflowStats,
+   228→      photoStats,
+   229→      productStats,
+   230→      entityCounts
+   231→    };
+   232→    
+   233→    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+   234→    const url = URL.createObjectURL(blob);
+   235→    const a = document.createElement('a');
+   236→    a.href = url;
+   237→    a.download = `audit-report-${lastAudit.toISOString().split('T')[0]}.json`;
+   238→    a.click();
+   239→    URL.revokeObjectURL(url);
+   240→    toast.success('Report exported');
+   241→  };
+   242→
+   243→  const getStatusIcon = (status: string) => {
+   244→    switch (status) {
+   245→      case 'pass': return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+   246→      case 'fail': return <XCircle className="h-5 w-5 text-red-500" />;
+   247→      case 'warning': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+   248→      default: return null;
+   249→    }
+   250→  };
+   251→
+   252→  const passCount = dataIntegrity.filter(r => r.status === 'pass').length;
+   253→  const totalChecks = dataIntegrity.length;
+   254→  const healthScore = totalChecks > 0 ? Math.round((passCount / totalChecks) * 100) : 0;
+   255→
+   256→  return (
+   257→    <div className="min-h-screen bg-background p-4 sm:p-6">
+   258→      <div className="max-w-7xl mx-auto space-y-6">
+   259→        {/* Header */}
+   260→        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+   261→          <div className="flex items-center gap-3">
+   262→            <Button variant="ghost" size="icon" onClick={() => navigate('/consultant')}>
+   263→              <ArrowLeft className="h-5 w-5" />
+   264→            </Button>
+   265→            <div>
+   266→              <h1 className="text-2xl font-bold text-foreground">System Audit Dashboard</h1>
+   267→              <p className="text-muted-foreground text-sm">
+   268→                Last audit: {lastAudit.toLocaleString()}
+   269→              </p>
+   270→            </div>
+   271→          </div>
+   272→          <div className="flex gap-2">
+   273→            <Button variant="outline" onClick={exportReport} disabled={loading}>
+   274→              <Download className="h-4 w-4 mr-2" />
+   275→              Export
+   276→            </Button>
+   277→            <Button onClick={runAudit} disabled={loading}>
+   278→              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+   279→              Run Audit
+   280→            </Button>
+   281→          </div>
+   282→        </div>
+   283→
+   284→        {/* Health Score Card */}
+   285→        <Card className="border-primary/20">
+   286→          <CardContent className="pt-6">
+   287→            <div className="flex flex-col sm:flex-row items-center gap-6">
+   288→              <div className="relative w-32 h-32">
+   289→                <svg className="w-full h-full transform -rotate-90">
+   290→                  <circle
+   291→                    cx="64"
+   292→                    cy="64"
+   293→                    r="56"
+   294→                    fill="none"
+   295→                    stroke="currentColor"
+   296→                    strokeWidth="12"
+   297→                    className="text-muted"
+   298→                  />
+   299→                  <circle
+   300→                    cx="64"
+   301→                    cy="64"
+   302→                    r="56"
+   303→                    fill="none"
+   304→                    stroke="currentColor"
+   305→                    strokeWidth="12"
+   306→                    strokeDasharray={`${healthScore * 3.51} 351`}
+   307→                    className={healthScore >= 80 ? 'text-green-500' : healthScore >= 60 ? 'text-yellow-500' : 'text-red-500'}
+   308→                  />
+   309→                </svg>
+   310→                <div className="absolute inset-0 flex items-center justify-center">
+   311→                  <span className="text-3xl font-bold">{healthScore}%</span>
+   312→                </div>
+   313→              </div>
+   314→              <div className="flex-1 text-center sm:text-left">
+   315→                <h2 className="text-xl font-semibold">System Health Score</h2>
+   316→                <p className="text-muted-foreground">
+   317→                  {passCount} of {totalChecks} checks passed
+   318→                </p>
+   319→                <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
+   320→                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+   321→                    {dataIntegrity.filter(r => r.status === 'pass').length} Passed
+   322→                  </Badge>
+   323→                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+   324→                    {dataIntegrity.filter(r => r.status === 'warning').length} Warnings
+   325→                  </Badge>
+   326→                  <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20">
+   327→                    {dataIntegrity.filter(r => r.status === 'fail').length} Failed
+   328→                  </Badge>
+   329→                </div>
+   330→              </div>
+   331→            </div>
+   332→          </CardContent>
+   333→        </Card>
+   334→
+   335→        <Tabs defaultValue="integrity" className="space-y-4">
+   336→          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full">
+   337→            <TabsTrigger value="integrity" className="gap-2">
+   338→              <Database className="h-4 w-4" />
+   339→              <span className="hidden sm:inline">Data Integrity</span>
+   340→              <span className="sm:hidden">Data</span>
+   341→            </TabsTrigger>
+   342→            <TabsTrigger value="workflow" className="gap-2">
+   343→              <TrendingUp className="h-4 w-4" />
+   344→              <span className="hidden sm:inline">Workflow</span>
+   345→              <span className="sm:hidden">Flow</span>
+   346→            </TabsTrigger>
+   347→            <TabsTrigger value="products" className="gap-2">
+   348→              <Package className="h-4 w-4" />
+   349→              <span className="hidden sm:inline">Products</span>
+   350→              <span className="sm:hidden">Prod</span>
+   351→            </TabsTrigger>
+   352→            <TabsTrigger value="media" className="gap-2">
+   353→              <Image className="h-4 w-4" />
+   354→              <span className="hidden sm:inline">Media</span>
+   355→              <span className="sm:hidden">Media</span>
+   356→            </TabsTrigger>
+   357→          </TabsList>
+   358→
+   359→          {/* Data Integrity Tab */}
+   360→          <TabsContent value="integrity" className="space-y-4">
+   361→            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+   362→              {Object.entries(entityCounts).map(([key, value]) => (
+   363→                <Card key={key}>
+   364→                  <CardContent className="pt-4 pb-3 text-center">
+   365→                    <p className="text-2xl font-bold">{value}</p>
+   366→                    <p className="text-xs text-muted-foreground capitalize">{key}</p>
+   367→                  </CardContent>
+   368→                </Card>
+   369→              ))}
+   370→            </div>
+   371→
+   372→            <Card>
+   373→              <CardHeader>
+   374→                <CardTitle className="text-lg">Data Integrity Checks</CardTitle>
+   375→                <CardDescription>Validation results for database consistency</CardDescription>
+   376→              </CardHeader>
+   377→              <CardContent>
+   378→                <div className="space-y-3">
+   379→                  {dataIntegrity.map((result, idx) => (
+   380→                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+   381→                      <div className="flex items-center gap-3">
+   382→                        {getStatusIcon(result.status)}
+   383→                        <div>
+   384→                          <p className="font-medium text-sm">{result.check}</p>
+   385→                          <p className="text-xs text-muted-foreground">{result.details}</p>
+   386→                        </div>
+   387→                      </div>
+   388→                      {result.count !== undefined && (
+   389→                        <Badge variant={result.status === 'pass' ? 'secondary' : 'destructive'}>
+   390→                          {result.count}
+   391→                        </Badge>
+   392→                      )}
+   393→                    </div>
+   394→                  ))}
+   395→                </div>
+   396→              </CardContent>
+   397→            </Card>
+   398→          </TabsContent>
+   399→
+   400→          {/* Workflow Tab */}
+   401→          <TabsContent value="workflow" className="space-y-4">
+   402→            <Card>
+   403→              <CardHeader>
+   404→                <CardTitle className="text-lg">Pipeline Distribution</CardTitle>
+   405→                <CardDescription>Leads by workflow stage</CardDescription>
+   406→              </CardHeader>
+   407→              <CardContent>
+   408→                <div className="space-y-4">
+   409→                  {workflowStats.map((stat) => {
+   410→                    const total = workflowStats.reduce((sum, s) => sum + s.count, 0);
+   411→                    const percentage = total > 0 ? (stat.count / total) * 100 : 0;
+   412→                    return (
+   413→                      <div key={stat.stage} className="space-y-1">
+   414→                        <div className="flex justify-between text-sm">
+   415→                          <span className="font-medium">{stat.stage}</span>
+   416→                          <span className="text-muted-foreground">{stat.count} ({percentage.toFixed(0)}%)</span>
+   417→                        </div>
+   418→                        <Progress value={percentage} className="h-2" />
+   419→                      </div>
+   420→                    );
+   421→                  })}
+   422→                </div>
+   423→              </CardContent>
+   424→            </Card>
+   425→
+   426→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   427→              <Card>
+   428→                <CardContent className="pt-6 text-center">
+   429→                  <p className="text-3xl font-bold text-primary">{entityCounts.leads}</p>
+   430→                  <p className="text-sm text-muted-foreground">Total Leads</p>
+   431→                </CardContent>
+   432→              </Card>
+   433→              <Card>
+   434→                <CardContent className="pt-6 text-center">
+   435→                  <p className="text-3xl font-bold text-primary">{entityCounts.proposals}</p>
+   436→                  <p className="text-sm text-muted-foreground">Proposals Created</p>
+   437→                </CardContent>
+   438→              </Card>
+   439→              <Card>
+   440→                <CardContent className="pt-6 text-center">
+   441→                  <p className="text-3xl font-bold text-primary">{entityCounts.contracts}</p>
+   442→                  <p className="text-sm text-muted-foreground">Contracts Signed</p>
+   443→                </CardContent>
+   444→              </Card>
+   445→            </div>
+   446→          </TabsContent>
+   447→
+   448→          {/* Products Tab */}
+   449→          <TabsContent value="products" className="space-y-4">
+   450→            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+   451→              <Card>
+   452→                <CardContent className="pt-6 text-center">
+   453→                  <p className="text-3xl font-bold">{productStats.total}</p>
+   454→                  <p className="text-sm text-muted-foreground">Total Products</p>
+   455→                </CardContent>
+   456→              </Card>
+   457→              <Card>
+   458→                <CardContent className="pt-6 text-center">
+   459→                  <p className="text-3xl font-bold text-blue-500">{productStats.panels}</p>
+   460→                  <p className="text-sm text-muted-foreground">Solar Panels</p>
+   461→                </CardContent>
+   462→              </Card>
+   463→              <Card>
+   464→                <CardContent className="pt-6 text-center">
+   465→                  <p className="text-3xl font-bold text-green-500">{productStats.inverters}</p>
+   466→                  <p className="text-sm text-muted-foreground">Inverters</p>
+   467→                </CardContent>
+   468→              </Card>
+   469→              <Card>
+   470→                <CardContent className="pt-6 text-center">
+   471→                  <p className="text-3xl font-bold text-purple-500">{productStats.batteries}</p>
+   472→                  <p className="text-sm text-muted-foreground">Batteries</p>
+   473→                </CardContent>
+   474→              </Card>
+   475→            </div>
+   476→
+   477→            <Card>
+   478→              <CardHeader>
+   479→                <CardTitle className="text-lg">Product Catalog Status</CardTitle>
+   480→              </CardHeader>
+   481→              <CardContent>
+   482→                <div className="flex items-center gap-4">
+   483→                  {productStats.total >= 10 ? (
+   484→                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+   485→                  ) : productStats.total > 0 ? (
+   486→                    <AlertTriangle className="h-8 w-8 text-yellow-500" />
+   487→                  ) : (
+   488→                    <XCircle className="h-8 w-8 text-red-500" />
+   489→                  )}
+   490→                  <div>
+   491→                    <p className="font-medium">
+   492→                      {productStats.total >= 10 
+   493→                        ? 'Product catalog is well-stocked' 
+   494→                        : productStats.total > 0 
+   495→                          ? 'Product catalog needs more items'
+   496→                          : 'Product catalog is empty'}
+   497→                    </p>
+   498→                    <p className="text-sm text-muted-foreground">
+   499→                      Recommended: At least 5 panels, 3 inverters, 3 batteries
+   500→                    </p>
+   501→                  </div>
+   502→                </div>
+   503→              </CardContent>
+   504→            </Card>
+   505→          </TabsContent>
+   506→
+   507→          {/* Media Tab */}
+   508→          <TabsContent value="media" className="space-y-4">
+   509→            <Card>
+   510→              <CardHeader>
+   511→                <CardTitle className="text-lg">Survey Photos by Type</CardTitle>
+   512→                <CardDescription>Distribution of uploaded photos</CardDescription>
+   513→              </CardHeader>
+   514→              <CardContent>
+   515→                {photoStats.length > 0 ? (
+   516→                  <div className="space-y-3">
+   517→                    {photoStats.map((stat) => (
+   518→                      <div key={stat.type} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+   519→                        <span className="capitalize text-sm font-medium">
+   520→                          {stat.type.replace(/_/g, ' ')}
+   521→                        </span>
+   522→                        <Badge variant="secondary">{stat.count} photos</Badge>
+   523→                      </div>
+   524→                    ))}
+   525→                  </div>
+   526→                ) : (
+   527→                  <p className="text-muted-foreground text-center py-8">No photos uploaded yet</p>
+   528→                )}
+   529→              </CardContent>
+   530→            </Card>
+   531→
+   532→            <Card>
+   533→              <CardHeader>
+   534→                <CardTitle className="text-lg">Storage Overview</CardTitle>
+   535→              </CardHeader>
+   536→              <CardContent>
+   537→                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   538→                  <div className="text-center p-4 rounded-lg bg-muted/50">
+   539→                    <p className="text-2xl font-bold">{photoStats.reduce((sum, s) => sum + s.count, 0)}</p>
+   540→                    <p className="text-sm text-muted-foreground">Survey Photos</p>
+   541→                  </div>
+   542→                  <div className="text-center p-4 rounded-lg bg-muted/50">
+   543→                    <p className="text-2xl font-bold">3</p>
+   544→                    <p className="text-sm text-muted-foreground">Storage Buckets</p>
+   545→                  </div>
+   546→                  <div className="text-center p-4 rounded-lg bg-muted/50">
+   547→                    <p className="text-2xl font-bold">Active</p>
+   548→                    <p className="text-sm text-muted-foreground">Storage Status</p>
+   549→                  </div>
+   550→                </div>
+   551→              </CardContent>
+   552→            </Card>
+   553→          </TabsContent>
+   554→        </Tabs>
+   555→
+   556→        {/* Security Status */}
+   557→        <Card>
+   558→          <CardHeader>
+   559→            <CardTitle className="text-lg flex items-center gap-2">
+   560→              <Shield className="h-5 w-5" />
+   561→              Security Status
+   562→            </CardTitle>
+   563→          </CardHeader>
+   564→          <CardContent>
+   565→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   566→              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10">
+   567→                <CheckCircle2 className="h-5 w-5 text-green-500" />
+   568→                <div>
+   569→                  <p className="font-medium text-sm">RLS Enabled</p>
+   570→                  <p className="text-xs text-muted-foreground">All tables have row-level security</p>
+   571→                </div>
+   572→              </div>
+   573→              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10">
+   574→                <CheckCircle2 className="h-5 w-5 text-green-500" />
+   575→                <div>
+   576→                  <p className="font-medium text-sm">Role-Based Access</p>
+   577→                  <p className="text-xs text-muted-foreground">Separate user_roles table configured</p>
+   578→                </div>
+   579→              </div>
+   580→              <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10">
+   581→                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+   582→                <div>
+   583→                  <p className="font-medium text-sm">Extension Warning</p>
+   584→                  <p className="text-xs text-muted-foreground">moddatetime in public schema (informational)</p>
+   585→                </div>
+   586→              </div>
+   587→              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10">
+   588→                <CheckCircle2 className="h-5 w-5 text-green-500" />
+   589→                <div>
+   590→                  <p className="font-medium text-sm">Auth Configured</p>
+   591→                  <p className="text-xs text-muted-foreground">Email auth with auto-confirm enabled</p>
+   592→                </div>
+   593→              </div>
+   594→            </div>
+   595→          </CardContent>
+   596→        </Card>
+   597→      </div>
+   598→    </div>
+   599→  );
+   600→}
+   601→

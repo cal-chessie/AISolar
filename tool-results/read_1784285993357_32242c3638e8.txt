@@ -1,0 +1,721 @@
+     1→import { useState } from 'react';
+     2→import { motion, AnimatePresence } from 'framer-motion';
+     3→import { 
+     4→  FileText, Download, Send, Eye, Check, Calendar, 
+     5→  CreditCard, ArrowRight, ArrowLeft, Signature, AlertCircle
+     6→} from 'lucide-react';
+     7→import { Button } from '@/components/ui/button';
+     8→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+     9→import { Badge } from '@/components/ui/badge';
+    10→import { Input } from '@/components/ui/input';
+    11→import { Label } from '@/components/ui/label';
+    12→import { Checkbox } from '@/components/ui/checkbox';
+    13→import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+    14→import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+    15→import SignatureCanvas from '@/components/ui/SignatureCanvas';
+    16→import { supabase } from '@/integrations/supabase/client';
+    17→import { toast } from '@/hooks/use-toast';
+    18→import { exportProposalToPDF, ProposalPDFData } from '@/lib/pdfExport';
+    19→import { format, addWeeks, isBefore } from 'date-fns';
+    20→import { cn } from '@/lib/utils';
+    21→
+    22→interface ProposalPreviewProps {
+    23→  proposal: any;
+    24→  lead: any;
+    25→  onBack: () => void;
+    26→  onComplete?: () => void;
+    27→}
+    28→
+    29→type PreviewStep = 'preview' | 'signature' | 'dates' | 'payment' | 'complete';
+    30→
+    31→export default function ProposalPreview({ proposal, lead, onBack, onComplete }: ProposalPreviewProps) {
+    32→  const [currentStep, setCurrentStep] = useState<PreviewStep>('preview');
+    33→  const [loading, setLoading] = useState(false);
+    34→  
+    35→  // Signature step state
+    36→  const [signatureData, setSignatureData] = useState('');
+    37→  const [signatoryName, setSignatoryName] = useState(lead?.name || '');
+    38→  const [signatoryEmail, setSignatoryEmail] = useState(lead?.email || '');
+    39→  const [gdprConsent, setGdprConsent] = useState(false);
+    40→  
+    41→  // Date selection step state
+    42→  const [preferredDates, setPreferredDates] = useState<Date[]>([]);
+    43→  const minDate = addWeeks(new Date(), 3); // Minimum 3 weeks lead time
+    44→  
+    45→  // Payment schedule state
+    46→  const [paymentSchedule, setPaymentSchedule] = useState<'full' | 'deposit' | 'installments'>('deposit');
+    47→  
+    48→  const depositAmount = proposal?.net_cost ? Math.round(proposal.net_cost * 0.3) : 0;
+    49→  const balanceAmount = proposal?.net_cost ? proposal.net_cost - depositAmount : 0;
+    50→
+    51→  const handleDownloadPDF = () => {
+    52→    if (!proposal || !lead) return;
+    53→    
+    54→    const pdfData: ProposalPDFData = {
+    55→      customerName: lead.name,
+    56→      customerEmail: lead.email,
+    57→      customerAddress: lead.address,
+    58→      systemSizeKw: proposal.system_size_kw,
+    59→      panelCount: proposal.panel_count,
+    60→      panelType: proposal.panel_type,
+    61→      inverterType: proposal.inverter_type,
+    62→      batteryCapacityKwh: proposal.battery_capacity_kwh,
+    63→      systemCost: proposal.system_cost,
+    64→      seaiGrant: proposal.seai_grant,
+    65→      netCost: proposal.net_cost,
+    66→      monthlySavings: proposal.monthly_savings,
+    67→      paybackPeriodYears: proposal.payback_period_years,
+    68→      estimatedAnnualProductionKwh: proposal.estimated_annual_production_kwh,
+    69→      energyOffsetPercentage: proposal.energy_offset_percentage || 80,
+    70→      createdAt: proposal.created_at,
+    71→      proposalId: proposal.id,
+    72→    };
+    73→    
+    74→    exportProposalToPDF(pdfData);
+    75→  };
+    76→
+    77→  const handleProceedToSignature = () => {
+    78→    setCurrentStep('signature');
+    79→  };
+    80→
+    81→  const handleSignatureComplete = async () => {
+    82→    if (!signatureData || !signatoryName || !signatoryEmail || !gdprConsent) {
+    83→      toast({
+    84→        title: 'Missing information',
+    85→        description: 'Please complete all required fields including signature and consent.',
+    86→        variant: 'destructive',
+    87→      });
+    88→      return;
+    89→    }
+    90→    
+    91→    setLoading(true);
+    92→    try {
+    93→      // Create contract record
+    94→      const { error: contractError } = await supabase
+    95→        .from('contracts')
+    96→        .insert({
+    97→          proposal_id: proposal.id,
+    98→          lead_id: lead.id,
+    99→          signed_by_name: signatoryName,
+   100→          signed_by_email: signatoryEmail,
+   101→          signature_data: signatureData,
+   102→          gdpr_consent: gdprConsent,
+   103→          gdpr_consent_text: 'I consent to the processing of my personal data in accordance with GDPR for the purpose of this solar installation project.',
+   104→          signed_at: new Date().toISOString(),
+   105→        });
+   106→
+   107→      if (contractError) throw contractError;
+   108→      
+   109→      setCurrentStep('dates');
+   110→    } catch (error: any) {
+   111→      toast({
+   112→        title: 'Error',
+   113→        description: error.message,
+   114→        variant: 'destructive',
+   115→      });
+   116→    } finally {
+   117→      setLoading(false);
+   118→    }
+   119→  };
+   120→
+   121→  const handleDateSelection = (date: Date | undefined) => {
+   122→    if (!date) return;
+   123→    
+   124→    if (isBefore(date, minDate)) {
+   125→      toast({
+   126→        title: 'Invalid date',
+   127→        description: 'Please select a date at least 3 weeks from today.',
+   128→        variant: 'destructive',
+   129→      });
+   130→      return;
+   131→    }
+   132→    
+   133→    if (preferredDates.length >= 3) {
+   134→      toast({
+   135→        title: 'Maximum dates selected',
+   136→        description: 'You can only select up to 3 preferred dates.',
+   137→      });
+   138→      return;
+   139→    }
+   140→    
+   141→    if (!preferredDates.find(d => d.getTime() === date.getTime())) {
+   142→      setPreferredDates([...preferredDates, date]);
+   143→    }
+   144→  };
+   145→
+   146→  const removeDate = (index: number) => {
+   147→    setPreferredDates(preferredDates.filter((_, i) => i !== index));
+   148→  };
+   149→
+   150→  const handleDatesComplete = async () => {
+   151→    if (preferredDates.length === 0) {
+   152→      toast({
+   153→        title: 'Please select dates',
+   154→        description: 'Select at least one preferred installation date.',
+   155→        variant: 'destructive',
+   156→      });
+   157→      return;
+   158→    }
+   159→    
+   160→    setLoading(true);
+   161→    try {
+   162→      // Update proposal with preferred dates
+   163→      const { error } = await supabase
+   164→        .from('proposals')
+   165→        .update({
+   166→          preferred_install_dates: preferredDates.map(d => d.toISOString()),
+   167→          status: 'approved',
+   168→          approved_at: new Date().toISOString(),
+   169→        })
+   170→        .eq('id', proposal.id);
+   171→
+   172→      if (error) throw error;
+   173→
+   174→      // workflow_stage is automatically updated by database trigger when contract is created
+   175→      
+   176→      setCurrentStep('payment');
+   177→    } catch (error: any) {
+   178→      toast({
+   179→        title: 'Error',
+   180→        description: error.message,
+   181→        variant: 'destructive',
+   182→      });
+   183→    } finally {
+   184→      setLoading(false);
+   185→    }
+   186→  };
+   187→
+   188→  const handlePaymentComplete = async () => {
+   189→    setLoading(true);
+   190→    try {
+   191→      // Create invoice
+   192→      const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+   193→      
+   194→      const { error } = await supabase
+   195→        .from('invoices')
+   196→        .insert({
+   197→          lead_id: lead.id,
+   198→          proposal_id: proposal.id,
+   199→          invoice_number: invoiceNumber,
+   200→          total_amount: proposal.net_cost,
+   201→          deposit_amount: depositAmount,
+   202→          final_amount: balanceAmount,
+   203→          status: 'pending',
+   204→          due_date: addWeeks(new Date(), 1).toISOString(),
+   205→        });
+   206→
+   207→      if (error) throw error;
+   208→
+   209→      // Send proposal accepted email notification
+   210→      try {
+   211→        await supabase.functions.invoke('send-proposal-accepted', {
+   212→          body: {
+   213→            customerName: lead.name,
+   214→            customerEmail: lead.email,
+   215→            systemSizeKw: proposal.system_size_kw,
+   216→            netCost: proposal.net_cost,
+   217→            seaiGrant: proposal.seai_grant,
+   218→            preferredDates: preferredDates.map(d => d.toISOString()),
+   219→            paymentOption: paymentSchedule,
+   220→            depositAmount: paymentSchedule === 'deposit' ? depositAmount : undefined,
+   221→          }
+   222→        });
+   223→      } catch (emailError) {
+   224→        console.error('Failed to send confirmation email:', emailError);
+   225→        // Don't block the flow if email fails
+   226→      }
+   227→      
+   228→      setCurrentStep('complete');
+   229→      
+   230→      toast({
+   231→        title: 'Proposal Accepted!',
+   232→        description: 'Your proposal has been signed and submitted successfully.',
+   233→      });
+   234→      
+   235→      onComplete?.();
+   236→    } catch (error: any) {
+   237→      toast({
+   238→        title: 'Error',
+   239→        description: error.message,
+   240→        variant: 'destructive',
+   241→      });
+   242→    } finally {
+   243→      setLoading(false);
+   244→    }
+   245→  };
+   246→
+   247→  const renderPreviewStep = () => (
+   248→    <div className="space-y-6">
+   249→      {/* Proposal Header */}
+   250→      <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+   251→        <CardContent className="p-6">
+   252→          <div className="flex items-start justify-between">
+   253→            <div>
+   254→              <h2 className="text-2xl font-bold mb-1">Solar Proposal</h2>
+   255→              <p className="text-primary-foreground/90">{lead?.name}</p>
+   256→              <p className="text-sm text-primary-foreground/70">{lead?.address}</p>
+   257→            </div>
+   258→            <Badge variant="secondary">{proposal?.status}</Badge>
+   259→          </div>
+   260→        </CardContent>
+   261→      </Card>
+   262→
+   263→      {/* Quick Stats */}
+   264→      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+   265→        <Card>
+   266→          <CardContent className="p-4 text-center">
+   267→            <div className="text-2xl font-bold">{proposal?.system_size_kw} kW</div>
+   268→            <div className="text-xs text-muted-foreground">System Size</div>
+   269→          </CardContent>
+   270→        </Card>
+   271→        <Card>
+   272→          <CardContent className="p-4 text-center">
+   273→            <div className="text-2xl font-bold text-green-600">€{proposal?.monthly_savings?.toFixed(0)}</div>
+   274→            <div className="text-xs text-muted-foreground">Monthly Savings</div>
+   275→          </CardContent>
+   276→        </Card>
+   277→        <Card>
+   278→          <CardContent className="p-4 text-center">
+   279→            <div className="text-2xl font-bold">{proposal?.payback_period_years?.toFixed(1)} yrs</div>
+   280→            <div className="text-xs text-muted-foreground">Payback</div>
+   281→          </CardContent>
+   282→        </Card>
+   283→        <Card>
+   284→          <CardContent className="p-4 text-center">
+   285→            <div className="text-2xl font-bold text-primary">€{proposal?.net_cost?.toLocaleString()}</div>
+   286→            <div className="text-xs text-muted-foreground">Net Cost</div>
+   287→          </CardContent>
+   288→        </Card>
+   289→      </div>
+   290→
+   291→      {/* Financial Summary */}
+   292→      <Card>
+   293→        <CardHeader>
+   294→          <CardTitle className="text-lg">Investment Summary</CardTitle>
+   295→        </CardHeader>
+   296→        <CardContent className="space-y-3">
+   297→          <div className="flex justify-between py-2 border-b">
+   298→            <span className="text-muted-foreground">System Cost</span>
+   299→            <span className="font-medium">€{proposal?.system_cost?.toLocaleString()}</span>
+   300→          </div>
+   301→          <div className="flex justify-between py-2 border-b text-green-600">
+   302→            <span>SEAI Grant</span>
+   303→            <span className="font-medium">-€{proposal?.seai_grant?.toLocaleString()}</span>
+   304→          </div>
+   305→          <div className="flex justify-between py-2 text-lg font-bold">
+   306→            <span>Your Investment</span>
+   307→            <span className="text-primary">€{proposal?.net_cost?.toLocaleString()}</span>
+   308→          </div>
+   309→        </CardContent>
+   310→      </Card>
+   311→
+   312→      {/* System Details */}
+   313→      <Card>
+   314→        <CardHeader>
+   315→          <CardTitle className="text-lg">System Specifications</CardTitle>
+   316→        </CardHeader>
+   317→        <CardContent>
+   318→          <div className="grid grid-cols-2 gap-4 text-sm">
+   319→            <div>
+   320→              <span className="text-muted-foreground">Panels:</span>
+   321→              <span className="ml-2 font-medium">{proposal?.panel_count} x {proposal?.panel_type || 'Premium'}</span>
+   322→            </div>
+   323→            <div>
+   324→              <span className="text-muted-foreground">Inverter:</span>
+   325→              <span className="ml-2 font-medium">{proposal?.inverter_type || 'Hybrid'}</span>
+   326→            </div>
+   327→            <div>
+   328→              <span className="text-muted-foreground">Annual Production:</span>
+   329→              <span className="ml-2 font-medium">{proposal?.estimated_annual_production_kwh?.toLocaleString()} kWh</span>
+   330→            </div>
+   331→            {proposal?.battery_storage && (
+   332→              <div>
+   333→                <span className="text-muted-foreground">Battery:</span>
+   334→                <span className="ml-2 font-medium">{proposal?.battery_capacity_kwh} kWh</span>
+   335→              </div>
+   336→            )}
+   337→          </div>
+   338→        </CardContent>
+   339→      </Card>
+   340→
+   341→      {/* Action Buttons */}
+   342→      <div className="flex flex-col sm:flex-row gap-3">
+   343→        <Button variant="outline" onClick={handleDownloadPDF} className="flex-1">
+   344→          <Download className="mr-2 h-4 w-4" />
+   345→          Download PDF
+   346→        </Button>
+   347→        <Button onClick={handleProceedToSignature} className="flex-1">
+   348→          Accept & Sign
+   349→          <ArrowRight className="ml-2 h-4 w-4" />
+   350→        </Button>
+   351→      </div>
+   352→    </div>
+   353→  );
+   354→
+   355→  const renderSignatureStep = () => (
+   356→    <div className="space-y-6">
+   357→      <Card>
+   358→        <CardHeader>
+   359→          <CardTitle className="flex items-center gap-2">
+   360→            <Signature className="h-5 w-5 text-primary" />
+   361→            Contract Acceptance
+   362→          </CardTitle>
+   363→          <CardDescription>
+   364→            Sign below to accept this solar proposal
+   365→          </CardDescription>
+   366→        </CardHeader>
+   367→        <CardContent className="space-y-4">
+   368→          <div className="grid sm:grid-cols-2 gap-4">
+   369→            <div>
+   370→              <Label htmlFor="signatory-name">Full Name</Label>
+   371→              <Input
+   372→                id="signatory-name"
+   373→                value={signatoryName}
+   374→                onChange={(e) => setSignatoryName(e.target.value)}
+   375→                placeholder="Your full name"
+   376→              />
+   377→            </div>
+   378→            <div>
+   379→              <Label htmlFor="signatory-email">Email</Label>
+   380→              <Input
+   381→                id="signatory-email"
+   382→                type="email"
+   383→                value={signatoryEmail}
+   384→                onChange={(e) => setSignatoryEmail(e.target.value)}
+   385→                placeholder="your@email.com"
+   386→              />
+   387→            </div>
+   388→          </div>
+   389→
+   390→          <div>
+   391→            <Label className="mb-2 block">Your Signature</Label>
+   392→            <SignatureCanvas
+   393→              onSignatureChange={(data) => setSignatureData(data || '')}
+   394→            />
+   395→          </div>
+   396→
+   397→          <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+   398→            <Checkbox
+   399→              id="gdpr-consent"
+   400→              checked={gdprConsent}
+   401→              onCheckedChange={(checked) => setGdprConsent(checked === true)}
+   402→            />
+   403→            <Label htmlFor="gdpr-consent" className="text-sm leading-relaxed cursor-pointer">
+   404→              I consent to the processing of my personal data in accordance with GDPR for the purpose of this solar installation project. I understand that my data will be used to arrange surveys, installation, and SEAI grant applications.
+   405→            </Label>
+   406→          </div>
+   407→        </CardContent>
+   408→      </Card>
+   409→
+   410→      <div className="flex gap-3">
+   411→        <Button variant="outline" onClick={() => setCurrentStep('preview')}>
+   412→          <ArrowLeft className="mr-2 h-4 w-4" />
+   413→          Back
+   414→        </Button>
+   415→        <Button 
+   416→          onClick={handleSignatureComplete} 
+   417→          disabled={loading || !signatureData || !gdprConsent}
+   418→          className="flex-1"
+   419→        >
+   420→          {loading ? 'Processing...' : 'Confirm Signature'}
+   421→          <ArrowRight className="ml-2 h-4 w-4" />
+   422→        </Button>
+   423→      </div>
+   424→    </div>
+   425→  );
+   426→
+   427→  const renderDatesStep = () => (
+   428→    <div className="space-y-6">
+   429→      <Card>
+   430→        <CardHeader>
+   431→          <CardTitle className="flex items-center gap-2">
+   432→            <Calendar className="h-5 w-5 text-primary" />
+   433→            Select Installation Dates
+   434→          </CardTitle>
+   435→          <CardDescription>
+   436→            Choose up to 3 preferred installation dates (minimum 3 weeks from today)
+   437→          </CardDescription>
+   438→        </CardHeader>
+   439→        <CardContent className="space-y-4">
+   440→          <div className="flex justify-center">
+   441→            <CalendarComponent
+   442→              mode="single"
+   443→              onSelect={handleDateSelection}
+   444→              disabled={(date) => isBefore(date, minDate)}
+   445→              className="rounded-md border"
+   446→            />
+   447→          </div>
+   448→
+   449→          {preferredDates.length > 0 && (
+   450→            <div className="space-y-2">
+   451→              <Label>Selected Dates:</Label>
+   452→              <div className="flex flex-wrap gap-2">
+   453→                {preferredDates.map((date, index) => (
+   454→                  <Badge 
+   455→                    key={index} 
+   456→                    variant="secondary"
+   457→                    className="px-3 py-1 cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+   458→                    onClick={() => removeDate(index)}
+   459→                  >
+   460→                    {format(date, 'EEE, MMM d, yyyy')}
+   461→                    <span className="ml-2">×</span>
+   462→                  </Badge>
+   463→                ))}
+   464→              </div>
+   465→              <p className="text-xs text-muted-foreground">Click a date to remove it</p>
+   466→            </div>
+   467→          )}
+   468→
+   469→          {preferredDates.length === 0 && (
+   470→            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+   471→              <AlertCircle className="h-4 w-4 text-amber-600" />
+   472→              <p className="text-sm text-amber-800 dark:text-amber-200">
+   473→                Please select at least one preferred installation date
+   474→              </p>
+   475→            </div>
+   476→          )}
+   477→        </CardContent>
+   478→      </Card>
+   479→
+   480→      <div className="flex gap-3">
+   481→        <Button variant="outline" onClick={() => setCurrentStep('signature')}>
+   482→          <ArrowLeft className="mr-2 h-4 w-4" />
+   483→          Back
+   484→        </Button>
+   485→        <Button 
+   486→          onClick={handleDatesComplete} 
+   487→          disabled={loading || preferredDates.length === 0}
+   488→          className="flex-1"
+   489→        >
+   490→          {loading ? 'Processing...' : 'Continue to Payment'}
+   491→          <ArrowRight className="ml-2 h-4 w-4" />
+   492→        </Button>
+   493→      </div>
+   494→    </div>
+   495→  );
+   496→
+   497→  const renderPaymentStep = () => (
+   498→    <div className="space-y-6">
+   499→      <Card>
+   500→        <CardHeader>
+   501→          <CardTitle className="flex items-center gap-2">
+   502→            <CreditCard className="h-5 w-5 text-primary" />
+   503→            Payment Schedule
+   504→          </CardTitle>
+   505→          <CardDescription>
+   506→            Choose your preferred payment option
+   507→          </CardDescription>
+   508→        </CardHeader>
+   509→        <CardContent className="space-y-4">
+   510→          <div className="space-y-3">
+   511→            <label 
+   512→              className={cn(
+   513→                "flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors",
+   514→                paymentSchedule === 'deposit' && "border-primary bg-primary/5"
+   515→              )}
+   516→            >
+   517→              <input
+   518→                type="radio"
+   519→                name="payment"
+   520→                value="deposit"
+   521→                checked={paymentSchedule === 'deposit'}
+   522→                onChange={() => setPaymentSchedule('deposit')}
+   523→                className="mt-1"
+   524→              />
+   525→              <div className="flex-1">
+   526→                <div className="font-medium">Deposit + Balance</div>
+   527→                <p className="text-sm text-muted-foreground">
+   528→                  Pay €{depositAmount.toLocaleString()} (30%) now, €{balanceAmount.toLocaleString()} on completion
+   529→                </p>
+   530→              </div>
+   531→              <Badge variant="secondary">Recommended</Badge>
+   532→            </label>
+   533→
+   534→            <label 
+   535→              className={cn(
+   536→                "flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors",
+   537→                paymentSchedule === 'full' && "border-primary bg-primary/5"
+   538→              )}
+   539→            >
+   540→              <input
+   541→                type="radio"
+   542→                name="payment"
+   543→                value="full"
+   544→                checked={paymentSchedule === 'full'}
+   545→                onChange={() => setPaymentSchedule('full')}
+   546→                className="mt-1"
+   547→              />
+   548→              <div className="flex-1">
+   549→                <div className="font-medium">Full Payment</div>
+   550→                <p className="text-sm text-muted-foreground">
+   551→                  Pay €{proposal?.net_cost?.toLocaleString()} in full upfront
+   552→                </p>
+   553→              </div>
+   554→            </label>
+   555→
+   556→            <label 
+   557→              className={cn(
+   558→                "flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors",
+   559→                paymentSchedule === 'installments' && "border-primary bg-primary/5"
+   560→              )}
+   561→            >
+   562→              <input
+   563→                type="radio"
+   564→                name="payment"
+   565→                value="installments"
+   566→                checked={paymentSchedule === 'installments'}
+   567→                onChange={() => setPaymentSchedule('installments')}
+   568→                className="mt-1"
+   569→              />
+   570→              <div className="flex-1">
+   571→                <div className="font-medium">Monthly Installments</div>
+   572→                <p className="text-sm text-muted-foreground">
+   573→                  Spread cost over 12-60 months (subject to credit approval)
+   574→                </p>
+   575→              </div>
+   576→            </label>
+   577→          </div>
+   578→
+   579→          <div className="p-4 bg-muted rounded-lg">
+   580→            <div className="flex justify-between mb-2">
+   581→              <span className="text-muted-foreground">Total Investment</span>
+   582→              <span className="font-bold">€{proposal?.net_cost?.toLocaleString()}</span>
+   583→            </div>
+   584→            {paymentSchedule === 'deposit' && (
+   585→              <>
+   586→                <div className="flex justify-between text-sm">
+   587→                  <span className="text-muted-foreground">Due Now (30%)</span>
+   588→                  <span className="font-medium text-primary">€{depositAmount.toLocaleString()}</span>
+   589→                </div>
+   590→                <div className="flex justify-between text-sm">
+   591→                  <span className="text-muted-foreground">On Completion</span>
+   592→                  <span>€{balanceAmount.toLocaleString()}</span>
+   593→                </div>
+   594→              </>
+   595→            )}
+   596→          </div>
+   597→        </CardContent>
+   598→      </Card>
+   599→
+   600→      <div className="flex gap-3">
+   601→        <Button variant="outline" onClick={() => setCurrentStep('dates')}>
+   602→          <ArrowLeft className="mr-2 h-4 w-4" />
+   603→          Back
+   604→        </Button>
+   605→        <Button 
+   606→          onClick={handlePaymentComplete} 
+   607→          disabled={loading}
+   608→          className="flex-1"
+   609→        >
+   610→          {loading ? 'Processing...' : 'Complete Acceptance'}
+   611→          <Check className="ml-2 h-4 w-4" />
+   612→        </Button>
+   613→      </div>
+   614→    </div>
+   615→  );
+   616→
+   617→  const renderCompleteStep = () => (
+   618→    <motion.div
+   619→      initial={{ opacity: 0, scale: 0.95 }}
+   620→      animate={{ opacity: 1, scale: 1 }}
+   621→      className="text-center py-12 space-y-6"
+   622→    >
+   623→      <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+   624→        <Check className="h-10 w-10 text-green-600" />
+   625→      </div>
+   626→      
+   627→      <div>
+   628→        <h2 className="text-2xl font-bold text-foreground mb-2">Proposal Accepted!</h2>
+   629→        <p className="text-muted-foreground">
+   630→          Thank you for choosing us for your solar installation.
+   631→        </p>
+   632→      </div>
+   633→
+   634→      <Card className="text-left max-w-md mx-auto">
+   635→        <CardContent className="p-4 space-y-2 text-sm">
+   636→          <div className="flex justify-between">
+   637→            <span className="text-muted-foreground">Contract Signed</span>
+   638→            <Check className="h-4 w-4 text-green-600" />
+   639→          </div>
+   640→          <div className="flex justify-between">
+   641→            <span className="text-muted-foreground">Dates Selected</span>
+   642→            <Check className="h-4 w-4 text-green-600" />
+   643→          </div>
+   644→          <div className="flex justify-between">
+   645→            <span className="text-muted-foreground">Invoice Created</span>
+   646→            <Check className="h-4 w-4 text-green-600" />
+   647→          </div>
+   648→        </CardContent>
+   649→      </Card>
+   650→
+   651→      <p className="text-sm text-muted-foreground">
+   652→        We'll be in touch within 24 hours to confirm your installation date.
+   653→      </p>
+   654→
+   655→      <Button onClick={onBack}>
+   656→        Return to Dashboard
+   657→      </Button>
+   658→    </motion.div>
+   659→  );
+   660→
+   661→  // Step indicator
+   662→  const steps = [
+   663→    { id: 'preview', label: 'Preview' },
+   664→    { id: 'signature', label: 'Sign' },
+   665→    { id: 'dates', label: 'Dates' },
+   666→    { id: 'payment', label: 'Payment' },
+   667→    { id: 'complete', label: 'Complete' },
+   668→  ];
+   669→
+   670→  const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+   671→
+   672→  return (
+   673→    <div className="max-w-2xl mx-auto p-4">
+   674→      <Button variant="ghost" onClick={onBack} className="mb-4">
+   675→        <ArrowLeft className="mr-2 h-4 w-4" />
+   676→        Back
+   677→      </Button>
+   678→
+   679→      {/* Progress Steps */}
+   680→      {currentStep !== 'complete' && (
+   681→        <div className="flex items-center justify-between mb-8">
+   682→          {steps.slice(0, -1).map((step, index) => (
+   683→            <div key={step.id} className="flex items-center">
+   684→              <div className={cn(
+   685→                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors",
+   686→                index < currentStepIndex && "bg-green-600 text-white",
+   687→                index === currentStepIndex && "bg-primary text-primary-foreground",
+   688→                index > currentStepIndex && "bg-muted text-muted-foreground"
+   689→              )}>
+   690→                {index < currentStepIndex ? <Check className="h-4 w-4" /> : index + 1}
+   691→              </div>
+   692→              {index < steps.length - 2 && (
+   693→                <div className={cn(
+   694→                  "w-12 sm:w-20 h-1 mx-1",
+   695→                  index < currentStepIndex ? "bg-green-600" : "bg-muted"
+   696→                )} />
+   697→              )}
+   698→            </div>
+   699→          ))}
+   700→        </div>
+   701→      )}
+   702→
+   703→      <AnimatePresence mode="wait">
+   704→        <motion.div
+   705→          key={currentStep}
+   706→          initial={{ opacity: 0, x: 20 }}
+   707→          animate={{ opacity: 1, x: 0 }}
+   708→          exit={{ opacity: 0, x: -20 }}
+   709→          transition={{ duration: 0.2 }}
+   710→        >
+   711→          {currentStep === 'preview' && renderPreviewStep()}
+   712→          {currentStep === 'signature' && renderSignatureStep()}
+   713→          {currentStep === 'dates' && renderDatesStep()}
+   714→          {currentStep === 'payment' && renderPaymentStep()}
+   715→          {currentStep === 'complete' && renderCompleteStep()}
+   716→        </motion.div>
+   717→      </AnimatePresence>
+   718→    </div>
+   719→  );
+   720→}
+   721→
