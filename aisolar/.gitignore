@@ -33,3 +33,6 @@ dist-ssr
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# ephemeral spawn_task worktrees
+.claude/worktrees/
