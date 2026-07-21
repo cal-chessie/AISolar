@@ -39,6 +39,7 @@ import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/
 import { getStage, PIPELINE_STAGES, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
+import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';

@@ -36,6 +36,7 @@ import {
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { PipelineBar } from '@/components/layout/PipelineBar';
+import InsightsView from '@/components/InsightsView';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
@@ -249,7 +250,7 @@ export default function OwnerCockpit() {
           {activeView === 'products' && <ProfessionalProducts />}
           {activeView === 'settings' && <SystemSettings />}
           {activeView === 'agents' && <AgentFoundation />}
-          {activeView === 'analytics' && <AnalyticsDashboard />}
+          {activeView === 'analytics' && <InsightsView />}
           {activeView === 'crm' && <CrmPlaceholder />}
           {activeView === 'seai' && <SEAIDashboard leads={leads} />}
           {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
