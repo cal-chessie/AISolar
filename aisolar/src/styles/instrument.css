@@ -22,20 +22,22 @@
     --text-2xs:   0.6875rem; /* 11px — UPPERCASE micro-labels ONLY, never body text
                                 (below the 12px body floor; uppercase+tracking keeps it legible) */
     --text-xs:    0.75rem;   /* 12px — labels, captions, badges */
-    --text-sm:    0.8125rem; /* 13px — DEFAULT UI text */
-    --text-base:  0.875rem;  /* 14px — body / reading */
-    --text-md:    1rem;      /* 16px — emphasis, card titles */
+    --text-sm:    0.875rem;  /* 14px — DEFAULT UI text (Cal.com measured) */
+    --text-base:  1rem;      /* 16px — body / reading (Cal.com body) */
+    --text-md:    1.125rem;  /* 18px — emphasis, card titles */
     --text-lg:    1.25rem;   /* 20px — section headings */
     --text-xl:    1.5rem;    /* 24px — page titles */
     --text-2xl:   1.875rem;  /* 30px — hero numbers, KPI values */
     --text-3xl:   2.25rem;   /* 36px — the one big number on a cockpit */
 
     --leading-tight:  1.25;
-    --leading-ui:     1.4;   /* default for interface text */
-    --leading-body:   1.55;  /* prose / descriptions */
+    --leading-ui:     1.45;  /* interface text */
+    --leading-body:   1.5;   /* prose / descriptions (Cal.com: 16px/24px) */
 
-    --tracking-tight: -0.02em;  /* headings, big numbers */
-    --tracking-ui:    -0.006em; /* interface default — subtle */
+    --tracking-tight: -0.02em;  /* display headings + big numbers ONLY */
+    --tracking-ui:    normal;   /* Cal.com uses NORMAL tracking on UI + body.
+                                   Negative tracking on interface text hurts
+                                   legibility and is not the reference. */
     --tracking-wide:   0.04em;  /* uppercase micro-labels */
 
     /* ---- SPACING (4px grid) ----------------------------------------------
@@ -63,9 +65,9 @@
     /* ---- DENSITY ----------------------------------------------------------
        Control heights. Field crews on mobile need bigger touch targets than an
        owner on a 27" monitor — see the [data-density] overrides below. */
-    --control-h-sm: 1.75rem;  /* 28 — table row actions, chips */
-    --control-h:    2rem;     /* 32 — DEFAULT input/button */
-    --control-h-lg: 2.25rem;  /* 36 — primary actions */
+    --control-h-sm: 2rem;     /* 32 — table row actions, chips */
+    --control-h:    2.25rem;  /* 36 — DEFAULT input/button (Cal.com measured) */
+    --control-h-lg: 2.5rem;   /* 40 — primary actions */
     --row-h:        2.25rem;  /* 36 — table/list row */
     --header-h:     3rem;     /* 48 — app + page headers */
 
@@ -76,6 +78,8 @@
     --radius-sm: 0.375rem;  /*  6 */
     --radius-md: 0.5rem;    /*  8 — default for cards/inputs */
     --radius-lg: 0.625rem;  /* 10 — panels */
+    --radius-control: 0.625rem; /* 10 — buttons/inputs (Cal.com measured;
+                                   slightly rounder than its 8px cards) */
     --radius-xl: 0.875rem;  /* 14 — modals only */
     --radius: var(--radius-md);
 
@@ -139,6 +143,9 @@
   }
 
   /* Headings: engineered, not airy */
+  /* Cal.com button/label weight is 500 (medium), not 600 */
+  button, [role="button"], label { font-weight: 500; }
+
   h1, h2, h3, h4 {
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
