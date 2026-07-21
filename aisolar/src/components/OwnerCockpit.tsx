@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+import { PipelineBar } from '@/components/layout/PipelineBar';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -474,47 +475,18 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         </motion.div>
       </motion.div>
 
-      {/* Pipeline flow — the main attraction */}
+      {/* Pipeline — compact 6-phase bar; raw stages via progressive disclosure */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold">Pipeline — click any stage to see leads</h3>
-            {data.bottleneck && (
-              <Badge variant="outline" className="text-[11px] bg-red-50 text-red-700 border-red-200">
-                <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-                Bottleneck: {getStage(data.bottleneck.stage).label} ({data.bottleneck.rate}%)
-              </Badge>
-            )}
-          </div>
-          {/* Horizontal flow — bigger boxes */}
-          <div className="flex gap-1 overflow-x-auto pb-3">
-            {data.stageCounts.map((stage: any, i: number) => {
-              const isBottleneck = data.bottleneck?.stage === stage.id;
-              const isExpanded = expandedStage === stage.id;
-              return (
-                <div key={stage.id} className="flex items-center flex-shrink-0">
-                  <button
-                    onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
-                    className={`p-3 rounded-lg border-2 text-center min-w-[85px] transition-all ${
-                      isBottleneck ? 'border-red-400 bg-red-50 dark:bg-red-950/20' :
-                      isExpanded ? `border-${stage.color}-500 bg-${stage.color}-50 dark:bg-${stage.color}-950/20` :
-                      `border-${stage.color}-200 hover:border-${stage.color}-400`
-                    }`}
-                  >
-                    <div className={`text-2xl font-bold ${isBottleneck ? 'text-red-600' : `text-${stage.color}-600`}`}>{stage.count}</div>
-                    <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">{stage.label}</div>
-                    {i > 0 && stage.cumulative > 0 && (
-                      <div className="text-[11px] text-muted-foreground mt-1">{Math.round((stage.cumulative / data.stageCounts[0].cumulative) * 100)}% of total</div>
-                    )}
-                  </button>
-                  {i < data.stageCounts.length - 1 && <div className={`h-0.5 w-4 ${isBottleneck ? 'bg-red-300' : 'bg-muted-foreground/20'}`} />}
-                </div>
-              );
-            })}
-          </div>
+        <CardContent className="p-0">
+          <PipelineBar
+            counts={Object.fromEntries(data.stageCounts.map((s: any) => [s.id, s.count]))}
+            onStageClick={(id) => setExpandedStage(expandedStage === id ? null : id)}
+            onGroupToggle={() => setExpandedStage(null)}
+            className="border-0"
+          />
           {/* Expanded leads */}
           {expandedStage && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mt-3 pt-3 border-t">
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mx-4 mb-4 pt-3 border-t">
               <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
                 {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads (click to open)
               </div>
