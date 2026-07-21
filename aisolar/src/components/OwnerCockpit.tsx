@@ -36,6 +36,7 @@ import {
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { PipelineBar } from '@/components/layout/PipelineBar';
+import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -208,92 +209,29 @@ export default function OwnerCockpit() {
     };
   }, [leads]);
 
+  const shellNav: ShellNavItem[] = [
+    ...SIDEBAR_ITEMS.map(it => ({
+      id: it.id as string,
+      label: it.label,
+      icon: <it.icon />,
+      onSelect: () => selectView(it.id),
+      badge: it.id === 'agents' && data.agentFailures ? data.agentFailures : undefined,
+      primary: ['overview', 'calendar', 'agents', 'analytics'].includes(it.id),
+    })),
+    { id: 'switch-consultant', label: 'Consultant view', icon: <Users />, onSelect: () => navigate('/consultant') },
+    { id: 'switch-installer', label: 'Installer view', icon: <Wrench />, onSelect: () => navigate('/installer') },
+  ];
+
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
-      {/* ====== Mobile top bar (only on mobile) ====== */}
-      {isMobile && (
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b h-14 flex items-center gap-3 px-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -ml-1 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Open navigation menu"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="p-1 bg-gradient-to-br from-emerald-600 to-blue-600 rounded">
-              <Building2 className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="font-bold text-xs truncate">{brand.name}</span>
-            <span className="text-[11px] text-muted-foreground truncate">Owner</span>
-          </div>
-          <DarkModeToggle />
-        </header>
-      )}
-
-      {/* ====== Sidebar (desktop: collapsible column; mobile: drawer overlay) ====== */}
-      {isMobile ? (
-        /* Mobile drawer */
-        <AnimatePresence>
-          {sidebarOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setSidebarOpen(false)}
-                className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-              />
-              {/* Drawer */}
-              <motion.div
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-muted/30 border-r flex flex-col lg:hidden"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Navigation menu"
-              >
-                <SidebarContent
-                  activeView={activeView}
-                  onSelectView={selectView}
-                  agentFailures={data.agentFailures}
-                  staleLeadsCount={data.staleLeads.length}
-                  onNavigate={navigate}
-                />
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      ) : (
-        /* Desktop collapsible sidebar */
-        <div className={`${sidebarOpen ? 'w-56' : 'w-0'} transition-all overflow-hidden border-r flex-shrink-0 bg-muted/30 hidden lg:block`}>
-          <SidebarContent
-            activeView={activeView}
-            onSelectView={selectView}
-            agentFailures={data.agentFailures}
-            staleLeadsCount={data.staleLeads.length}
-            onNavigate={navigate}
-          />
-        </div>
-      )}
-
-      {/* Toggle sidebar button (desktop only) */}
-      {!isMobile && (
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-background border rounded-r-lg p-1 shadow-md hidden lg:block"
-          style={{ left: sidebarOpen ? '224px' : '0' }}
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
-      )}
-
-      {/* Main content */}
-      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pt-14' : ''}`}>
+    <AppShell
+      persona="owner"
+      brandName={brand.name}
+      personaLabel="Owner Cockpit"
+      nav={shellNav}
+      activeId={activeView}
+      title={SIDEBAR_ITEMS.find(it => it.id === activeView)?.label ?? 'Overview'}
+      headerExtra={<DarkModeToggle />}
+    >
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
@@ -319,8 +257,7 @@ export default function OwnerCockpit() {
             <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
           )}
         </Suspense>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
