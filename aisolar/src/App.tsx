@@ -9,6 +9,7 @@ import { AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from 'next-themes';
 import PageTransition from "@/components/layout/PageTransition";
 import GlobalSearchModal from "@/components/search/GlobalSearchModal";
+import ProposalPage from "@/pages/ProposalPage";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
@@ -89,6 +90,7 @@ function AppRoutes() {
           <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
           <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
           <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
+          <Route path="/p/:leadId" element={wrap(<ProposalPage />)} />
 
           {/* Workflow — auth-guarded (staff-only) */}
           <Route path="/lead-flow" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
