@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getProduct, CatalogProduct } from '@/config/productCatalog';
+import { brand } from '@/config/brand';
 import type { DummyLead } from '@/lib/dummyData';
 
 const eur = (n: number | null | undefined) =>
@@ -45,13 +46,14 @@ function BillEvidence({ lead }: { lead: DummyLead }) {
   ];
   return (
     <section className="rounded-panel border border-border bg-card overflow-hidden">
-      <header className="flex items-center gap-2.5 px-5 py-4 border-b border-border bg-muted/40">
-        <FileText className="size-4 text-primary" />
-        <div>
-          <h2 className="text-md font-semibold leading-tight">Read from your electricity bill</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Every number below came off the bill you uploaded — this proposal is
-            calculated on <span className="font-medium text-foreground">your actual usage</span>, not an average home.
+      <header className="flex items-start gap-2.5 px-5 py-4 border-b border-border bg-muted/40">
+        <FileText className="size-4 text-primary mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <h2 className="text-md font-semibold leading-tight">What your bill told us</h2>
+          <p className="text-xs text-muted-foreground mt-1 leading-body">
+            We pulled 21 details off your last bill: your tariff, your day and night
+            split, your meter point. Every figure in this proposal runs off those
+            numbers. Ask the other quotes you get which of them opened your bill.
           </p>
         </div>
         <BadgeCheck className="size-5 text-primary ml-auto shrink-0" aria-hidden />
@@ -118,26 +120,51 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
   if (!p) {
     return (
       <div className="max-w-3xl mx-auto p-8 text-center text-sm text-muted-foreground">
-        Your proposal is being prepared — we'll email you the moment it's ready.
+        We are still putting your proposal together. It lands in your inbox the moment it is ready.
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto p-4 lg:p-8 space-y-5 print:p-0">
-      {/* Header */}
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      {/* Letterhead — this is a commercial document, so it carries the
+          installer's trading identity, not an app header. */}
+      <header className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          {brand.logo.image ? (
+            <img src={brand.logo.image} alt={brand.legal.tradingName} className="h-9 w-auto" />
+          ) : (
+            <span className="size-9 rounded-md bg-primary text-primary-foreground grid place-items-center">
+              <Sun className="size-5" />
+            </span>
+          )}
+          <div className="leading-tight">
+            <div className="text-md font-semibold">{brand.legal.tradingName}</div>
+            <div className="text-2xs text-muted-foreground">
+              {[brand.legal.registeredName, brand.contact.phoneDisplay].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="label-micro">Solar proposal</p>
+          <p className="text-sm font-medium tabular-nums">{p.id}</p>
+          <p className="text-2xs text-muted-foreground mt-0.5">
+            {new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+      </header>
+
+      {/* Who it's for */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="label-micro">Solar proposal · {p.id}</p>
+          <p className="label-micro">Prepared for</p>
           <h1 className="text-xl font-semibold mt-1">{lead.name}</h1>
           <p className="text-sm text-muted-foreground">{lead.address}</p>
         </div>
-        <div className="flex items-center gap-2 print:hidden">
-          <Button variant="ghost" size="sm" onClick={() => window.print()}>
-            <Printer /> Save as PDF
-          </Button>
-        </div>
-      </header>
+        <Button variant="ghost" size="sm" onClick={() => window.print()} className="print:hidden">
+          <Printer /> Save as PDF
+        </Button>
+      </div>
 
       {/* 1 — Evidence (the moat) */}
       <BillEvidence lead={lead} />
@@ -195,7 +222,7 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
       <section className="rounded-panel border border-border bg-card p-5 print:hidden">
         {depositPaid ? (
           <p className="flex items-center gap-2 text-sm font-medium text-primary">
-            <CalendarCheck className="size-4" /> Deposit received — your install is being scheduled. Nothing more to do today.
+            <CalendarCheck className="size-4" /> Deposit received. We are booking your install now, so there is nothing else for you to do today.
           </p>
         ) : accepted ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -207,7 +234,7 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <div className="text-sm text-muted-foreground">
-              Happy with this? Accepting reserves your install slot — deposit of {eur(deposit)} confirms it.
+              Accepting reserves your install slot. The {eur(deposit)} deposit confirms it.
             </div>
             <div className="ml-auto flex items-center gap-2">
               <Button variant="ghost" size="default" onClick={() => onQuestion?.()}>
@@ -221,9 +248,22 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
         )}
       </section>
 
-      <p className="text-2xs text-muted-foreground text-center pb-6">
-        Prices valid 30 days · SEAI grant subject to eligibility · RECI-certified installation
-      </p>
+      <footer className="border-t border-border pt-4 pb-8 space-y-1.5">
+        <p className="text-2xs text-muted-foreground">
+          {[
+            brand.legal.registeredName && `${brand.legal.registeredName}${brand.legal.tradingName && brand.legal.registeredName !== brand.legal.tradingName ? ` trading as ${brand.legal.tradingName}` : ''}`,
+            brand.legal.registeredAddress,
+            brand.legal.companyNumber && `Company no. ${brand.legal.companyNumber}`,
+            brand.legal.vatNumber && `VAT ${brand.legal.vatNumber}`,
+            brand.legal.reciNumber && `RECI ${brand.legal.reciNumber}`,
+            brand.legal.seaiRegistered && 'SEAI registered installer',
+          ].filter(Boolean).join(' · ')}
+        </p>
+        <p className="text-2xs text-muted-foreground">
+          Prices hold for 30 days. The SEAI grant depends on your eligibility and we
+          confirm it before you pay anything.
+        </p>
+      </footer>
     </div>
   );
 }

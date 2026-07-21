@@ -36,6 +36,21 @@ export const brand = {
     address: "Dublin, Ireland",
   },
   
+  // ===== LEGAL / TRADING IDENTITY =====
+  // Cal 2026-07-21: a proposal is a commercial document. It needs the
+  // installer's real trading identity on it — company name, registration,
+  // VAT and the certifications an Irish homeowner checks before signing.
+  // Each tenant fills these with their own; blanks are simply not rendered.
+  legal: {
+    tradingName: "AISOLAR",              // "trading as" name on the quote
+    registeredName: "AISolar Ireland Ltd", // legal entity
+    companyNumber: "",                    // CRO number
+    vatNumber: "",                        // IE VAT
+    reciNumber: "",                       // RECI electrical contractor reg
+    seaiRegistered: true,                 // SEAI registered installer
+    registeredAddress: "Dublin, Ireland",
+  },
+
   // ===== SOCIAL LINKS =====
   social: {
     facebook: "https://facebook.com/aisolarie",

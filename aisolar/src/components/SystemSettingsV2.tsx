@@ -370,7 +370,7 @@ export default function SystemSettingsV2() {
               <table className="w-full text-xs">
                 <thead><tr className="text-muted-foreground border-b"><th className="text-left py-2">Secret</th><th className="text-left">Last rotated</th><th className="text-right">Status</th></tr></thead>
                 <tbody>
-                  {['supabase_service_role', 'stripe_secret_key', 'stripe_webhook_secret', 'coinbase_api_key', 'postmark_server_token', 'lovable_api_key', 'openrouter_api_key'].map(s => (
+                  {['supabase_service_role', 'stripe_secret_key', 'stripe_webhook_secret', 'coinbase_api_key', 'postmark_server_token', 'ai_api_key', 'openrouter_api_key'].map(s => (
                     <tr key={s} className="border-b last:border-0">
                       <td className="py-2 font-mono">{s}</td>
                       <td>2026-07-17</td>

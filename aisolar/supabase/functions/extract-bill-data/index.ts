@@ -24,8 +24,8 @@ serve(async (req) => {
     const caller = await getCaller(req);
     log(FN, "info", "Bill extraction requested", { authenticated: !!caller });
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENROUTER_API_KEY");
+    if (!AI_API_KEY) {
       throw new HttpError(500, "AI service not configured");
     }
 
@@ -45,15 +45,20 @@ serve(async (req) => {
 
     log(FN, "info", "Processing bill image", { fileType, sizeBytes: imageBase64.length });
 
-    // Use Lovable AI Gateway with vision model
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        // AI provider — OpenAI-compatible endpoint, tenant-configurable.
+    // Was hardwired to Lovable's gateway; AISolar is BYO-key per tenant
+    // (see the vault: "BYO keys stay with the owner/tenant"), so this reads
+    // the tenant's own provider + key and falls back to OpenRouter.
+    const AI_BASE_URL = Deno.env.get("AI_BASE_URL") ?? "https://openrouter.ai/api/v1";
+    const AI_MODEL = Deno.env.get("AI_VISION_MODEL") ?? "google/gemini-2.5-flash";
+    const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: AI_MODEL,
         messages: [
           {
             role: "system",
