@@ -24,12 +24,22 @@ Repo root is the parent `AI SOLAR/` folder; app lives here in `aisolar/`.
 - agent-drain: lead_intake now advances stage → intake_complete (chain cascades);
   proposal drafter reads confirmed_* from lead_intake first; duplicate authHeader
   bug fixed.
-- extract-bill-data: ~20-field extraction (rates, tariff, MPRN, day/night…).
+- extract-bill-data: 21-field extraction (rates, tariff, MPRN, day/night…) and
+  as of 20260724 it PERSISTS all 21 to lead_intake (13 typed cols already
+  existed; migration adds the other 8 + bill_extracted_at) plus extraction_raw.
+  Write is authorised: needs a staff JWT or the lead's 64-char access_token
+  (like create-checkout), so anonymous callers can't overwrite by UUID guess.
+  Response now returns `persisted:boolean` — a failed write never reads OK.
+- Migration 20260724_bill_extract_complete.sql also FIXES a GDPR leak:
+  anonymise_lead() was leaving extracted_eircode (+ notes) behind on erasure.
 - Deploy: `supabase functions deploy ingest-lead agent-drain extract-bill-data`
   + secrets INGEST_API_KEY, AISOLAR_TENANT_ID. Frontend: Vercel (vercel.json set).
 
 ## Known debt (docs/PIPELINE_AUTONOMY_AUDIT.md has the full graded list)
-- NOTHING calls extract-bill-data from the UI — bill-upload front door missing.
+- Bill-upload FRONT DOOR still missing: the extractor now persists, but no UI
+  screen calls it with a leadId yet. That is the next chunk. Until it lands,
+  real leads carry only the ~5 fields the web form collects; the proposal's
+  field count is computed, so it stays honest (says 5, not 21).
 - survey_scheduler + install_coordinator stamp dates without calendar logic and
   send no email despite touchpoints claiming so.
 - Landing copy oversells (SMS/WhatsApp/roof-detection don't exist; grant agent
