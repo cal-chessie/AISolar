@@ -93,6 +93,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         // Instrument scale (see src/styles/instrument.css)
         xs: "var(--radius-xs)",
+        control: "var(--radius-control)",
         panel: "var(--radius-lg)",
         modal: "var(--radius-xl)",
       },
@@ -119,6 +120,11 @@ export default {
         header: "var(--header-h)",
         page: "var(--pad-page)",
         card: "var(--pad-card)",
+      },
+      lineHeight: {
+        tight: "var(--leading-tight)",
+        ui: "var(--leading-ui)",
+        body: "var(--leading-body)",
       },
       boxShadow: {
         "elev-1": "var(--elev-1)",
