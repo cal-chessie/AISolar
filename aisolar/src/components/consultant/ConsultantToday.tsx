@@ -20,6 +20,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { getStage } from '@/lib/leadIntake';
 import type { DummyLead } from '@/lib/dummyData';
+import AgentWindow, { useAgentActions } from '@/components/agents/AgentWindow';
+import { toast } from 'sonner';
 
 const eur = (n?: number | null) =>
   n == null ? '—' : new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -97,6 +99,8 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
     return { diary, needsMe, waiting };
   }, [leads]);
 
+  const agentActions = useAgentActions(leads, 8);
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
@@ -152,6 +156,11 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
               })()} />
           ))}
         </Panel>
+
+        <AgentWindow
+          actions={agentActions}
+          onCorrect={(a, note) => toast.success(`Correction sent to ${a.agent}`, { description: note })}
+        />
 
         <section className="rounded-panel border border-border bg-card p-4 flex flex-col justify-between gap-3">
           <div>
