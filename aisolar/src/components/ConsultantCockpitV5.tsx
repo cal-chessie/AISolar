@@ -34,11 +34,11 @@ import {
   Calendar, Clock, Package, FolderOpen, BarChart3, Search,
   Phone, Mail, ArrowRight, ChevronRight, Flame, Star, Zap,
   TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
-  Building2, Sun, MapPin, Send, User, Sparkles, X, Award,
-} from 'lucide-react';
+  Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
+import ConsultantToday from '@/components/consultant/ConsultantToday';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';
@@ -64,9 +64,10 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
  * same surface (lead list) with different `leads.filter(...)` predicates.
  * They're now filter chips inside Inbox.
  */
-type TabId = 'inbox' | 'pipeline' | 'calendar' | 'products' | 'documents' | 'insights';
+type TabId = 'today' | 'inbox' | 'pipeline' | 'calendar' | 'products' | 'documents' | 'insights';
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof Users }> = [
+  { id: 'today', label: 'Today', icon: CalendarClock },
   { id: 'inbox', label: 'Inbox', icon: MessageSquare },
   { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
@@ -91,7 +92,7 @@ export default function ConsultantCockpitV5() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
-  const [activeTab, setActiveTab] = useState<TabId>('inbox');
+  const [activeTab, setActiveTab] = useState<TabId>('today');
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
@@ -293,9 +294,9 @@ export default function ConsultantCockpitV5() {
               : 0;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
-                <Icon className="h-3.5 w-3.5" /> {tab.label}
-                {count > 0 && <span className={`text-[11px] px-1 rounded-full ${isActive ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{count}</span>}
+                className={`flex items-center gap-1.5 px-3 h-control-sm rounded-control text-sm font-medium whitespace-nowrap cursor-pointer transition-colors duration-instant border ${isActive ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
+                <Icon className="size-3.5" /> {tab.label}
+                {count > 0 && <span className="text-2xs tabular-nums px-1.5 rounded-full bg-muted-foreground/15">{count}</span>}
               </button>
             );
           })}
@@ -303,7 +304,15 @@ export default function ConsultantCockpitV5() {
       </header>
 
       {/* Main content */}
-      {isChatView ? (
+      {activeTab === 'today' ? (
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <ConsultantToday
+            leads={leads}
+            onOpenLead={(lead) => { selectLead(lead); setActiveTab('inbox'); }}
+            onGoCalendar={() => setActiveTab('calendar')}
+          />
+        </div>
+      ) : isChatView ? (
         /* Chat layout: lead list + conversation thread */
         <div className="flex-1 flex overflow-hidden">
           {/* ====== Lead list ======
