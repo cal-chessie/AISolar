@@ -139,8 +139,11 @@ const DEFAULT_PHOTOS: Record<TabId, PhotoItem[]> = {
     { id: 'photo_monitoring_app', label: 'Monitoring app on customer phone', description: 'Screenshot/photo of monitoring app showing data flowing', uploaded: false },
     { id: 'photo_serial_numbers', label: 'Serial numbers (panels + inverter + battery)', description: 'Photo of serial number labels — needed for SEAI + warranty', uploaded: false },
   ],
+  // Cal 2026-07-21: dropped the "photo of the documents folder" — it proves
+  // nothing and costs the installer a step at the busiest moment. The signature
+  // is the actual proof of handover. The final array shot stays: it's the
+  // warranty/SEAI record and the customer's own before/after.
   handover: [
-    { id: 'photo_handover_pack', label: 'Handover pack given to customer', description: 'Photo of the documents folder handed to customer', uploaded: false },
     { id: 'photo_final_array', label: 'Final photo of completed install', description: 'Photo of the full array from ground level, install complete', uploaded: false },
   ],
 };
@@ -240,7 +243,11 @@ export default function JobViewV2() {
   const survey = lead.survey;
 
   return (
-    <div className="min-h-screen bg-background">
+    // data-density="comfortable": THE fix for Cal's "sizing is the worst part".
+    // The field app was silently running desktop density (36px controls); this
+    // opts the whole job view into 44px+ targets, bigger text for outdoor
+    // legibility, and roomier rows — gloves, roofs, one hand free.
+    <div data-density="comfortable" className="min-h-dvh bg-background">
       {/* Sticky header with completion status */}
       <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-background/95 backdrop-blur'}`}>
         <div className="px-4 py-3 flex items-center gap-3">
@@ -278,9 +285,12 @@ export default function JobViewV2() {
         </div>
       </header>
 
-      {/* Tab navigation — horizontal scroll on mobile, full on desktop */}
+      {/* Tab navigation — Cal 2026-07-21: was a 244px-overflowing scroll strip,
+          so Handover sat off-screen and had to be swiped to. Now a 3x2 grid on
+          phones (every phase reachable without scrolling) and one row on
+          tablet/desktop. */}
       <nav className="border-b bg-background sticky top-[57px] z-20">
-        <div className="flex overflow-x-auto px-2 py-2 gap-1 scrollbar-thin">
+        <div className="grid grid-cols-3 sm:flex sm:flex-wrap px-2 py-2 gap-1">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -289,18 +299,19 @@ export default function JobViewV2() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors min-h-[40px] ${
+                aria-current={isActive ? 'step' : undefined}
+                className={`flex items-center justify-center sm:justify-start gap-1.5 px-2 sm:px-3 h-control rounded-control text-sm font-medium cursor-pointer border transition-colors duration-instant ${
                   isActive
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-foreground text-background border-foreground'
                     : phaseDone
-                    ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
-                    : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="size-4 shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.shortLabel}</span>
-                {phaseDone && <CheckCircle2 className="h-3 w-3" />}
+                <span className="sm:hidden truncate">{tab.shortLabel}</span>
+                {phaseDone && <CheckCircle2 className="size-3.5 shrink-0" />}
               </button>
             );
           })}
