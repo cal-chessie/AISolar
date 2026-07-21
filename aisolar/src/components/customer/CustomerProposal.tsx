@@ -35,15 +35,36 @@ const num = (n: number | null | undefined, unit = '') =>
 const maskMprn = (m?: string | null) => (m ? `${m.slice(0, 3)}•••••${m.slice(-3)}` : '—');
 
 /* ── The moat: what we read from THEIR bill ────────────────────────────── */
+/**
+ * TRUTH RULE: the headline count is computed from the fields we actually
+ * hold, never hardcoded. The extractor can return 21 fields, but until the
+ * bill-upload front door is wired and persisting, a given lead may only carry
+ * a handful. Claiming 21 when we show 5 is the kind of overselling on Cal's
+ * own DO-NOT-CLAIM list, and a homeowner can count the boxes.
+ */
 function BillEvidence({ lead }: { lead: DummyLead }) {
-  const i = lead.intake ?? {};
-  const cells: Array<{ label: string; value: string; hint?: string }> = [
-    { label: 'Monthly bill', value: eur(i.extracted_monthly_bill ?? lead.monthly_bill) },
-    { label: 'Annual usage', value: num(i.extracted_annual_kwh ?? lead.annual_kwh, ' kWh') },
-    { label: 'MPRN', value: maskMprn(i.extracted_mprn ?? lead.mprn), hint: 'Your unique meter point — masked for privacy' },
-    { label: 'Account name', value: i.extracted_account_name ?? lead.name },
-    { label: 'Supply address', value: (i.extracted_address ?? lead.address).split(',').slice(0, 2).join(',') },
+  const i = (lead.intake ?? {}) as Record<string, unknown>;
+  const pick = <T,>(k: string, fallback?: T) => (i[k] ?? fallback) as T | undefined;
+
+  const rate = (n?: number | null) => (n == null ? undefined : `€${Number(n).toFixed(2)}/kWh`);
+
+  const all: Array<{ label: string; value?: string; hint?: string }> = [
+    { label: 'Monthly bill',    value: pick<number>('extracted_monthly_bill', lead.monthly_bill) != null ? eur(pick<number>('extracted_monthly_bill', lead.monthly_bill)) : undefined },
+    { label: 'Annual usage',    value: pick<number>('extracted_annual_kwh', lead.annual_kwh) != null ? num(pick<number>('extracted_annual_kwh', lead.annual_kwh), ' kWh') : undefined },
+    { label: 'MPRN',            value: maskMprn(pick<string>('extracted_mprn', lead.mprn)), hint: 'Your meter point, masked here for privacy' },
+    { label: 'Supplier',        value: pick<string>('extracted_provider') },
+    { label: 'Tariff',          value: pick<string>('extracted_tariff_name') },
+    { label: 'Day rate',        value: rate(pick<number>('extracted_unit_rate')) },
+    { label: 'Night rate',      value: rate(pick<number>('extracted_night_rate')) },
+    { label: 'Standing charge', value: pick<number>('extracted_standing_charge') != null ? `€${Number(pick<number>('extracted_standing_charge')).toFixed(2)}` : undefined },
+    { label: 'Meter type',      value: pick<boolean>('extracted_day_night_meter') == null ? undefined : (pick<boolean>('extracted_day_night_meter') ? 'Day/night' : 'Single rate') },
+    { label: 'Billing period',  value: pick<string>('extracted_billing_period') },
+    { label: 'Eircode',         value: pick<string>('extracted_eircode') },
+    { label: 'Account name',    value: pick<string>('extracted_account_name', lead.name) },
+    { label: 'Supply address',  value: (pick<string>('extracted_address', lead.address) ?? '').split(',').slice(0, 2).join(',') || undefined },
   ];
+  const cells = all.filter(c => c.value && c.value !== '—');
+
   return (
     <section className="rounded-panel border border-border bg-card overflow-hidden">
       <header className="flex items-start gap-2.5 px-5 py-4 border-b border-border bg-muted/40">
@@ -51,14 +72,15 @@ function BillEvidence({ lead }: { lead: DummyLead }) {
         <div className="min-w-0">
           <h2 className="text-md font-semibold leading-tight">What your bill told us</h2>
           <p className="text-xs text-muted-foreground mt-1 leading-body">
-            We pulled 21 details off your last bill: your tariff, your day and night
-            split, your meter point. Every figure in this proposal runs off those
-            numbers. Ask the other quotes you get which of them opened your bill.
+            We read {cells.length} {cells.length === 1 ? 'detail' : 'details'} off your last bill
+            {cells.some(c => /rate|Tariff|Standing/.test(c.label)) ? ', down to your tariff and unit rates' : ''}.
+            Every figure in this proposal runs off those numbers. Ask the other
+            quotes you get which of them opened your bill.
           </p>
         </div>
         <BadgeCheck className="size-5 text-primary ml-auto shrink-0" aria-hidden />
       </header>
-      <dl className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border">
+      <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border">
         {cells.map(c => (
           <div key={c.label} className="bg-card px-4 py-3">
             <dt className="label-micro">{c.label}</dt>
