@@ -56,10 +56,15 @@ function BillEvidence({ lead }: { lead: DummyLead }) {
     { label: 'Tariff',          value: pick<string>('extracted_tariff_name') },
     { label: 'Day rate',        value: rate(pick<number>('extracted_unit_rate')) },
     { label: 'Night rate',      value: rate(pick<number>('extracted_night_rate')) },
-    { label: 'Standing charge', value: pick<number>('extracted_standing_charge') != null ? `€${Number(pick<number>('extracted_standing_charge')).toFixed(2)}` : undefined },
+    { label: 'Standing charge', value: pick<number>('extracted_standing_charge') != null ? `€${Number(pick<number>('extracted_standing_charge')).toFixed(2)}${pick<string>('extracted_standing_charge_unit') ? ` ${pick<string>('extracted_standing_charge_unit')}` : ''}` : undefined },
     { label: 'Meter type',      value: pick<boolean>('extracted_day_night_meter') == null ? undefined : (pick<boolean>('extracted_day_night_meter') ? 'Day/night' : 'Single rate') },
     { label: 'Billing period',  value: pick<string>('extracted_billing_period') },
     { label: 'Eircode',         value: pick<string>('extracted_eircode') },
+    { label: 'Billed usage',    value: pick<number>('extracted_billing_period_kwh') != null ? num(pick<number>('extracted_billing_period_kwh'), ' kWh') : undefined },
+    { label: 'Day usage',       value: pick<number>('extracted_day_usage_kwh') != null ? num(pick<number>('extracted_day_usage_kwh'), ' kWh') : undefined },
+    { label: 'Night usage',     value: pick<number>('extracted_night_usage_kwh') != null ? num(pick<number>('extracted_night_usage_kwh'), ' kWh') : undefined },
+    { label: 'VAT rate',        value: pick<number>('extracted_vat_rate') != null ? `${pick<number>('extracted_vat_rate')}%` : undefined },
+    { label: 'Reading type',    value: pick<boolean>('extracted_estimated_reading') == null ? undefined : (pick<boolean>('extracted_estimated_reading') ? 'Estimated' : 'Actual meter read') },
     { label: 'Account name',    value: pick<string>('extracted_account_name', lead.name) },
     { label: 'Supply address',  value: (pick<string>('extracted_address', lead.address) ?? '').split(',').slice(0, 2).join(',') || undefined },
   ];
@@ -87,8 +92,86 @@ function BillEvidence({ lead }: { lead: DummyLead }) {
             <dd className="mt-1 text-sm font-semibold tabular-nums truncate" title={c.hint}>{c.value}</dd>
           </div>
         ))}
+        {/* Fill trailing cells so no bare border track shows. The grid is
+            2-col on mobile and 4-col from md, so the two need different pad
+            counts: pad to even for mobile, to a multiple of four for desktop.
+            The extra desktop-only pads are hidden on mobile, where they would
+            otherwise add a whole empty row. */}
+        {Array.from({ length: (4 - (cells.length % 4)) % 4 }).map((_, k) => (
+          <div
+            key={`pad-${k}`}
+            aria-hidden
+            className={cn('bg-card', k >= (2 - (cells.length % 2)) % 2 && 'hidden md:block')}
+          />
+        ))}
       </dl>
+      <SplitInsight lead={lead} />
     </section>
+  );
+}
+
+/**
+ * The thing a generic quote tool cannot print.
+ *
+ * Every installer can quote panels off an annual kWh figure. Almost none read
+ * the DAY/NIGHT SPLIT, and that split is what decides whether a battery pays
+ * back. A night-heavy household is already buying cheap units and gains far
+ * less from storage; a day-heavy one is paying peak rates for power the roof
+ * could have made. Saying which one they are, using their own numbers, is the
+ * moat — and it is honest, because it sometimes argues AGAINST the upsell.
+ *
+ * Renders only when both halves are present. No split, no claim.
+ */
+function SplitInsight({ lead }: { lead: DummyLead }) {
+  const i = (lead.intake ?? {}) as Record<string, unknown>;
+  const day = i.extracted_day_usage_kwh as number | undefined;
+  const night = i.extracted_night_usage_kwh as number | undefined;
+  const estimated = i.extracted_estimated_reading as boolean | undefined;
+
+  if (day == null || night == null || day + night <= 0) return null;
+
+  const total = day + night;
+  const nightPct = Math.round((night / total) * 100);
+  const dayPct = 100 - nightPct;
+  const nightHeavy = nightPct >= 40;
+
+  return (
+    <div className="px-5 py-4 border-t border-border bg-muted/20">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-sm font-semibold">Your day/night split</h3>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {dayPct}% day · {nightPct}% night
+        </span>
+      </div>
+
+      <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted" role="img"
+        aria-label={`${dayPct} percent day usage, ${nightPct} percent night usage`}>
+        <div className="bg-primary" style={{ width: `${dayPct}%` }} />
+        <div className="bg-primary/35" style={{ width: `${nightPct}%` }} />
+      </div>
+
+      <p className="mt-2.5 text-xs text-muted-foreground leading-body">
+        {nightHeavy ? (
+          <>You use {nightPct}% of your power at night, on the cheaper rate. Solar
+          covers daytime use, so your panels do the heavy lifting here and a battery
+          adds less than it would for most homes. We have sized this proposal around
+          that rather than selling you storage you would wait a long time to earn back.</>
+        ) : (
+          <>You use {dayPct}% of your power during the day, at the expensive rate.
+          That is the half solar replaces directly, which is why the savings below
+          land where they do. A battery then carries the evening on stored sunshine
+          instead of peak-rate units.</>
+        )}
+      </p>
+
+      {estimated && (
+        <p className="mt-2 text-xs text-muted-foreground leading-body">
+          One caveat we would rather state than hide: your last bill was an
+          estimated reading, not a meter read. The shape is right, the totals may
+          move. Send us an actual read and we will rerun these figures.
+        </p>
+      )}
+    </div>
   );
 }
 

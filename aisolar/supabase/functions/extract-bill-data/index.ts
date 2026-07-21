@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, log, HttpError, errorResponse, getCaller } from "../_shared/auth.ts";
+import { corsHeaders, log, HttpError, errorResponse, getCaller, getCallerOrToken } from "../_shared/auth.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const FN = "extract-bill-data";
 
@@ -29,7 +30,7 @@ serve(async (req) => {
       throw new HttpError(500, "AI service not configured");
     }
 
-    const { imageBase64, fileType } = await req.json();
+    const { imageBase64, fileType, leadId } = await req.json();
 
     if (!imageBase64) {
       throw new HttpError(400, "No image data provided");
@@ -128,7 +129,7 @@ Rules:
           fallback: true 
         }), {
           status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...headers, 'Content-Type': 'application/json' },
         });
       }
       if (response.status === 402) {
@@ -137,7 +138,7 @@ Rules:
           fallback: true 
         }), {
           status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...headers, 'Content-Type': 'application/json' },
         });
       }
       throw new Error(`AI Gateway error: ${response.status}`);
@@ -153,7 +154,7 @@ Rules:
         fallback: true 
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
@@ -177,39 +178,114 @@ Rules:
         rawResponse: content
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
     console.log("Extracted bill data:", extractedData);
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: {
-        mprn: extractedData.mprn || null,
-        billAmount: extractedData.billAmount || null,
-        annualKwh: extractedData.annualKwh || null,
-        billingPeriodKwh: extractedData.billingPeriodKwh || null,
-        accountName: extractedData.accountName || null,
-        address: extractedData.address || null,
-        eircode: extractedData.eircode || null,
-        provider: extractedData.provider || null,
-        tariffName: extractedData.tariffName || null,
-        billingPeriod: extractedData.billingPeriod || null,
-        unitRate: extractedData.unitRate || null,
-        nightRate: extractedData.nightRate || null,
-        standingCharge: extractedData.standingCharge || null,
-        standingChargeUnit: extractedData.standingChargeUnit || null,
-        vatRate: extractedData.vatRate || null,
-        dayNightMeter: extractedData.dayNightMeter ?? null,
-        dayUsageKwh: extractedData.dayUsageKwh || null,
-        nightUsageKwh: extractedData.nightUsageKwh || null,
-        estimatedReading: extractedData.estimatedReading ?? null,
-        confidence: extractedData.confidence || 'low',
-        notes: extractedData.notes || null
+    // Normalise once, then both persist and return the SAME object — the
+    // response must never claim a field the database did not accept.
+    const bill = {
+      mprn: extractedData.mprn || null,
+      billAmount: extractedData.billAmount || null,
+      annualKwh: extractedData.annualKwh || null,
+      billingPeriodKwh: extractedData.billingPeriodKwh || null,
+      accountName: extractedData.accountName || null,
+      address: extractedData.address || null,
+      eircode: extractedData.eircode || null,
+      provider: extractedData.provider || null,
+      tariffName: extractedData.tariffName || null,
+      billingPeriod: extractedData.billingPeriod || null,
+      unitRate: extractedData.unitRate || null,
+      nightRate: extractedData.nightRate || null,
+      standingCharge: extractedData.standingCharge || null,
+      standingChargeUnit: extractedData.standingChargeUnit || null,
+      vatRate: extractedData.vatRate || null,
+      dayNightMeter: extractedData.dayNightMeter ?? null,
+      dayUsageKwh: extractedData.dayUsageKwh || null,
+      nightUsageKwh: extractedData.nightUsageKwh || null,
+      estimatedReading: extractedData.estimatedReading ?? null,
+      confidence: extractedData.confidence || 'low',
+      notes: extractedData.notes || null,
+    };
+
+    // ── Persist ───────────────────────────────────────────────────────────
+    // Until now this function READ 21 fields and kept none of them: it
+    // returned JSON and the caller dropped it. The proposal then told the
+    // homeowner how many details we hold, which was only ever true of the
+    // response body, never of the record.
+    //
+    // AUTHORISATION: this endpoint accepts anonymous callers (the public
+    // /upload page), so a bare leadId would let anyone overwrite any lead's
+    // bill by guessing a UUID. A write therefore needs either a signed-in
+    // staff user or the lead's own 64-char access_token, matching the rule
+    // create-checkout already uses. Callers with neither still get their
+    // JSON back exactly as before — extraction is not gated, only writing.
+    let persisted = false;
+    if (leadId) {
+      const auth = await getCallerOrToken(req);
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { persistSession: false } },
+      );
+
+      let allowed = auth?.type === "staff";
+      if (auth?.type === "customer") {
+        const { data: lead } = await admin
+          .from("leads").select("access_token").eq("id", leadId).maybeSingle();
+        allowed = !!lead && lead.access_token === auth.token;
       }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+
+      if (!allowed) {
+        log(FN, "warn", "Refused bill write: caller not authorised for lead", { leadId });
+      } else {
+        const { error } = await admin.from("lead_intake").upsert({
+          lead_id: leadId,
+          extracted_mprn: bill.mprn,
+          extracted_monthly_bill: bill.billAmount,
+          extracted_annual_kwh: bill.annualKwh,
+          extracted_billing_period_kwh: bill.billingPeriodKwh,
+          extracted_account_name: bill.accountName,
+          extracted_address: bill.address,
+          extracted_eircode: bill.eircode,
+          extracted_provider: bill.provider,
+          extracted_tariff_name: bill.tariffName,
+          extracted_billing_period: bill.billingPeriod,
+          extracted_unit_rate: bill.unitRate,
+          extracted_night_rate: bill.nightRate,
+          extracted_standing_charge: bill.standingCharge,
+          extracted_standing_charge_unit: bill.standingChargeUnit,
+          extracted_vat_rate: bill.vatRate,
+          extracted_day_night_meter: bill.dayNightMeter,
+          extracted_day_usage_kwh: bill.dayUsageKwh,
+          extracted_night_usage_kwh: bill.nightUsageKwh,
+          extracted_estimated_reading: bill.estimatedReading,
+          extracted_notes: bill.notes,
+          extraction_confidence: bill.confidence,
+          // full model output, so a field we have not typed yet is still
+          // recoverable rather than lost between deploys
+          extraction_raw: extractedData,
+          bill_extracted_at: new Date().toISOString(),
+        }, { onConflict: "lead_id" });
+
+        if (error) {
+          // A failed write must not read as success. Return the data (the
+          // extraction did work) and say plainly that it was not saved.
+          log(FN, "error", "Bill extraction not persisted", { leadId, error: error.message });
+        } else {
+          persisted = true;
+          log(FN, "info", "Bill extraction persisted", {
+            leadId,
+            fieldsHeld: Object.entries(bill).filter(([k, v]) => k !== "confidence" && v !== null).length,
+          });
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, persisted, data: bill }), {
+      headers: { ...headers, 'Content-Type': 'application/json' },
     });
 
   } catch (err) {

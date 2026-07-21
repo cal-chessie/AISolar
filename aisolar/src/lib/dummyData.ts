@@ -283,6 +283,28 @@ export function generateDummyLeads(): DummyLead[] {
         extracted_account_name: s.name,
         extracted_address: s.address,
         extraction_confidence: idx % 3 === 0 ? 'high' : idx % 3 === 1 ? 'medium' : 'low',
+        // Full 21-field extract, so the demo shows what the bill reader
+        // actually pulls rather than the five fields a web form collects.
+        // Rates are real Irish domestic ranges (2026): day 0.33-0.38,
+        // night ~0.17, standing charge ~0.60/day, VAT 9% on electricity.
+        extracted_provider: ['Electric Ireland', 'Energia', 'SSE Airtricity', 'Bord Gáis Energy', 'Pinergy'][idx % 5],
+        extracted_tariff_name: idx % 2 === 0 ? 'Home Electric+ Night Boost' : 'Standard 24hr Urban',
+        extracted_unit_rate: [0.3512, 0.3390, 0.3745, 0.3298, 0.3611][idx % 5],
+        extracted_night_rate: idx % 2 === 0 ? [0.1721, 0.1690, 0.1802][idx % 3] : null,
+        extracted_standing_charge: 0.6027,
+        extracted_standing_charge_unit: 'per day',
+        extracted_vat_rate: 9,
+        extracted_day_night_meter: idx % 2 === 0,
+        extracted_billing_period: 'Bi-monthly',
+        extracted_billing_period_kwh: Math.round(s.kwh / 6),
+        extracted_eircode: s.address.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? null,
+        // The pair that decides the battery case. Split varies by household so
+        // both the night-heavy and day-heavy narratives appear in the demo.
+        extracted_day_usage_kwh: Math.round((s.kwh / 6) * [0.72, 0.55, 0.68, 0.49, 0.77][idx % 5]),
+        extracted_night_usage_kwh: Math.round((s.kwh / 6) * [0.28, 0.45, 0.32, 0.51, 0.23][idx % 5]),
+        // one estimated read in the set, so the caveat path is exercised
+        extracted_estimated_reading: idx % 4 === 3,
+        extracted_notes: idx % 4 === 3 ? 'Reading marked E on the bill; totals may move on next actual read.' : null,
         estimated_system_size_kw: estimate.systemSizeKw,
         estimated_annual_savings: estimate.annualSavings,
         estimated_payback_years: estimate.paybackYears,
