@@ -15,13 +15,16 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 
-/* ── Cal edits here ──────────────────────────────────────────────────────── */
+/* ── Cal edits here (2026-07-23, Cal's numbers) ──────────────────────────── */
 const PRICES = {
-  team: { monthly: 65, yearly: 49 },      // € per user / month
-  aiteam: { monthly: 265, yearly: 199 },  // € per month
+  solo:   { monthly: 99,  yearly: 83,  yearlyBilled: 997 }, // €997/yr = €83/mo
+  team:   { monthly: 199, yearly: 79 },                     // € per user / month
+  aiteam: { monthly: 399, yearly: 365 },                    // € per month
 };
-const YEARLY_SAVE = '25%';
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
+/** Honest save badge — computed from the real numbers, never hardcoded. */
+const savePct = (p: { monthly: number; yearly: number }) =>
+  `${Math.round((1 - p.yearly / p.monthly) * 100)}%`;
 /* ────────────────────────────────────────────────────────────────────────── */
 
 const eur = (n: number) => `€${n}`;
@@ -37,6 +40,8 @@ interface Tier {
   features: string[];
   dark?: boolean;
   hasToggle?: boolean;
+  savePct?: string;
+  yearlyNote?: string;
 }
 
 export default function PricingPage() {
@@ -45,12 +50,15 @@ export default function PricingPage() {
   const tiers: Tier[] = [
     {
       name: 'Solo',
-      price: () => 'Free',
-      priceSub: '',
+      price: (y) => eur(y ? PRICES.solo.yearly : PRICES.solo.monthly),
+      priceSub: 'per month',
       blurb: 'Everything one installer needs to run bill-to-proposal.',
-      cta: { label: 'Use for free', to: '/get-started' },
-      microcopy: '*Free forever',
-      featuresLead: 'Free features:',
+      cta: { label: 'Try for free', to: '/get-started' },
+      microcopy: 'Free for 7 days',
+      featuresLead: 'Solo features:',
+      hasToggle: true,
+      savePct: savePct(PRICES.solo),
+      yearlyNote: `€${PRICES.solo.yearlyBilled} billed yearly`,
       features: [
         '1 user',
         'Bill reader — 21 details per bill',
@@ -68,6 +76,7 @@ export default function PricingPage() {
       cta: { label: 'Try for free', to: '/get-started' },
       microcopy: '14 day free trial',
       featuresLead: 'Solo features, plus:',
+      savePct: savePct(PRICES.team),
       features: [
         'Consultant + installer seats',
         'Shared pipeline board and calendar',
@@ -85,6 +94,7 @@ export default function PricingPage() {
       cta: { label: 'Try for free', to: '/aiteam' },
       microcopy: '14 day free trial',
       featuresLead: 'Team features, plus:',
+      savePct: savePct(PRICES.aiteam),
       features: [
         'Proposal drafts written for you',
         'Surveys booked, follow-ups sent on time',
@@ -126,8 +136,8 @@ export default function PricingPage() {
           Choose your AISolar subscription
         </h1>
         <p className="mt-4 max-w-xl text-base sm:text-lg text-muted-foreground leading-body">
-          Start free with no usage limits. Add the team when your crew grows,
-          and the AI workforce when you want the admin to run itself.
+          Every plan starts with a free trial. Add the team when your crew
+          grows, and the AI workforce when you want the admin to run itself.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a href={CAL_LINK} target="_blank" rel="noreferrer"
@@ -176,13 +186,16 @@ export default function PricingPage() {
                 {tier.priceSub && (
                   <span className={`text-sm ${tier.dark ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{tier.priceSub}</span>
                 )}
-                {tier.hasToggle && yearly && (
+                {tier.hasToggle && yearly && tier.savePct && (
                   <span className={`ml-auto text-xs rounded px-1.5 py-0.5 ${tier.dark ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-tech-subtle text-tech'}`}>
-                    Save {YEARLY_SAVE}
+                    Save {tier.savePct}
                   </span>
                 )}
               </div>
 
+              {tier.yearlyNote && yearly && (
+                <p className="mt-1 px-1 text-xs text-muted-foreground">{tier.yearlyNote}</p>
+              )}
               <p className={`mt-3 px-1 text-sm leading-body min-h-16 ${tier.dark ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                 {tier.blurb}
               </p>
