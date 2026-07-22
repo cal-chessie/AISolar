@@ -24,6 +24,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
+import AISolarLanding from "./pages/AISolarLanding";
 
 // Components (current versions only — no legacy)
 import ConsultantCockpitV5 from "./components/ConsultantCockpitV5";
@@ -73,7 +74,8 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public */}
-          <Route path="/" element={wrap(<InstallerLanding />)} />
+          <Route path="/" element={wrap(<AISolarLanding />)} />
+          <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
           <Route path="/upsell" element={wrap(<ValueUpsell />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
           <Route path="/calculator" element={wrap(<ROICalculator />)} />

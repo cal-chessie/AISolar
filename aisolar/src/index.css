@@ -20,24 +20,26 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 14.1%;
 
-    --primary: 142 71% 45%;            /* the ONE accent (colour pass is next) */
+    /* AIOS is monochrome: charcoal is the ink AND the button colour, like
+       cal.com's black. No green. #26262B ≈ hsl(240 6% 16%). */
+    --primary: 240 6% 16%;             /* charcoal — buttons, links, ink */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 94%;
-    --secondary-foreground: 0 0% 14.1%;
+    --secondary: 240 5% 94%;
+    --secondary-foreground: 240 6% 16%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 40%;      /* cal.com's calm grey label text */
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 4% 42%;    /* calm charcoal-grey label text */
 
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 240 5% 92%;              /* hover wash, not a colour */
+    --accent-foreground: 240 6% 16%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;                /* barely-there; cards float on shadow */
-    --input: 0 0% 90%;
-    --ring: 142 71% 45%;
+    --border: 240 5% 89%;              /* barely-there; cards float on shadow */
+    --input: 240 5% 89%;
+    --ring: 240 6% 16%;
 
     --radius: 1rem;
 
@@ -48,14 +50,15 @@ All colors MUST be HSL.
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 240 6% 16%;
 
-    /* Premium Design Tokens */
-    --primary-50: 152 81% 96%;
-    --primary-100: 149 80% 90%;
-    --primary-500: 142 71% 45%;
-    --primary-600: 142 76% 36%;
-    --primary-700: 142 72% 29%;
+    /* Charcoal ramp (was a green ramp). Kept so any component referencing
+       primary-500/600 stays on-brand monochrome instead of reintroducing green. */
+    --primary-50: 240 6% 96%;
+    --primary-100: 240 5% 90%;
+    --primary-500: 240 6% 22%;
+    --primary-600: 240 6% 16%;
+    --primary-700: 240 6% 11%;
 
     --slate-50: 210 40% 98%;
     --slate-100: 210 40% 96.1%;
@@ -83,42 +86,46 @@ All colors MUST be HSL.
     /* Dark mode float: the canvas is near-black and cards sit a notch LIGHTER,
        so they lift off the page the same way white cards lift off grey. The
        old theme had card == background, which is why nothing floated. */
-    --background: 0 0% 7%;             /* #121212 canvas */
+    /* AIOS charcoal, NOT pure black (Cal: the darkest infinity mark was "too
+       dark"). Canvas ≈ #18181B; cards lift a notch to ≈ #212126. */
+    --background: 240 6% 10%;          /* #18181B charcoal canvas */
     --foreground: 0 0% 96%;
 
-    --card: 0 0% 11%;                  /* #1C1C1C — lighter than canvas */
+    --card: 240 5% 14%;                /* #212126 — lighter than canvas */
     --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 11%;
+    --popover: 240 5% 14%;
     --popover-foreground: 0 0% 96%;
 
-    --primary: 142 71% 45%;
-    --primary-foreground: 0 0% 100%;
+    /* On charcoal, a charcoal button would vanish — invert to near-white so
+       primary actions read, the way cal.com flips its buttons in dark. */
+    --primary: 0 0% 96%;
+    --primary-foreground: 240 6% 12%;
 
-    --secondary: 0 0% 15%;
+    --secondary: 240 4% 17%;
     --secondary-foreground: 0 0% 96%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 62%;
+    --muted: 240 4% 17%;
+    --muted-foreground: 240 4% 64%;
 
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 240 4% 19%;
+    --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62.8% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 142 71% 45%;
+    --border: 240 4% 20%;
+    --input: 240 4% 20%;
+    --ring: 0 0% 83%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 142 71% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 96%;
+    --sidebar-primary-foreground: 240 6% 12%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 142 71% 45%;
+    --sidebar-ring: 0 0% 83%;
   }
 }
 
@@ -1224,8 +1231,8 @@ All colors MUST be HSL.
 }
 
 .result-card.eco {
-  background: linear-gradient(135deg, hsl(142 76% 36% / 0.1), hsl(142 76% 36% / 0.05));
-  border-color: hsl(142 76% 36% / 0.2);
+  background: hsl(var(--muted) / 0.5);
+  border-color: hsl(var(--border));
 }
 
 .result-icon-wrapper {
