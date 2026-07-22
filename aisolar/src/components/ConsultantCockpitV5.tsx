@@ -48,6 +48,9 @@ import { buildConversation, generateAIResponse, summarizeConversation, type Chat
 const EstimateView = lazy(() => import('./EstimateView'));
 const ProposalView = lazy(() => import('./ProposalView'));
 const UnifiedCalendar = lazy(() => import('./UnifiedCalendar'));
+// #3: the consultant calendar must be the SAME as the owner's — the owner uses
+// RealCalendar, so the consultant does too (one calendar, no divergence).
+const RealCalendar = lazy(() => import('./RealCalendar'));
 const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -522,7 +525,7 @@ export default function ConsultantCockpitV5() {
 
               {activeTab === 'calendar' && (
                 <Suspense fallback={<CardListSkeleton count={3} />}>
-                  <UnifiedCalendar filterRole="consultant" />
+                  <RealCalendar />
                 </Suspense>
               )}
 

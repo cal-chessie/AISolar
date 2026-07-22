@@ -28,6 +28,7 @@ import AISolarLanding from "./pages/AISolarLanding";
 import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
 import AiTeamPage from "./pages/AiTeamPage";
+import AgentFoundation from "./components/AgentFoundation";
 
 // Components (current versions only — no legacy)
 import ConsultantCockpitV5 from "./components/ConsultantCockpitV5";
@@ -99,6 +100,8 @@ function AppRoutes() {
           <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
           <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
           <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
+          {/* #6: agent calendar events navigate here — was a 404 stub */}
+          <Route path="/agents" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />
           <Route path="/p/:leadId" element={wrap(<ProposalPage />)} />
 
           {/* Workflow — auth-guarded (staff-only) */}

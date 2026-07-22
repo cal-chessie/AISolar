@@ -39,20 +39,27 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
   return (
     <div className="space-y-3">
       {/* Proposal header */}
-      <Card className="border-primary/40 dark:border-primary/40 bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary">
+      {/* Inverted charcoal header — text is primary-foreground so it reads in
+          BOTH themes (was invisible: text-primary on a primary-coloured card). */}
+      <Card className="border-0 bg-primary text-primary-foreground">
         <CardContent className="p-4">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary border-primary/40 mb-2">
-                {proposal.status === 'draft' ? 'DRAFT' : proposal.status === 'presented' ? 'SENT' : 'APPROVED'}
-              </Badge>
+              {(() => {
+                const s = proposal.status;
+                const label = s === 'draft' ? 'DRAFT' : s === 'presented' ? 'SENT' : 'APPROVED';
+                const tone = s === 'draft' ? 'bg-muted-foreground text-white'
+                  : s === 'presented' ? 'bg-doc-contract text-white'
+                  : 'bg-doc-deposit text-white';
+                return <span className={`inline-block text-[11px] font-semibold rounded-full px-2 py-0.5 mb-2 ${tone}`}>{label}</span>;
+              })()}
               <h2 className="text-xl font-bold">Solar Proposal</h2>
-              <p className="text-sm text-muted-foreground">Prepared for {lead.name} · {lead.address}</p>
-              <p className="text-xs text-muted-foreground mt-1">Proposal #{proposal.id} · {proposal.sent_date ? `Sent ${new Date(proposal.sent_date).toLocaleDateString('en-IE')}` : 'Not sent'}</p>
+              <p className="text-sm text-primary-foreground/70">Prepared for {lead.name} · {lead.address}</p>
+              <p className="text-xs text-primary-foreground/60 mt-1">Proposal #{proposal.id} · {proposal.sent_date ? `Sent ${new Date(proposal.sent_date).toLocaleDateString('en-IE')}` : 'Not sent'}</p>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-primary dark:text-primary">{proposal.system_size_kw} kWp</div>
-              <div className="text-xs text-muted-foreground">{proposal.panel_count} panels</div>
+            <div className="text-right shrink-0">
+              <div className="text-3xl font-bold">{proposal.system_size_kw} kWp</div>
+              <div className="text-xs text-primary-foreground/70">{proposal.panel_count} panels</div>
             </div>
           </div>
         </CardContent>
@@ -61,7 +68,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       {/* System design */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Sun className="h-4 w-4 text-amber-600" /> System design</h3>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Sun className="h-4 w-4 text-primary" /> System design</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="p-3 bg-muted/30 rounded-lg">
               <div className="text-xs text-muted-foreground">Solar panels</div>
@@ -96,20 +103,20 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">Net cost</div>
-              <div className="text-xl font-bold text-primary">{eurFmt(proposal.net_cost)}</div>
+              <div className="text-xl font-bold text-foreground">{eurFmt(proposal.net_cost)}</div>
               <div className="text-[11px] text-muted-foreground">after {eurFmt(proposal.seai_grant)} grant</div>
             </div>
             <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="text-xl font-bold text-primary">{eurFmt(proposal.annual_savings)}</div>
+              <div className="text-xl font-bold text-doc-deposit">{eurFmt(proposal.annual_savings)}</div>
             </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+            <div className="p-3 bg-muted/40 rounded-lg">
               <div className="text-xs text-muted-foreground">Payback</div>
-              <div className="text-xl font-bold text-amber-700">{proposal.payback_years} yrs</div>
+              <div className="text-xl font-bold text-foreground">{proposal.payback_years} yrs</div>
             </div>
             <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">20-yr savings</div>
-              <div className="text-xl font-bold text-primary">{eurFmt(proposal.twenty_year_savings)}</div>
+              <div className="text-xl font-bold text-doc-deposit">{eurFmt(proposal.twenty_year_savings)}</div>
             </div>
           </div>
           <div className="mt-3 p-2 bg-muted/30 rounded text-xs space-y-1">
