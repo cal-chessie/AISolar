@@ -118,7 +118,7 @@ export default function InstallerPortalV5() {
                     Active ({displayActive.length})
                   </button>
                   <button onClick={() => setJobSubTab('completed')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'completed' ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
                     Completed ({completedJobs.length})
                   </button>
                 </div>
@@ -243,7 +243,7 @@ export default function InstallerPortalV5() {
                                 <div className="text-xs text-muted-foreground">{row.stock} in stock · {row.alloc} allocated this week</div>
                               </div>
                               <div className="text-right">
-                                <div className={`font-bold ${available < 5 ? 'text-red-600' : 'text-emerald-600'}`}>{available}</div>
+                                <div className={`font-bold ${available < 5 ? 'text-red-600' : 'text-primary'}`}>{available}</div>
                                 <div className="text-[11px] text-muted-foreground">available</div>
                               </div>
                             </div>
@@ -254,7 +254,7 @@ export default function InstallerPortalV5() {
                               </div>
                             )}
                             <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div className={`h-full ${available < 5 ? 'bg-red-500' : available < 15 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                              <div className={`h-full ${available < 5 ? 'bg-red-500' : available < 15 ? 'bg-amber-500' : 'bg-primary'}`}
                                 style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
                             </div>
                           </CardContent>
@@ -314,7 +314,7 @@ function JobCard({ lead, variant, onClick }: { lead: DummyLead; variant: 'survey
   const color = variant === 'survey' ? 'indigo' : variant === 'handover' ? 'blue' : variant === 'completed' ? 'emerald' : 'amber';
 
   return (
-    <Card className={`mb-2 cursor-pointer hover:shadow-md border-l-4 border-l-${color}-500`} onClick={onClick}>
+    <Card className={`mb-2 cursor-pointer hover:shadow-md border-l-4 border-l-primary/40`} onClick={onClick}>
       <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -328,16 +328,16 @@ function JobCard({ lead, variant, onClick }: { lead: DummyLead; variant: 'survey
                 <span className="truncate">{lead.address.split(',').slice(-2).join(',').trim()}</span>
               </div>
               {variant === 'survey' && survey && (
-                <div className="text-xs text-indigo-600 mt-0.5">{survey.photo_count || 0}/8 photos · {survey.roof_type} roof</div>
+                <div className="text-xs text-primary mt-0.5">{survey.photo_count || 0}/8 photos · {survey.roof_type} roof</div>
               )}
               {variant === 'install' && proposal && (
                 <div className="text-xs text-amber-600 mt-0.5">{proposal.system_size_kw} kWp · {proposal.panel_count} panels{proposal.battery_model ? ' + battery' : ''}</div>
               )}
               {variant === 'handover' && (
-                <div className="text-xs text-blue-600 mt-0.5">Warranty sent · Final invoice pending</div>
+                <div className="text-xs text-primary mt-0.5">Warranty sent · Final invoice pending</div>
               )}
               {variant === 'completed' && (
-                <div className="text-xs text-emerald-600 mt-0.5">Completed · {lead.assignment?.completed_date ? new Date(lead.assignment.completed_date).toLocaleDateString('en-IE') : ''}</div>
+                <div className="text-xs text-primary mt-0.5">Completed · {lead.assignment?.completed_date ? new Date(lead.assignment.completed_date).toLocaleDateString('en-IE') : ''}</div>
               )}
             </div>
           </div>

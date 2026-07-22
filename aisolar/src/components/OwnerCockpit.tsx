@@ -280,7 +280,7 @@ function SidebarContent({
     <div className="w-56 h-full flex flex-col">
       {/* Logo */}
       <div className="p-3 flex items-center gap-2 border-b">
-        <div className="p-1.5 bg-gradient-to-br from-emerald-600 to-blue-600 rounded-lg">
+        <div className="p-1.5 bg-gradient-to-br from-primary to-primary rounded-lg">
           <Building2 className="h-4 w-4 text-white" />
         </div>
         <div>
@@ -299,7 +299,7 @@ function SidebarContent({
               key={item.id}
               onClick={() => onSelectView(item.id)}
               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                isActive ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                isActive ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <Icon className="h-3.5 w-3.5 flex-shrink-0" />
@@ -344,34 +344,34 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         animate="show"
       >
         <motion.div variants={listItem}>
-        <Card className="border-emerald-200 dark:border-emerald-800">
+        <Card className="border-primary/40 dark:border-primary/40">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Revenue</span>
-              <TrendingUp className="h-3 w-3 text-emerald-600" />
+              <TrendingUp className="h-3 w-3 text-primary" />
             </div>
-            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.revenueClosed)}</div>
+            <div className="text-xl font-bold text-primary dark:text-primary">{eur(data.revenueClosed)}</div>
             <div className="text-[11px] text-muted-foreground">{eur(data.revenuePending)} pending</div>
             <div className="flex items-end gap-0.5 mt-1.5 h-6">
               {[40, 55, 48, 62, 70, 65, 78, 85, 72, 90, 88, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-emerald-400/60 rounded-sm" style={{ height: `${h}%` }} />
+                <div key={i} className="flex-1 bg-primary rounded-sm" style={{ height: `${h}%` }} />
               ))}
             </div>
           </CardContent>
         </Card>
         </motion.div>
         <motion.div variants={listItem}>
-        <Card className="border-emerald-200 dark:border-emerald-800">
+        <Card className="border-primary/40 dark:border-primary/40">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
-              <Activity className="h-3 w-3 text-emerald-600" />
+              <Activity className="h-3 w-3 text-primary" />
             </div>
-            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{eur(data.stats.totalValue)}</div>
+            <div className="text-xl font-bold text-primary dark:text-primary">{eur(data.stats.totalValue)}</div>
             <div className="text-[11px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
             <div className="flex gap-0.5 mt-1.5">
               {data.stageCounts.slice(0, 8).map((s: any) => (
-                <div key={s.id} className={`flex-1 h-1.5 rounded-full bg-${s.color}-400`} />
+                <div key={s.id} className={`flex-1 h-1.5 rounded-full bg-primary`} />
               ))}
             </div>
           </CardContent>
@@ -388,25 +388,25 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             <div className="text-[11px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
             <div className="flex gap-0.5 mt-1.5">
               {leads.filter((l: DummyLead) => l.assignment).slice(0, 6).map((l: DummyLead, i: number) => (
-                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-primary' : 'bg-amber-400'}`} />
               ))}
             </div>
           </CardContent>
         </Card>
         </motion.div>
         <motion.div variants={listItem}>
-        <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-violet-200 dark:border-violet-800'}>
+        <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-primary/40 dark:border-primary/40'}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Agents</span>
-              <Bot className="h-3 w-3 text-violet-600" />
+              <Bot className="h-3 w-3 text-primary" />
             </div>
-            <div className="text-xl font-bold text-violet-700 dark:text-violet-400">{data.totalAgentRuns}</div>
+            <div className="text-xl font-bold text-primary dark:text-primary">{data.totalAgentRuns}</div>
             <div className="text-[11px] text-muted-foreground">
               {data.agentFailures > 0 ? <span className="text-red-600">⚠ {data.agentFailures} failed</span> : 'all healthy'} · runs/24h
             </div>
             <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className={`h-full ${data.agentFailures > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${data.agentHealth}%` }} />
+              <div className={`h-full ${data.agentFailures > 0 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${data.agentHealth}%` }} />
             </div>
           </CardContent>
         </Card>
@@ -442,12 +442,12 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      {lead.proposal && <span className="text-[11px] font-semibold text-emerald-600">{eur(lead.proposal.net_cost)}</span>}
-                      <button className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+                      {lead.proposal && <span className="text-[11px] font-semibold text-primary">{eur(lead.proposal.net_cost)}</span>}
+                      <button className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
                         <Calculator className="h-2.5 w-2.5 inline mr-0.5" />Estimate
                       </button>
                       {lead.proposal && (
-                        <button className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+                        <button className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
                           <FileText className="h-2.5 w-2.5 inline mr-0.5" />Proposal
                         </button>
                       )}
@@ -476,10 +476,10 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 return (
                   <div key={i} className="flex items-start gap-2 text-xs">
                     <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
-                    <div className={`p-0.5 rounded ${isAgent ? 'bg-violet-100 dark:bg-violet-950/30' : isCustomer ? 'bg-emerald-100 dark:bg-emerald-950/30' : 'bg-muted'}`}>
-                      {isAgent && <Bot className="h-2.5 w-2.5 text-violet-600" />}
-                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-emerald-600" />}
-                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-emerald-600" />}
+                    <div className={`p-0.5 rounded ${isAgent ? 'bg-primary/10 dark:bg-primary/10' : isCustomer ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
+                      {isAgent && <Bot className="h-2.5 w-2.5 text-primary" />}
+                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-primary" />}
+                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-primary" />}
                     </div>
                     <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
                   </div>
@@ -512,8 +512,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               return (
                 <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(target)}>
                   <span className="text-[11px] font-mono text-muted-foreground w-10">{event.time}</span>
-                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-emerald-100 dark:bg-emerald-950/30'}`}>
-                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-emerald-600" />}
+                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-primary/10 dark:bg-primary/10'}`}>
+                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-primary" />}
                   </div>
                   <span className="text-xs flex-1 truncate">{event.title}</span>
                   <span className="text-[11px] text-muted-foreground">{event.assignee}</span>
@@ -579,7 +579,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
               <div className="flex-1">
                 <div className="font-bold">{c.name}</div>
                 <div className="text-xs text-muted-foreground">{c.activeLeads} active · {c.hotLeads} hot</div>
-                <div className="text-sm font-bold text-emerald-600 mt-1">{eur(c.pipelineValue)}</div>
+                <div className="text-sm font-bold text-primary mt-1">{eur(c.pipelineValue)}</div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </CardContent>
@@ -611,8 +611,8 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
         <div className="space-y-2">
           {installer.jobs.map((lead: DummyLead) => (
             <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(`/job/${lead.id}`)}>
-              <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-                <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'}`} />
+              <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-primary/10' : 'bg-amber-100'}`}>
+                <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-primary' : 'text-amber-600'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-sm">{lead.name}</div>
@@ -674,7 +674,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold">{lead.name}</h1>
-                  <Badge className={`bg-${stage.color}-600 text-white text-[11px]`}>{stage.label}</Badge>
+                  <Badge className={`bg-primary text-white text-[11px]`}>{stage.label}</Badge>
                   {lead.score > 80 && <Badge className="bg-red-500 text-white text-[11px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
@@ -762,7 +762,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
                 </div>
-                <Badge variant="outline" className={`text-[11px] bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>{stage.label}</Badge>
+                <Badge variant="outline" className={`text-[11px] bg-primary/10 text-primary border-primary/40`}>{stage.label}</Badge>
                 {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -813,7 +813,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
           return (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                tab === t.id ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-muted-foreground hover:text-foreground'
+                tab === t.id ? 'border-primary/40 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}>
               <Icon className="h-3 w-3" /> {t.label}
             </button>
@@ -859,8 +859,8 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
 function AlertItem({ icon: Icon, color, title, desc, cta, onClick }: any) {
   return (
     <div className="flex items-center gap-2 p-2 border rounded-lg">
-      <div className={`p-1.5 rounded-lg bg-${color}-100 dark:bg-${color}-950/40 flex-shrink-0`}>
-        <Icon className={`h-3 w-3 text-${color}-600`} />
+      <div className={`p-1.5 rounded-lg bg-primary/10 dark:bg-primary/10 flex-shrink-0`}>
+        <Icon className={`h-3 w-3 text-primary`} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-xs font-medium">{title}</div>
@@ -876,8 +876,8 @@ function StatBox({ label, value, sub, color, icon: Icon }: any) {
     <Card>
       <CardContent className="p-2">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <div className={`p-0.5 rounded bg-${color}-100 dark:bg-${color}-950/40`}>
-            <Icon className={`h-2.5 w-2.5 text-${color}-600`} />
+          <div className={`p-0.5 rounded bg-primary/10 dark:bg-primary/10`}>
+            <Icon className={`h-2.5 w-2.5 text-primary`} />
           </div>
           <span className="text-[11px] text-muted-foreground">{label}</span>
         </div>

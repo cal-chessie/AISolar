@@ -174,14 +174,14 @@ export default function OnboardingMode() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-emerald-50 dark:from-violet-950/20 dark:via-background dark:to-emerald-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500 to-emerald-500 mb-4 shadow-lg"
+            className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary mb-4 shadow-lg"
           >
             <Sun className="h-8 w-8 text-white" />
           </motion.div>
@@ -211,8 +211,8 @@ export default function OnboardingMode() {
             <Card className="mb-4">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 mb-4">
-                  <div className="p-3 bg-violet-100 dark:bg-violet-950/40 rounded-xl flex-shrink-0">
-                    <step.icon className="h-6 w-6 text-violet-700 dark:text-violet-300" />
+                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl flex-shrink-0">
+                    <step.icon className="h-6 w-6 text-primary dark:text-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -224,18 +224,18 @@ export default function OnboardingMode() {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">What to do:</div>
-                    <p className="text-sm text-blue-900 dark:text-blue-100">{step.whatToDo}</p>
+                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
+                    <div className="text-xs font-semibold text-primary dark:text-primary mb-1">What to do:</div>
+                    <p className="text-sm text-primary dark:text-primary">{step.whatToDo}</p>
                   </div>
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
-                    <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1">What to look for:</div>
-                    <p className="text-sm text-emerald-900 dark:text-emerald-100">{step.whatToLook}</p>
+                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
+                    <div className="text-xs font-semibold text-primary dark:text-primary mb-1">What to look for:</div>
+                    <p className="text-sm text-primary dark:text-primary">{step.whatToLook}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={handleVisit} className="flex-1 bg-violet-600 hover:bg-violet-700 h-11">
+                  <Button onClick={handleVisit} className="flex-1 bg-primary hover:bg-primary h-11">
                     Visit {step.title} <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                   <Button onClick={handleNext} variant="outline" className="flex-1 h-11">
@@ -258,8 +258,8 @@ export default function OnboardingMode() {
               key={s.id}
               onClick={() => setCurrentStep(i)}
               className={`h-2 rounded-full transition-all ${
-                i === currentStep ? 'w-8 bg-violet-600' :
-                completed.has(s.id) ? 'w-2 bg-emerald-500' :
+                i === currentStep ? 'w-8 bg-primary' :
+                completed.has(s.id) ? 'w-2 bg-primary' :
                 'w-2 bg-muted-foreground/30'
               }`}
               aria-label={`Step ${i + 1}: ${s.title}`}
@@ -279,7 +279,7 @@ export default function OnboardingMode() {
 
         {/* Demo mode notice */}
         {demoActive && (
-          <div className="mt-8 p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg text-xs text-violet-800 dark:text-violet-300 text-center">
+          <div className="mt-8 p-3 bg-primary/10 dark:bg-primary/10 rounded-lg text-xs text-primary dark:text-primary text-center">
             <Lock className="h-3 w-3 inline mr-1" />
             You're in demo mode. No real data is loaded. When you sign up for real,
             you'll see your actual leads, products, and agents here.

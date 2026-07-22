@@ -85,7 +85,7 @@ export default function RoleBasedAICoach() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 right-4 z-40 bg-violet-600 hover:bg-violet-700 text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
+          className="fixed bottom-20 right-4 z-40 bg-primary hover:bg-primary text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
           aria-label={`Open ${role} AI coach`}
         >
           <Sparkles className="h-5 w-5" />
@@ -107,9 +107,9 @@ export default function RoleBasedAICoach() {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="fixed top-16 right-4 bottom-4 z-40 w-full max-w-md"
           >
-            <Card className="h-full flex flex-col shadow-2xl border-violet-200 dark:border-violet-800">
+            <Card className="h-full flex flex-col shadow-2xl border-primary/40 dark:border-primary/40">
               {/* Header */}
-              <div className="p-4 border-b bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-lg">
+              <div className="p-4 border-b bg-gradient-to-r from-primary to-primary text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide opacity-90">
@@ -140,9 +140,9 @@ export default function RoleBasedAICoach() {
                     tip.priority === 'medium' ? 'border-l-amber-500' :
                                                 'border-l-slate-400';
                   const typeColor =
-                    tip.type === 'action'     ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300' :
+                    tip.type === 'action'     ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
                     tip.type === 'warning'    ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' :
-                    tip.type === 'opportunity'? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300' :
+                    tip.type === 'opportunity'? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
                                                 'bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300';
 
                   return (
@@ -175,7 +175,7 @@ export default function RoleBasedAICoach() {
                             {tip.cta?.route && (
                               <a
                                 href={tip.cta.route}
-                                className="text-[11px] font-semibold text-violet-600 hover:underline inline-flex items-center gap-1"
+                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1"
                               >
                                 {tip.cta.label}
                                 <ArrowRight className="h-3 w-3" />

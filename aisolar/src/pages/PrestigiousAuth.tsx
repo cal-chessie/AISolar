@@ -158,7 +158,7 @@ export default function PrestigiousAuth() {
   return (
     <div className="min-h-screen flex">
       {/* Left: Brand showcase (desktop only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-blue-700 text-white p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary to-primary text-white p-12 flex-col justify-between relative overflow-hidden">
         {/* Animated background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse" />
@@ -230,7 +230,7 @@ export default function PrestigiousAuth() {
       </div>
 
       {/* Right: Auth form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-background dark:to-blue-950/20">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-slate-50 to-primary dark:from-background dark:to-primary">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait">
             {/* CHOOSE MODE */}
@@ -246,7 +246,7 @@ export default function PrestigiousAuth() {
                   <motion.div
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
-                    className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-500 mb-4 shadow-lg shadow-emerald-500/30"
+                    className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary mb-4 shadow-lg shadow-card"
                   >
                     <Sun className="h-8 w-8 text-white" />
                   </motion.div>
@@ -259,11 +259,11 @@ export default function PrestigiousAuth() {
                   {/* Customer path */}
                   <button
                     onClick={() => navigate('/upload')}
-                    className="w-full p-5 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 hover:border-emerald-400 transition-shadow hover:shadow-lg transition-all text-left group"
+                    className="w-full p-5 rounded-xl border-2 border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10 hover:border-primary/40 transition-shadow hover:shadow-lg transition-all text-left group"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                        <UserCircle className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
+                      <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
+                        <UserCircle className="h-6 w-6 text-primary dark:text-primary" />
                       </div>
                       <div className="flex-1">
                         <div className="font-bold text-base">I'm a homeowner</div>
@@ -271,7 +271,7 @@ export default function PrestigiousAuth() {
                           Get a free solar analysis from your electricity bill. Book a consultation.
                           Track your project from quote to install.
                         </p>
-                        <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 text-sm font-medium mt-2 group-hover:gap-2 transition-all">
+                        <div className="flex items-center gap-1 text-primary dark:text-primary text-sm font-medium mt-2 group-hover:gap-2 transition-all">
                           Start free analysis <ArrowRight className="h-3 w-3" />
                         </div>
                       </div>
@@ -281,11 +281,11 @@ export default function PrestigiousAuth() {
                   {/* Staff path */}
                   <button
                     onClick={() => setMode('signin')}
-                    className="w-full p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 transition-shadow hover:shadow-lg transition-all text-left group"
+                    className="w-full p-5 rounded-xl border-2 border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10 hover:border-primary/40 transition-shadow hover:shadow-lg transition-all text-left group"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                        <Wrench className="h-6 w-6 text-blue-700 dark:text-blue-300" />
+                      <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
+                        <Wrench className="h-6 w-6 text-primary dark:text-primary" />
                       </div>
                       <div className="flex-1">
                         <div className="font-bold text-base">I'm staff (installer / consultant / owner)</div>
@@ -293,7 +293,7 @@ export default function PrestigiousAuth() {
                           Sign in to your dashboard. Manage your pipeline, surveys, proposals,
                           installs, agents, and analytics.
                         </p>
-                        <div className="flex items-center gap-1 text-blue-700 dark:text-blue-300 text-sm font-medium mt-2 group-hover:gap-2 transition-all">
+                        <div className="flex items-center gap-1 text-primary dark:text-primary text-sm font-medium mt-2 group-hover:gap-2 transition-all">
                           Sign in <ArrowRight className="h-3 w-3" />
                         </div>
                       </div>
@@ -304,7 +304,7 @@ export default function PrestigiousAuth() {
                   <div className="text-center pt-4">
                     <p className="text-sm text-muted-foreground">
                       New to {brand.name}?{' '}
-                      <button onClick={() => setMode('signup')} className="text-blue-600 hover:underline font-medium">
+                      <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">
                         Create an account
                       </button>
                     </p>
@@ -331,7 +331,7 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-500 mb-3">
+                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary mb-3">
                         <Lock className="h-6 w-6 text-white" />
                       </div>
                       <h1 className="text-2xl font-bold">Staff sign in</h1>
@@ -372,7 +372,7 @@ export default function PrestigiousAuth() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-11 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-semibold shadow-lg"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white font-semibold shadow-lg"
                       >
                         {loading ? 'Signing in…' : 'Sign in'}
                       </Button>
@@ -389,7 +389,7 @@ export default function PrestigiousAuth() {
 
                     <div className="mt-6 pt-4 border-t text-center text-sm">
                       <span className="text-muted-foreground">No account? </span>
-                      <button onClick={() => setMode('signup')} className="text-blue-600 hover:underline font-medium">
+                      <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">
                         Create one
                       </button>
                     </div>
@@ -416,7 +416,7 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-500 mb-3">
+                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary mb-3">
                         <Sparkles className="h-6 w-6 text-white" />
                       </div>
                       <h1 className="text-2xl font-bold">Create your account</h1>
@@ -442,11 +442,11 @@ export default function PrestigiousAuth() {
                               onClick={() => setRole(opt.id)}
                               className={`p-3 rounded-lg border-2 transition-all text-left ${
                                 isSelected
-                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
-                                  : 'border-border hover:border-emerald-300'
+                                  ? 'border-primary/40 bg-primary/10 dark:bg-primary/10'
+                                  : 'border-border hover:border-primary/40'
                               }`}
                             >
-                              <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                              <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                               <div className="font-semibold text-sm">{opt.label}</div>
                               <div className="text-xs text-muted-foreground">{opt.desc}</div>
                             </button>
@@ -517,7 +517,7 @@ export default function PrestigiousAuth() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-11 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-semibold shadow-lg"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white font-semibold shadow-lg"
                       >
                         {loading ? 'Creating account…' : 'Create account'}
                       </Button>
@@ -530,7 +530,7 @@ export default function PrestigiousAuth() {
 
                     <div className="mt-6 pt-4 border-t text-center text-sm">
                       <span className="text-muted-foreground">Already have an account? </span>
-                      <button onClick={() => setMode('signin')} className="text-blue-600 hover:underline font-medium">
+                      <button onClick={() => setMode('signin')} className="text-primary hover:underline font-medium">
                         Sign in
                       </button>
                     </div>

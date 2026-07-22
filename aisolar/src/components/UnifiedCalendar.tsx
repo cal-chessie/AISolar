@@ -212,20 +212,20 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                 key={i}
                 onClick={() => setSelectedDay(day)}
                 className={`p-2 rounded-lg border text-center transition-colors min-h-[80px] ${
-                  isSelected ? 'border-blue-500 bg-emerald-50 dark:bg-emerald-950/30' :
-                  isToday ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20' :
-                  'border-border hover:border-blue-300'
+                  isSelected ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
+                  isToday ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
+                  'border-border hover:border-primary/40'
                 }`}
               >
-                <div className={`text-[11px] font-medium ${isToday ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                <div className={`text-[11px] font-medium ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                   {day.toLocaleDateString('en-IE', { weekday: 'short' })}
                 </div>
-                <div className={`text-sm font-bold ${isToday ? 'text-emerald-700' : ''}`}>{day.getDate()}</div>
+                <div className={`text-sm font-bold ${isToday ? 'text-primary' : ''}`}>{day.getDate()}</div>
                 {dayEvents.length > 0 && (
                   <div className="flex flex-wrap gap-0.5 justify-center mt-1">
                     {dayEvents.slice(0, 4).map(e => {
                       const meta = EVENT_META[e.type];
-                      return <div key={e.id} className={`h-1.5 w-1.5 rounded-full bg-${meta.color}-500`} />;
+                      return <div key={e.id} className={`h-1.5 w-1.5 rounded-full bg-primary`} />;
                     })}
                     {dayEvents.length > 4 && <span className="text-[11px] text-muted-foreground">+{dayEvents.length - 4}</span>}
                   </div>
@@ -253,11 +253,11 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
                     return (
                       <div
                         key={event.id}
-                        className={`flex items-center gap-3 p-2 border rounded-lg hover:bg-muted/30 cursor-pointer ${event.route ? 'hover:border-blue-300' : ''}`}
+                        className={`flex items-center gap-3 p-2 border rounded-lg hover:bg-muted/30 cursor-pointer ${event.route ? 'hover:border-primary/40' : ''}`}
                         onClick={() => event.route && navigate(event.route)}
                       >
-                        <div className={`p-1.5 rounded-lg bg-${meta.color}-100 dark:bg-${meta.color}-950/40 flex-shrink-0`}>
-                          <Icon className={`h-3 w-3 text-${meta.color}-700 dark:text-${meta.color}-300`} />
+                        <div className={`p-1.5 rounded-lg bg-primary/10 dark:bg-primary/10 flex-shrink-0`}>
+                          <Icon className={`h-3 w-3 text-primary dark:text-primary`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium truncate">{event.title}</div>
@@ -278,7 +278,7 @@ export default function UnifiedCalendar({ filterRole }: { filterRole?: 'consulta
         <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-[11px] text-muted-foreground">
           {Object.entries(EVENT_META).map(([type, meta]) => (
             <span key={type} className="flex items-center gap-1">
-              <div className={`h-2 w-2 rounded-full bg-${meta.color}-500`} />
+              <div className={`h-2 w-2 rounded-full bg-primary`} />
               {meta.label}
             </span>
           ))}

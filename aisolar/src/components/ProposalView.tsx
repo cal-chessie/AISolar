@@ -39,11 +39,11 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
   return (
     <div className="space-y-3">
       {/* Proposal header */}
-      <Card className="border-emerald-300 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20">
+      <Card className="border-primary/40 dark:border-primary/40 bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary">
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div>
-              <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200 mb-2">
+              <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary border-primary/40 mb-2">
                 {proposal.status === 'draft' ? 'DRAFT' : proposal.status === 'presented' ? 'SENT' : 'APPROVED'}
               </Badge>
               <h2 className="text-xl font-bold">Solar Proposal</h2>
@@ -51,7 +51,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
               <p className="text-xs text-muted-foreground mt-1">Proposal #{proposal.id} · {proposal.sent_date ? `Sent ${new Date(proposal.sent_date).toLocaleDateString('en-IE')}` : 'Not sent'}</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{proposal.system_size_kw} kWp</div>
+              <div className="text-3xl font-bold text-primary dark:text-primary">{proposal.system_size_kw} kWp</div>
               <div className="text-xs text-muted-foreground">{proposal.panel_count} panels</div>
             </div>
           </div>
@@ -92,29 +92,29 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       {/* Financial summary */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-emerald-600" /> Investment & savings</h3>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" /> Investment & savings</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">Net cost</div>
-              <div className="text-xl font-bold text-emerald-700">{eurFmt(proposal.net_cost)}</div>
+              <div className="text-xl font-bold text-primary">{eurFmt(proposal.net_cost)}</div>
               <div className="text-[11px] text-muted-foreground">after {eurFmt(proposal.seai_grant)} grant</div>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="text-xl font-bold text-blue-700">{eurFmt(proposal.annual_savings)}</div>
+              <div className="text-xl font-bold text-primary">{eurFmt(proposal.annual_savings)}</div>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
               <div className="text-xs text-muted-foreground">Payback</div>
               <div className="text-xl font-bold text-amber-700">{proposal.payback_years} yrs</div>
             </div>
-            <div className="p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg">
+            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="text-xs text-muted-foreground">20-yr savings</div>
-              <div className="text-xl font-bold text-violet-700">{eurFmt(proposal.twenty_year_savings)}</div>
+              <div className="text-xl font-bold text-primary">{eurFmt(proposal.twenty_year_savings)}</div>
             </div>
           </div>
           <div className="mt-3 p-2 bg-muted/30 rounded text-xs space-y-1">
             <div className="flex justify-between"><span className="text-muted-foreground">Gross cost</span><span className="font-medium">{eurFmt(proposal.gross_cost)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">SEAI grant</span><span className="font-medium text-violet-600">−{eurFmt(proposal.seai_grant)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">SEAI grant</span><span className="font-medium text-primary">−{eurFmt(proposal.seai_grant)}</span></div>
             <div className="flex justify-between font-bold"><span>Net investment</span><span>{eurFmt(proposal.net_cost)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Deposit (30%)</span><span>{eurFmt(proposal.net_cost * 0.3)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Balance (70%)</span><span>{eurFmt(proposal.net_cost * 0.7)}</span></div>
@@ -123,9 +123,9 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       </Card>
 
       {/* Compliance papertrail (SEAI + ESB + RECI) */}
-      <Card className="border-violet-200 dark:border-violet-800">
+      <Card className="border-primary/40 dark:border-primary/40">
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-violet-600" /> Compliance papertrail</h3>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> Compliance papertrail</h3>
           <p className="text-xs text-muted-foreground mb-3">Pre-populated from survey + install data. These certs are linked to the customer portal.</p>
           <div className="space-y-2">
             <ComplianceItem
@@ -154,7 +154,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       <div className="flex gap-2">
         <Button variant="outline" className="flex-1"><Printer className="h-4 w-4 mr-2" /> Print PDF</Button>
         <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download</Button>
-        <Button className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700"><FileText className="h-4 w-4 mr-2" /> Open in LeadFlow</Button>
+        <Button className="flex-1 bg-primary transition-colors hover:bg-primary"><FileText className="h-4 w-4 mr-2" /> Open in LeadFlow</Button>
       </div>
     </div>
   );
@@ -167,9 +167,9 @@ function ComplianceItem({ org, label, icon: Icon, status, details, prePopulated 
 }) {
   const statusMeta = {
     pending: { label: 'Pending', color: 'amber', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-    in_progress: { label: 'In progress', color: 'blue', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    submitted: { label: 'Submitted', color: 'violet', bg: 'bg-violet-50 text-violet-700 border-violet-200' },
-    filed: { label: 'Filed', color: 'emerald', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    in_progress: { label: 'In progress', color: 'blue', bg: 'bg-primary/10 text-primary border-primary/40' },
+    submitted: { label: 'Submitted', color: 'violet', bg: 'bg-primary/10 text-primary border-primary/40' },
+    filed: { label: 'Filed', color: 'emerald', bg: 'bg-primary/10 text-primary border-primary/40' },
   }[status];
 
   return (
@@ -190,7 +190,7 @@ function ComplianceItem({ org, label, icon: Icon, status, details, prePopulated 
       <div className="pl-9 space-y-0.5">
         {prePopulated.map((field, i) => (
           <div key={i} className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <CheckCircle2 className="h-2.5 w-2.5 text-emerald-500" />
+            <CheckCircle2 className="h-2.5 w-2.5 text-primary" />
             <span>{field}</span>
           </div>
         ))}

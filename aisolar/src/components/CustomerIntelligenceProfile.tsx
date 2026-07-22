@@ -59,7 +59,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
               </div>
             </div>
             <div className="text-right">
-              <Badge className={`bg-${stage.color}-600 text-white`}>{stage.label}</Badge>
+              <Badge className={`bg-primary text-white`}>{stage.label}</Badge>
               <div className="text-xs text-muted-foreground mt-1">Score: {lead.score}/100</div>
               <div className="text-xs text-muted-foreground">Assigned: {lead.assigned_consultant}</div>
             </div>
@@ -71,7 +71,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
       <div className="grid lg:grid-cols-3 gap-4">
         {/* Bill data */}
         <Card>
-          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-blue-600" /> Bill extraction</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Bill extraction</CardTitle></CardHeader>
           <CardContent className="text-xs space-y-1">
             <Row label="Monthly bill" value={`€${lead.monthly_bill}`} />
             <Row label="Annual kWh" value={lead.annual_kwh?.toLocaleString()} />
@@ -83,7 +83,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
         {/* Survey data */}
         {lead.survey && (
           <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Home className="h-4 w-4 text-indigo-600" /> Survey</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Home className="h-4 w-4 text-primary" /> Survey</CardTitle></CardHeader>
             <CardContent className="text-xs space-y-1">
               <Row label="Roof type" value={lead.survey.roof_type} />
               <Row label="Orientation" value={lead.survey.roof_orientation} />
@@ -114,7 +114,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
         {/* Contract + invoice */}
         {lead.contract && (
           <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-emerald-600" /> Contract & invoice</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Contract & invoice</CardTitle></CardHeader>
             <CardContent className="text-xs space-y-1">
               <Row label="Contract" value={`Signed ${new Date(lead.contract.signed_date).toLocaleDateString('en-IE')}`} />
               {lead.invoice && (
@@ -141,7 +141,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
 
         {/* Touchpoints summary */}
         <Card>
-          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><MessageSquare className="h-4 w-4 text-violet-600" /> Communication</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> Communication</CardTitle></CardHeader>
           <CardContent className="text-xs space-y-1">
             <Row label="Total touchpoints" value={String(lead.touchpoints.length)} />
             <Row label="Emails" value={String(lead.touchpoints.filter(t => t.channel === 'email').length)} />

@@ -185,15 +185,15 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       {!compact && (
         <div className="flex gap-1 border-b">
           <button onClick={() => setActiveTab('agents')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'agents' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'agents' ? 'border-primary/40 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <Bot className="h-4 w-4" /> Agents
           </button>
           <button onClick={() => setActiveTab('training')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'training' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'training' ? 'border-primary/40 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <Brain className="h-4 w-4" /> Training
           </button>
           <button onClick={() => setActiveTab('ai_config')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ai_config' ? 'border-violet-600 text-violet-600' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'ai_config' ? 'border-primary/40 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <Cpu className="h-4 w-4" /> AI Config
           </button>
         </div>
@@ -221,7 +221,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-violet-600" />
+                <Bot className="h-5 w-5 text-primary" />
                 Agent Foundation
                 {demo && (
                   <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700 border-amber-200 ml-2">
@@ -238,7 +238,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
             {!compact && (
               <div className="grid grid-cols-4 gap-3 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-emerald-600">{totalRuns}</div>
+                  <div className="text-2xl font-bold text-primary">{totalRuns}</div>
                   <div className="text-xs text-muted-foreground">runs (24h)</div>
                 </div>
                 <div>
@@ -250,7 +250,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                   <div className="text-xs text-muted-foreground">failed</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-violet-600">{activeAgents}/{AGENTS.length}</div>
+                  <div className="text-2xl font-bold text-primary">{activeAgents}/{AGENTS.length}</div>
                   <div className="text-xs text-muted-foreground">active</div>
                 </div>
               </div>
@@ -267,9 +267,9 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
           const TriggerIcon = TRIGGER_ICONS[agent.trigger];
           const isOn = enabled[agent.id];
           const statusColor =
-            run.status === 'success' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' :
+            run.status === 'success' ? 'text-primary bg-primary/10 dark:bg-primary/10' :
             run.status === 'failed'  ? 'text-red-600 bg-red-50 dark:bg-red-950/30' :
-            run.status === 'running' ? 'text-blue-600 bg-emerald-50 dark:bg-emerald-950/30' :
+            run.status === 'running' ? 'text-primary bg-primary/10 dark:bg-primary/10' :
                                        'text-slate-600 bg-slate-50 dark:bg-slate-900/30';
 
           return (
@@ -331,7 +331,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                 )}
 
                 {run.lastOutputs && !run.lastError && run.status === 'success' && (
-                  <div className="mt-2 p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 text-xs text-emerald-700 dark:text-emerald-400">
+                  <div className="mt-2 p-2 rounded bg-primary/10 dark:bg-primary/10 text-xs text-primary dark:text-primary">
                     <CheckCircle2 className="h-3 w-3 inline mr-1" />
                     {typeof run.lastOutputs === 'object' ? JSON.stringify(run.lastOutputs).slice(0, 80) + '...' : String(run.lastOutputs)}
                   </div>
@@ -339,7 +339,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
 
                 {!compact && (
                   <details className="mt-2 group">
-                    <summary className="text-xs text-violet-600 cursor-pointer hover:underline list-none flex items-center gap-1">
+                    <summary className="text-xs text-primary cursor-pointer hover:underline list-none flex items-center gap-1">
                       <ArrowRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
                       Details (inputs, outputs, guardrails)
                     </summary>

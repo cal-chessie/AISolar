@@ -165,7 +165,7 @@ export default function SystemSettingsV2() {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="h-6 w-6 text-violet-600" />
+          <Settings className="h-6 w-6 text-primary" />
           System Settings
         </h2>
         <p className="text-sm text-muted-foreground mt-1">The bedrock: integrations, branding, audit, kernel.</p>
@@ -187,22 +187,22 @@ export default function SystemSettingsV2() {
             const Icon = integration.icon;
             const isSelected = selectedIntegration === integration.id;
             return (
-              <Card key={integration.id} className={isSelected ? 'border-violet-400' : ''}>
+              <Card key={integration.id} className={isSelected ? 'border-primary/40' : ''}>
                 <CardContent className="p-3">
                   <div
                     className="flex items-center gap-3 cursor-pointer"
                     onClick={() => setSelectedIntegration(isSelected ? null : integration.id)}
                   >
                     <div className={`p-2 rounded-lg ${
-                      integration.status === 'connected' ? 'bg-emerald-100 dark:bg-emerald-950/40' :
+                      integration.status === 'connected' ? 'bg-primary/10 dark:bg-primary/10' :
                       integration.status === 'error' ? 'bg-red-100 dark:bg-red-950/40' :
-                      integration.status === 'connecting' ? 'bg-blue-100 dark:bg-blue-950/40' :
+                      integration.status === 'connecting' ? 'bg-primary/10 dark:bg-primary/10' :
                       'bg-muted'
                     }`}>
                       <Icon className={`h-4 w-4 ${
-                        integration.status === 'connected' ? 'text-emerald-600' :
+                        integration.status === 'connected' ? 'text-primary' :
                         integration.status === 'error' ? 'text-red-600' :
-                        integration.status === 'connecting' ? 'text-blue-600 animate-pulse' :
+                        integration.status === 'connecting' ? 'text-primary animate-pulse' :
                         'text-muted-foreground'
                       }`} />
                     </div>
@@ -211,9 +211,9 @@ export default function SystemSettingsV2() {
                       <div className="text-xs text-muted-foreground">{integration.description}</div>
                     </div>
                     <Badge variant="outline" className={`text-[11px] ${
-                      integration.status === 'connected' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      integration.status === 'connected' ? 'bg-primary/10 text-primary border-primary/40' :
                       integration.status === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
-                      integration.status === 'connecting' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      integration.status === 'connecting' ? 'bg-primary/10 text-primary border-primary/40' :
                       'bg-muted text-muted-foreground'
                     }`}>
                       {integration.status === 'connecting' && <RefreshCw className="h-2.5 w-2.5 mr-0.5 animate-spin" />}
@@ -245,7 +245,7 @@ export default function SystemSettingsV2() {
                             </Button>
                           </>
                         ) : (
-                          <Button size="sm" className="h-7 text-xs bg-emerald-600 transition-colors hover:bg-emerald-700" onClick={() => handleToggleIntegration(integration.id)}>
+                          <Button size="sm" className="h-7 text-xs bg-primary transition-colors hover:bg-primary" onClick={() => handleToggleIntegration(integration.id)}>
                             {integration.status === 'connecting' ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Connecting…</> : <><Power className="h-3 w-3 mr-1" /> Connect</>}
                           </Button>
                         )}
@@ -322,7 +322,7 @@ export default function SystemSettingsV2() {
                     <Badge variant="outline" className={`text-[11px] flex-shrink-0 ${
                       event.severity === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
                       event.severity === 'warn' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      'bg-blue-50 text-blue-700 border-blue-200'
+                      'bg-primary/10 text-primary border-primary/40'
                     }`}>
                       {event.severity}
                     </Badge>
@@ -340,7 +340,7 @@ export default function SystemSettingsV2() {
 
               {/* Summary stats */}
               <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-2 text-center text-xs">
-                <div><div className="font-bold text-blue-600">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
+                <div><div className="font-bold text-primary">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
                 <div><div className="font-bold text-amber-600">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[11px] text-muted-foreground">warnings</div></div>
                 <div><div className="font-bold text-red-600">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[11px] text-muted-foreground">errors</div></div>
                 <div><div className="font-bold">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[11px] text-muted-foreground">agent actions</div></div>
@@ -353,12 +353,12 @@ export default function SystemSettingsV2() {
         <TabsContent value="kernel" className="space-y-3">
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-violet-600" /> Supabase Configuration</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-primary" /> Supabase Configuration</h3>
               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                 <div><span className="text-muted-foreground">Project URL:</span> <code className="font-mono">https://coxmtpnqjybwlrfwkols.supabase.co</code></div>
                 <div><span className="text-muted-foreground">Region:</span> Frankfurt (eu-west-1)</div>
                 <div><span className="text-muted-foreground">Postgres:</span> 15.6</div>
-                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700">Enabled</Badge></div>
+                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Enabled</Badge></div>
                 <div><span className="text-muted-foreground">Migrations:</span> 28 applied</div>
                 <div><span className="text-muted-foreground">pg_cron jobs:</span> 7 scheduled</div>
               </div>
@@ -366,7 +366,7 @@ export default function SystemSettingsV2() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Lock className="h-4 w-4 text-violet-600" /> Vault Secrets</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Lock className="h-4 w-4 text-primary" /> Vault Secrets</h3>
               <table className="w-full text-xs">
                 <thead><tr className="text-muted-foreground border-b"><th className="text-left py-2">Secret</th><th className="text-left">Last rotated</th><th className="text-right">Status</th></tr></thead>
                 <tbody>
@@ -374,7 +374,7 @@ export default function SystemSettingsV2() {
                     <tr key={s} className="border-b last:border-0">
                       <td className="py-2 font-mono">{s}</td>
                       <td>2026-07-17</td>
-                      <td className="text-right"><Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
+                      <td className="text-right"><Badge variant="outline" className="text-[11px] bg-primary/10 text-primary"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
                     </tr>
                   ))}
                 </tbody>
@@ -431,7 +431,7 @@ function BrandConfigFull() {
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
-        <h3 className="font-semibold text-sm flex items-center gap-2"><Palette className="h-4 w-4 text-violet-600" /> Brand Configuration</h3>
+        <h3 className="font-semibold text-sm flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> Brand Configuration</h3>
         <p className="text-xs text-muted-foreground">These settings touch every customer-facing touchpoint.</p>
 
         {/* Touchpoint preview */}
@@ -440,14 +440,14 @@ function BrandConfigFull() {
             const Icon = tp.icon;
             return (
               <div key={tp.label} className="p-2 border rounded-lg flex items-center gap-2">
-                <div className="p-1.5 rounded bg-violet-100 dark:bg-violet-950/40">
-                  <Icon className="h-3 w-3 text-violet-600" />
+                <div className="p-1.5 rounded bg-primary/10 dark:bg-primary/10">
+                  <Icon className="h-3 w-3 text-primary" />
                 </div>
                 <div>
                   <div className="text-xs font-medium">{tp.label}</div>
                   <div className="text-[11px] text-muted-foreground">{tp.desc}</div>
                 </div>
-                <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />
+                <CheckCircle2 className="h-3 w-3 text-primary ml-auto" />
               </div>
             );
           })}
@@ -482,7 +482,7 @@ function BrandConfigFull() {
         {/* Logo upload */}
         <div>
           <Label className="text-xs">Logo (SVG/PNG, max 200KB)</Label>
-          <div className="mt-1 p-4 border-2 border-dashed rounded-lg text-center text-xs text-muted-foreground cursor-pointer hover:border-violet-400">
+          <div className="mt-1 p-4 border-2 border-dashed rounded-lg text-center text-xs text-muted-foreground cursor-pointer hover:border-primary/40">
             Drop logo here or click to upload
           </div>
         </div>
@@ -540,7 +540,7 @@ function BrandConfigFull() {
           </div>
         </div>
 
-        <Button className="w-full bg-violet-600 transition-colors hover:bg-violet-700"><Save className="h-4 w-4 mr-2" /> Save all branding</Button>
+        <Button className="w-full bg-primary transition-colors hover:bg-primary"><Save className="h-4 w-4 mr-2" /> Save all branding</Button>
       </CardContent>
     </Card>
   );
@@ -556,7 +556,7 @@ function EmailChannelConfig() {
           <div><Label className="text-xs">Server token</Label><Input type="password" defaultValue="••••••••" className="mt-1 h-8 text-xs" /></div>
           <div><Label className="text-xs">From email</Label><Input type="email" defaultValue={brand.contact.email} className="mt-1 h-8 text-xs" /></div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-emerald-600"><CheckCircle2 className="h-3 w-3" /> Sender verified · SPF + DKIM + DMARC · 99.4% delivery</div>
+        <div className="flex items-center gap-2 text-xs text-primary"><CheckCircle2 className="h-3 w-3" /> Sender verified · SPF + DKIM + DMARC · 99.4% delivery</div>
       </CardContent>
     </Card>
   );
@@ -580,13 +580,13 @@ function SmsChannelConfig() {
 function WhatsAppChannelConfig() {
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-green-600" /> WhatsApp Business</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> WhatsApp Business</CardTitle></CardHeader>
       <CardContent className="space-y-2">
         <div className="grid sm:grid-cols-2 gap-2">
           <div><Label className="text-xs">Phone number</Label><Input placeholder="+353..." className="mt-1 h-8 text-xs" /></div>
           <div><Label className="text-xs">Access token</Label><Input type="password" placeholder="EAAG..." className="mt-1 h-8 text-xs font-mono" /></div>
         </div>
-        <div className="text-xs text-green-700 dark:text-green-400">Use cases: install reminders, document delivery, customer chat, review requests</div>
+        <div className="text-xs text-primary dark:text-primary">Use cases: install reminders, document delivery, customer chat, review requests</div>
       </CardContent>
     </Card>
   );
@@ -606,7 +606,7 @@ function MarketingSequences() {
         ].map(seq => (
           <div key={seq.name} className="flex items-center justify-between p-2 border rounded text-xs">
             <div><span className="font-medium">{seq.name}</span><span className="text-muted-foreground ml-2">{seq.trigger} · {seq.emails} emails</span></div>
-            <div className="flex items-center gap-2"><span className={seq.open >= 60 ? 'text-emerald-600' : 'text-amber-600'}>{seq.open}% open</span><Badge variant="default" className="text-[11px]">{seq.status}</Badge></div>
+            <div className="flex items-center gap-2"><span className={seq.open >= 60 ? 'text-primary' : 'text-amber-600'}>{seq.open}% open</span><Badge variant="default" className="text-[11px]">{seq.status}</Badge></div>
           </div>
         ))}
       </CardContent>

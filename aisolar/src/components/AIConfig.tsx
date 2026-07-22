@@ -151,7 +151,7 @@ export default function AIConfig() {
   if (loading) {
     return (
       <div className="p-8 text-center">
-        <Loader2 className="h-6 w-6 animate-spin text-violet-600 mx-auto" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
         <p className="text-xs text-muted-foreground mt-2">Loading AI configuration…</p>
       </div>
     );
@@ -160,14 +160,14 @@ export default function AIConfig() {
   return (
     <div className="p-3 space-y-3">
       <div>
-        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-violet-600" /> AI Configuration</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> AI Configuration</h2>
         <p className="text-sm text-muted-foreground mt-1">The brain behind all 10 agents. Configure your LLM, API keys, and cost limits.</p>
       </div>
 
       {/* LLM Provider */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4 text-violet-600" /> LLM Provider</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4 text-primary" /> LLM Provider</CardTitle>
           <CardDescription>Connect your OpenRouter account. All agents use this model.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -188,7 +188,7 @@ export default function AIConfig() {
               </Button>
             </div>
             {testResult === 'success' && (
-              <div className="mt-1 text-xs text-emerald-600 flex items-start gap-1">
+              <div className="mt-1 text-xs text-primary flex items-start gap-1">
                 <CheckCircle2 className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <div>
                   <div>Connection successful — LLM is responding.</div>
@@ -206,7 +206,7 @@ export default function AIConfig() {
               </div>
             )}
             <p className="text-[11px] text-muted-foreground mt-1">
-              Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:underline">openrouter.ai/keys</a>.
+              Get your key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a>.
               Stored in the <code>ai_config</code> table (admin-only RLS). The agent-drain edge function reads it via service role.
             </p>
           </div>
@@ -222,16 +222,16 @@ export default function AIConfig() {
                     key={m.id}
                     onClick={() => setSelectedModel(m.id)}
                     className={`p-3 rounded-lg border-2 text-left transition-all ${
-                      isSelected ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/20' : 'border-border hover:border-violet-300'
+                      isSelected ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border hover:border-primary/40'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-sm">{m.name}</span>
-                      {isSelected && <CheckCircle2 className="h-3 w-3 text-violet-600" />}
+                      {isSelected && <CheckCircle2 className="h-3 w-3 text-primary" />}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">{m.provider} · {m.context} context</div>
                     <div className="text-[11px] text-muted-foreground">{m.cost}</div>
-                    <div className="text-[11px] text-violet-600 mt-0.5">{m.best}</div>
+                    <div className="text-[11px] text-primary mt-0.5">{m.best}</div>
                   </button>
                 );
               })}
@@ -251,7 +251,7 @@ export default function AIConfig() {
           <div className="flex items-center justify-between p-3 border rounded-lg">
             <div>
               <div className="text-xs font-medium flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-violet-600" /> Enable LLM calls
+                <Sparkles className="h-3 w-3 text-primary" /> Enable LLM calls
               </div>
               <div className="text-[11px] text-muted-foreground mt-0.5">
                 Master switch. When off, agents fall back to deterministic logic (no LLM cost).
@@ -278,11 +278,11 @@ export default function AIConfig() {
       </Card>
 
       {/* Summary + Save */}
-      <Card className="border-violet-300 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-lg">
-              <Bot className="h-5 w-5 text-violet-600" />
+            <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-lg">
+              <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h3 className="font-semibold text-sm">Configuration summary</h3>
@@ -295,7 +295,7 @@ export default function AIConfig() {
             <div className="p-2 bg-background rounded"><span className="text-muted-foreground">Daily cap:</span> <span className="font-medium">${dailyCostCap}</span></div>
             <div className="p-2 bg-background rounded"><span className="text-muted-foreground">LLM calls:</span> <span className="font-medium">{enableLLM ? 'Enabled' : 'Disabled'}</span></div>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="w-full mt-3 bg-violet-600 hover:bg-violet-700">
+          <Button onClick={handleSave} disabled={saving} className="w-full mt-3 bg-primary hover:bg-primary">
             {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</> : saved ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Saved!</> : <><Save className="h-4 w-4 mr-2" /> Save AI configuration</>}
           </Button>
         </CardContent>

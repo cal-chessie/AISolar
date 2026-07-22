@@ -20,8 +20,8 @@ export default function PrivacyPolicy() {
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-violet-100 dark:bg-violet-950/40 rounded-xl">
-              <Shield className="h-6 w-6 text-violet-700 dark:text-violet-300" />
+            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
+              <Shield className="h-6 w-6 text-primary dark:text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Privacy Policy</h1>
@@ -150,7 +150,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof Shield; title: 
     <Card>
       <CardContent className="p-5">
         <h2 className="text-lg font-bold flex items-center gap-2 mb-3">
-          <Icon className="h-4 w-4 text-violet-600" />
+          <Icon className="h-4 w-4 text-primary" />
           {title}
         </h2>
         <div className="text-sm text-muted-foreground space-y-2">{children}</div>

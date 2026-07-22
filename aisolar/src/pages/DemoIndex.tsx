@@ -48,11 +48,11 @@ export default function DemoIndex() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-emerald-50 dark:from-violet-950/30 dark:via-background dark:to-emerald-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
       <div className="container mx-auto px-4 py-10 max-w-5xl">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+          <div className="inline-flex items-center gap-2 bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary px-3 py-1 rounded-full text-xs font-semibold mb-3">
             <Compass className="h-3.5 w-3.5" />
             VIEW INDEX
           </div>
@@ -67,11 +67,11 @@ export default function DemoIndex() {
         {/* Status banner */}
         <div className={`rounded-xl border p-4 mb-8 flex items-start gap-3 ${
           demoActive
-            ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800'
+            ? 'bg-primary/10 border-primary/40 dark:bg-primary/10 dark:border-primary/40'
             : 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800'
         }`}>
           {demoActive ? (
-            <Zap className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <Zap className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
           ) : (
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           )}
@@ -88,7 +88,7 @@ export default function DemoIndex() {
           {ALL_ROUTES.map((group) => (
             <section key={group.group}>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="bg-violet-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
+                <span className="bg-primary text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
                   {ALL_ROUTES.indexOf(group) + 1}
                 </span>
                 {group.group}
@@ -98,16 +98,16 @@ export default function DemoIndex() {
                   <button
                     key={route.path}
                     onClick={() => navigate(route.path)}
-                    className="text-left p-4 rounded-xl border bg-card hover:shadow-md hover:border-violet-300 dark:hover:border-violet-700 transition-all group"
+                    className="text-left p-4 rounded-xl border bg-card hover:shadow-md hover:border-primary/40 dark:hover:border-primary/40 transition-all group"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-base group-hover:text-violet-600 transition-colors">
+                      <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
                         {route.label}
                       </h3>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-violet-600 group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{route.desc}</p>
-                    <code className="text-xs text-violet-600 dark:text-violet-400 font-mono bg-violet-50 dark:bg-violet-950/30 px-2 py-0.5 rounded">
+                    <code className="text-xs text-primary dark:text-primary font-mono bg-primary/10 dark:bg-primary/10 px-2 py-0.5 rounded">
                       {route.path}
                     </code>
                   </button>
@@ -167,7 +167,7 @@ export default function DemoIndex() {
         {/* Footer */}
         <div className="text-center mt-10 text-sm text-muted-foreground">
           <p>
-            Visit <Link to="/?demo=0" className="text-violet-600 hover:underline">the home page</Link>
+            Visit <Link to="/?demo=0" className="text-primary hover:underline">the home page</Link>
             {' '}to exit demo mode, or click "Exit Demo" in the top banner.
           </p>
         </div>

@@ -17,8 +17,8 @@ export default function TermsOfService() {
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-              <FileText className="h-6 w-6 text-blue-700 dark:text-blue-300" />
+            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
+              <FileText className="h-6 w-6 text-primary dark:text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Terms of Service</h1>

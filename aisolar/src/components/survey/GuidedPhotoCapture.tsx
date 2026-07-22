@@ -146,7 +146,7 @@ export default function GuidedPhotoCapture({
           variant={capturedCount >= requiredCount ? "default" : "secondary"}
           className={cn(
             "text-sm px-3 py-1",
-            capturedCount >= requiredCount && "bg-green-500"
+            capturedCount >= requiredCount && "bg-primary"
           )}
         >
           {capturedCount} / {requiredCount}
@@ -164,7 +164,7 @@ export default function GuidedPhotoCapture({
               key={photo.id} 
               className={cn(
                 "overflow-hidden transition-all",
-                captured && "border-green-500 bg-green-50/50 dark:bg-green-900/10",
+                captured && "border-primary/40 bg-primary/10 dark:bg-primary/10",
                 !captured && photo.required && "border-orange-300/50 dark:border-orange-700/50"
               )}
             >
@@ -194,7 +194,7 @@ export default function GuidedPhotoCapture({
                           <img 
                             src={captured.url} 
                             alt={photo.label}
-                            className="w-20 h-20 object-cover rounded-xl border-2 border-green-500"
+                            className="w-20 h-20 object-cover rounded-xl border-2 border-primary/40"
                           />
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-1">
                             <Button 
@@ -214,7 +214,7 @@ export default function GuidedPhotoCapture({
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="absolute -top-1 -right-1 h-5 w-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <div className="absolute -top-1 -right-1 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                             <Check className="h-3 w-3 text-white" />
                           </div>
                         </motion.div>

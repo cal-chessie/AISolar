@@ -61,11 +61,11 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       {/* Bill extracted data */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4 text-blue-600" /> Bill extraction (AI)</h3>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Bill extraction (AI)</h3>
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="p-3 bg-muted/30 rounded-lg text-center">
               <div className="text-xs text-muted-foreground">Monthly bill</div>
-              <div className="text-2xl font-bold text-blue-600">€{lead.monthly_bill}</div>
+              <div className="text-2xl font-bold text-primary">€{lead.monthly_bill}</div>
             </div>
             <div className="p-3 bg-muted/30 rounded-lg text-center">
               <div className="text-xs text-muted-foreground">Annual consumption</div>
@@ -80,9 +80,9 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       </Card>
 
       {/* AI estimate */}
-      <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10">
+      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-emerald-600" /> AI estimate</h3>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /> AI estimate</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="text-center">
               <Sun className="h-5 w-5 text-amber-500 mx-auto mb-1" />
@@ -90,17 +90,17 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
               <div className="text-lg font-bold text-amber-600">{estimate.systemSizeKw} kWp</div>
             </div>
             <div className="text-center">
-              <TrendingUp className="h-5 w-5 text-emerald-500 mx-auto mb-1" />
+              <TrendingUp className="h-5 w-5 text-primary mx-auto mb-1" />
               <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="text-lg font-bold text-emerald-600">{eurFmt(estimate.annualSavings)}</div>
+              <div className="text-lg font-bold text-primary">{eurFmt(estimate.annualSavings)}</div>
             </div>
             <div className="text-center">
-              <Award className="h-5 w-5 text-violet-500 mx-auto mb-1" />
+              <Award className="h-5 w-5 text-primary mx-auto mb-1" />
               <div className="text-xs text-muted-foreground">SEAI grant</div>
-              <div className="text-lg font-bold text-violet-600">{eurFmt(seai.solarElectricityGrant)}</div>
+              <div className="text-lg font-bold text-primary">{eurFmt(seai.solarElectricityGrant)}</div>
             </div>
             <div className="text-center">
-              <Clock className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+              <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
               <div className="text-xs text-muted-foreground">Payback</div>
               <div className="text-lg font-bold">{estimate.paybackYears} yrs</div>
             </div>
@@ -118,7 +118,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       <div className="flex gap-2">
         <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download estimate</Button>
         {onOpenProposal && (
-          <Button onClick={onOpenProposal} className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700">
+          <Button onClick={onOpenProposal} className="flex-1 bg-primary transition-colors hover:bg-primary">
             Open full proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         )}

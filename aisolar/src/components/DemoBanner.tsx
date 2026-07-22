@@ -34,7 +34,7 @@ export default function DemoBanner() {
       {/* Floating nav button (bottom-right) */}
       <button
         onClick={() => setMenuOpen(true)}
-        className="fixed bottom-4 right-4 z-[9998] bg-violet-600 hover:bg-violet-700 text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
+        className="fixed bottom-4 right-4 z-[9998] bg-primary hover:bg-primary text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
         aria-label="Open demo navigation"
       >
         <Compass className="h-5 w-5" />
@@ -42,7 +42,7 @@ export default function DemoBanner() {
       </button>
 
       {/* Top banner */}
-      <div className="fixed top-0 left-0 right-0 z-[9997] bg-violet-600 text-white text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
+      <div className="fixed top-0 left-0 right-0 z-[9997] bg-primary text-white text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-3.5 w-3.5" />
           <span>
@@ -80,7 +80,7 @@ export default function DemoBanner() {
           >
             <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between">
               <h2 className="font-bold text-lg flex items-center gap-2">
-                <Compass className="h-5 w-5 text-violet-600" />
+                <Compass className="h-5 w-5 text-primary" />
                 All Views
               </h2>
               <button
@@ -111,18 +111,18 @@ export default function DemoBanner() {
                           }}
                           className={`w-full text-left p-3 rounded-lg border transition-all ${
                             isCurrent
-                              ? 'bg-violet-50 border-violet-300 dark:bg-violet-950/30 dark:border-violet-700'
+                              ? 'bg-primary/10 border-primary/40 dark:bg-primary/10 dark:border-primary/40'
                               : 'hover:bg-muted border-border'
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-sm">{route.label}</span>
                             {isCurrent && (
-                              <span className="text-xs text-violet-600 font-bold">CURRENT</span>
+                              <span className="text-xs text-primary font-bold">CURRENT</span>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">{route.desc}</p>
-                          <p className="text-xs text-violet-600 mt-1 font-mono">{route.path}</p>
+                          <p className="text-xs text-primary mt-1 font-mono">{route.path}</p>
                         </button>
                       );
                     })}
@@ -134,7 +134,7 @@ export default function DemoBanner() {
                 <Link
                   to="/demo"
                   onClick={() => setMenuOpen(false)}
-                  className="block text-center text-sm text-violet-600 hover:underline font-semibold"
+                  className="block text-center text-sm text-primary hover:underline font-semibold"
                 >
                   View full route index page →
                 </Link>

@@ -90,7 +90,7 @@ export default function GlobalSearchModal({
           type: 'lead',
           title: lead.name,
           subtitle: lead.email || lead.address || 'No details',
-          icon: <Users className="h-4 w-4 text-blue-500" />,
+          icon: <Users className="h-4 w-4 text-primary" />,
         });
       });
 
@@ -104,7 +104,7 @@ export default function GlobalSearchModal({
           type: 'proposal',
           title: `Proposal - ${(proposal.leads as any)?.name || 'Unknown'}`,
           subtitle: `${proposal.system_size_kw || 0}kW system • ${proposal.status}`,
-          icon: <FileText className="h-4 w-4 text-purple-500" />,
+          icon: <FileText className="h-4 w-4 text-primary" />,
         });
       });
 
@@ -118,7 +118,7 @@ export default function GlobalSearchModal({
           type: 'survey',
           title: `Survey - ${(survey.leads as any)?.name || 'Unknown'}`,
           subtitle: survey.status || 'Draft',
-          icon: <ClipboardList className="h-4 w-4 text-green-500" />,
+          icon: <ClipboardList className="h-4 w-4 text-primary" />,
         });
       });
 

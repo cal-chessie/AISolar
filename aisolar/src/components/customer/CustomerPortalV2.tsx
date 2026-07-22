@@ -133,19 +133,19 @@ export default function CustomerPortalV2() {
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-emerald-950/20 dark:via-background dark:to-blue-950/20 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary overflow-hidden">
       {/* Header — project status */}
       <header className="bg-background/95 backdrop-blur border-b flex-shrink-0">
         <div className="px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sun className="h-7 w-7 text-emerald-600" />
+            <Sun className="h-7 w-7 text-primary" />
             <div>
               <div className="font-bold text-sm">{brand.name}</div>
               <div className="text-[11px] text-muted-foreground">My Solar Project</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={`text-xs bg-${stage.color}-50 text-${stage.color}-700 border-${stage.color}-200`}>
+            <Badge variant="outline" className={`text-xs bg-primary/10 text-primary border-primary/40`}>
               {stage.label}
             </Badge>
             <Button variant="ghost" size="sm" className="p-2" onClick={() => setShowRights(true)}>
@@ -156,7 +156,7 @@ export default function CustomerPortalV2() {
         {/* Progress bar */}
         <div className="h-1 bg-muted">
           <motion.div
-            className="h-full bg-gradient-to-r from-emerald-500 to-blue-500"
+            className="h-full bg-gradient-to-r from-primary to-primary"
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.8 }}
@@ -171,7 +171,7 @@ export default function CustomerPortalV2() {
             <span className="flex-shrink-0">·</span>
             <span className="flex-shrink-0">{lead.proposal.payback_years}yr payback</span>
             <span className="flex-shrink-0">·</span>
-            <span className="flex-shrink-0 text-emerald-600">{eur(lead.proposal.annual_savings)}/yr savings</span>
+            <span className="flex-shrink-0 text-primary">{eur(lead.proposal.annual_savings)}/yr savings</span>
           </div>
         )}
       </header>
@@ -186,7 +186,7 @@ export default function CustomerPortalV2() {
         {thinking && (
           <div className="flex justify-start">
             <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2">
-              <Sparkles className="h-3 w-3 text-violet-600 animate-pulse" />
+              <Sparkles className="h-3 w-3 text-primary animate-pulse" />
               <span className="text-xs text-muted-foreground">AI is thinking…</span>
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function CustomerPortalV2() {
               <button
                 key={q}
                 onClick={() => { setInput(q); setTimeout(() => handleSend(), 100); }}
-                className="text-xs px-3 py-1.5 rounded-full border border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-full border border-primary/40 bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors"
               >
                 {q}
               </button>
@@ -256,7 +256,7 @@ export default function CustomerPortalV2() {
           <Button
             onClick={handleSend}
             disabled={!input.trim() || thinking}
-            className="bg-emerald-600 transition-colors hover:bg-emerald-700 rounded-full h-11 w-11 p-0 flex-shrink-0"
+            className="bg-primary transition-colors hover:bg-primary rounded-full h-11 w-11 p-0 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -391,11 +391,11 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
   const isCompany = message.type === 'company';
 
   const bgClass = isCustomer
-    ? 'bg-emerald-600 text-white rounded-br-sm'
+    ? 'bg-primary text-white rounded-br-sm'
     : isAI
-    ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm'
+    ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm'
     : isAgent
-    ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 rounded-bl-sm'
+    ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm'
     : 'bg-muted text-foreground rounded-bl-sm';
 
   const actorLabel = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : leadName.split(' ')[0] + '\'s Consultant';
@@ -425,7 +425,7 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
           <p className="text-sm whitespace-pre-wrap">{message.body}</p>
           {/* Action button */}
           {message.actionLabel && ActionIcon && (
-            <button className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-blue-700 dark:text-blue-300'} hover:underline`}>
+            <button className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-primary dark:text-primary'} hover:underline`}>
               <ActionIcon className="h-3 w-3" />
               {message.actionLabel}
               <ArrowRight className="h-2 w-2" />

@@ -249,7 +249,7 @@ export default function JobViewV2() {
     // legibility, and roomier rows — gloves, roofs, one hand free.
     <div data-density="comfortable" className="min-h-dvh bg-background">
       {/* Sticky header with completion status */}
-      <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-background/95 backdrop-blur'}`}>
+      <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-primary/10 dark:bg-primary/10' : 'bg-background/95 backdrop-blur'}`}>
         <div className="px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/installer')} className="p-2" aria-label="Back to installer portal">
             <ArrowLeft className="h-5 w-5" />
@@ -266,7 +266,7 @@ export default function JobViewV2() {
           </div>
           {/* Completion status badge */}
           {overallComplete ? (
-            <Badge className="bg-emerald-600 text-white">
+            <Badge className="bg-primary text-white">
               <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
             </Badge>
           ) : (
@@ -279,7 +279,7 @@ export default function JobViewV2() {
         {/* Progress bar */}
         <div className="h-1 bg-muted">
           <motion.div
-            className={`h-full transition-all ${overallComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-emerald-500'}`}
+            className={`h-full transition-all ${overallComplete ? 'bg-primary' : 'bg-gradient-to-r from-amber-500 to-primary'}`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -421,12 +421,12 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
     <div className="space-y-4">
       {/* Completion status banner */}
       {overallComplete ? (
-        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
           <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+            <CheckCircle2 className="h-8 w-8 text-primary" />
             <div>
-              <div className="font-bold text-emerald-800 dark:text-emerald-300">All checks complete</div>
-              <div className="text-xs text-emerald-700 dark:text-emerald-400">Ready to mark job complete. Customer has signed, all photos uploaded.</div>
+              <div className="font-bold text-primary dark:text-primary">All checks complete</div>
+              <div className="text-xs text-primary dark:text-primary">Ready to mark job complete. Customer has signed, all photos uploaded.</div>
             </div>
           </CardContent>
         </Card>
@@ -450,12 +450,12 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
             const done = phaseCompletion[phase.id];
             const Icon = phase.icon;
             return (
-              <Card key={phase.id} className={done ? 'border-emerald-400' : ''}>
+              <Card key={phase.id} className={done ? 'border-primary/40' : ''}>
                 <CardContent className="p-3 text-center">
-                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className="text-[11px] font-medium leading-tight">{phase.label}</div>
                   {done ? (
-                    <Badge variant="outline" className="mt-1 text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <Badge variant="outline" className="mt-1 text-[11px] bg-primary/10 text-primary border-primary/40">
                       <CheckCircle2 className="h-2 w-2 mr-0.5" /> Done
                     </Badge>
                   ) : (
@@ -511,10 +511,10 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
 
       {/* Site notes from survey (read-only snapshot, not the survey questions) */}
       {survey && (
-        <Card className="border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/10">
+        <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
           <CardContent className="p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-indigo-600" /> Site notes (from survey)
+              <ClipboardList className="h-4 w-4 text-primary" /> Site notes (from survey)
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
@@ -581,7 +581,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">SEAI grant</div>
-                <div className="font-medium text-emerald-600">{eur(proposal.seai_grant)}</div>
+                <div className="font-medium text-primary">{eur(proposal.seai_grant)}</div>
               </div>
             </div>
           </CardContent>
@@ -608,7 +608,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
               <span>12 km/h SW</span>
             </div>
           </div>
-          <div className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+          <div className="mt-2 text-xs text-primary dark:text-primary">
             ✓ Safe for roof work
           </div>
         </CardContent>
@@ -638,10 +638,10 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
 
       {/* Phase completion banner */}
       {allDone ? (
-        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
           <CardContent className="p-3 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Phase complete — move to next tab</span>
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium text-primary dark:text-primary">Phase complete — move to next tab</span>
           </CardContent>
         </Card>
       ) : (
@@ -669,7 +669,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
                   <Label className={`text-sm font-medium flex-1 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
                     {item.label}
                   </Label>
-                  {item.done && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                  {item.done && <CheckCircle2 className="h-4 w-4 text-primary" />}
                 </div>
                 <Input
                   placeholder="Add note (e.g. '100A main fuse', 'earth bond at gas meter')"
@@ -697,9 +697,9 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
             <div className="divide-y">
               {photos.map(photo => (
                 <div key={photo.id} className="p-3 flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-muted'}`}>
+                  <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
                     {photo.uploaded ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
                     ) : (
                       <Camera className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -792,11 +792,11 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
                     {signature ? (
                       <div>
                         <img src={signature} alt="Customer signature" className="border rounded bg-white p-2 max-h-24 w-auto" />
-                        <div className="text-xs text-emerald-700 mt-1">Signed · {new Date().toLocaleString('en-IE')}</div>
+                        <div className="text-xs text-primary mt-1">Signed · {new Date().toLocaleString('en-IE')}</div>
                         <Button size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setShowPad(true)}>Re-sign</Button>
                       </div>
                     ) : (
-                      <Button size="sm" onClick={() => setShowPad(true)} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
+                      <Button size="sm" onClick={() => setShowPad(true)} className="bg-primary transition-colors hover:bg-primary">
                         <PenLine className="h-3 w-3 mr-1" /> Get signature
                       </Button>
                     )}
@@ -819,8 +819,8 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
           <div className="divide-y">
             {photos.map(photo => (
               <div key={photo.id} className="p-3 flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-muted'}`}>
-                  {photo.uploaded ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
+                <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
+                  {photo.uploaded ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-sm">{photo.label}</div>
@@ -842,11 +842,11 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
 
       {/* Completion status */}
       {overallComplete ? (
-        <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
           <CardContent className="p-6 text-center">
             {jobCompleted ? (
               <>
-                <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-600 mb-3 shadow-lg shadow-emerald-500/30">
+                <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary mb-3 shadow-lg shadow-card">
                   <CheckCircle2 className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="font-bold text-lg">Job complete</h3>
@@ -856,13 +856,13 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
               </>
             ) : (
               <>
-                <Award className="h-12 w-12 text-emerald-600 mx-auto mb-3" />
+                <Award className="h-12 w-12 text-primary mx-auto mb-3" />
                 <h3 className="font-bold text-lg">Ready to mark complete!</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   All checks done, all photos uploaded, customer signed. Click below to finalize — PostInstall Agent will send warranty docs + schedule a review request.
                 </p>
                 <Button
-                  className="mt-4 bg-emerald-600 transition-colors hover:bg-emerald-700 w-full h-12"
+                  className="mt-4 bg-primary transition-colors hover:bg-primary w-full h-12"
                   onClick={onMarkJobComplete}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" /> Mark job complete
@@ -979,7 +979,7 @@ function SignaturePad({ customerName, onSave, onCancel }: {
         />
         <div className="flex gap-2 mt-3">
           <Button variant="outline" className="flex-1" onClick={clear}>Clear</Button>
-          <Button className="flex-1 bg-emerald-600 transition-colors hover:bg-emerald-700" onClick={save}>
+          <Button className="flex-1 bg-primary transition-colors hover:bg-primary" onClick={save}>
             Save signature
           </Button>
         </div>

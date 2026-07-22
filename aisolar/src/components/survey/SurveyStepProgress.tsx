@@ -194,7 +194,7 @@ export default function SurveyStepProgress({
                 className={cn(
                   "relative z-10 h-6 w-6 rounded-full flex items-center justify-center transition-all duration-300 text-xs font-medium",
                   isCurrent && "ring-4 ring-primary/20 bg-primary text-primary-foreground",
-                  isCompleted && !isCurrent && "bg-green-500 text-white",
+                  isCompleted && !isCurrent && "bg-primary text-white",
                   isPast && !isCompleted && "bg-primary/30 text-primary",
                   !isCurrent && !isCompleted && !isPast && "bg-muted text-muted-foreground"
                 )}
@@ -206,7 +206,7 @@ export default function SurveyStepProgress({
               <span className={cn(
                 "text-[10px] font-medium text-center leading-tight",
                 isCurrent && "text-primary",
-                isCompleted && "text-green-600",
+                isCompleted && "text-primary",
                 !isCurrent && !isCompleted && "text-muted-foreground"
               )}>
                 {step.shortLabel}
@@ -231,7 +231,7 @@ export default function SurveyStepProgress({
                 className={cn(
                   "h-2 rounded-full transition-all duration-300",
                   isCurrent ? "w-8 bg-primary" : "w-2",
-                  isCompleted && !isCurrent && "bg-green-500",
+                  isCompleted && !isCurrent && "bg-primary",
                   !isCurrent && !isCompleted && "bg-muted-foreground/30"
                 )}
               />

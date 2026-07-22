@@ -85,7 +85,7 @@ export function CalendarSkeleton() {
 export function SpinnerSkeleton({ label }: { label?: string }) {
   return (
     <div className="p-8 text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto" />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary/40 mx-auto" />
       {label && <div className="text-xs text-muted-foreground mt-2">{label}</div>}
     </div>
   );

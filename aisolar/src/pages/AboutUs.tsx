@@ -25,14 +25,14 @@ export default function AboutUs() {
       <SiteNavigation />
 
       {/* Hero */}
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-50 via-white to-blue-50 dark:from-emerald-950/20 dark:via-background dark:to-blue-950/20">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
         <div className="container mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Badge variant="outline" className="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 mb-4">
+            <Badge variant="outline" className="bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary border-primary/40 dark:border-primary/40 mb-4">
               <Sparkles className="h-3 w-3 mr-1" /> The Solar Installer Operating System
             </Badge>
             <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight">
@@ -44,7 +44,7 @@ export default function AboutUs() {
               install coordination, and customer follow-ups.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button size="lg" onClick={() => navigate('/upload')} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="lg" onClick={() => navigate('/upload')} className="bg-primary hover:bg-primary">
                 See it in action <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => navigate('/demo')}>
@@ -84,8 +84,8 @@ export default function AboutUs() {
                 >
                   <Card className="h-full">
                     <CardContent className="p-5">
-                      <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg w-fit mb-3">
-                        <Icon className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+                      <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-lg w-fit mb-3">
+                        <Icon className="h-5 w-5 text-primary dark:text-primary" />
                       </div>
                       <h3 className="font-bold mb-1">{item.title}</h3>
                       <p className="text-sm text-muted-foreground">{item.desc}</p>
@@ -99,10 +99,10 @@ export default function AboutUs() {
       </section>
 
       {/* The 10 agents */}
-      <section className="py-16 px-4 bg-gradient-to-br from-violet-50 to-blue-50 dark:from-violet-950/20 dark:to-blue-950/20">
+      <section className="py-16 px-4 bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <Badge variant="outline" className="bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border-violet-200 mb-3">
+            <Badge variant="outline" className="bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary border-primary/40 mb-3">
               <Bot className="h-3 w-3 mr-1" /> Autonomous Foundation
             </Badge>
             <h2 className="text-3xl font-bold mb-3">10 agents working 24/7</h2>
@@ -134,8 +134,8 @@ export default function AboutUs() {
               >
                 <Card className="text-center">
                   <CardContent className="p-4">
-                    <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-full w-fit mx-auto mb-2">
-                      <Bot className="h-4 w-4 text-violet-700 dark:text-violet-300" />
+                    <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-full w-fit mx-auto mb-2">
+                      <Bot className="h-4 w-4 text-primary dark:text-primary" />
                     </div>
                     <div className="font-semibold text-sm">{agent.name}</div>
                     <div className="text-[10px] text-muted-foreground mt-1">{agent.trigger}</div>
@@ -194,8 +194,8 @@ export default function AboutUs() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl flex-shrink-0">
-                    <Sparkles className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
+                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl flex-shrink-0">
+                    <Sparkles className="h-6 w-6 text-primary dark:text-primary" />
                   </div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">So we built the operating system</h3>
@@ -246,7 +246,7 @@ export default function AboutUs() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-blue-700 text-white">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary to-primary text-white">
         <div className="container mx-auto max-w-3xl text-center">
           <Sun className="h-12 w-12 mx-auto mb-4" />
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -256,7 +256,7 @@ export default function AboutUs() {
             Start your free 14-day trial. No credit card. We'll have your first lead through the pipeline today.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-emerald-700 hover:bg-white/90">
+            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-primary hover:bg-white/90">
               Start free trial <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/demo')} className="border-white text-white hover:bg-white/10">

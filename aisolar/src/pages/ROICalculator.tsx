@@ -50,7 +50,7 @@ export default function ROICalculator() {
       <SiteNavigation />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="text-center mb-8">
-          <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-200 mb-3">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 mb-3">
             <Calculator className="h-3 w-3 mr-1" /> Free · No signup
           </Badge>
           <h1 className="text-3xl sm:text-4xl font-bold mb-3">Solar Savings Calculator</h1>
@@ -65,7 +65,7 @@ export default function ROICalculator() {
               <div>
                 <label className="text-sm font-semibold flex items-center justify-between mb-2">
                   <span>Monthly electricity bill</span>
-                  <span className="text-2xl font-bold text-emerald-600">€{monthlyBill}</span>
+                  <span className="text-2xl font-bold text-primary">€{monthlyBill}</span>
                 </label>
                 <input
                   type="range" min="80" max="600" step="10"
@@ -95,10 +95,10 @@ export default function ROICalculator() {
                       key={dir}
                       onClick={() => setOrientation(dir)}
                       className={`p-3 rounded-lg border-2 text-xs font-medium transition-all ${
-                        orientation === dir ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border'
+                        orientation === dir ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border'
                       }`}
                     >
-                      <Sun className={`h-4 w-4 mx-auto mb-1 ${orientation === dir ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                      <Sun className={`h-4 w-4 mx-auto mb-1 ${orientation === dir ? 'text-primary' : 'text-muted-foreground'}`} />
                       {dir.charAt(0).toUpperCase() + dir.slice(1)}
                     </button>
                   ))}
@@ -108,7 +108,7 @@ export default function ROICalculator() {
           </Card>
 
           {/* Results */}
-          <Card className="border-emerald-300 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
             <CardContent className="p-6">
               <h3 className="font-bold text-lg mb-4">Your estimate</h3>
               <div className="space-y-3">
@@ -127,7 +127,7 @@ export default function ROICalculator() {
                 className="mt-6 p-3 bg-background rounded-lg border"
               >
                 <p className="text-xs text-muted-foreground mb-2">Want a detailed proposal with your exact roof?</p>
-                <Button onClick={() => navigate('/upload')} className="w-full bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={() => navigate('/upload')} className="w-full bg-primary hover:bg-primary">
                   Upload bill for full analysis <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </motion.div>
@@ -148,8 +148,8 @@ function ResultRow({ icon: Icon, label, value, color }: { icon: typeof Sun; labe
   return (
     <div className="flex items-center justify-between p-2 bg-background/60 rounded-lg">
       <div className="flex items-center gap-2">
-        <div className={`p-1.5 rounded bg-${color}-100 dark:bg-${color}-950/40`}>
-          <Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} />
+        <div className={`p-1.5 rounded bg-primary/10 dark:bg-primary/10`}>
+          <Icon className={`h-3 w-3 text-primary dark:text-primary`} />
         </div>
         <span className="text-sm text-muted-foreground">{label}</span>
       </div>

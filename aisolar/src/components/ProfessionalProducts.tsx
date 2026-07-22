@@ -346,7 +346,7 @@ export default function ProfessionalProducts() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">vs RRP</div>
-                    <div className="font-bold text-emerald-600">Save {eur(bundle.savingVsRrp)}</div>
+                    <div className="font-bold text-primary">Save {eur(bundle.savingVsRrp)}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Battery</div>
@@ -372,13 +372,13 @@ export default function ProfessionalProducts() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg bg-${cat.color}-100 dark:bg-${cat.color}-950/40`}>
-                        <Icon className={`h-4 w-4 text-${cat.color}-700 dark:text-${cat.color}-300`} />
+                      <div className={`p-2 rounded-lg bg-primary/10 dark:bg-primary/10`}>
+                        <Icon className={`h-4 w-4 text-primary dark:text-primary`} />
                       </div>
                       <Badge variant="outline" className="text-[11px]">{cat.label}</Badge>
                     </div>
                     {product.seaiApproved && (
-                      <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary border-primary/40">
                         <CheckCircle2 className="h-3 w-3 mr-0.5" /> SEAI
                       </Badge>
                     )}
@@ -398,7 +398,7 @@ export default function ProfessionalProducts() {
                     </div>
                     <div>
                       <div className="text-muted-foreground">Margin</div>
-                      <div className="font-semibold text-emerald-600">{product.margin}%</div>
+                      <div className="font-semibold text-primary">{product.margin}%</div>
                     </div>
                   </div>
 
@@ -409,7 +409,7 @@ export default function ProfessionalProducts() {
                           <AlertCircle className="h-3 w-3" /> Out of stock
                         </span>
                       ) : (
-                        <span className={product.stock < 5 ? 'text-amber-600' : 'text-emerald-600'}>
+                        <span className={product.stock < 5 ? 'text-amber-600' : 'text-primary'}>
                           {product.stock} in stock
                         </span>
                       )}
@@ -468,8 +468,8 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
         <div className="p-5">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-${cat.color}-100 dark:bg-${cat.color}-950/40`}>
-                <Icon className={`h-6 w-6 text-${cat.color}-700 dark:text-${cat.color}-300`} />
+              <div className={`p-3 rounded-xl bg-primary/10 dark:bg-primary/10`}>
+                <Icon className={`h-6 w-6 text-primary dark:text-primary`} />
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">{product.manufacturer}</div>
@@ -502,7 +502,7 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
             </div>
             <div className="p-2 rounded bg-muted/30 text-center">
               <div className="text-xs text-muted-foreground">Margin</div>
-              <div className="font-bold text-emerald-600">{product.margin}%</div>
+              <div className="font-bold text-primary">{product.margin}%</div>
             </div>
             <div className="p-2 rounded bg-muted/30 text-center">
               <div className="text-xs text-muted-foreground">Stock</div>
@@ -540,9 +540,9 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
               <div className="text-xs text-muted-foreground">Bundle price</div>
               <div className="font-bold text-lg">{eur(bundle.bundlePrice)}</div>
             </div>
-            <div className="p-3 rounded bg-emerald-50/50 dark:bg-emerald-950/20 text-center">
+            <div className="p-3 rounded bg-primary/10 dark:bg-primary/10 text-center">
               <div className="text-xs text-muted-foreground">Save vs RRP</div>
-              <div className="font-bold text-lg text-emerald-600">{eur(bundle.savingVsRrp)}</div>
+              <div className="font-bold text-lg text-primary">{eur(bundle.savingVsRrp)}</div>
             </div>
             <div className="p-3 rounded bg-muted/30 text-center">
               <div className="text-xs text-muted-foreground">System</div>

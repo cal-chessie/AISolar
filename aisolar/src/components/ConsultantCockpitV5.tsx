@@ -271,7 +271,7 @@ export default function ConsultantCockpitV5() {
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sun className="h-5 w-5 text-emerald-600" />
+            <Sun className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{brand.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>
@@ -424,7 +424,7 @@ export default function ConsultantCockpitV5() {
                     aria-label="Ask AI to summarize conversation"
                     title="Ask AI to summarize"
                   >
-                    <Sparkles className={`h-3.5 w-3.5 mr-1 ${summarizing ? 'animate-pulse text-violet-600' : 'text-violet-600'}`} />
+                    <Sparkles className={`h-3.5 w-3.5 mr-1 ${summarizing ? 'animate-pulse text-primary' : 'text-primary'}`} />
                     {summarizing ? 'Summarizing…' : 'Summarize'}
                   </Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7" asChild><a href={`tel:${selectedLead.phone}`} aria-label="Call customer"><Phone className="h-3.5 w-3.5" /></a></Button>
@@ -437,18 +437,18 @@ export default function ConsultantCockpitV5() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="border-b bg-violet-50 dark:bg-violet-950/20 p-3"
+                    className="border-b bg-primary/10 dark:bg-primary/10 p-3"
                   >
                     <div className="flex items-start gap-2">
-                      <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex-shrink-0">
-                        <Sparkles className="h-3 w-3 text-violet-700 dark:text-violet-300" />
+                      <div className="p-1.5 rounded-lg bg-primary/10 dark:bg-primary/10 flex-shrink-0">
+                        <Sparkles className="h-3 w-3 text-primary dark:text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300 mb-1">AI Summary</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-primary dark:text-primary mb-1">AI Summary</div>
                         <ul className="space-y-1">
                           {summary.map((bullet, i) => (
                             <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                              <span className="text-violet-600 mt-0.5">•</span>
+                              <span className="text-primary mt-0.5">•</span>
                               <span>{bullet}</span>
                             </li>
                           ))}
@@ -494,7 +494,7 @@ export default function ConsultantCockpitV5() {
                   <div className="flex gap-2">
                     <Input placeholder="Type a reply…" value={replyText} onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} className="h-9 text-xs" />
-                    <Button onClick={handleSendReply} disabled={!replyText.trim()} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-9 px-3">
+                    <Button onClick={handleSendReply} disabled={!replyText.trim()} className="bg-primary transition-colors hover:bg-primary h-9 px-3">
                       <Send className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -544,7 +544,7 @@ export default function ConsultantCockpitV5() {
                       <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
-                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[11px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[11px] bg-blue-50 text-blue-700">Invoice</Badge>}</div></div>
+                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[11px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Invoice</Badge>}</div></div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </CardContent>
                       </Card>
@@ -569,7 +569,7 @@ export default function ConsultantCockpitV5() {
                         return (
                           <div key={s.id} className="flex items-center gap-2">
                             <div className="w-24 text-[11px] truncate">{s.label}</div>
-                            <div className="flex-1 h-4 bg-muted rounded relative overflow-hidden"><div className={`h-full bg-${s.color}-500`} style={{ width: `${Math.max(2, (count / leads.length) * 100)}%` }} /></div>
+                            <div className="flex-1 h-4 bg-muted rounded relative overflow-hidden"><div className={`h-full bg-primary`} style={{ width: `${Math.max(2, (count / leads.length) * 100)}%` }} /></div>
                             <span className="text-[11px] font-bold w-6 text-right">{count}</span>
                           </div>
                         );
@@ -600,7 +600,7 @@ export default function ConsultantCockpitV5() {
           >
             <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between z-10">
               <h3 className="font-bold text-sm flex items-center gap-2">
-                {slideOutView === 'estimate' ? <><Calculator className="h-4 w-4 text-blue-600" /> Estimate</> : <><FileText className="h-4 w-4 text-emerald-600" /> Proposal</>}
+                {slideOutView === 'estimate' ? <><Calculator className="h-4 w-4 text-primary" /> Estimate</> : <><FileText className="h-4 w-4 text-primary" /> Proposal</>}
                 <span className="text-muted-foreground font-normal">· {selectedLead.name}</span>
               </h3>
               <div className="flex items-center gap-1">
@@ -684,7 +684,7 @@ function LeadListContent({
                 onClick={() => setInboxFilter(f.id)}
                 className={`text-[11px] px-2 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                   isActive
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-muted text-muted-foreground hover:bg-muted/70'
                 }`}
               >
@@ -715,7 +715,7 @@ function LeadListContent({
                 key={lead.id}
                 variants={listItemFade}
                 onClick={() => onSelectLead(lead)}
-                className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}
+                className={`w-full p-2.5 border-b flex items-start gap-2 text-left transition-colors hover:bg-muted/30 ${isSelected ? 'bg-primary/10 dark:bg-primary/10' : ''}`}
               >
                 <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
@@ -725,7 +725,7 @@ function LeadListContent({
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Badge variant="outline" className={`text-[11px] bg-${getStage(lead.workflow_stage).color}-50 text-${getStage(lead.workflow_stage).color}-700 border-${getStage(lead.workflow_stage).color}-200`}>{getStage(lead.workflow_stage).label}</Badge>
+                    <Badge variant="outline" className={`text-[11px] bg-primary/10 text-primary border-primary/40`}>{getStage(lead.workflow_stage).label}</Badge>
                     {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
                   </div>
                 </div>
@@ -745,7 +745,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
   const isCustomer = message.type === 'customer';
   const isAI = message.type === 'ai';
   const isAgent = message.type === 'agent';
-  const bg = isCustomer ? 'bg-emerald-600 text-white rounded-br-sm' : isAI ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-100 rounded-bl-sm' : isAgent ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
+  const bg = isCustomer ? 'bg-primary text-white rounded-br-sm' : isAI ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : isAgent ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
   const label = isCustomer ? 'Customer' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
   const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
   const ActionIcon = message.actionIcon;
@@ -766,7 +766,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
           {message.actionLabel && ActionIcon && (
             <button
               onClick={() => onAction?.(message.actionData)}
-              className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-emerald-700 dark:text-emerald-300'} hover:underline`}
+              className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-primary dark:text-primary'} hover:underline`}
             >
               <ActionIcon className="h-3 w-3" />
               {message.actionLabel}
@@ -778,10 +778,10 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
         {message.card && (
           <div className={`mt-1 rounded-xl border bg-background shadow-sm overflow-hidden ${isCustomer ? 'ml-auto' : ''}`}>
             <div className="px-3 py-2 border-b bg-muted/30 flex items-center gap-2">
-              {message.card.kind === 'proposal' && <FileText className="h-3.5 w-3.5 text-emerald-600" />}
-              {message.card.kind === 'contract' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+              {message.card.kind === 'proposal' && <FileText className="h-3.5 w-3.5 text-primary" />}
+              {message.card.kind === 'contract' && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
               {message.card.kind === 'install' && <Calendar className="h-3.5 w-3.5 text-amber-600" />}
-              {message.card.kind === 'warranty' && <Award className="h-3.5 w-3.5 text-emerald-600" />}
+              {message.card.kind === 'warranty' && <Award className="h-3.5 w-3.5 text-primary" />}
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold truncate">{message.card.title}</div>
                 {message.card.subtitle && <div className="text-[11px] text-muted-foreground truncate">{message.card.subtitle}</div>}
@@ -799,7 +799,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
             )}
             <button
               onClick={() => onAction?.(message.card?.ctaData)}
-              className="w-full px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center justify-center gap-1 border-t"
+              className="w-full px-3 py-2 text-xs font-medium text-primary dark:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors flex items-center justify-center gap-1 border-t"
             >
               {CardIcon && <CardIcon className="h-3 w-3" />}
               {message.card.ctaLabel}
@@ -815,7 +815,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
 function StatBox({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Users; color: string }) {
   return (
     <Card><CardContent className="p-3">
-      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-${color}-100 dark:bg-${color}-950/40`}><Icon className={`h-3 w-3 text-${color}-700 dark:text-${color}-300`} /></div><span className="text-[11px] text-muted-foreground">{label}</span></div>
+      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-primary/10 dark:bg-primary/10`}><Icon className={`h-3 w-3 text-primary dark:text-primary`} /></div><span className="text-[11px] text-muted-foreground">{label}</span></div>
       <div className="text-lg font-bold">{value}</div>
     </CardContent></Card>
   );
@@ -869,12 +869,12 @@ function PipelineKanban({
                 onDragLeave={() => setHoverStage(prev => prev === stage.id ? null : prev)}
                 onDrop={() => handleDrop(stage.id)}
                 className={`w-56 flex-shrink-0 rounded-lg border-2 transition-colors ${
-                  isHover ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20' : 'border-border bg-muted/20'
+                  isHover ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border bg-muted/20'
                 }`}
               >
                 <div className="p-2 border-b flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-1.5 h-1.5 rounded-full bg-${stage.color}-500`} />
+                    <div className={`w-1.5 h-1.5 rounded-full bg-primary`} />
                     <span className="text-[11px] font-semibold uppercase tracking-wide">{stage.label}</span>
                   </div>
                   <span className="text-[11px] font-bold text-muted-foreground">{stageLeads.length}</span>

@@ -252,7 +252,7 @@ export default function AgentTraining() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-violet-600" /> Agent Training</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> Agent Training</h2>
         <p className="text-sm text-muted-foreground mt-1">Feed prompts to agents to make them smarter. They also learn automatically from system outcomes.</p>
       </div>
 
@@ -266,12 +266,12 @@ export default function AgentTraining() {
               key={a.id}
               onClick={() => { setSelectedAgent(a.id); setTestResult(null); }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                isSelected ? 'bg-violet-600 text-white' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
+                isSelected ? 'bg-primary text-white' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
               }`}
             >
               <Bot className="h-3 w-3" />
               {a.name.replace(' Agent', '')}
-              <span className={`text-[11px] px-1 rounded ${al.successRate >= 95 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+              <span className={`text-[11px] px-1 rounded ${al.successRate >= 95 ? 'bg-primary text-primary' : 'bg-amber-500/20 text-amber-300'}`}>
                 {al.successRate}%
               </span>
             </button>
@@ -285,7 +285,7 @@ export default function AgentTraining() {
           {/* System prompt */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-violet-600" /> System prompt</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> System prompt</CardTitle>
               <p className="text-xs text-muted-foreground">What the agent should know + how it should behave.</p>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -315,7 +315,7 @@ export default function AgentTraining() {
             <CardContent className="space-y-2">
               {agentLearning.behaviouralRules.map((rule, i) => (
                 <div key={i} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" />
                   <span className="flex-1">{rule}</span>
                   <button onClick={() => setLearning(prev => ({ ...prev, [selectedAgent]: { ...prev[selectedAgent], behaviouralRules: prev[selectedAgent].behaviouralRules.filter((_, idx) => idx !== i) } }))} className="text-muted-foreground hover:text-red-600">
                     <AlertTriangle className="h-3 w-3" />
@@ -337,7 +337,7 @@ export default function AgentTraining() {
           {/* Test prompt */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><Play className="h-4 w-4 text-blue-600" /> Test prompt (dry run)</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2"><Play className="h-4 w-4 text-primary" /> Test prompt (dry run)</CardTitle>
               <p className="text-xs text-muted-foreground">Run a prompt against this agent without side effects.</p>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -347,11 +347,11 @@ export default function AgentTraining() {
                 rows={3}
                 className="text-xs"
               />
-              <Button size="sm" onClick={handleTest} disabled={testing || !testPrompt.trim()} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={handleTest} disabled={testing || !testPrompt.trim()} className="bg-primary hover:bg-primary">
                 {testing ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Running…</> : <><Play className="h-3 w-3 mr-1" /> Test</>}
               </Button>
               {testResult && (
-                <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs whitespace-pre-wrap">{testResult}</div>
+                <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded text-xs whitespace-pre-wrap">{testResult}</div>
               )}
             </CardContent>
           </Card>
@@ -364,11 +364,11 @@ export default function AgentTraining() {
             <CardContent className="p-4">
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-violet-600">{agentLearning.totalRuns}</div>
+                  <div className="text-2xl font-bold text-primary">{agentLearning.totalRuns}</div>
                   <div className="text-[11px] text-muted-foreground">total runs</div>
                 </div>
                 <div>
-                  <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-emerald-600' : 'text-amber-600'}`}>{agentLearning.successRate}%</div>
+                  <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-primary' : 'text-amber-600'}`}>{agentLearning.successRate}%</div>
                   <div className="text-[11px] text-muted-foreground">success rate</div>
                 </div>
                 <div>
@@ -382,7 +382,7 @@ export default function AgentTraining() {
           {/* Learned patterns */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><Brain className="h-4 w-4 text-violet-600" /> Learned patterns (auto)</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2"><Brain className="h-4 w-4 text-primary" /> Learned patterns (auto)</CardTitle>
               <p className="text-xs text-muted-foreground">The agent discovered these from outcome data. No manual input.</p>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -392,7 +392,7 @@ export default function AgentTraining() {
                 agentLearning.learnedPatterns.map((pattern, i) => (
                   <div key={i} className="p-2 border rounded-lg">
                     <div className="flex items-start gap-2">
-                      <TrendingUp className="h-3 w-3 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <TrendingUp className="h-3 w-3 text-primary flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="text-xs font-medium">{pattern.pattern}</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -402,7 +402,7 @@ export default function AgentTraining() {
                     </div>
                     {/* Confidence bar */}
                     <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500" style={{ width: `${pattern.confidence * 100}%` }} />
+                      <div className="h-full bg-primary" style={{ width: `${pattern.confidence * 100}%` }} />
                     </div>
                   </div>
                 ))
@@ -411,15 +411,15 @@ export default function AgentTraining() {
           </Card>
 
           {/* How learning works */}
-          <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+          <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
             <CardContent className="p-3">
-              <h4 className="text-xs font-bold mb-2 flex items-center gap-1"><Bot className="h-3 w-3 text-violet-600" /> How agents learn</h4>
+              <h4 className="text-xs font-bold mb-2 flex items-center gap-1"><Bot className="h-3 w-3 text-primary" /> How agents learn</h4>
               <div className="space-y-1 text-[11px] text-muted-foreground">
-                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Manual:</strong> You set the system prompt + behavioural rules (left panel)</span></div>
-                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Auto:</strong> Agents track outcomes (accepted/rejected proposals, opened emails, conversion rates)</span></div>
-                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Pattern discovery:</strong> After 50+ runs, agents identify correlations (e.g. "battery proposals convert better")</span></div>
-                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>Feedback loop:</strong> Failed runs adjust the agent's approach automatically</span></div>
-                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-500 flex-shrink-0 mt-0.5" /> <span><strong>LLM integration:</strong> In production, agents call an LLM with their system prompt + learned patterns as context</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" /> <span><strong>Manual:</strong> You set the system prompt + behavioural rules (left panel)</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" /> <span><strong>Auto:</strong> Agents track outcomes (accepted/rejected proposals, opened emails, conversion rates)</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" /> <span><strong>Pattern discovery:</strong> After 50+ runs, agents identify correlations (e.g. "battery proposals convert better")</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" /> <span><strong>Feedback loop:</strong> Failed runs adjust the agent's approach automatically</span></div>
+                <div className="flex items-start gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-primary flex-shrink-0 mt-0.5" /> <span><strong>LLM integration:</strong> In production, agents call an LLM with their system prompt + learned patterns as context</span></div>
               </div>
             </CardContent>
           </Card>

@@ -89,7 +89,7 @@ export default function AnalyticsDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-violet-600" />
+            <BarChart3 className="h-6 w-6 text-primary" />
             Analytics
           </h2>
           <p className="text-sm text-muted-foreground">Pipeline health, team performance, agent impact</p>
@@ -173,7 +173,7 @@ export default function AnalyticsDashboard() {
                       <div className="w-32 text-xs truncate">{stage.label}</div>
                       <div className="flex-1 h-6 bg-muted rounded relative overflow-hidden">
                         <div
-                          className={`h-full bg-${stage.color}-500 transition-all`}
+                          className={`h-full bg-primary transition-all`}
                           style={{ width: `${Math.max(2, pct)}%` }}
                         />
                       </div>
@@ -209,8 +209,8 @@ export default function AnalyticsDashboard() {
                       variant="outline"
                       className={`text-[11px] ${
                         item.type === 'hot' ? 'bg-red-50 text-red-700 border-red-200' :
-                        item.type === 'won' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-violet-50 text-violet-700 border-violet-200'
+                        item.type === 'won' ? 'bg-primary/10 text-primary border-primary/40' :
+                        'bg-primary/10 text-primary border-primary/40'
                       }`}
                     >
                       {item.type === 'hot' ? '🔥' : item.type === 'won' ? '✓' : '🤖'}
@@ -242,7 +242,7 @@ export default function AnalyticsDashboard() {
                         <div className="flex items-center gap-3 text-xs">
                           <span className="text-muted-foreground">
                             {conversionRate < 100 && (
-                              <span className={conversionRate < 50 ? 'text-red-600' : conversionRate < 80 ? 'text-amber-600' : 'text-emerald-600'}>
+                              <span className={conversionRate < 50 ? 'text-red-600' : conversionRate < 80 ? 'text-amber-600' : 'text-primary'}>
                                 {conversionRate}% from previous
                               </span>
                             )}
@@ -252,7 +252,7 @@ export default function AnalyticsDashboard() {
                       </div>
                       <div className="h-8 bg-muted rounded relative overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-violet-500 to-emerald-500 transition-all flex items-center px-3"
+                          className="h-full bg-gradient-to-r from-primary to-primary transition-all flex items-center px-3"
                           style={{ width: `${Math.max(2, pctOfTotal)}%` }}
                         >
                           <span className="text-xs font-semibold text-white">{Math.round(pctOfTotal)}%</span>
@@ -300,7 +300,7 @@ export default function AnalyticsDashboard() {
                       <td className="text-right tabular-nums">{c.proposals}</td>
                       <td className="text-right tabular-nums">{c.contracts}</td>
                       <td className="text-right tabular-nums">
-                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-emerald-600' : c.conversionRate >= 25 ? 'text-amber-600' : 'text-red-600'}`}>
+                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-primary' : c.conversionRate >= 25 ? 'text-amber-600' : 'text-red-600'}`}>
                           {c.conversionRate}%
                         </span>
                       </td>
@@ -310,11 +310,11 @@ export default function AnalyticsDashboard() {
                 </tbody>
               </table>
 
-              <div className="mt-4 p-3 bg-violet-50 dark:bg-violet-950/20 rounded-lg text-sm">
-                <div className="font-semibold text-violet-800 dark:text-violet-300 mb-1 flex items-center gap-1">
+              <div className="mt-4 p-3 bg-primary/10 dark:bg-primary/10 rounded-lg text-sm">
+                <div className="font-semibold text-primary dark:text-primary mb-1 flex items-center gap-1">
                   <Bot className="h-3 w-3" /> AI Coach insight
                 </div>
-                <p className="text-violet-700 dark:text-violet-400 text-xs">
+                <p className="text-primary dark:text-primary text-xs">
                   Aoife converts 42% (above benchmark). Cian converts 24%. Pattern: Aoife leads with
                   SEAI grant, Cian leads with savings. Recommend 30-min coaching session for Cian.
                 </p>
@@ -360,10 +360,10 @@ export default function AnalyticsDashboard() {
                         </div>
                       </div>
                       <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full bg-${agent.color}-500`} style={{ width: `${successRate}%` }} />
+                        <div className={`h-full bg-primary`} style={{ width: `${successRate}%` }} />
                       </div>
                       <div className="w-12 text-right text-xs font-semibold tabular-nums">
-                        <span className={successRate >= 95 ? 'text-emerald-600' : successRate >= 80 ? 'text-amber-600' : 'text-red-600'}>
+                        <span className={successRate >= 95 ? 'text-primary' : successRate >= 80 ? 'text-amber-600' : 'text-red-600'}>
                           {successRate}%
                         </span>
                       </div>
@@ -381,19 +381,19 @@ export default function AnalyticsDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
                 <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-violet-600">{agentImpact.emailsSent}</div>
+                  <div className="text-2xl font-bold text-primary">{agentImpact.emailsSent}</div>
                   <div className="text-xs text-muted-foreground">Emails sent</div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-violet-600">{agentImpact.smsSent}</div>
+                  <div className="text-2xl font-bold text-primary">{agentImpact.smsSent}</div>
                   <div className="text-xs text-muted-foreground">SMS sent</div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-violet-600">{agentImpact.proposalsAutoDrafted}</div>
+                  <div className="text-2xl font-bold text-primary">{agentImpact.proposalsAutoDrafted}</div>
                   <div className="text-xs text-muted-foreground">Proposals auto-drafted</div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-violet-600">{agentImpact.surveysAutoScheduled}</div>
+                  <div className="text-2xl font-bold text-primary">{agentImpact.surveysAutoScheduled}</div>
                   <div className="text-xs text-muted-foreground">Surveys auto-scheduled</div>
                 </div>
               </div>
@@ -433,10 +433,10 @@ export default function AnalyticsDashboard() {
                       <div className="text-xs text-muted-foreground">{lead.proposal?.system_size_kw} kWp · {eur(lead.proposal?.net_cost || 0)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-emerald-600">{eur(lead.proposal?.seai_grant || 0)}</div>
+                      <div className="font-bold text-primary">{eur(lead.proposal?.seai_grant || 0)}</div>
                       <Badge variant="outline" className={`text-[11px] mt-1 ${
-                        lead.workflow_stage === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        ['final_paid'].includes(lead.workflow_stage) ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        lead.workflow_stage === 'completed' ? 'bg-primary/10 text-primary border-primary/40' :
+                        ['final_paid'].includes(lead.workflow_stage) ? 'bg-primary/10 text-primary border-primary/40' :
                         'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
                         {lead.workflow_stage === 'completed' ? 'Paid' :
@@ -467,12 +467,12 @@ function KpiCard({ label, value, delta, deltaDirection, icon: Icon, color }: {
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <div className={`p-2 rounded-lg bg-${color}-100 dark:bg-${color}-950/40`}>
-            <Icon className={`h-4 w-4 text-${color}-700 dark:text-${color}-300`} />
+          <div className={`p-2 rounded-lg bg-primary/10 dark:bg-primary/10`}>
+            <Icon className={`h-4 w-4 text-primary dark:text-primary`} />
           </div>
           {delta && (
             <div className={`text-xs flex items-center gap-0.5 ${
-              deltaDirection === 'up' ? 'text-emerald-600' :
+              deltaDirection === 'up' ? 'text-primary' :
               deltaDirection === 'down' ? 'text-red-600' :
               'text-amber-600'
             }`}>

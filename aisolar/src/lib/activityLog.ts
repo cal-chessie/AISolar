@@ -75,24 +75,24 @@ export function getActionIcon(actionType: ActivityActionType): string {
 
 export function getActionColor(actionType: ActivityActionType): string {
   const colors: Record<string, string> = {
-    lead_created: 'bg-blue-100 text-blue-700',
+    lead_created: 'bg-primary/10 text-primary',
     lead_updated: 'bg-slate-100 text-slate-700',
-    lead_contacted: 'bg-green-100 text-green-700',
-    lead_status_changed: 'bg-purple-100 text-purple-700',
+    lead_contacted: 'bg-primary/10 text-primary',
+    lead_status_changed: 'bg-primary/10 text-primary',
     survey_started: 'bg-yellow-100 text-yellow-700',
-    survey_completed: 'bg-emerald-100 text-emerald-700',
-    proposal_created: 'bg-indigo-100 text-indigo-700',
-    proposal_updated: 'bg-indigo-100 text-indigo-700',
-    proposal_sent: 'bg-cyan-100 text-cyan-700',
-    proposal_accepted: 'bg-green-100 text-green-700',
-    contract_signed: 'bg-emerald-100 text-emerald-700',
+    survey_completed: 'bg-primary/10 text-primary',
+    proposal_created: 'bg-primary/10 text-primary',
+    proposal_updated: 'bg-primary/10 text-primary',
+    proposal_sent: 'bg-primary/10 text-primary',
+    proposal_accepted: 'bg-primary/10 text-primary',
+    contract_signed: 'bg-primary/10 text-primary',
     invoice_created: 'bg-orange-100 text-orange-700',
-    payment_received: 'bg-green-100 text-green-700',
-    installation_scheduled: 'bg-blue-100 text-blue-700',
-    installation_completed: 'bg-emerald-100 text-emerald-700',
+    payment_received: 'bg-primary/10 text-primary',
+    installation_scheduled: 'bg-primary/10 text-primary',
+    installation_completed: 'bg-primary/10 text-primary',
     note_added: 'bg-slate-100 text-slate-700',
-    assignment_created: 'bg-purple-100 text-purple-700',
-    seai_application_submitted: 'bg-teal-100 text-teal-700'
+    assignment_created: 'bg-primary/10 text-primary',
+    seai_application_submitted: 'bg-primary/10 text-primary'
   };
   return colors[actionType] || 'bg-slate-100 text-slate-700';
 }

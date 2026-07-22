@@ -36,13 +36,13 @@ interface CalEvent {
 }
 
 const EVENT_META: Record<EventType, { label: string; icon: typeof Video; color: string; bg: string; text: string }> = {
-  consultation: { label: 'Consultation', icon: Video, color: 'blue', bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300' },
-  site_survey: { label: 'Site survey', icon: MapPin, color: 'indigo', bg: 'bg-indigo-100 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-300' },
+  consultation: { label: 'Consultation', icon: Video, color: 'blue', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
+  site_survey: { label: 'Site survey', icon: MapPin, color: 'indigo', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
   install: { label: 'Install', icon: Wrench, color: 'amber', bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300' },
-  follow_up: { label: 'Follow-up', icon: Phone, color: 'emerald', bg: 'bg-emerald-100 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300' },
+  follow_up: { label: 'Follow-up', icon: Phone, color: 'emerald', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
   deadline: { label: 'Deadline', icon: Clock, color: 'red', bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300' },
-  agent_run: { label: 'Agent', icon: Bot, color: 'violet', bg: 'bg-violet-100 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-300' },
-  payment: { label: 'Payment', icon: FileText, color: 'green', bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300' },
+  agent_run: { label: 'Agent', icon: Bot, color: 'violet', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
+  payment: { label: 'Payment', icon: FileText, color: 'green', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
 };
 
 function generateEvents(leads: DummyLead[]): CalEvent[] {
@@ -220,12 +220,12 @@ export default function RealCalendar() {
                         key={i}
                         onClick={() => setSelectedDate(day)}
                         className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border text-left transition-colors ${
-                          isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' :
-                          isToday(day) ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/10' :
-                          isCurrentMonth ? 'border-border hover:border-blue-300' : 'border-transparent opacity-40'
+                          isSelected ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
+                          isToday(day) ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
+                          isCurrentMonth ? 'border-border hover:border-primary/40' : 'border-transparent opacity-40'
                         }`}
                       >
-                        <div className={`text-xs font-medium ${isToday(day) ? 'text-emerald-600' : isCurrentMonth ? '' : 'text-muted-foreground'}`}>
+                        <div className={`text-xs font-medium ${isToday(day) ? 'text-primary' : isCurrentMonth ? '' : 'text-muted-foreground'}`}>
                           {day.getDate()}
                         </div>
                         <div className="space-y-0.5 mt-0.5">
@@ -252,8 +252,8 @@ export default function RealCalendar() {
                 {weekDays.map((day, i) => {
                   const dayEvents = eventsByDay.get(day.toDateString()) || [];
                   return (
-                    <div key={i} className={`min-h-[300px] p-1 border rounded-lg ${isToday(day) ? 'border-emerald-400' : 'border-border'}`}>
-                      <div className={`text-xs font-bold mb-1 ${isToday(day) ? 'text-emerald-600' : ''}`}>
+                    <div key={i} className={`min-h-[300px] p-1 border rounded-lg ${isToday(day) ? 'border-primary/40' : 'border-border'}`}>
+                      <div className={`text-xs font-bold mb-1 ${isToday(day) ? 'text-primary' : ''}`}>
                         {day.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })}
                       </div>
                       <div className="space-y-1">
@@ -261,7 +261,7 @@ export default function RealCalendar() {
                           const meta = EVENT_META[e.type];
                           return (
                             <button key={e.id} onClick={() => setSelectedEvent(e)}
-                              className={`w-full text-left text-[11px] px-1.5 py-1 rounded ${meta.bg} ${meta.text} hover:ring-1 hover:ring-${meta.color}-400`}>
+                              className={`w-full text-left text-[11px] px-1.5 py-1 rounded ${meta.bg} ${meta.text} hover:ring-1 hover:ring-primary`}>
                               <div className="font-medium">{e.time}</div>
                               <div className="truncate">{e.title}</div>
                             </button>

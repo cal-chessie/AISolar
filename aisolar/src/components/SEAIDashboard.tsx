@@ -78,19 +78,19 @@ function getComplianceForLead(lead: DummyLead): ComplianceItem {
 
 const STATUS_META = {
   not_started: { label: 'Not started', color: 'slate', bg: 'bg-slate-50 text-slate-700 border-slate-200' },
-  in_progress: { label: 'In progress', color: 'blue', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  submitted: { label: 'Submitted', color: 'violet', bg: 'bg-violet-50 text-violet-700 border-violet-200' },
-  approved: { label: 'Approved', color: 'emerald', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  paid: { label: 'Paid', color: 'green', bg: 'bg-green-50 text-green-700 border-green-200' },
-  connected: { label: 'Connected', color: 'emerald', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  filed: { label: 'Filed', color: 'emerald', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  in_progress: { label: 'In progress', color: 'blue', bg: 'bg-primary/10 text-primary border-primary/40' },
+  submitted: { label: 'Submitted', color: 'violet', bg: 'bg-primary/10 text-primary border-primary/40' },
+  approved: { label: 'Approved', color: 'emerald', bg: 'bg-primary/10 text-primary border-primary/40' },
+  paid: { label: 'Paid', color: 'green', bg: 'bg-primary/10 text-primary border-primary/40' },
+  connected: { label: 'Connected', color: 'emerald', bg: 'bg-primary/10 text-primary border-primary/40' },
+  filed: { label: 'Filed', color: 'emerald', bg: 'bg-primary/10 text-primary border-primary/40' },
 };
 
 const PAPERWORK_META = {
   missing: { color: 'red', bg: 'bg-red-50 text-red-700', icon: AlertTriangle },
   pending: { color: 'amber', bg: 'bg-amber-50 text-amber-700', icon: Clock },
-  ready: { color: 'blue', bg: 'bg-blue-50 text-blue-700', icon: FileText },
-  submitted: { color: 'emerald', bg: 'bg-emerald-50 text-emerald-700', icon: CheckCircle2 },
+  ready: { color: 'blue', bg: 'bg-primary/10 text-primary', icon: FileText },
+  submitted: { color: 'emerald', bg: 'bg-primary/10 text-primary', icon: CheckCircle2 },
 };
 
 export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
@@ -130,7 +130,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
               </div>
               <div className="text-right">
                 <div className="text-xs text-muted-foreground">Grant value</div>
-                <div className="font-bold text-violet-600">{eur(compliance.grantAmount)}</div>
+                <div className="font-bold text-primary">{eur(compliance.grantAmount)}</div>
               </div>
             </div>
           </CardContent>
@@ -139,7 +139,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
         {/* SEAI */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Award className="h-4 w-4 text-violet-600" /> SEAI Solar Electricity Grant</h3>
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> SEAI Solar Electricity Grant</h3>
             <div className="flex items-center gap-3 mb-3">
               <Badge variant="outline" className={STATUS_META[compliance.seaiStatus].bg}>{STATUS_META[compliance.seaiStatus].label}</Badge>
               <span className="text-xs text-muted-foreground">Grant: {eur(compliance.grantAmount)} · System: {selectedLead.proposal?.system_size_kw}kWp</span>
@@ -176,7 +176,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
         {/* RECI */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-blue-600" /> RECI Electrical Sign-off</h3>
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> RECI Electrical Sign-off</h3>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className={STATUS_META[compliance.reciStatus].bg}>{STATUS_META[compliance.reciStatus].label}</Badge>
               <span className="text-xs text-muted-foreground">Required for SEAI grant + commissioning</span>
@@ -190,21 +190,21 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold flex items-center gap-2"><Award className="h-5 w-5 text-violet-600" /> SEAI & Compliance</h2>
+      <h2 className="text-lg font-bold flex items-center gap-2"><Award className="h-5 w-5 text-primary" /> SEAI & Compliance</h2>
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">Grant pipeline</div><div className="text-xl font-bold text-violet-600">{eur(stats.totalGrantValue)}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">SEAI submitted</div><div className="text-xl font-bold text-violet-600">{stats.submitted}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">Grant pipeline</div><div className="text-xl font-bold text-primary">{eur(stats.totalGrantValue)}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">SEAI submitted</div><div className="text-xl font-bold text-primary">{stats.submitted}</div></CardContent></Card>
         <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">ESB connected</div><div className="text-xl font-bold text-amber-600">{stats.esbConnected}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-blue-600">{stats.reciFiled}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-primary">{stats.reciFiled}</div></CardContent></Card>
       </div>
 
       {/* Filter */}
       <div className="flex gap-1">
         {(['all', 'seai', 'esb', 'reci'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize ${filter === f ? 'bg-violet-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize ${filter === f ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
             {f === 'all' ? 'All' : f.toUpperCase()}
           </button>
         ))}
@@ -225,7 +225,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                   {/* SEAI badge */}
                   {(filter === 'all' || filter === 'seai') && (
                     <div className="flex items-center gap-1">
-                      <Award className="h-3 w-3 text-violet-600" />
+                      <Award className="h-3 w-3 text-primary" />
                       <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.seaiStatus].bg}`}>{STATUS_META[c.seaiStatus].label}</Badge>
                     </div>
                   )}
@@ -239,11 +239,11 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                   {/* RECI badge */}
                   {(filter === 'all' || filter === 'reci') && (
                     <div className="flex items-center gap-1">
-                      <Shield className="h-3 w-3 text-blue-600" />
+                      <Shield className="h-3 w-3 text-primary" />
                       <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.reciStatus].bg}`}>{STATUS_META[c.reciStatus].label}</Badge>
                     </div>
                   )}
-                  <span className="text-xs font-semibold text-violet-600">{eur(c.grantAmount)}</span>
+                  <span className="text-xs font-semibold text-primary">{eur(c.grantAmount)}</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>

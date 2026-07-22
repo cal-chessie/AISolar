@@ -30,12 +30,12 @@ interface PipelineBarProps {
 }
 
 const GROUP_ACCENT: Record<string, string> = {
-  intake:   'bg-sky-500',
-  survey:   'bg-indigo-500',
-  proposal: 'bg-violet-500',
-  contract: 'bg-emerald-500',
+  intake:   'bg-primary',
+  survey:   'bg-primary',
+  proposal: 'bg-primary',
+  contract: 'bg-primary',
   install:  'bg-amber-500',
-  closeout: 'bg-green-600',
+  closeout: 'bg-primary',
 };
 
 export function PipelineBar({ counts, onStageClick, onGroupToggle, className }: PipelineBarProps) {

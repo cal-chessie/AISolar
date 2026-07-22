@@ -35,7 +35,7 @@ export default function InstallerLanding() {
     <>
       <Button variant="ghost" size="sm" onClick={() => { navigate('/calculator'); setMenuOpen(false); }}>ROI Calculator</Button>
       <Button variant="ghost" size="sm" onClick={() => { navigate('/about'); setMenuOpen(false); }}>About</Button>
-      <Button size="sm" onClick={() => { navigate('/auth'); setMenuOpen(false); }} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
+      <Button size="sm" onClick={() => { navigate('/auth'); setMenuOpen(false); }} className="bg-primary transition-colors hover:bg-primary">
         Sign in
       </Button>
       <Button size="sm" variant="outline" onClick={() => { navigate('/demo'); setMenuOpen(false); }}>
@@ -55,7 +55,7 @@ export default function InstallerLanding() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-amber-500 to-blue-600 rounded-lg">
+            <div className="p-1.5 bg-gradient-to-br from-amber-500 to-primary rounded-lg">
               <Sun className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-lg">{brand.name}</span>
@@ -97,15 +97,15 @@ export default function InstallerLanding() {
       </header>
 
       {/* Hero — for installers */}
-      <section className="py-20 px-4 bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-background dark:to-blue-950/20">
+      <section className="py-20 px-4 bg-gradient-to-br from-slate-50 via-white to-primary dark:from-slate-950 dark:via-background dark:to-primary">
         <div className="container mx-auto max-w-4xl text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Badge variant="outline" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 mb-4">
+            <Badge variant="outline" className="bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary border-primary/40 mb-4">
               <Bot className="h-3 w-3 mr-1" /> Solar Installer Operating System
             </Badge>
             <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight">
               Your crews install.<br />
-              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
                 The platform does the rest.
               </span>
             </h1>
@@ -115,7 +115,7 @@ export default function InstallerLanding() {
               Built for Irish solar installers — SEAI, RECI, ESB, Met Éireann built in.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button size="lg" onClick={() => navigate('/auth')} className="bg-emerald-600 transition-colors hover:bg-emerald-700">
+              <Button size="lg" onClick={() => navigate('/auth')} className="bg-primary transition-colors hover:bg-primary">
                 Start free trial <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => navigate('/demo')}>
@@ -123,9 +123,9 @@ export default function InstallerLanding() {
               </Button>
             </div>
             <div className="mt-6 flex items-center gap-4 justify-center text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-600" /> 14-day free trial</span>
-              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-600" /> No credit card</span>
-              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-emerald-600" /> Irish-based support</span>
+              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-primary" /> 14-day free trial</span>
+              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-primary" /> No credit card</span>
+              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-primary" /> Irish-based support</span>
             </div>
           </motion.div>
         </div>
@@ -154,8 +154,8 @@ export default function InstallerLanding() {
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                   <Card className="h-full">
                     <CardContent className="p-5">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg w-fit mb-3">
-                        <Icon className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+                      <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-lg w-fit mb-3">
+                        <Icon className="h-5 w-5 text-primary dark:text-primary" />
                       </div>
                       <h3 className="font-bold mb-1">{item.title}</h3>
                       <p className="text-sm text-muted-foreground">{item.desc}</p>
@@ -169,13 +169,13 @@ export default function InstallerLanding() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 px-4 bg-emerald-600 text-white">
+      <section className="py-12 px-4 bg-primary text-white">
         <div className="container mx-auto max-w-4xl">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-            <div><div className="text-4xl font-bold">10</div><div className="text-sm text-blue-100">Autonomous agents</div></div>
-            <div><div className="text-4xl font-bold">3hrs</div><div className="text-sm text-blue-100">Saved per consultant/day</div></div>
-            <div><div className="text-4xl font-bold">42%</div><div className="text-sm text-blue-100">Lift in conversion</div></div>
-            <div><div className="text-4xl font-bold">€1,800</div><div className="text-sm text-blue-100">SEAI grant auto-filed</div></div>
+            <div><div className="text-4xl font-bold">10</div><div className="text-sm text-primary">Autonomous agents</div></div>
+            <div><div className="text-4xl font-bold">3hrs</div><div className="text-sm text-primary">Saved per consultant/day</div></div>
+            <div><div className="text-4xl font-bold">42%</div><div className="text-sm text-primary">Lift in conversion</div></div>
+            <div><div className="text-4xl font-bold">€1,800</div><div className="text-sm text-primary">SEAI grant auto-filed</div></div>
           </div>
         </div>
       </section>
@@ -198,8 +198,8 @@ export default function InstallerLanding() {
               return (
                 <Card key={i}>
                   <CardContent className="p-5 flex items-start gap-3">
-                    <div className="p-2 bg-violet-100 dark:bg-violet-950/40 rounded-lg flex-shrink-0">
-                      <Icon className="h-5 w-5 text-violet-700 dark:text-violet-300" />
+                    <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-lg flex-shrink-0">
+                      <Icon className="h-5 w-5 text-primary dark:text-primary" />
                     </div>
                     <div>
                       <h3 className="font-bold">{item.title}</h3>
@@ -228,7 +228,7 @@ export default function InstallerLanding() {
               return (
                 <div key={i} className="text-center">
                   <div className="p-3 bg-background rounded-xl w-fit mx-auto mb-2 border">
-                    <Icon className="h-6 w-6 text-emerald-600" />
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="font-semibold text-sm">{item.label}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
@@ -240,7 +240,7 @@ export default function InstallerLanding() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-blue-700 text-white">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary to-primary text-white">
         <div className="container mx-auto max-w-3xl text-center">
           <Cpu className="h-12 w-12 mx-auto mb-4 opacity-80" />
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -250,7 +250,7 @@ export default function InstallerLanding() {
             14-day free trial. We'll have your first lead through the pipeline today.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-emerald-700 transition-colors hover:bg-white/90">
+            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-primary transition-colors hover:bg-white/90">
               Start free trial <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/demo')} className="border-white text-white transition-colors hover:bg-white/10">

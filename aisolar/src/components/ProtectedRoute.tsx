@@ -47,7 +47,7 @@ export default function ProtectedRoute({ children, roles }: ProtectedRouteProps)
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-500 mb-3 shadow-lg shadow-emerald-500/30">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-primary mb-3 shadow-lg shadow-card">
             <Sun className="h-6 w-6 text-white animate-pulse" />
           </div>
           <div className="text-sm text-muted-foreground">Loading…</div>

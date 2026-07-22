@@ -97,7 +97,7 @@ export default function SiteNavigation() {
               onClick={() => navigate('/demo')}
               variant="ghost"
               size="sm"
-              className="hidden sm:flex h-10 px-3 text-sm text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+              className="hidden sm:flex h-10 px-3 text-sm text-primary hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/10"
               title="Browse every view without auth — for review only"
             >
               <Compass className="h-4 w-4 mr-2" />
@@ -167,7 +167,7 @@ export default function SiteNavigation() {
                     setMobileMenuOpen(false);
                   }}
                   variant="ghost"
-                  className="mt-2 justify-start gap-3 h-14 text-base text-violet-600"
+                  className="mt-2 justify-start gap-3 h-14 text-base text-primary"
                 >
                   <Compass className="h-5 w-5" />
                   Browse All Views

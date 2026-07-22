@@ -164,8 +164,8 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <button
                     onClick={() => i <= stepIndex && setStep(s.id)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      isActive ? 'bg-emerald-600 text-white' :
-                      isDone ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' :
+                      isActive ? 'bg-primary text-white' :
+                      isDone ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
                       'text-muted-foreground'
                     }`}
                   >
@@ -173,7 +173,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     <span className="hidden sm:inline">{s.label}</span>
                   </button>
                   {i < STEPS.length - 1 && (
-                    <div className={`h-0.5 flex-1 ${i < stepIndex ? 'bg-emerald-400' : 'bg-muted'}`} />
+                    <div className={`h-0.5 flex-1 ${i < stepIndex ? 'bg-primary' : 'bg-muted'}`} />
                   )}
                 </div>
               );
@@ -193,7 +193,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <Card>
                     <CardContent className="p-4">
                       <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
-                        <Calculator className="h-5 w-5 text-emerald-600" /> Estimate from bill
+                        <Calculator className="h-5 w-5 text-primary" /> Estimate from bill
                       </h2>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between p-2 bg-muted/30 rounded">
@@ -208,13 +208,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           <span className="text-muted-foreground">MPRN</span>
                           <span className="font-mono text-xs">{lead.mprn || 'Not extracted'}</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
                           <span className="text-muted-foreground">Recommended system</span>
-                          <span className="font-bold text-blue-700 dark:text-blue-300">{estimate.systemSizeKw} kWp</span>
+                          <span className="font-bold text-primary dark:text-primary">{estimate.systemSizeKw} kWp</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded">
+                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
                           <span className="text-muted-foreground">Annual savings</span>
-                          <span className="font-bold text-emerald-700 dark:text-emerald-300">{eurFmt(estimate.annualSavings)}</span>
+                          <span className="font-bold text-primary dark:text-primary">{eurFmt(estimate.annualSavings)}</span>
                         </div>
                         <div className="flex justify-between p-2 bg-muted/30 rounded">
                           <span className="text-muted-foreground">Payback</span>
@@ -224,9 +224,9 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           <span className="text-muted-foreground">20-year savings</span>
                           <span className="font-semibold">{eurFmt(estimate.twentyYearSavings)}</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-violet-50 dark:bg-violet-950/30 rounded">
+                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
                           <span className="text-muted-foreground">SEAI grant</span>
-                          <span className="font-bold text-violet-700 dark:text-violet-300">{eurFmt(1800)}</span>
+                          <span className="font-bold text-primary dark:text-primary">{eurFmt(1800)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -236,7 +236,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <Card>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-emerald-600" /> Property location
+                        <MapPin className="h-4 w-4 text-primary" /> Property location
                       </h3>
                       <Label className="text-xs">Eircode</Label>
                       <div className="flex gap-2 mt-1">
@@ -304,16 +304,16 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+                  <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <Bot className="h-4 w-4 text-violet-600" /> AI Coach
+                        <Bot className="h-4 w-4 text-primary" /> AI Coach
                       </h3>
                       <p className="text-xs text-muted-foreground mb-2">
                         Based on €{lead.monthly_bill}/mo bill, this is a high-value lead. Lead with the SEAI grant + monthly savings.
                       </p>
                       <div className="text-xs space-y-1">
-                        <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+                        <div className="p-2 bg-background rounded border-l-2 border-primary/40">
                           <strong>Script:</strong> "With your {estimate.systemSizeKw}kWp system, you'll save {eurFmt(estimate.annualSavings)}/year and the SEAI covers {eurFmt(1800)}. Payback in {estimate.paybackYears} years."
                         </div>
                       </div>
@@ -324,7 +324,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
               {/* Next button */}
               <div className="mt-6 flex justify-end">
-                <Button onClick={() => setStep('survey')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
+                <Button onClick={() => setStep('survey')} className="bg-primary transition-colors hover:bg-primary h-12 px-6">
                   Continue to survey <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -364,7 +364,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 <Button variant="outline" onClick={() => setStep('survey')} className="h-12">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button onClick={() => setStep('proposal')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
+                <Button onClick={() => setStep('proposal')} className="bg-primary transition-colors hover:bg-primary h-12 px-6">
                   Continue to proposal <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -390,7 +390,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 <Button variant="outline" onClick={() => setStep('design')} className="h-12">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button onClick={() => setStep('send')} className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6">
+                <Button onClick={() => setStep('send')} className="bg-primary transition-colors hover:bg-primary h-12 px-6">
                   Review & send <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -410,13 +410,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     <Button variant="outline" onClick={() => navigate(`/consultant`)} className="h-12">
                       <MessageSquare className="h-4 w-4 mr-2" /> Back to inbox
                     </Button>
-                    <Button onClick={() => navigate('/owner')} className="h-12 bg-emerald-600 transition-colors hover:bg-emerald-700">
+                    <Button onClick={() => navigate('/owner')} className="h-12 bg-primary transition-colors hover:bg-primary">
                       View in pipeline <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 ) : (
                   <Button
-                    className="bg-emerald-600 transition-colors hover:bg-emerald-700 h-12 px-6"
+                    className="bg-primary transition-colors hover:bg-primary h-12 px-6"
                     onClick={() => {
                       setProposalSent(true);
                       toast.success('Proposal sent to customer', {
@@ -507,7 +507,7 @@ function SurveyStep({ lead, eircode, address, onDataCollected }: {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Home className="h-5 w-5 text-indigo-600" /> Site survey
+          <Home className="h-5 w-5 text-primary" /> Site survey
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Capture roof details, electrical setup, and customer preferences. This data flows directly into the proposal.</p>
       </div>
@@ -516,7 +516,7 @@ function SurveyStep({ lead, eircode, address, onDataCollected }: {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-emerald-600" /> Property overview
+            <MapPin className="h-4 w-4 text-primary" /> Property overview
           </h3>
           <SatelliteMap eircode={eircode || lead.mprn} address={address || lead.address} />
         </CardContent>
@@ -688,12 +688,12 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             />
             {/* Panel overlay grid — positioned over the "roof" area */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-blue-600/20 border-2 border-blue-500/50 rounded-lg p-2 pointer-events-auto" style={{ width: '60%', height: '50%' }}>
+              <div className="bg-primary border-2 border-primary/40 rounded-lg p-2 pointer-events-auto" style={{ width: '60%', height: '50%' }}>
                 <div className="grid h-full gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(designData.panelCount))}, 1fr)` }}>
                   {Array.from({ length: designData.panelCount }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-blue-600/80 border border-blue-300/50 rounded-sm flex items-center justify-center text-[7px] text-white font-bold hover:bg-blue-500 cursor-pointer transition-colors"
+                      className="bg-primary border border-primary/40 rounded-sm flex items-center justify-center text-[7px] text-white font-bold hover:bg-primary cursor-pointer transition-colors"
                       onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
                       title={`Panel ${i + 1}`}
                     />
@@ -727,7 +727,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             <span className="text-muted-foreground">
               {designData.panelCount} panels · {systemSizeKw} kWp · {annualProduction.toLocaleString()} kWh/yr
             </span>
-            <span className="text-emerald-600 font-medium">
+            <span className="text-primary font-medium">
               {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage covered
             </span>
           </div>
@@ -742,7 +742,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-violet-600" /> Gear selection
+            <Zap className="h-4 w-4 text-primary" /> Gear selection
           </h3>
           <div className="space-y-3">
             {/* Panels */}
@@ -787,10 +787,10 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
       </Card>
 
       {/* AI suggestion */}
-      <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <Bot className="h-4 w-4 text-violet-600" /> AI design suggestion
+            <Bot className="h-4 w-4 text-primary" /> AI design suggestion
           </h3>
           <p className="text-xs text-muted-foreground">
             Based on {lead.annual_kwh?.toLocaleString() || estimate.annualKwh.toLocaleString()} kWh annual usage
@@ -832,7 +832,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <FileText className="h-5 w-5 text-emerald-600" /> Proposal & financing
+          <FileText className="h-5 w-5 text-primary" /> Proposal & financing
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Choose payment structure, review costs, and prepare the professional proposal.</p>
       </div>
@@ -864,11 +864,11 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
               <span>Gross cost</span>
               <span>{eurFmt(grossCost)}</span>
             </div>
-            <div className="flex justify-between p-2 bg-violet-50 dark:bg-violet-950/30 rounded text-violet-700 dark:text-violet-300">
+            <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded text-primary dark:text-primary">
               <span>SEAI grant</span>
               <span className="font-semibold">−{eurFmt(seaiGrant)}</span>
             </div>
-            <div className="flex justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded text-lg font-bold text-emerald-700 dark:text-emerald-300">
+            <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded text-lg font-bold text-primary dark:text-primary">
               <span>Net cost</span>
               <span>{eurFmt(netCost)}</span>
             </div>
@@ -880,7 +880,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-emerald-600" /> Payment options
+            <CreditCard className="h-4 w-4 text-primary" /> Payment options
           </h3>
           <div className="grid sm:grid-cols-3 gap-2">
             {[
@@ -895,10 +895,10 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
                   key={opt.id}
                   onClick={() => setFinanceOption(opt.id as 'cash' | 'finance' | 'lease')}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
-                    isSelected ? 'border-blue-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:border-blue-300'
+                    isSelected ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border hover:border-primary/40'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                  <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                   <div className="font-semibold text-sm">{opt.label}</div>
                   <div className="text-xs text-muted-foreground">{opt.desc}</div>
                 </button>
@@ -931,7 +931,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
 
           {/* Finance breakdown */}
           {financeOption === 'finance' && (
-            <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+            <div className="mt-4 p-3 bg-primary/10 dark:bg-primary/10 rounded-lg">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-xs text-muted-foreground">Monthly payment</div>
@@ -939,11 +939,11 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Monthly savings</div>
-                  <div className="font-bold text-lg text-emerald-600">{eurFmt(annualSavings / 12)}</div>
+                  <div className="font-bold text-lg text-primary">{eurFmt(annualSavings / 12)}</div>
                 </div>
                 <div className="col-span-2 pt-2 border-t">
                   <div className="text-xs text-muted-foreground">Net monthly position</div>
-                  <div className={`font-bold text-lg ${netMonthlyPosition > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <div className={`font-bold text-lg ${netMonthlyPosition > 0 ? 'text-primary' : 'text-red-600'}`}>
                     {netMonthlyPosition > 0 ? '+' : ''}{eurFmt(netMonthlyPosition)}/month
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -959,15 +959,15 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
       </Card>
 
       {/* Savings summary */}
-      <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10">
+      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-emerald-600" /> Savings summary
+            <TrendingUp className="h-4 w-4 text-primary" /> Savings summary
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="font-bold text-lg text-emerald-700 dark:text-emerald-300">{eurFmt(annualSavings)}</div>
+              <div className="font-bold text-lg text-primary dark:text-primary">{eurFmt(annualSavings)}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Payback</div>
@@ -982,19 +982,19 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
       </Card>
 
       {/* AI pricing suggestion */}
-      <Card className="border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10">
+      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <Bot className="h-4 w-4 text-violet-600" /> AI pricing coach
+            <Bot className="h-4 w-4 text-primary" /> AI pricing coach
           </h3>
           <div className="text-xs space-y-1">
-            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+            <div className="p-2 bg-background rounded border-l-2 border-primary/40">
               <strong>Margin:</strong> {Math.round(((netCost - grossCost + seaiGrant) / netCost) * 100)}% (healthy — industry avg is 18-22%)
             </div>
-            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+            <div className="p-2 bg-background rounded border-l-2 border-primary/40">
               <strong>Objection handler:</strong> If customer says "too expensive" → offer the finance option. {eurFmt(annualSavings / 12)}/mo savings vs {eurFmt(financeMonthly)}/mo payment = cashflow positive from month 1.
             </div>
-            <div className="p-2 bg-background rounded border-l-2 border-violet-400">
+            <div className="p-2 bg-background rounded border-l-2 border-primary/40">
               <strong>Closing tip:</strong> Lead with the SEAI grant ({eurFmt(seaiGrant)}) — it's "free money" that makes the decision feel urgent (grant rates may change).
             </div>
           </div>
@@ -1016,9 +1016,9 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
 }) {
   if (proposalSent) {
     return (
-      <Card className="border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20">
+      <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-6 text-center">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-600 mb-3 shadow-lg shadow-emerald-500/30">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary mb-3 shadow-lg shadow-card">
             <CheckCircle2 className="h-6 w-6 text-white" />
           </div>
           <h2 className="text-xl font-bold">Proposal sent to {lead.name}</h2>
@@ -1026,7 +1026,7 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
             An email with the proposal link has been sent to {lead.email}. The Follow-Up Agent will check in automatically, in 3 days, if they don't respond.
           </p>
           <div className="mt-4 inline-flex items-center gap-2 text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-full border">
-            <Bot className="h-3 w-3 text-violet-600" />
+            <Bot className="h-3 w-3 text-primary" />
             Follow-Up Agent scheduled · 3 days
           </div>
         </CardContent>
@@ -1038,13 +1038,13 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Send className="h-5 w-5 text-emerald-600" /> Review & send
+          <Send className="h-5 w-5 text-primary" /> Review & send
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Final review before sending the professional proposal to {lead.name}.</p>
       </div>
 
       {/* Summary card */}
-      <Card className="border-emerald-300 dark:border-emerald-800">
+      <Card className="border-primary/40 dark:border-primary/40">
         <CardContent className="p-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -1073,18 +1073,18 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-emerald-600" /> Professional proposal
+            <FileText className="h-4 w-4 text-primary" /> Professional proposal
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
             4-page branded PDF: Cover page · System design + roof layout · Investment & savings (20-year cashflow) · Terms & acceptance
           </p>
-          <div className="aspect-[210/297] max-w-xs mx-auto bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30 rounded-lg border-2 border-dashed border-emerald-300 dark:border-emerald-800 flex items-center justify-center">
+          <div className="aspect-[210/297] max-w-xs mx-auto bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary rounded-lg border-2 border-dashed border-primary/40 dark:border-primary/40 flex items-center justify-center">
             <div className="text-center p-4">
               <div className="text-xs font-bold mb-1">{brand.name}</div>
               <div className="text-[11px] text-muted-foreground">Solar Investment Plan</div>
               <div className="text-[11px] text-muted-foreground mt-2">Prepared for {lead.name}</div>
               <div className="text-[11px] text-muted-foreground">{(designData.panelCount * 0.435).toFixed(1)} kWp · {eurFmt(netCost)}</div>
-              <FileText className="h-8 w-8 text-emerald-400 mx-auto mt-3" />
+              <FileText className="h-8 w-8 text-primary mx-auto mt-3" />
             </div>
           </div>
           <Button variant="outline" className="w-full mt-3">

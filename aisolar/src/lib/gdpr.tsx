@@ -160,7 +160,7 @@ export function CookieConsentBanner() {
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" size="sm" onClick={handleReject}>Reject optional</Button>
               <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>Preferences</Button>
-              <Button size="sm" onClick={handleAcceptAll} className="bg-emerald-600 hover:bg-emerald-700">Accept all</Button>
+              <Button size="sm" onClick={handleAcceptAll} className="bg-primary hover:bg-primary">Accept all</Button>
             </div>
           </div>
         ) : (
@@ -196,7 +196,7 @@ export function CookieConsentBanner() {
               onChange={(v) => setConsents(prev => ({ ...prev, thirdPartyAi: v }))}
             />
             <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button size="sm" onClick={handleAcceptSelected} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" onClick={handleAcceptSelected} className="bg-primary hover:bg-primary">
                 Save preferences
               </Button>
             </div>
@@ -285,7 +285,7 @@ export function DataSubjectRightsPanel({ userEmail }: { userEmail: string }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Shield className="h-4 w-4 text-violet-600" />
+          <Shield className="h-4 w-4 text-primary" />
           Your data rights (GDPR)
         </CardTitle>
         <CardDescription>You have full control over your personal data.</CardDescription>
@@ -419,7 +419,7 @@ export function ConsentAuditLog() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Lock className="h-4 w-4 text-violet-600" />
+          <Lock className="h-4 w-4 text-primary" />
           Consent audit log
         </CardTitle>
         <CardDescription>Every consent capture is logged. Retained 7 years per GDPR.</CardDescription>
@@ -441,10 +441,10 @@ export function ConsentAuditLog() {
                 <td className="py-2 font-mono">{log.email}</td>
                 <td>{log.captured}</td>
                 <td className="text-center">
-                  {log.marketing ? <CheckCircle2 className="h-3 w-3 text-emerald-600 mx-auto" /> : <span className="text-muted-foreground">—</span>}
+                  {log.marketing ? <CheckCircle2 className="h-3 w-3 text-primary mx-auto" /> : <span className="text-muted-foreground">—</span>}
                 </td>
                 <td className="text-center">
-                  {log.ai ? <CheckCircle2 className="h-3 w-3 text-emerald-600 mx-auto" /> : <span className="text-muted-foreground">—</span>}
+                  {log.ai ? <CheckCircle2 className="h-3 w-3 text-primary mx-auto" /> : <span className="text-muted-foreground">—</span>}
                 </td>
                 <td className="font-mono">{log.version}</td>
               </tr>
@@ -475,7 +475,7 @@ export function SubProcessorList() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Globe className="h-4 w-4 text-violet-600" />
+          <Globe className="h-4 w-4 text-primary" />
           Sub-processors
         </CardTitle>
         <CardDescription>Third parties that process customer data. DPAs signed with all.</CardDescription>
@@ -497,7 +497,7 @@ export function SubProcessorList() {
                 <td className="text-muted-foreground">{p.purpose}</td>
                 <td>{p.location}</td>
                 <td className="text-center">
-                  {p.dpasSigned && <CheckCircle2 className="h-3 w-3 text-emerald-600 mx-auto" />}
+                  {p.dpasSigned && <CheckCircle2 className="h-3 w-3 text-primary mx-auto" />}
                 </td>
               </tr>
             ))}

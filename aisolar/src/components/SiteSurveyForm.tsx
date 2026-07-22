@@ -852,7 +852,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
             <div className={cn(
               "px-3 py-1.5 rounded-full text-sm font-medium",
               calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' 
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                ? 'bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary'
                 : calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress'
                 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                 : 'bg-muted text-muted-foreground'
@@ -897,7 +897,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                 type="button"
                 onClick={handleCompleteAndCreateProposal}
                 disabled={loading || !completionStatus.isComplete}
-                className="flex-1 h-11 bg-green-600 hover:bg-green-700"
+                className="flex-1 h-11 bg-primary hover:bg-primary"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Complete & Create Proposal
