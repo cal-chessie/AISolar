@@ -35,9 +35,9 @@ export default function AiosPage() {
             <Link to="/" className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
               See AISolar, live <ArrowRight className="size-4" />
             </Link>
-            <Link to="/auth" className="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors">
+            <a href="https://cal.com/renewableireland/solar-consultation" target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors">
               Talk to us
-            </Link>
+            </a>
           </div>
         </section>
 

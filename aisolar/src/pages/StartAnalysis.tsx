@@ -36,32 +36,52 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
 type Step = 'choose' | 'upload' | 'manual' | 'estimate' | 'book';
 
 interface BillData {
+  // the full 21-field read (whatever the extractor found)
+  mprn?: string | null;
   monthlyBill?: number | null;
   annualKwh?: number | null;
-  dayUsageKwh?: number | null;
-  nightUsageKwh?: number | null;
-  dayNightMeter?: boolean | null;
+  billingPeriodKwh?: number | null;
+  accountName?: string | null;
+  address?: string | null;
   eircode?: string | null;
   provider?: string | null;
+  tariffName?: string | null;
+  billingPeriod?: string | null;
+  unitRate?: number | null;
+  nightRate?: number | null;
+  standingCharge?: number | null;
+  standingChargeUnit?: string | null;
+  vatRate?: number | null;
+  dayNightMeter?: boolean | null;
+  dayUsageKwh?: number | null;
+  nightUsageKwh?: number | null;
+  estimatedReading?: boolean | null;
+  notes?: string | null;
   fieldsRead: number;      // how many bill details we actually hold
 }
 
 /* A worked sample so the flow is walkable before the extractor is live. The
-   maths downstream is real; only these inputs are illustrative. */
+   maths downstream is real; only these inputs are illustrative. Full 21 so the
+   estimate can prove the depth of the read — that depth is what sells the call. */
 const SAMPLE: BillData = {
-  monthlyBill: 296, annualKwh: 10200, dayUsageKwh: 6600, nightUsageKwh: 3600,
-  dayNightMeter: true, eircode: 'D04 X8N7', provider: 'Electric Ireland', fieldsRead: 17,
+  mprn: '10001234567', monthlyBill: 296, annualKwh: 10200, billingPeriodKwh: 1700,
+  accountName: 'J. Murphy', address: '14 Ailesbury Road, Ballsbridge, Dublin 4', eircode: 'D04 X8N7',
+  provider: 'Electric Ireland', tariffName: 'Home Electric+ Night Boost', billingPeriod: 'Bi-monthly',
+  unitRate: 0.3512, nightRate: 0.1721, standingCharge: 0.6027, standingChargeUnit: 'per day', vatRate: 9,
+  dayNightMeter: true, dayUsageKwh: 6600, nightUsageKwh: 3600, estimatedReading: false, notes: null,
+  fieldsRead: 19,
 };
 
 export default function StartAnalysis() {
   const [step, setStep] = useState<Step>('choose');
   const [bill, setBill] = useState<BillData | null>(null);
   const [busy, setBusy] = useState(false);
-  const [contact, setContact] = useState({ mobile: '', email: '' });
+  const [contact, setContact] = useState({ name: '', mobile: '', email: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // manual inputs — the few that actually move the estimate, most-weighted first
-  const [manual, setManual] = useState({ monthlyBill: '', dayNight: false, eircode: '' });
+  // manual inputs — the few that actually move the estimate, most-weighted first,
+  // plus two sticky yes/no questions that sharpen it and pull the user in.
+  const [manual, setManual] = useState({ monthlyBill: '', dayNight: false, eircode: '', ev: null as boolean | null, daytime: null as boolean | null });
 
   const estimate = bill
     ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh })
@@ -87,9 +107,12 @@ export default function StartAnalysis() {
       const d = data.data;
       const held = Object.entries(d).filter(([k, v]) => k !== 'confidence' && v != null).length;
       setBill({
-        monthlyBill: d.billAmount, annualKwh: d.annualKwh, dayUsageKwh: d.dayUsageKwh,
-        nightUsageKwh: d.nightUsageKwh, dayNightMeter: d.dayNightMeter, eircode: d.eircode,
-        provider: d.provider, fieldsRead: held,
+        mprn: d.mprn, monthlyBill: d.billAmount, annualKwh: d.annualKwh, billingPeriodKwh: d.billingPeriodKwh,
+        accountName: d.accountName, address: d.address, eircode: d.eircode, provider: d.provider,
+        tariffName: d.tariffName, billingPeriod: d.billingPeriod, unitRate: d.unitRate, nightRate: d.nightRate,
+        standingCharge: d.standingCharge, standingChargeUnit: d.standingChargeUnit, vatRate: d.vatRate,
+        dayNightMeter: d.dayNightMeter, dayUsageKwh: d.dayUsageKwh, nightUsageKwh: d.nightUsageKwh,
+        estimatedReading: d.estimatedReading, notes: d.notes, fieldsRead: held,
       });
     } catch {
       // Extractor not reachable yet (Supabase not live) — walk the flow on the
@@ -103,12 +126,17 @@ export default function StartAnalysis() {
 
   function submitManual() {
     const mb = parseFloat(manual.monthlyBill);
+    // Derive annual usage from the bill; an EV adds ~2,000 kWh/yr, which pushes
+    // the recommended system up — the yes/no answers actually move the estimate.
+    const baseKwh = isFinite(mb) ? (mb * 12) / 0.35 : null;
+    const annualKwh = baseKwh != null ? Math.round(baseKwh + (manual.ev ? 2000 : 0)) : null;
     setBill({
       monthlyBill: isFinite(mb) ? mb : null,
-      annualKwh: null,
+      annualKwh,
       dayNightMeter: manual.dayNight,
       eircode: manual.eircode || null,
-      fieldsRead: [manual.monthlyBill, manual.dayNight, manual.eircode].filter(Boolean).length,
+      notes: [manual.ev ? 'Has an EV' : null, manual.daytime ? 'Home during the day' : null].filter(Boolean).join(' · ') || null,
+      fieldsRead: [manual.monthlyBill, manual.dayNight, manual.eircode, manual.ev != null, manual.daytime != null].filter(Boolean).length,
     });
     setStep('estimate');
   }
@@ -221,6 +249,14 @@ export default function StartAnalysis() {
                 </div>
               </Field>
 
+              <YesNo label="Do you drive an EV (or plan to)?"
+                helper="An EV roughly doubles a home's usage — we size for it."
+                value={manual.ev} onChange={v => setManual(m => ({ ...m, ev: v }))} />
+
+              <YesNo label="Is someone usually home during the day?"
+                helper="Daytime use is what solar replaces directly — it lifts your savings."
+                value={manual.daytime} onChange={v => setManual(m => ({ ...m, daytime: v }))} />
+
               <Field label="Eircode" htmlFor="ec" helper="So we can show your roof from satellite. Optional.">
                 <input id="ec" value={manual.eircode}
                   onChange={e => setManual(m => ({ ...m, eircode: e.target.value.toUpperCase() }))}
@@ -276,6 +312,11 @@ export default function StartAnalysis() {
               </div>
             )}
 
+            {/* THE READ — all 21 points we pulled off the bill. This is the sell:
+                every figure the estimate runs on, shown, so the survey is the
+                obvious next step. */}
+            {bill && <BillReadPanel bill={bill} />}
+
             {/* satellite of the actual roof (imagery only — no auto-detection) */}
             {satelliteSrc && (
               <div className="mt-4 rounded-panel border border-border bg-card shadow-card overflow-hidden">
@@ -297,10 +338,28 @@ export default function StartAnalysis() {
         {step === 'book' && (
           <div className="max-w-2xl mx-auto">
             <BackBtn onClick={() => setStep('estimate')} />
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Book your call</h1>
-            <p className="mt-2 text-muted-foreground leading-body">Pick a slot that suits. Your estimate and bill details come with you — the consultant already has your numbers.</p>
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Turn this into a real quote</h1>
+            <p className="mt-2 text-muted-foreground leading-body">
+              A free 30-minute survey confirms every number above and locks your
+              SEAI grant. Your bill read and estimate come with you — the
+              consultant already has your figures, so there's nothing to repeat.
+            </p>
 
-            <div className="mt-6 grid sm:grid-cols-2 gap-3">
+            {/* what the survey gets them — sell it */}
+            <ul className="mt-4 grid sm:grid-cols-3 gap-2">
+              {[['Exact roof + panel layout', ShieldCheck], ['Your SEAI grant secured', Euro], ['Firm price, no pressure', Check]].map(([t, Ic]) => {
+                const Icon = Ic as typeof Check;
+                return <li key={t as string} className="flex items-center gap-2 rounded-control border border-border bg-card px-3 py-2 text-xs font-medium"><Icon className="size-3.5 text-doc-deposit" /> {t as string}</li>;
+              })}
+            </ul>
+
+            <div className="mt-5 grid sm:grid-cols-3 gap-3">
+              <Field label="Name" htmlFor="nm" required>
+                <input id="nm" autoComplete="name" value={contact.name}
+                  onChange={e => setContact(c => ({ ...c, name: e.target.value }))}
+                  placeholder="Your name"
+                  className="w-full h-control rounded-control border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25" />
+              </Field>
               <Field label="Mobile" htmlFor="mob" required>
                 <input id="mob" inputMode="tel" autoComplete="tel" value={contact.mobile}
                   onChange={e => setContact(c => ({ ...c, mobile: e.target.value }))}
@@ -318,7 +377,7 @@ export default function StartAnalysis() {
             <div className="mt-4 rounded-panel border border-border bg-card shadow-card overflow-hidden">
               <iframe
                 title="Book a consultation"
-                src={`${CAL_LINK}?embed=true${contact.email ? `&email=${encodeURIComponent(contact.email)}` : ''}${contact.mobile ? `&name=${encodeURIComponent(contact.mobile)}` : ''}`}
+                src={`${CAL_LINK}?embed=true${contact.email ? `&email=${encodeURIComponent(contact.email)}` : ''}${contact.name ? `&name=${encodeURIComponent(contact.name)}` : ''}`}
                 className="w-full h-[560px] border-0"
                 loading="lazy"
               />
@@ -333,11 +392,77 @@ export default function StartAnalysis() {
   );
 }
 
+function YesNo({ label, helper, value, onChange }: { label: string; helper?: string; value: boolean | null; onChange: (v: boolean) => void }) {
+  return (
+    <Field label={label} helper={helper}>
+      <div className="flex gap-2">
+        {[['Yes', true], ['No', false]].map(([l, v]) => (
+          <button key={String(l)} type="button" onClick={() => onChange(v as boolean)}
+            className={`flex-1 h-control rounded-control border text-sm font-medium transition-colors ${value === v ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+    </Field>
+  );
+}
+
 function BackBtn({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
       <ArrowLeft className="size-4" /> Back
     </button>
+  );
+}
+
+/* The full 21-point read. Renders whatever the extractor actually found, with a
+   dynamic count (never overclaims), framed as "no other quote opened your bill". */
+function BillReadPanel({ bill }: { bill: BillData }) {
+  const rate = (n?: number | null) => (n == null ? undefined : `€${Number(n).toFixed(2)}/kWh`);
+  const rows: Array<{ label: string; value?: string }> = [
+    { label: 'Supplier', value: bill.provider ?? undefined },
+    { label: 'Tariff', value: bill.tariffName ?? undefined },
+    { label: 'MPRN', value: bill.mprn ? `${bill.mprn.slice(0, 3)}••••${bill.mprn.slice(-3)}` : undefined },
+    { label: 'Account', value: bill.accountName ?? undefined },
+    { label: 'Monthly bill', value: bill.monthlyBill != null ? eur(bill.monthlyBill) : undefined },
+    { label: 'Annual usage', value: bill.annualKwh != null ? `${bill.annualKwh.toLocaleString()} kWh` : undefined },
+    { label: 'Billed usage', value: bill.billingPeriodKwh != null ? `${bill.billingPeriodKwh.toLocaleString()} kWh` : undefined },
+    { label: 'Day rate', value: rate(bill.unitRate) },
+    { label: 'Night rate', value: rate(bill.nightRate) },
+    { label: 'Standing charge', value: bill.standingCharge != null ? `€${bill.standingCharge.toFixed(2)}${bill.standingChargeUnit ? ` ${bill.standingChargeUnit}` : ''}` : undefined },
+    { label: 'VAT', value: bill.vatRate != null ? `${bill.vatRate}%` : undefined },
+    { label: 'Meter', value: bill.dayNightMeter == null ? undefined : bill.dayNightMeter ? 'Day / night' : 'Single rate' },
+    { label: 'Day usage', value: bill.dayUsageKwh != null ? `${bill.dayUsageKwh.toLocaleString()} kWh` : undefined },
+    { label: 'Night usage', value: bill.nightUsageKwh != null ? `${bill.nightUsageKwh.toLocaleString()} kWh` : undefined },
+    { label: 'Billing period', value: bill.billingPeriod ?? undefined },
+    { label: 'Reading', value: bill.estimatedReading == null ? undefined : bill.estimatedReading ? 'Estimated' : 'Actual read' },
+    { label: 'Eircode', value: bill.eircode ?? undefined },
+    { label: 'Supply address', value: bill.address ? bill.address.split(',').slice(0, 2).join(',') : undefined },
+  ];
+  const cells = rows.filter(r => r.value);
+  const pad = (4 - (cells.length % 4)) % 4;
+  return (
+    <div className="mt-4 rounded-panel border border-border bg-card shadow-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <FileText className="size-4 text-primary" />
+          <span className="text-sm font-semibold">What your bill told us</span>
+          <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">{cells.length} details read</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1.5 leading-body">
+          Every figure above runs off these. Ask the other quotes you get which of them opened your bill.
+        </p>
+      </div>
+      <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border">
+        {cells.map(c => (
+          <div key={c.label} className="bg-card px-3 py-2.5">
+            <dt className="label-micro">{c.label}</dt>
+            <dd className="text-sm font-semibold tabular-nums truncate mt-0.5">{c.value}</dd>
+          </div>
+        ))}
+        {Array.from({ length: pad }).map((_, k) => <div key={`p${k}`} className="bg-card hidden md:block" aria-hidden />)}
+      </dl>
+    </div>
   );
 }
 
