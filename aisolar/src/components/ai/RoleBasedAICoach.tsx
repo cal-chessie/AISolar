@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
+  Bot,
   Sparkles, X, Copy, Check, ChevronDown, ChevronUp, ChevronRight,
   AlertTriangle, Lightbulb, TrendingUp, Zap, ArrowRight,
 } from 'lucide-react';
@@ -85,13 +86,13 @@ export default function RoleBasedAICoach() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 right-4 z-40 bg-primary hover:bg-primary text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
+          className="fixed bottom-20 right-4 z-40 bg-foreground text-background hover:opacity-90 rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
           aria-label={`Open ${role} AI coach`}
         >
-          <Sparkles className="h-5 w-5" />
+          <Bot className="h-5 w-5" />
           <span className="hidden sm:inline">AI Coach</span>
           {highPriorityCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-pop text-pop-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
               {highPriorityCount}
             </span>
           )}
@@ -109,11 +110,11 @@ export default function RoleBasedAICoach() {
           >
             <Card className="h-full flex flex-col shadow-2xl border-primary/40 dark:border-primary/40">
               {/* Header */}
-              <div className="p-4 border-b bg-gradient-to-r from-primary to-primary text-white rounded-t-lg">
+              <div className="p-4 border-b bg-foreground text-background rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide opacity-90">
-                      <Sparkles className="h-3 w-3" />
+                      <Bot className="h-3 w-3" />
                       AI Coach · {role}
                     </div>
                     <h2 className="font-bold text-lg mt-1">{summary.headline}</h2>
@@ -123,7 +124,7 @@ export default function RoleBasedAICoach() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsOpen(false)}
-                    className="text-white hover:bg-white/10 h-8 w-8"
+                    className="text-background hover:bg-background/10 h-8 w-8"
                   >
                     <X className="h-4 w-4" />
                   </Button>

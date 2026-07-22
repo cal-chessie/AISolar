@@ -246,7 +246,7 @@ const SAMPLE_BUNDLES: Bundle[] = [
 ];
 
 const CATEGORY_META: Record<ProductCategory, { label: string; icon: typeof Sun; color: string }> = {
-  panels: { label: 'Solar Panels', icon: Sun, color: 'amber' },
+  panels: { label: 'Solar Panels', icon: Sun, color: 'tech' },
   inverters: { label: 'Inverters', icon: Zap, color: 'blue' },
   batteries: { label: 'Batteries', icon: Battery, color: 'emerald' },
   mounting: { label: 'Mounting', icon: Wrench, color: 'slate' },
@@ -284,7 +284,7 @@ export default function ProfessionalProducts() {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Package className="h-6 w-6 text-amber-600" />
+          <Package className="h-6 w-6 text-tech" />
           Product Catalogue
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -327,7 +327,7 @@ export default function ProfessionalProducts() {
             Pre-configured system packages. Click a bundle to view components + add to proposal.
           </p>
           {SAMPLE_BUNDLES.map(bundle => (
-            <Card key={bundle.id} className="border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-500 cursor-pointer hover:shadow-md transition-shadow"
+            <Card key={bundle.id} className="border-l-4 border-l-tech cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => setSelectedBundle(bundle)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
@@ -335,7 +335,7 @@ export default function ProfessionalProducts() {
                     <h3 className="font-bold text-base">{bundle.name}</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">{bundle.description}</p>
                   </div>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                  <Badge variant="outline" className="bg-tech/10 text-tech border-tech/30">
                     {bundle.systemSizeKw} kWp
                   </Badge>
                 </div>
@@ -353,7 +353,7 @@ export default function ProfessionalProducts() {
                     <div className="font-semibold">{bundle.includesBattery ? 'Included' : 'No'}</div>
                   </div>
                 </div>
-                <Button size="sm" className="mt-3 bg-amber-600 transition-colors hover:bg-amber-700 text-white">
+                <Button size="sm" className="mt-3 bg-tech transition-opacity hover:opacity-90 text-white">
                   Add to proposal <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </CardContent>
@@ -421,7 +421,7 @@ export default function ProfessionalProducts() {
                     </div>
                   </div>
 
-                  <Button size="sm" className="mt-3 w-full bg-amber-600 transition-colors hover:bg-amber-700 text-white" disabled={isOutOfStock}>
+                  <Button size="sm" className="mt-3 w-full bg-tech transition-opacity hover:opacity-90 text-white" disabled={isOutOfStock}>
                     Add to proposal <Plus className="h-3 w-3 ml-1" />
                   </Button>
                 </CardContent>
@@ -449,7 +449,7 @@ function CategoryChip({ label, active, onClick, count, icon: Icon }: {
     <button
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[36px] ${
-        active ? 'bg-amber-600 text-white' : 'bg-muted hover:bg-muted/70'
+        active ? 'bg-tech text-white' : 'bg-muted hover:bg-muted/70'
       }`}
     >
       {Icon && <Icon className="h-3 w-3" />}
@@ -511,7 +511,7 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 bg-amber-600 transition-colors hover:bg-amber-700 text-white">
+            <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white">
               Add to proposal <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
             <Button variant="outline">Datasheet</Button>
@@ -536,7 +536,7 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
           </div>
 
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="p-3 rounded bg-amber-50/50 dark:bg-amber-950/20 text-center">
+            <div className="p-3 rounded bg-tech/5 text-center">
               <div className="text-xs text-muted-foreground">Bundle price</div>
               <div className="font-bold text-lg">{eur(bundle.bundlePrice)}</div>
             </div>
@@ -567,7 +567,7 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
             })}
           </div>
 
-          <Button className="w-full bg-amber-600 transition-colors hover:bg-amber-700 text-white h-12">
+          <Button className="w-full bg-tech transition-opacity hover:opacity-90 text-white h-12">
             Add bundle to proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>

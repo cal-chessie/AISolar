@@ -44,6 +44,22 @@ All colors MUST be HSL.
     --pop-foreground: 0 0% 100%;
     --pop-subtle: 358 80% 96%;         /* faint red wash for backgrounds */
 
+    /* SEMANTIC DOCUMENT / STATUS COLOURS — a small, deliberate lift of colour
+       used ONLY as small emblems, left-edge card accents, badges and counts.
+       Muted/premium tones (not neon). Every hue means one thing:
+         proposal = yellow · contract = blue · invoice = red · deposit = green
+       Product/catalogue uses the same tech blue as contract. */
+    --tech:            212 88% 48%;    /* tech blue — contracts, products */
+    --tech-subtle:     212 90% 96%;
+    --doc-proposal:     38 82% 47%;    /* amber-gold */
+    --doc-proposal-subtle: 40 90% 95%;
+    --doc-contract:    212 88% 48%;    /* blue */
+    --doc-contract-subtle: 212 90% 96%;
+    --doc-invoice:     358 74% 59%;    /* red (aligned with --pop) */
+    --doc-invoice-subtle: 358 80% 96%;
+    --doc-deposit:     152 52% 40%;    /* muted green — money received */
+    --doc-deposit-subtle: 152 45% 95%;
+
     --border: 240 5% 89%;              /* barely-there; cards float on shadow */
     --input: 240 5% 89%;
     --ring: 240 6% 16%;
@@ -124,6 +140,18 @@ All colors MUST be HSL.
     --pop: 358 75% 62%;                /* red reads a touch brighter on charcoal */
     --pop-foreground: 0 0% 100%;
     --pop-subtle: 358 40% 18%;         /* deep red wash on dark surfaces */
+
+    /* Semantic doc/status hues — lifted for legibility on charcoal, deep washes */
+    --tech:            210 90% 62%;
+    --tech-subtle:     212 45% 18%;
+    --doc-proposal:     40 90% 60%;
+    --doc-proposal-subtle: 38 45% 17%;
+    --doc-contract:    210 90% 62%;
+    --doc-contract-subtle: 212 45% 18%;
+    --doc-invoice:     358 75% 62%;
+    --doc-invoice-subtle: 358 40% 18%;
+    --doc-deposit:     152 50% 55%;
+    --doc-deposit-subtle: 152 35% 16%;
 
     --border: 240 4% 20%;
     --input: 240 4% 20%;

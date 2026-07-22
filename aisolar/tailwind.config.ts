@@ -53,6 +53,13 @@ export default {
           foreground: "hsl(var(--pop-foreground))",
           subtle: "hsl(var(--pop-subtle))",
         },
+        // Semantic doc/status hues (proposal=yellow, contract=blue,
+        // invoice=red, deposit=green) + tech blue for products.
+        tech: { DEFAULT: "hsl(var(--tech))", subtle: "hsl(var(--tech-subtle))" },
+        "doc-proposal": { DEFAULT: "hsl(var(--doc-proposal))", subtle: "hsl(var(--doc-proposal-subtle))" },
+        "doc-contract": { DEFAULT: "hsl(var(--doc-contract))", subtle: "hsl(var(--doc-contract-subtle))" },
+        "doc-invoice": { DEFAULT: "hsl(var(--doc-invoice))", subtle: "hsl(var(--doc-invoice-subtle))" },
+        "doc-deposit": { DEFAULT: "hsl(var(--doc-deposit))", subtle: "hsl(var(--doc-deposit-subtle))" },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",

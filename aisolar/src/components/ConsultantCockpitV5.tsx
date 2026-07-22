@@ -298,7 +298,9 @@ export default function ConsultantCockpitV5() {
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 h-control-sm rounded-control text-sm font-medium whitespace-nowrap cursor-pointer transition-colors duration-instant border ${isActive ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
                 <Icon className="size-3.5" /> {tab.label}
-                {count > 0 && <span className="text-2xs tabular-nums px-1.5 rounded-full bg-muted-foreground/15">{count}</span>}
+                {count > 0 && (
+                  <span className={`text-2xs tabular-nums px-1.5 rounded-full ${tab.id === 'inbox' ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{count}</span>
+                )}
               </button>
             );
           })}
@@ -541,15 +543,28 @@ export default function ConsultantCockpitV5() {
                       variant="compact"
                     />
                   ) : (
-                    leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => (
-                      <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
+                    leads.filter(l => l.proposal || l.contract || l.invoice).map(lead => {
+                      // Left-edge accent = the furthest-along document on this lead.
+                      // Colour logic (used app-wide): proposal=yellow, contract=blue,
+                      // invoice=red, deposit=green.
+                      const edge = lead.invoice?.deposit_paid ? 'border-l-doc-deposit'
+                        : lead.invoice ? 'border-l-doc-invoice'
+                        : lead.contract ? 'border-l-doc-contract'
+                        : 'border-l-doc-proposal';
+                      return (
+                      <Card key={lead.id} className={`cursor-pointer transition-shadow hover:shadow-md border-l-4 ${edge}`} onClick={() => { setSelectedLead(lead); setSlideOutView('proposal'); }}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className="p-2 bg-muted rounded-lg"><FileText className="h-4 w-4 text-muted-foreground" /></div>
-                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">{lead.proposal && <Badge variant="outline" className="text-[11px]">Proposal</Badge>}{lead.contract && <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Contract</Badge>}{lead.invoice && <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Invoice</Badge>}</div></div>
+                          <div className="flex-1 min-w-0"><span className="font-medium text-sm">{lead.name}</span><div className="flex items-center gap-2 mt-0.5">
+                            {lead.proposal && <Badge variant="outline" className="text-[11px] bg-doc-proposal/10 text-doc-proposal border-doc-proposal/30">Proposal</Badge>}
+                            {lead.contract && <Badge variant="outline" className="text-[11px] bg-doc-contract/10 text-doc-contract border-doc-contract/30">Contract</Badge>}
+                            {lead.invoice && <Badge variant="outline" className="text-[11px] bg-doc-invoice/10 text-doc-invoice border-doc-invoice/30">Invoice</Badge>}
+                            {lead.invoice?.deposit_paid && <Badge variant="outline" className="text-[11px] bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30">Deposit paid</Badge>}
+                          </div></div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </CardContent>
                       </Card>
-                    ))
+                    )})
                   )}
                 </>
               )}

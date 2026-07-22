@@ -88,9 +88,11 @@ export const AiosWordmark = ({ className }: { className?: string }) => <Wordmark
 export const AisolarWordmark = ({ className }: { className?: string }) => <Wordmark word="AISolar" className={className} />;
 
 /**
- * Back-compat: existing headers import `AiosMark`. It now renders the app
- * BrandMark (infinity squircle). Kept so call sites don't churn.
+ * In-app header mark. Cal: the infinity "isn't doing it" inside the app — use
+ * the AIOS logo there. So every cockpit header (which imports AiosMark) now
+ * shows the AIOS wordmark tile. The infinity BrandMark stays reserved for
+ * favicon / sparing motif use only.
  */
-export function AiosMark({ className, glyphClassName }: { className?: string; glyphClassName?: string }) {
-  return <BrandMark className={className} glyphClassName={glyphClassName} />;
+export function AiosMark({ className }: { className?: string; glyphClassName?: string }) {
+  return <Wordmark word="AIOS" className={className} />;
 }
