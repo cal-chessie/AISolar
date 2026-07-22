@@ -20,45 +20,9 @@ import {
   MoveRight, ShieldCheck, Sun, Zap,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
-import { AiosWordmark } from '@/components/brand/AiosMark';
+import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
-function Nav() {
-  const links = ['Product', 'Agents', 'Pricing', 'Docs'];
-  return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
-      <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
-        <Link to="/" className="flex items-center gap-2.5 shrink-0">
-          <AiosWordmark className="size-9" />
-          <span className="font-semibold tracking-tight">
-            AISOLAR <span className="text-muted-foreground font-normal">by AIOS</span>
-          </span>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-6 ml-2">
-          {links.map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">
-              {l}
-            </a>
-          ))}
-        </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Link to="/auth" className="hidden sm:inline-flex h-control items-center px-3 text-sm font-medium hover:bg-muted rounded-control transition-colors duration-instant">
-            Sign in
-          </Link>
-          <Link to="/auth" className="inline-flex h-control items-center gap-1.5 rounded-control bg-primary px-3.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity duration-instant">
-            Get started <ArrowRight className="size-4" />
-          </Link>
-          <button className="md:hidden inline-grid place-items-center size-control rounded-control hover:bg-muted" aria-label="Menu">
-            <Menu className="size-5" />
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
 /* ── The product visual beside the hero: the moat, in miniature ──────────── */
 function HeroVisual() {
   return (
@@ -341,51 +305,10 @@ function FinalCTA() {
 }
 
 /* ── Footer: the AIOS family ─────────────────────────────────────────────── */
-function Footer() {
-  const cols: Array<[string, string[]]> = [
-    ['Product', ['How it works', 'Agents', 'Pricing', 'Book a demo']],
-    ['AIOS family', ['AISolar', 'AITeam', 'AIOS']],
-    ['Company', ['About', 'Privacy', 'Terms']],
-  ];
-  return (
-    <footer className="border-t border-border">
-      <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 md:grid-cols-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <AiosWordmark className="size-9" />
-            <span className="font-semibold tracking-tight">AISOLAR</span>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground leading-body max-w-[15rem]">
-            The solar installer operating system. An <span className="font-medium text-foreground">AIOS</span> product.
-          </p>
-        </div>
-        {cols.map(([head, items]) => (
-          <div key={head}>
-            <p className="label-micro">{head}</p>
-            <ul className="mt-3 space-y-2">
-              {items.map(i => (
-                <li key={i}>
-                  <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">{i}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-5 py-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} {brand.legal.registeredName}</span>
-          <span className="ml-auto">AISolar by AIOS</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export default function AISolarLanding() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <Nav />
+      <MarketingNav product="aisolar" />
       <main>
         <Hero />
         <Trust />
@@ -393,7 +316,7 @@ export default function AISolarLanding() {
         <Benefits />
         <FinalCTA />
       </main>
-      <Footer />
+      <MarketingFooter product="aisolar" />
     </div>
   );
 }
