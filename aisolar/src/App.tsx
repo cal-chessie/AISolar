@@ -25,6 +25,7 @@ import TermsOfService from "./pages/TermsOfService";
 import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
 import AISolarLanding from "./pages/AISolarLanding";
+import StartAnalysis from "./pages/StartAnalysis";
 
 // Components (current versions only — no legacy)
 import ConsultantCockpitV5 from "./components/ConsultantCockpitV5";
@@ -75,6 +76,8 @@ function AppRoutes() {
         <Routes location={location} key={location.pathname}>
           {/* Public */}
           <Route path="/" element={wrap(<AISolarLanding />)} />
+          <Route path="/start" element={wrap(<StartAnalysis />)} />
+          <Route path="/upload" element={wrap(<StartAnalysis />)} />
           <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
           <Route path="/upsell" element={wrap(<ValueUpsell />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
