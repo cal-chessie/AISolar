@@ -42,7 +42,7 @@ function Row({ lead, meta, accent, onOpen }: {
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="text-sm font-medium truncate">{lead.name}</span>
-          {accent === 'hot' && <Flame className="size-3.5 text-orange-500 shrink-0" aria-label="hot lead" />}
+          {accent === 'hot' && <Flame className="size-3.5 text-pop shrink-0" aria-label="hot lead" />}
         </span>
         <span className="block text-xs text-muted-foreground truncate">{meta}</span>
       </span>

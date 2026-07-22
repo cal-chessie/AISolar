@@ -1,12 +1,36 @@
 /**
- * AIOS infinity mark.
+ * AIOS / AISolar brand marks.
  *
- * The parent brand's glyph: a lemniscate (∞) drawn as a single stroked path
- * with round caps, so it reads clean at any size and inherits currentColor —
- * white on a charcoal tile, charcoal on white. The loops are drawn tall so the
- * glyph fills a square tile rather than floating in a band of background.
+ * Three marks, all the SAME shape — a charcoal ROUNDED SQUARE (an iOS-style
+ * squircle, ~26% corner radius so it reads as a rounded square at every size,
+ * never a circle). White ink.
+ *
+ *   BrandMark      — the infinity glyph in a tile. The app mark. Used sparingly:
+ *                    once in a header, as favicon, as a loading motif. Not
+ *                    scattered.
+ *   AiosWordmark   — "AIOS" wordmark tile (the parent brand).
+ *   AisolarWordmark— "AISolar" wordmark tile (the product).
+ *
+ * These are hand-built (clean vector + type), not the raw AI-generated raster
+ * icons — no sparkle artifacts, crisp at any scale.
  */
 import { cn } from '@/lib/utils';
+
+/** Shared squircle tile. Corner radius is a PERCENTAGE so it scales with size
+ *  and always looks like a rounded square, not a circle. */
+function Tile({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        'inline-grid place-items-center bg-primary text-primary-foreground overflow-hidden',
+        'rounded-[26%]',
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 export function AiosGlyph({ className }: { className?: string }) {
   return (
@@ -25,15 +49,48 @@ export function AiosGlyph({ className }: { className?: string }) {
   );
 }
 
+/** The app mark: infinity in a charcoal squircle. Use sparingly. */
+export function BrandMark({ className, glyphClassName, label = 'AISolar' }: {
+  className?: string; glyphClassName?: string; label?: string;
+}) {
+  return (
+    <Tile className={className}>
+      <AiosGlyph className={cn('w-[72%] h-[72%]', glyphClassName)} />
+      <span className="sr-only">{label}</span>
+    </Tile>
+  );
+}
+
+/** Wordmark tile — bold white type on the charcoal squircle, drawn as SVG so it
+ *  scales perfectly at any tile size. Best at md+ (auth hero, footer, marketing)
+ *  where the word is legible. */
+export function Wordmark({ word, className }: { word: 'AIOS' | 'AISolar'; className?: string }) {
+  return (
+    <Tile className={className}>
+      <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true">
+        <text
+          x="50" y="50" dominantBaseline="central" textAnchor="middle"
+          fill="currentColor"
+          fontSize={word === 'AIOS' ? 34 : 26}
+          fontWeight={600}
+          letterSpacing={word === 'AIOS' ? -1 : -0.8}
+          fontFamily="Inter, system-ui, sans-serif"
+        >
+          {word}
+        </text>
+      </svg>
+      <span className="sr-only">{word}</span>
+    </Tile>
+  );
+}
+
+export const AiosWordmark = ({ className }: { className?: string }) => <Wordmark word="AIOS" className={className} />;
+export const AisolarWordmark = ({ className }: { className?: string }) => <Wordmark word="AISolar" className={className} />;
+
 /**
- * The full lockup: charcoal rounded tile with the white infinity, like the
- * AIOS app icon. The glyph fills ~82% of the tile so the mark reads bold, not
- * lost in padding.
+ * Back-compat: existing headers import `AiosMark`. It now renders the app
+ * BrandMark (infinity squircle). Kept so call sites don't churn.
  */
 export function AiosMark({ className, glyphClassName }: { className?: string; glyphClassName?: string }) {
-  return (
-    <span className={cn('inline-grid place-items-center rounded-lg bg-primary text-primary-foreground', className)}>
-      <AiosGlyph className={cn('w-[82%] h-[82%]', glyphClassName)} />
-    </span>
-  );
+  return <BrandMark className={className} glyphClassName={glyphClassName} />;
 }

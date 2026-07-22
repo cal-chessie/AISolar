@@ -23,11 +23,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
 import {
-  Zap, ArrowRight, ArrowLeft, Shield, Award, Users, TrendingUp,
-  Sun, Wrench, Calendar, Mail, Lock, User, Phone, Sparkles, CheckCircle2,
-  Building2, UserCircle, Star,
+  ArrowRight, ArrowLeft, Shield, Award, Mail, Lock, User, Phone,
+  Wrench, CheckCircle2, Building2, UserCircle, FileText,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
+import { AiosGlyph, BrandMark, AisolarWordmark } from '@/components/brand/AiosMark';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
@@ -157,80 +157,68 @@ export default function PrestigiousAuth() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left: Brand showcase (desktop only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary to-primary text-white p-12 flex-col justify-between relative overflow-hidden">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-yellow-300 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
+      {/* Left: brand panel (desktop only) — solid charcoal, one quiet infinity
+          motif, and only claims we can stand behind. */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary text-primary-foreground p-14 flex-col justify-between relative overflow-hidden">
+        {/* A single, subtle infinity motif — used sparingly, low contrast. */}
+        <AiosGlyph className="absolute -right-16 -bottom-10 w-[32rem] h-auto text-primary-foreground/[0.04]" />
 
         <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-12">
+          <Link to="/" className="inline-flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-14">
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
 
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 bg-white/10 backdrop-blur rounded-2xl">
-              <Sun className="h-8 w-8" />
-            </div>
+          <div className="flex items-center gap-3 mb-10">
+            <AisolarWordmark className="size-11" />
             <div>
-              <div className="text-2xl font-bold">{brand.name}</div>
-              <div className="text-sm text-white/70">{brand.tagline}</div>
+              <div className="text-xl font-semibold tracking-tight">{brand.name}</div>
+              <div className="text-sm text-primary-foreground/60">by AIOS</div>
             </div>
           </div>
 
-          <h1 className="text-4xl font-bold leading-tight mb-4">
-            Run your solar business on autopilot.
+          <h1 className="text-4xl font-semibold tracking-tight leading-[1.1] mb-5 max-w-md">
+            The operating system for solar installers.
           </h1>
-          <p className="text-lg text-white/80 mb-8">
-            Bill extract at the front door. Autonomous agents handle survey scheduling,
-            proposal drafting, SEAI grants, install coordination, and follow-ups.
-            Your crews install. The platform does the rest.
+          <p className="text-lg text-primary-foreground/70 leading-relaxed mb-10 max-w-md">
+            Upload a homeowner's bill and the agents take it from there — proposals
+            drafted, surveys scheduled, follow-ups sent. Your crews install. The
+            platform runs the rest.
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5 max-w-md">
             {[
-              { icon: Zap, text: '10 autonomous agents working 24/7' },
-              { icon: TrendingUp, text: '42% lift in survey→proposal conversion' },
-              { icon: Shield, text: 'SEAI grant auto-filed · RECI sign-off built in' },
-              { icon: Users, text: '3 hours saved per consultant per day' },
+              { icon: FileText, text: 'Reads 21 details off every bill — tariff, day/night split, MPRN' },
+              { icon: CheckCircle2, text: 'Agents draft, schedule and follow up — you approve, never chase' },
+              { icon: Building2, text: 'One cockpit for owner, consultant and crew' },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                  className="flex items-center gap-3"
+                  transition={{ delay: 0.15 + i * 0.08 }}
+                  className="flex items-start gap-3"
                 >
-                  <div className="p-2 bg-white/10 backdrop-blur rounded-lg">
+                  <span className="mt-0.5 p-1.5 rounded-md bg-primary-foreground/10">
                     <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm">{item.text}</span>
+                  </span>
+                  <span className="text-sm leading-relaxed text-primary-foreground/85">{item.text}</span>
                 </motion.div>
               );
             })}
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 text-sm text-white/70">
-          <div className="flex items-center gap-1">
-            <Award className="h-4 w-4" /> SEAI Registered
-          </div>
-          <div className="flex items-center gap-1">
-            <Shield className="h-4 w-4" /> RECI Certified
-          </div>
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4" /> 4.9★ customer rating
-          </div>
+        <div className="relative z-10 flex items-center gap-6 text-sm text-primary-foreground/60">
+          <span className="flex items-center gap-1.5"><Award className="h-4 w-4" /> SEAI Registered</span>
+          <span className="flex items-center gap-1.5"><Shield className="h-4 w-4" /> RECI aware</span>
         </div>
       </div>
 
       {/* Right: Auth form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-slate-50 to-primary dark:from-background dark:to-primary">
+      <div className="flex-1 flex items-center justify-center p-5 sm:p-10 bg-background">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait">
             {/* CHOOSE MODE */}
@@ -243,14 +231,10 @@ export default function PrestigiousAuth() {
                 className="space-y-4"
               >
                 <div className="text-center mb-8">
-                  <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary mb-4 shadow-lg shadow-card"
-                  >
-                    <Sun className="h-8 w-8 text-white" />
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex mb-5">
+                    <BrandMark className="size-14" />
                   </motion.div>
-                  <h1 className="text-3xl font-bold">Welcome to {brand.name}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight">Welcome to {brand.name}</h1>
                   <p className="text-muted-foreground mt-2">Sign in to your dashboard, or get a free solar analysis.</p>
                 </div>
 
@@ -331,10 +315,8 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary mb-3">
-                        <Lock className="h-6 w-6 text-white" />
-                      </div>
-                      <h1 className="text-2xl font-bold">Staff sign in</h1>
+                      <BrandMark className="size-12 mx-auto mb-3" />
+                      <h1 className="text-xl font-semibold tracking-tight">Staff sign in</h1>
                       <p className="text-sm text-muted-foreground mt-1">Access your {brand.name} dashboard</p>
                     </div>
 
@@ -372,7 +354,7 @@ export default function PrestigiousAuth() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-11 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white font-semibold shadow-lg"
+                        className="w-full h-11 bg-pop text-pop-foreground hover:bg-pop/90 font-medium"
                       >
                         {loading ? 'Signing in…' : 'Sign in'}
                       </Button>
@@ -416,11 +398,9 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary mb-3">
-                        <Sparkles className="h-6 w-6 text-white" />
-                      </div>
-                      <h1 className="text-2xl font-bold">Create your account</h1>
-                      <p className="text-sm text-muted-foreground mt-1">Start your free 14-day trial. No credit card.</p>
+                      <BrandMark className="size-12 mx-auto mb-3" />
+                      <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
+                      <p className="text-sm text-muted-foreground mt-1">Free to start. No credit card required.</p>
                     </div>
 
                     {/* Role picker — visual cards */}
@@ -517,7 +497,7 @@ export default function PrestigiousAuth() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-11 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-white font-semibold shadow-lg"
+                        className="w-full h-11 bg-pop text-pop-foreground hover:bg-pop/90 font-medium"
                       >
                         {loading ? 'Creating account…' : 'Create account'}
                       </Button>

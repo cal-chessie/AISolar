@@ -19,16 +19,17 @@
        Instrument-dense. Base UI text is 13px (Linear sits here); reading text
        is 14px. Tight line-heights, slight negative tracking on larger sizes so
        headings feel engineered rather than airy. */
-    --text-2xs:   0.6875rem; /* 11px — UPPERCASE micro-labels ONLY, never body text
-                                (below the 12px body floor; uppercase+tracking keeps it legible) */
-    --text-xs:    0.75rem;   /* 12px — labels, captions, badges */
-    --text-sm:    0.875rem;  /* 14px — DEFAULT UI text (Cal.com measured) */
-    --text-base:  1rem;      /* 16px — body / reading (Cal.com body) */
-    --text-md:    1.125rem;  /* 18px — emphasis, card titles */
-    --text-lg:    1.25rem;   /* 20px — section headings */
-    --text-xl:    1.5rem;    /* 24px — page titles */
-    --text-2xl:   1.875rem;  /* 30px — hero numbers, KPI values */
-    --text-3xl:   2.25rem;   /* 36px — the one big number on a cockpit */
+    /* Scaled up a notch from the Linear-dense original — Cal: "feels tight and
+       small". Base UI text is now 15px, headings step up, so the app breathes. */
+    --text-2xs:   0.75rem;   /* 12px — UPPERCASE micro-labels ONLY */
+    --text-xs:    0.8125rem; /* 13px — labels, captions, badges */
+    --text-sm:    0.9375rem; /* 15px — DEFAULT UI text (was 14) */
+    --text-base:  1.0625rem; /* 17px — body / reading (was 16) */
+    --text-md:    1.1875rem; /* 19px — emphasis, card titles */
+    --text-lg:    1.375rem;  /* 22px — section headings */
+    --text-xl:    1.75rem;   /* 28px — page titles */
+    --text-2xl:   2.125rem;  /* 34px — hero numbers, KPI values */
+    --text-3xl:   2.75rem;   /* 44px — the one big number on a cockpit */
 
     --leading-tight:  1.25;
     --leading-ui:     1.45;  /* interface text */
@@ -54,22 +55,23 @@
     --space-12: 3rem;     /* 48 */
     --space-16: 4rem;     /* 64 */
 
-    /* Rhythm: the few decisions every layout needs */
+    /* Rhythm: the few decisions every layout needs. Roomier than before so the
+       app doesn't read cramped — cards and pages get more breathing space. */
     --gap-tight:    var(--space-2);
-    --gap-default:  var(--space-3);
-    --gap-loose:    var(--space-6);
-    --pad-control:  var(--space-2) var(--space-3);
-    --pad-card:     var(--space-4);
-    --pad-page:     var(--space-6);
+    --gap-default:  var(--space-4);   /* was 12 → 16 */
+    --gap-loose:    var(--space-8);   /* was 24 → 32 */
+    --pad-control:  var(--space-2) var(--space-4);
+    --pad-card:     var(--space-5);   /* was 16 → 20 */
+    --pad-page:     var(--space-8);   /* was 24 → 32 */
 
     /* ---- DENSITY ----------------------------------------------------------
-       Control heights. Field crews on mobile need bigger touch targets than an
-       owner on a 27" monitor — see the [data-density] overrides below. */
-    --control-h-sm: 2rem;     /* 32 — table row actions, chips */
-    --control-h:    2.25rem;  /* 36 — DEFAULT input/button (Cal.com measured) */
-    --control-h-lg: 2.5rem;   /* 40 — primary actions */
-    --row-h:        2.25rem;  /* 36 — table/list row */
-    --header-h:     3rem;     /* 48 — app + page headers */
+       Control heights, bumped up a notch (Cal: felt tight). Field crews on
+       mobile get bigger still — see the [data-density] overrides below. */
+    --control-h-sm: 2.25rem;  /* 36 — table row actions, chips */
+    --control-h:    2.5rem;   /* 40 — DEFAULT input/button (was 36) */
+    --control-h-lg: 2.75rem;  /* 44 — primary actions */
+    --row-h:        2.5rem;   /* 40 — table/list row */
+    --header-h:     3.5rem;   /* 56 — app + page headers (was 48) */
 
     /* ---- RADIUS -----------------------------------------------------------
        Was a single 1rem (16px) — marketing-round. Instruments are 4–10px.

@@ -34,8 +34,15 @@ All colors MUST be HSL.
     --accent: 240 5% 92%;              /* hover wash, not a colour */
     --accent-foreground: 240 6% 16%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 358 74% 59%;
     --destructive-foreground: 0 0% 100%;
+
+    /* THE ONE ACCENT — signal red #E5484D. Used sparingly: the single most
+       important action or alert per screen (hot lead, overdue, primary CTA
+       emphasis). Charcoal stays the workhorse; red is the pop. */
+    --pop: 358 74% 59%;                /* #E5484D */
+    --pop-foreground: 0 0% 100%;
+    --pop-subtle: 358 80% 96%;         /* faint red wash for backgrounds */
 
     --border: 240 5% 89%;              /* barely-there; cards float on shadow */
     --input: 240 5% 89%;
@@ -111,8 +118,12 @@ All colors MUST be HSL.
     --accent: 240 4% 19%;
     --accent-foreground: 0 0% 96%;
 
-    --destructive: 0 62.8% 45%;
+    --destructive: 358 70% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    --pop: 358 75% 62%;                /* red reads a touch brighter on charcoal */
+    --pop-foreground: 0 0% 100%;
+    --pop-subtle: 358 40% 18%;         /* deep red wash on dark surfaces */
 
     --border: 240 4% 20%;
     --input: 240 4% 20%;
