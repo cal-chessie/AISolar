@@ -272,7 +272,7 @@ export default function ConsultantCockpitV5() {
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AiosMark className="size-6" />
+            <AiosMark className="size-8" />
             <span className="font-bold text-sm">{brand.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>

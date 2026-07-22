@@ -299,13 +299,28 @@ async function handleSurveyScheduler({ supabase, leadId }: AgentRunParams): Prom
 
   await supabase.from("leads").update({ workflow_stage: "survey_scheduled" }).eq("id", leadId);
 
+  // Actually tell the customer, the way follow_up does — don't just write a
+  // touchpoint that claims an email was sent. Record the real send result.
+  const { data: lead } = await supabase.from("leads").select("name, email").eq("id", leadId).single();
+  const dateStr = slot.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  let emailResult = { ok: false, error: "no lead email", messageId: undefined as string | undefined };
+  if (lead?.email) {
+    emailResult = await sendEmail({
+      to: lead.email,
+      subject: "Your solar site survey is booked",
+      htmlBody: wrapEmailHtml(`<p>Hi ${(lead.name || "there").split(" ")[0]},</p><p>Good news — we've booked your site survey for <strong>${dateStr} at 10:00</strong>. Our surveyor will confirm the exact arrival window the day before.</p><p>If that time doesn't suit, just reply to this email and we'll rearrange.</p><p>Best regards,<br>The AISOLAR team</p>`),
+    });
+  }
+
   await supabase.from("touchpoints").insert({
-    lead_id: leadId, stage: "survey_scheduled", channel: "email", direction: "outbound",
-    summary: `Survey Scheduler Agent booked site survey for ${slot.toLocaleDateString("en-IE")}.`,
+    lead_id: leadId, stage: "survey_scheduled",
+    channel: emailResult.ok ? "email" : "system", direction: "outbound",
+    summary: `Survey Scheduler Agent booked site survey for ${slot.toLocaleDateString("en-IE")}${emailResult.ok ? " and emailed the customer" : ` (email not sent: ${emailResult.error})`}.`,
     actor: "agent", agent_id: "survey_scheduler",
+    metadata: { surveyDate: slot.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId },
   });
 
-  return { success: true, outputs: { surveyDate: slot.toISOString() } };
+  return { success: true, outputs: { surveyDate: slot.toISOString(), emailSent: emailResult.ok } };
 }
 
 async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams): Promise<AgentRunResult> {
@@ -593,13 +608,27 @@ async function handleInstallCoordinator({ supabase, leadId }: AgentRunParams): P
 
   await supabase.from("leads").update({ workflow_stage: "install_scheduled" }).eq("id", leadId);
 
+  // Tell the customer for real, and record whether it actually sent.
+  const { data: lead } = await supabase.from("leads").select("name, email").eq("id", leadId).single();
+  const dateStr = installDate.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  let emailResult = { ok: false, error: "no lead email", messageId: undefined as string | undefined };
+  if (lead?.email) {
+    emailResult = await sendEmail({
+      to: lead.email,
+      subject: "Your solar installation is scheduled",
+      htmlBody: wrapEmailHtml(`<p>Hi ${(lead.name || "there").split(" ")[0]},</p><p>Your installation is booked for <strong>${dateStr}</strong>. Our team will be in touch beforehand to confirm timings and what to expect on the day.</p><p>Best regards,<br>The AISOLAR team</p>`),
+    });
+  }
+
   await supabase.from("touchpoints").insert({
-    lead_id: leadId, stage: "install_scheduled", channel: "email", direction: "outbound",
-    summary: `Install Coordinator Agent scheduled install for ${installDate.toLocaleDateString("en-IE")}.`,
+    lead_id: leadId, stage: "install_scheduled",
+    channel: emailResult.ok ? "email" : "system", direction: "outbound",
+    summary: `Install Coordinator Agent scheduled install for ${installDate.toLocaleDateString("en-IE")}${emailResult.ok ? " and emailed the customer" : ` (email not sent: ${emailResult.error})`}.`,
     actor: "agent", agent_id: "install_coordinator",
+    metadata: { installDate: installDate.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId },
   });
 
-  return { success: true, outputs: { installDate: installDate.toISOString() } };
+  return { success: true, outputs: { installDate: installDate.toISOString(), emailSent: emailResult.ok } };
 }
 
 async function handlePostInstall({ supabase, leadId }: AgentRunParams): Promise<AgentRunResult> {

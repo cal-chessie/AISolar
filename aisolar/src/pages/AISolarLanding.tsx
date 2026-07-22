@@ -29,7 +29,7 @@ function Nav() {
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
       <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <AiosMark className="size-7" />
+          <AiosMark className="size-8" />
           <span className="font-semibold tracking-tight">
             AISOLAR <span className="text-muted-foreground font-normal">by AIOS</span>
           </span>
@@ -352,7 +352,7 @@ function Footer() {
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <AiosMark className="size-7" />
+            <AiosMark className="size-8" />
             <span className="font-semibold tracking-tight">AISOLAR</span>
           </div>
           <p className="mt-3 text-xs text-muted-foreground leading-body max-w-[15rem]">

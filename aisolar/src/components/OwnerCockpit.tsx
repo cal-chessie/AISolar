@@ -281,7 +281,7 @@ function SidebarContent({
     <div className="w-56 h-full flex flex-col">
       {/* Logo */}
       <div className="p-3 flex items-center gap-2 border-b">
-        <AiosMark className="size-7" />
+        <AiosMark className="size-8" />
         <div>
           <div className="font-bold text-xs">{brand.name}</div>
           <div className="text-[11px] text-muted-foreground">Owner Cockpit</div>

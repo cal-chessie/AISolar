@@ -63,7 +63,7 @@ export default function InstallerPortalV5() {
       <header className="bg-background border-b sticky top-0 z-30">
         <div className="px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AiosMark className="size-7" />
+            <AiosMark className="size-8" />
             <div>
               <span className="font-bold text-sm">{brand.name} Field</span>
               <span className="text-xs text-muted-foreground ml-2">{new Date().toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
