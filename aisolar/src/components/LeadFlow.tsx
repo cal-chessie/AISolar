@@ -675,7 +675,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             <MapPin className="h-4 w-4 text-amber-600" /> Roof layout designer
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
-            Satellite view with panel overlay. Use + / − to adjust panel count. In production: Mapbox satellite + roof polygon detection + drag-to-position panels.
+            Satellite view of the property. Use + / − to adjust panel count. In production: Mapbox satellite imagery + drag-to-position panels (panel counts come from bill + survey, not an auto roof-scan).
           </p>
           <div className="relative aspect-[16/10] rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-700">
             {/* Real satellite tiles via OSM */}
@@ -733,7 +733,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
           </div>
           <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded text-xs text-amber-800 dark:text-amber-300">
             <Info className="h-3 w-3 inline mr-1" />
-            In production: Mapbox satellite layer + automated roof detection + drag-to-position panels + 3D pitch rendering (like OpenSolar).
+            In production: Mapbox satellite imagery + drag-to-position panels. Roof dimensions come from the site survey (more accurate than a satellite scan); auto roof-detection is a post-launch maybe, gated on Google Solar API coverage in Ireland.
           </div>
         </CardContent>
       </Card>

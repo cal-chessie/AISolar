@@ -9,7 +9,7 @@
 - **AI:** OpenRouter (7 LLMs supported) — bill extraction, proposal drafting, role-aware coaching
 - **Payments:** Stripe (card) + Coinbase Commerce (crypto)
 - **Comms:** Postmark (email) + Twilio (SMS) + WhatsApp Business
-- **Maps:** OpenStreetMap (free) / Mapbox (satellite + roof detection)
+- **Maps:** OpenStreetMap (free) / Mapbox (satellite imagery for the property; NO auto roof-detection — proposals use bill + survey data)
 - **Deploy:** Vercel (static) + Supabase (serverless)
 
 ## Quick Start
