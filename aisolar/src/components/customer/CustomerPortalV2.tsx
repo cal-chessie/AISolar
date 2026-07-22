@@ -133,19 +133,19 @@ export default function CustomerPortalV2() {
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary overflow-hidden">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header — project status */}
       <header className="bg-background/95 backdrop-blur border-b flex-shrink-0">
         <div className="px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sun className="h-7 w-7 text-primary" />
+            <span className="size-8 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0"><Bot className="h-4.5 w-4.5" /></span>
             <div>
-              <div className="font-bold text-sm">{brand.name}</div>
+              <div className="font-bold text-sm">{brand.name} <span className="font-normal text-muted-foreground">Assistant</span></div>
               <div className="text-[11px] text-muted-foreground">My Solar Project</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={`text-xs bg-primary/10 text-primary border-primary/40`}>
+            <Badge variant="outline" className="text-xs bg-tech/10 text-tech border-tech/30">
               {stage.label}
             </Badge>
             <Button variant="ghost" size="sm" className="p-2" onClick={() => setShowRights(true)}>
@@ -199,7 +199,7 @@ export default function CustomerPortalV2() {
               <button
                 key={q}
                 onClick={() => { setInput(q); setTimeout(() => handleSend(), 100); }}
-                className="text-xs px-3 py-1.5 rounded-full border border-primary/40 bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-foreground hover:bg-muted transition-colors"
               >
                 {q}
               </button>
@@ -390,12 +390,14 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
   const isAgent = message.type === 'agent';
   const isCompany = message.type === 'company';
 
+  // Cal: customer's own messages GREEN; everyone else a neutral bubble that
+  // reads in both themes (the old bg-primary/10 + text-primary vanished in dark).
   const bgClass = isCustomer
-    ? 'bg-primary text-white rounded-br-sm'
+    ? 'bg-doc-deposit text-white rounded-br-sm'
     : isAI
-    ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm'
+    ? 'bg-muted text-foreground rounded-bl-sm'
     : isAgent
-    ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm'
+    ? 'bg-tech/10 text-foreground rounded-bl-sm'
     : 'bg-muted text-foreground rounded-bl-sm';
 
   const actorLabel = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : leadName.split(' ')[0] + '\'s Consultant';
