@@ -22,6 +22,7 @@ import {
   ClipboardList, Zap, TrendingUp, Lock,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
+import { AisolarWordmark } from '@/components/brand/AiosMark';
 import { enableDemoMode, isDemoMode } from '@/lib/demoMode';
 
 interface OnboardingStep {
@@ -133,7 +134,7 @@ const STEPS: OnboardingStep[] = [
     route: '/system-settings',
     icon: Settings,
     duration: '1 min',
-    whatToDo: 'Click through all 6 tabs. Notice the integration health cards (Stripe, Coinbase, Postmark, Lovable AI, etc.).',
+    whatToDo: 'Click through all 6 tabs. Notice the integration health cards (Stripe, Coinbase, Postmark, OpenRouter, etc.).',
     whatToLook: 'The Vault Secrets card — secrets are encrypted at rest, never exposed to the client.',
   },
 ];
@@ -174,20 +175,20 @@ export default function OnboardingMode() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary mb-4 shadow-lg"
+            className="inline-flex mb-4"
           >
-            <Sun className="h-8 w-8 text-white" />
+            <AisolarWordmark className="size-16" />
           </motion.div>
-          <h1 className="text-3xl font-bold mb-2">Welcome to {brand.name}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight mb-2">Take a look around</h1>
           <p className="text-muted-foreground">
-            Take a 5-minute tour. Click around — it's all demo data, nothing breaks.
+            A five-minute tour of the cockpit. Click anything — it's demo data, nothing breaks.
           </p>
         </div>
 

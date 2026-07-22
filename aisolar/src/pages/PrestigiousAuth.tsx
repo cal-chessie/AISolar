@@ -27,7 +27,7 @@ import {
   Wrench, CheckCircle2, Building2, UserCircle, FileText,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
-import { AiosGlyph, BrandMark, AisolarWordmark } from '@/components/brand/AiosMark';
+import { AiosGlyph, AisolarWordmark } from '@/components/brand/AiosMark';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const emailSchema = z.string().email('Invalid email address').max(255);
@@ -169,12 +169,9 @@ export default function PrestigiousAuth() {
             Back to home
           </Link>
 
-          <div className="flex items-center gap-4 mb-10">
-            <AisolarWordmark className="size-16" />
-            <div>
-              <div className="text-3xl font-semibold tracking-tight leading-none">AISolar</div>
-              <div className="text-base text-primary-foreground/60 mt-1.5">by AIOS</div>
-            </div>
+          <div className="mb-10">
+            <AisolarWordmark className="size-20" />
+            <div className="text-base text-primary-foreground/60 mt-3 ml-1">by AIOS</div>
           </div>
 
           <h1 className="text-4xl font-semibold tracking-tight leading-[1.1] mb-5 max-w-md">
@@ -232,10 +229,10 @@ export default function PrestigiousAuth() {
               >
                 <div className="text-center mb-8">
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex mb-5">
-                    <BrandMark className="size-14" />
+                    <AisolarWordmark className="size-16" />
                   </motion.div>
-                  <h1 className="text-2xl font-semibold tracking-tight">Welcome to {brand.name}</h1>
-                  <p className="text-muted-foreground mt-2">Sign in to your dashboard, or get a free solar analysis.</p>
+                  <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+                  <p className="text-muted-foreground mt-2">Sign in to your dashboard, or start a free bill analysis.</p>
                 </div>
 
                 {/* Two paths */}
@@ -252,8 +249,8 @@ export default function PrestigiousAuth() {
                       <div className="flex-1">
                         <div className="font-bold text-base">I'm a homeowner</div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Get a free solar analysis from your electricity bill. Book a consultation.
-                          Track your project from quote to install.
+                          Upload your electricity bill for a free analysis, book a consultation, and
+                          follow your job from quote to install.
                         </p>
                         <div className="flex items-center gap-1 text-primary dark:text-primary text-sm font-medium mt-2 group-hover:gap-2 transition-all">
                           Start free analysis <ArrowRight className="h-3 w-3" />
@@ -274,8 +271,8 @@ export default function PrestigiousAuth() {
                       <div className="flex-1">
                         <div className="font-bold text-base">I'm staff (installer / consultant / owner)</div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Sign in to your dashboard. Manage your pipeline, surveys, proposals,
-                          installs, agents, and analytics.
+                          Your cockpit — pipeline, surveys, proposals, installs, and the agents
+                          that run them.
                         </p>
                         <div className="flex items-center gap-1 text-primary dark:text-primary text-sm font-medium mt-2 group-hover:gap-2 transition-all">
                           Sign in <ArrowRight className="h-3 w-3" />
@@ -315,9 +312,9 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <BrandMark className="size-12 mx-auto mb-3" />
+                      <AisolarWordmark className="size-14 mx-auto mb-3" />
                       <h1 className="text-xl font-semibold tracking-tight">Staff sign in</h1>
-                      <p className="text-sm text-muted-foreground mt-1">Access your {brand.name} dashboard</p>
+                      <p className="text-sm text-muted-foreground mt-1">Owner, consultant or installer — one login.</p>
                     </div>
 
                     <form onSubmit={handleSignIn} className="space-y-4">
@@ -398,9 +395,9 @@ export default function PrestigiousAuth() {
                     </button>
 
                     <div className="text-center mb-6">
-                      <BrandMark className="size-12 mx-auto mb-3" />
+                      <AisolarWordmark className="size-14 mx-auto mb-3" />
                       <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
-                      <p className="text-sm text-muted-foreground mt-1">Free to start. No credit card required.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Free to start. No card required.</p>
                     </div>
 
                     {/* Role picker — visual cards */}
