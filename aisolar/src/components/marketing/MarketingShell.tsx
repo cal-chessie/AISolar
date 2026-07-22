@@ -55,7 +55,7 @@ export function MarketingNav({ product }: { product: ProductKey }) {
               {l.label}
             </Link>
           ))}
-          <Link to="/start" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
+          <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -80,7 +80,7 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
   const cols: Array<{ head: string; items: Array<{ label: string; to: string }> }> = [
     { head: 'Product', items: [
       { label: 'How it works', to: product === 'aisolar' ? '/#product' : PRODUCT[product].home },
-      { label: 'Pricing', to: '/start' },
+      { label: 'Pricing', to: '/pricing' },
       { label: 'Start free', to: '/start' },
     ] },
     { head: 'AIOS family', items: [

@@ -28,6 +28,7 @@ import AISolarLanding from "./pages/AISolarLanding";
 import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
 import AiTeamPage from "./pages/AiTeamPage";
+import PricingPage from "./pages/PricingPage";
 import AgentFoundation from "./components/AgentFoundation";
 
 // Components (current versions only — no legacy)
@@ -83,6 +84,7 @@ function AppRoutes() {
           <Route path="/upload" element={wrap(<StartAnalysis />)} />
           <Route path="/aios" element={wrap(<AiosPage />)} />
           <Route path="/aiteam" element={wrap(<AiTeamPage />)} />
+          <Route path="/pricing" element={wrap(<PricingPage />)} />
           <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
           <Route path="/upsell" element={wrap(<ValueUpsell />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
