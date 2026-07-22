@@ -37,7 +37,7 @@ import {
   TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
   Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
-import { getStage, PIPELINE_STAGES, calculateSystemEstimate } from '@/lib/leadIntake';
+import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
 import InsightsView from '@/components/InsightsView';
@@ -848,6 +848,12 @@ function StatBox({ label, value, icon: Icon, color }: { label: string; value: st
  * Uses native HTML5 drag-and-drop. Each column maps to a PIPELINE_STAGES entry.
  * Drop a card on a column → onAdvance(leadId, targetStageId) is called.
  */
+// Colour emblem per phase (Cal's "little emblems follow the primary-colour logic").
+const GROUP_DOT: Record<string, string> = {
+  intake: 'bg-muted-foreground', survey: 'bg-tech', proposal: 'bg-doc-proposal',
+  contract: 'bg-doc-contract', install: 'bg-primary', closeout: 'bg-doc-deposit',
+};
+
 function PipelineKanban({
   leads,
   onAdvance,
@@ -858,84 +864,87 @@ function PipelineKanban({
   onSelectLead: (lead: DummyLead) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [hoverStage, setHoverStage] = useState<string | null>(null);
+  const [hoverGroup, setHoverGroup] = useState<string | null>(null);
 
-  const handleDrop = (stageId: string) => {
-    if (draggedId) {
-      onAdvance(draggedId, stageId);
-    }
-    setDraggedId(null);
-    setHoverStage(null);
-  };
+  const active = leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage));
+  const totalValue = leads.reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0);
+  const hot = leads.filter(l => l.score > 80).length;
+
+  // 6 phase columns (not 13 raw stages) — fills the width, no runaway strip.
+  const columns = STAGE_GROUPS.map(g => {
+    const stageIds = PIPELINE_STAGES.filter(s => s.group === g.id).map(s => s.id);
+    const firstStage = stageIds[0];
+    const groupLeads = leads
+      .filter(l => stageIds.includes(l.workflow_stage))
+      .sort((a, b) => b.score - a.score);
+    const value = groupLeads.reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0);
+    return { ...g, firstStage, leads: groupLeads, value };
+  });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          Pipeline — {leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length} active
-        </h3>
-        <span className="text-[11px] text-muted-foreground">Drag a card to advance stage</span>
-      </div>
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-2 min-w-max">
-          {PIPELINE_STAGES.map(stage => {
-            const stageLeads = leads.filter(l => l.workflow_stage === stage.id);
-            const isHover = hoverStage === stage.id;
-            return (
-              <div
-                key={stage.id}
-                onDragOver={(e) => { e.preventDefault(); setHoverStage(stage.id); }}
-                onDragLeave={() => setHoverStage(prev => prev === stage.id ? null : prev)}
-                onDrop={() => handleDrop(stage.id)}
-                className={`w-56 flex-shrink-0 rounded-lg border-2 transition-colors ${
-                  isHover ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border bg-muted/20'
-                }`}
-              >
-                <div className="p-2 border-b flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-1.5 h-1.5 rounded-full bg-primary`} />
-                    <span className="text-[11px] font-semibold uppercase tracking-wide">{stage.label}</span>
-                  </div>
-                  <span className="text-[11px] font-bold text-muted-foreground">{stageLeads.length}</span>
-                </div>
-                <div className="p-1.5 space-y-1.5 max-h-96 overflow-y-auto">
-                  {stageLeads.length === 0 ? (
-                    <div className="text-[11px] text-muted-foreground/60 text-center py-4">Drop here</div>
-                  ) : (
-                    stageLeads.map(lead => (
-                      <div
-                        key={lead.id}
-                        draggable
-                        onDragStart={() => setDraggedId(lead.id)}
-                        onDragEnd={() => { setDraggedId(null); setHoverStage(null); }}
-                        onClick={() => onSelectLead(lead)}
-                        className={`p-2 bg-background rounded-md border cursor-pointer transition-shadow hover:shadow-md ${
-                          draggedId === lead.id ? 'opacity-40' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <Avatar className="h-5 w-5"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                          <span className="text-xs font-medium truncate flex-1">{lead.name}</span>
-                          {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500 flex-shrink-0" />}
-                        </div>
-                        {lead.proposal && (
-                          <div className="text-[11px] text-muted-foreground mt-1">
-                            {lead.proposal.system_size_kw}kWp · {eur(lead.proposal.net_cost)}
-                          </div>
-                        )}
-                        {!lead.proposal && lead.intake && (
-                          <div className="text-[11px] text-muted-foreground mt-1">
-                            €{lead.monthly_bill}/mo · est. {lead.intake.estimated_system_size_kw}kWp
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
+    <div className="flex flex-col h-full min-h-[calc(100dvh-11rem)]">
+      {/* stat header */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 pb-3">
+        <div>
+          <span className="text-lg font-semibold tracking-tight">{eur(totalValue)}</span>
+          <span className="text-xs text-muted-foreground ml-1.5">pipeline value</span>
         </div>
+        <div className="text-sm text-muted-foreground">
+          <strong className="text-foreground">{active.length}</strong> active
+          {hot > 0 && <> · <strong className="text-pop">{hot}</strong> hot</>}
+        </div>
+        <span className="ml-auto text-2xs text-muted-foreground">Drag a card to advance a phase</span>
+      </div>
+
+      {/* full-height board: 6 columns on xl, wraps on smaller. No blank void. */}
+      <div className="flex-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 min-h-0">
+        {columns.map(col => {
+          const isHover = hoverGroup === col.id;
+          return (
+            <div
+              key={col.id}
+              onDragOver={(e) => { e.preventDefault(); setHoverGroup(col.id); }}
+              onDragLeave={() => setHoverGroup(prev => prev === col.id ? null : prev)}
+              onDrop={() => { if (draggedId && col.firstStage) onAdvance(draggedId, col.firstStage); setDraggedId(null); setHoverGroup(null); }}
+              className={`flex flex-col rounded-panel border bg-card min-h-[16rem] transition-colors ${isHover ? 'border-primary/50 bg-primary/[0.04]' : 'border-border'}`}
+            >
+              <div className="flex items-center gap-1.5 px-3 h-10 border-b border-border shrink-0">
+                <span className={`size-2 rounded-full ${GROUP_DOT[col.id] ?? 'bg-primary'}`} />
+                <span className="text-2xs font-semibold uppercase tracking-wide truncate">{col.label}</span>
+                <span className="ml-auto text-2xs tabular-nums text-muted-foreground">{col.leads.length}</span>
+              </div>
+              {col.value > 0 && (
+                <div className="px-3 py-1.5 text-2xs tabular-nums text-muted-foreground border-b border-border/60">{eur(col.value)}</div>
+              )}
+              <div className="flex-1 p-2 space-y-2 overflow-y-auto scroll-slim">
+                {col.leads.length === 0 ? (
+                  <div className="text-2xs text-muted-foreground/50 text-center py-6">—</div>
+                ) : col.leads.map(lead => (
+                  <div
+                    key={lead.id}
+                    draggable
+                    onDragStart={() => setDraggedId(lead.id)}
+                    onDragEnd={() => { setDraggedId(null); setHoverGroup(null); }}
+                    onClick={() => onSelectLead(lead)}
+                    className={`rounded-md border border-border bg-background p-2 cursor-pointer hover:shadow-md transition-shadow ${draggedId === lead.id ? 'opacity-40' : ''}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Avatar className="h-5 w-5"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                      <span className="text-xs font-medium truncate flex-1">{lead.name}</span>
+                      {lead.score > 80 && <Flame className="h-3 w-3 text-pop shrink-0" />}
+                    </div>
+                    <div className="text-2xs text-muted-foreground mt-1 truncate">{getStage(lead.workflow_stage).label}</div>
+                    <div className="text-2xs font-medium tabular-nums mt-0.5">
+                      {lead.proposal ? `${lead.proposal.system_size_kw}kWp · ${eur(lead.proposal.net_cost)}`
+                        : lead.intake ? `€${lead.monthly_bill}/mo · est. ${lead.intake.estimated_system_size_kw}kWp`
+                        : `€${lead.monthly_bill}/mo`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
