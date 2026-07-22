@@ -162,7 +162,10 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
               return (
                 <div key={s.id} className="flex items-center flex-1">
                   <button
-                    onClick={() => i <= stepIndex && setStep(s.id)}
+                    // Cal: never block the consultant — free movement through
+                    // every stage. We can gate specific stages after launch if
+                    // it proves necessary.
+                    onClick={() => setStep(s.id)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
                       isActive ? 'bg-primary text-white' :
                       isDone ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :

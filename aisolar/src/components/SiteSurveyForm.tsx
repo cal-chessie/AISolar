@@ -814,7 +814,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   };
 
   return (
-    <div ref={surveyContainerRef} className="space-y-4 pb-40">
+    <div ref={surveyContainerRef} className="space-y-4 pb-24">
       {/* Progress Indicator - Sticky on mobile */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <SurveyStepProgress 
@@ -854,7 +854,7 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
               calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' 
                 ? 'bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary'
                 : calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress'
-                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                ? 'bg-tech/10 text-tech'
                 : 'bg-muted text-muted-foreground'
             )}>
               {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' && (
@@ -867,50 +867,42 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         </CardContent>
       </Card>
 
-      {/* Sticky Action Buttons - Mobile Safe Area */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
-        <div className="max-w-4xl mx-auto space-y-3">
-          {/* Step Navigation - Previous/Next */}
-          <SurveyStepNavigation 
+      {/* ONE slim action bar (was: step pill + two h-14 buttons + save/complete
+          stack + helper text — half the phone screen of chrome). Left: prev/next.
+          Right: Save + the star action, Complete & Create Proposal. */}
+      <div className="fixed bottom-0 left-0 right-0 px-3 py-2 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
+        <div className="max-w-4xl mx-auto flex items-center gap-2">
+          <SurveyStepNavigation
             currentStep={currentStep}
             totalSteps={SURVEY_STEPS.length}
             onStepChange={setCurrentStep}
           />
-          
-          {/* Save/Complete Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button 
-              onClick={handleSubmit((data) => onSubmit(data, false))} 
-              disabled={loading} 
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              onClick={handleSubmit((data) => onSubmit(data, false))}
+              disabled={loading}
               variant="outline"
-              className="flex-1 h-11"
+              size="sm"
+              className="h-9"
             >
-              {loading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
-              ) : (
-                <><Save className="mr-2 h-4 w-4" /> Save Survey</>
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-1.5 h-4 w-4" /> Save</>}
             </Button>
-
             {onCreateProposal && (
               <Button
                 type="button"
                 onClick={handleCompleteAndCreateProposal}
                 disabled={loading || !completionStatus.isComplete}
-                className="flex-1 h-11 bg-primary hover:bg-primary"
+                size="sm"
+                className="h-9"
+                title={!completionStatus.isComplete ? `Complete all required fields (${completionStatus.completionPercentage}%) to create a proposal` : undefined}
               >
-                <FileText className="mr-2 h-4 w-4" />
-                Complete & Create Proposal
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <FileText className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Complete &amp; Create Proposal</span>
+                <span className="sm:hidden">Proposal</span>
+                <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             )}
           </div>
-          
-          {!completionStatus.isComplete && onCreateProposal && (
-            <p className="text-xs text-muted-foreground text-center">
-              Complete all required fields ({completionStatus.completionPercentage}%) to create a proposal
-            </p>
-          )}
         </div>
       </div>
     </div>
