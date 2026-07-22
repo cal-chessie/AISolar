@@ -105,7 +105,7 @@ export default function InstallerPortalV5() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 py-3 pb-20">
+      <main className="max-w-6xl mx-auto px-3 py-3 pb-20 sm:px-4">
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
 
@@ -119,7 +119,7 @@ export default function InstallerPortalV5() {
                     Active ({displayActive.length})
                   </button>
                   <button onClick={() => setJobSubTab('completed')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Completed ({completedJobs.length})
                   </button>
                 </div>
@@ -130,21 +130,21 @@ export default function InstallerPortalV5() {
                     {surveyJobs.length > 0 && (
                       <div>
                         <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Camera className="h-3 w-3" /> Surveys ({surveyJobs.length})</h3>
-                        {surveyJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="survey" onClick={() => navigate(`/job/${lead.id}`)} />)}
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{surveyJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="survey" onClick={() => navigate(`/job/${lead.id}`)} />)}</div>
                       </div>
                     )}
                     {/* Installs */}
                     {activeJobs.length > 0 && (
                       <div>
                         <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><Wrench className="h-3 w-3" /> Installs ({activeJobs.length})</h3>
-                        {activeJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="install" onClick={() => navigate(`/job/${lead.id}`)} />)}
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{activeJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="install" onClick={() => navigate(`/job/${lead.id}`)} />)}</div>
                       </div>
                     )}
                     {/* Handovers */}
                     {handoverJobs.length > 0 && (
                       <div>
                         <h3 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Handovers ({handoverJobs.length})</h3>
-                        {handoverJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="handover" onClick={() => navigate(`/job/${lead.id}`)} />)}
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{handoverJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="handover" onClick={() => navigate(`/job/${lead.id}`)} />)}</div>
                       </div>
                     )}
                     {displayActive.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active jobs.</p>}
@@ -152,7 +152,7 @@ export default function InstallerPortalV5() {
                 )}
 
                 {jobSubTab === 'completed' && (
-                  <div className="space-y-2">
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {completedJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="completed" onClick={() => navigate(`/job/${lead.id}`)} />)}
                     {completedJobs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No completed jobs yet.</p>}
                   </div>
