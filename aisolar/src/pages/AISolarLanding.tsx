@@ -84,7 +84,7 @@ function Hero() {
             crews install. The platform runs the rest.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 sm:max-w-md">
-            <Link to="/auth" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-control bg-pop px-5 text-sm font-medium text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
+            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-control bg-pop px-5 text-sm font-medium text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
               Get started <ArrowRight className="size-4" />
             </Link>
             <Link to="/demo" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-control border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors duration-instant">

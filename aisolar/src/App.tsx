@@ -92,6 +92,7 @@ function AppRoutes() {
 
           {/* Auth + Onboarding */}
           <Route path="/auth" element={wrap(<PrestigiousAuth />)} />
+          <Route path="/get-started" element={wrap(<PrestigiousAuth />)} />
           <Route path="/onboarding" element={wrap(<OnboardingMode />)} />
           <Route path="/demo" element={wrap(<DemoIndex />)} />
 

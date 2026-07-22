@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,12 @@ type RoleType = 'owner' | 'consultant' | 'installer' | 'customer';
 
 export default function PrestigiousAuth() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'choose' | 'signin' | 'signup'>('choose');
+  const location = useLocation();
+  // Two separate windows (Cal): /get-started opens the create-account window,
+  // everything else opens Sign in. Homeowners use /start, so there's no chooser.
+  const [mode, setMode] = useState<'choose' | 'signin' | 'signup'>(
+    location.pathname === '/get-started' ? 'signup' : 'signin'
+  );
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,6 +76,19 @@ export default function PrestigiousAuth() {
     } else {
       navigate('/consultant');
     }
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) {
+      toast({ title: 'Google sign-in error', description: error.message, variant: 'destructive' });
+      setLoading(false);
+    }
+    // on success the browser redirects to Google
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -285,7 +303,7 @@ export default function PrestigiousAuth() {
                   <div className="text-center pt-4">
                     <p className="text-sm text-muted-foreground">
                       New to {brand.name}?{' '}
-                      <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">
+                      <button onClick={() => navigate('/get-started')} className="text-primary hover:underline font-medium">
                         Create an account
                       </button>
                     </p>
@@ -305,7 +323,7 @@ export default function PrestigiousAuth() {
                 <Card className="shadow-xl">
                   <CardContent className="p-6">
                     <button
-                      onClick={() => setMode('choose')}
+                      onClick={() => navigate('/')}
                       className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
                     >
                       <ArrowLeft className="h-3 w-3" /> Back
@@ -313,9 +331,12 @@ export default function PrestigiousAuth() {
 
                     <div className="text-center mb-6">
                       <AisolarWordmark className="size-14 mx-auto mb-3" />
-                      <h1 className="text-xl font-semibold tracking-tight">Staff sign in</h1>
+                      <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
                       <p className="text-sm text-muted-foreground mt-1">Owner, consultant or installer — one login.</p>
                     </div>
+
+                    <GoogleButton onClick={handleGoogle} loading={loading} label="Sign in with Google" />
+                    <OrDivider />
 
                     <form onSubmit={handleSignIn} className="space-y-4">
                       <div>
@@ -368,7 +389,7 @@ export default function PrestigiousAuth() {
 
                     <div className="mt-6 pt-4 border-t text-center text-sm">
                       <span className="text-muted-foreground">No account? </span>
-                      <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">
+                      <button onClick={() => navigate('/get-started')} className="text-primary hover:underline font-medium">
                         Create one
                       </button>
                     </div>
@@ -388,7 +409,7 @@ export default function PrestigiousAuth() {
                 <Card className="shadow-xl">
                   <CardContent className="p-6">
                     <button
-                      onClick={() => setMode('choose')}
+                      onClick={() => navigate('/')}
                       className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
                     >
                       <ArrowLeft className="h-3 w-3" /> Back
@@ -396,9 +417,12 @@ export default function PrestigiousAuth() {
 
                     <div className="text-center mb-6">
                       <AisolarWordmark className="size-14 mx-auto mb-3" />
-                      <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
+                      <h1 className="text-xl font-semibold tracking-tight">Get started</h1>
                       <p className="text-sm text-muted-foreground mt-1">Free to start. No card required.</p>
                     </div>
+
+                    <GoogleButton onClick={handleGoogle} loading={loading} label="Sign up with Google" />
+                    <OrDivider />
 
                     {/* Role picker — visual cards */}
                     <div className="mb-4">
@@ -540,6 +564,36 @@ export default function PrestigiousAuth() {
           </Dialog>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Google OAuth button (primary login) + divider — cal.com style. */
+function GoogleButton({ onClick, loading, label }: { onClick: () => void; loading?: boolean; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="w-full h-11 rounded-control border border-border bg-background hover:bg-muted transition-colors flex items-center justify-center gap-2.5 text-sm font-medium disabled:opacity-60"
+    >
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 my-4">
+      <span className="h-px flex-1 bg-border" />
+      <span className="text-2xs uppercase tracking-wide text-muted-foreground">or</span>
+      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }

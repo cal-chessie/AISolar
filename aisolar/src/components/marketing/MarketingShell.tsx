@@ -23,7 +23,7 @@ const MARK: Record<ProductKey, (p: { className?: string }) => JSX.Element> = {
 };
 
 const PRODUCT = {
-  aisolar: { name: 'AISOLAR', sub: 'by AIOS', home: '/', cta: { label: 'Get started', to: '/auth' } },
+  aisolar: { name: 'AISOLAR', sub: 'by AIOS', home: '/', cta: { label: 'Get started', to: '/get-started' } },
   aios:    { name: 'AIOS',    sub: '',         home: '/aios', cta: { label: 'Talk to us', to: '/auth' } },
   aiteam:  { name: 'AITEAM',  sub: 'by AIOS', home: '/aiteam', cta: { label: 'Get early access', to: '/auth' } },
 } as const;
