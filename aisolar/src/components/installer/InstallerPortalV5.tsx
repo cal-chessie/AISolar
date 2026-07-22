@@ -312,10 +312,16 @@ function JobCard({ lead, variant, onClick }: { lead: DummyLead; variant: 'survey
   const proposal = lead.proposal;
   const survey = lead.survey;
   const initials = lead.name.split(' ').map(n => n[0]).slice(0, 2).join('');
-  const color = variant === 'survey' ? 'indigo' : variant === 'handover' ? 'blue' : variant === 'completed' ? 'emerald' : 'amber';
+  // Subtle red + blue: a job happening TODAY gets a red edge (act now); upcoming
+  // survey/install work gets a blue edge; everything else stays charcoal.
+  const isToday = !!lead.assignment?.scheduled_date &&
+    new Date(lead.assignment.scheduled_date).toDateString() === new Date().toDateString();
+  const edge = isToday ? 'border-l-pop'
+    : (variant === 'survey' || variant === 'install') ? 'border-l-tech'
+    : 'border-l-primary/40';
 
   return (
-    <Card className={`mb-2 cursor-pointer hover:shadow-md border-l-4 border-l-primary/40`} onClick={onClick}>
+    <Card className={`mb-2 cursor-pointer hover:shadow-md border-l-4 ${edge}`} onClick={onClick}>
       <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">

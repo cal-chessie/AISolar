@@ -224,7 +224,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                 <Bot className="h-5 w-5 text-primary" />
                 Agent Foundation
                 {demo && (
-                  <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700 border-amber-200 ml-2">
+                  <Badge variant="outline" className="text-[11px] bg-tech/10 text-tech border-tech/30 ml-2">
                     Demo data
                   </Badge>
                 )}
@@ -242,7 +242,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                   <div className="text-xs text-muted-foreground">runs (24h)</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-amber-600">{queuedItems}</div>
+                  <div className="text-2xl font-bold text-tech">{queuedItems}</div>
                   <div className="text-xs text-muted-foreground">queued</div>
                 </div>
                 <div>
@@ -305,7 +305,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                     <span className="text-muted-foreground">last: {run.lastRun}</span>
                     <span className="text-muted-foreground">{run.runs24h}/24h</span>
                     {run.queueDepth > 0 && (
-                      <span className="text-amber-600">queue: {run.queueDepth}</span>
+                      <span className="text-tech">queue: {run.queueDepth}</span>
                     )}
                   </div>
                   <Button

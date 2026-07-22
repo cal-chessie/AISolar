@@ -377,17 +377,17 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         </Card>
         </motion.div>
         <motion.div variants={listItem}>
-        <Card className="border-amber-200 dark:border-amber-800">
+        <Card className="border-tech/30">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Jobs</span>
-              <Wrench className="h-3 w-3 text-amber-600" />
+              <Wrench className="h-3 w-3 text-tech" />
             </div>
-            <div className="text-xl font-bold text-amber-700 dark:text-amber-400">{leads.filter((l: DummyLead) => l.assignment).length}</div>
+            <div className="text-xl font-bold text-tech">{leads.filter((l: DummyLead) => l.assignment).length}</div>
             <div className="text-[11px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
             <div className="flex gap-0.5 mt-1.5">
               {leads.filter((l: DummyLead) => l.assignment).slice(0, 6).map((l: DummyLead, i: number) => (
-                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-primary' : 'bg-amber-400'}`} />
+                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-primary' : 'bg-tech'}`} />
               ))}
             </div>
           </CardContent>
@@ -405,7 +405,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               {data.agentFailures > 0 ? <span className="text-red-600">⚠ {data.agentFailures} failed</span> : 'all healthy'} · runs/24h
             </div>
             <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className={`h-full ${data.agentFailures > 0 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${data.agentHealth}%` }} />
+              <div className={`h-full ${data.agentFailures > 0 ? 'bg-pop' : 'bg-primary'}`} style={{ width: `${data.agentHealth}%` }} />
             </div>
           </CardContent>
         </Card>
@@ -511,8 +511,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               return (
                 <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(target)}>
                   <span className="text-[11px] font-mono text-muted-foreground w-10">{event.time}</span>
-                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-amber-100 dark:bg-amber-950/30' : 'bg-primary/10 dark:bg-primary/10'}`}>
-                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-amber-600" /> : <Phone className="h-2.5 w-2.5 text-primary" />}
+                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-tech/10' : 'bg-primary/10'}`}>
+                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-tech" /> : <Phone className="h-2.5 w-2.5 text-primary" />}
                   </div>
                   <span className="text-xs flex-1 truncate">{event.title}</span>
                   <span className="text-[11px] text-muted-foreground">{event.assignee}</span>
@@ -610,8 +610,8 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
         <div className="space-y-2">
           {installer.jobs.map((lead: DummyLead) => (
             <div key={lead.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(`/job/${lead.id}`)}>
-              <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-primary/10' : 'bg-amber-100'}`}>
-                <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-primary' : 'text-amber-600'}`} />
+              <div className={`p-2 rounded-lg ${lead.assignment?.status === 'completed' ? 'bg-primary/10' : 'bg-tech/10'}`}>
+                <Wrench className={`h-4 w-4 ${lead.assignment?.status === 'completed' ? 'text-primary' : 'text-tech'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-sm">{lead.name}</div>
