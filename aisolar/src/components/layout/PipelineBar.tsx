@@ -34,7 +34,7 @@ const GROUP_ACCENT: Record<string, string> = {
   survey:   'bg-primary',
   proposal: 'bg-primary',
   contract: 'bg-primary',
-  install:  'bg-amber-500',
+  install:  'bg-primary',
   closeout: 'bg-primary',
 };
 
@@ -68,7 +68,7 @@ export function PipelineBar({ counts, onStageClick, onGroupToggle, className }: 
   const open = groups.find(g => g.id === openGroup);
 
   return (
-    <section className={cn('rounded-lg border border-border bg-card', className)}>
+    <section className={cn('rounded-panel border border-border/70 bg-card shadow-card', className)}>
       <header className="flex items-center gap-2 px-4 h-11 border-b border-border">
         <h2 className="text-sm font-semibold">Pipeline</h2>
         <span className="text-xs text-muted-foreground">click a phase for its stages</span>

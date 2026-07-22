@@ -279,7 +279,7 @@ export default function JobViewV2() {
         {/* Progress bar */}
         <div className="h-1 bg-muted">
           <motion.div
-            className={`h-full transition-all ${overallComplete ? 'bg-primary' : 'bg-gradient-to-r from-amber-500 to-primary'}`}
+            className={`h-full transition-all ${overallComplete ? 'bg-primary' : 'bg-primary/70'}`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -554,7 +554,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
         <Card>
           <CardContent className="p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Sun className="h-4 w-4 text-amber-600" /> System being installed
+              <Sun className="h-4 w-4 text-muted-foreground" /> System being installed
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
@@ -596,7 +596,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
           </h3>
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div className="flex items-center gap-2">
-              <Sun className="h-4 w-4 text-amber-500" />
+              <Sun className="h-4 w-4 text-muted-foreground" />
               <span>18°C</span>
             </div>
             <div className="flex items-center gap-2">
@@ -727,7 +727,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
       <Button
         onClick={onComplete}
         disabled={!allDone}
-        className="w-full h-12 bg-amber-600 transition-colors hover:bg-amber-700 disabled:opacity-50"
+        className="w-full h-12 bg-primary transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {allDone ? (
           <>Phase complete — next <ChevronRight className="h-4 w-4 ml-1" /></>

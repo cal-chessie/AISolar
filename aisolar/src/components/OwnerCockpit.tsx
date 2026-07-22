@@ -18,6 +18,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+import { AiosMark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -280,9 +281,7 @@ function SidebarContent({
     <div className="w-56 h-full flex flex-col">
       {/* Logo */}
       <div className="p-3 flex items-center gap-2 border-b">
-        <div className="p-1.5 bg-gradient-to-br from-primary to-primary rounded-lg">
-          <Building2 className="h-4 w-4 text-white" />
-        </div>
+        <AiosMark className="size-7" />
         <div>
           <div className="font-bold text-xs">{brand.name}</div>
           <div className="text-[11px] text-muted-foreground">Owner Cockpit</div>

@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
+import { AiosMark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -271,7 +272,7 @@ export default function ConsultantCockpitV5() {
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sun className="h-5 w-5 text-primary" />
+            <AiosMark className="size-6" />
             <span className="font-bold text-sm">{brand.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>
@@ -780,7 +781,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
             <div className="px-3 py-2 border-b bg-muted/30 flex items-center gap-2">
               {message.card.kind === 'proposal' && <FileText className="h-3.5 w-3.5 text-primary" />}
               {message.card.kind === 'contract' && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
-              {message.card.kind === 'install' && <Calendar className="h-3.5 w-3.5 text-amber-600" />}
+              {message.card.kind === 'install' && <Calendar className="h-3.5 w-3.5 text-muted-foreground" />}
               {message.card.kind === 'warranty' && <Award className="h-3.5 w-3.5 text-primary" />}
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold truncate">{message.card.title}</div>

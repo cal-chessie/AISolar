@@ -14,6 +14,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { AiosMark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -62,7 +63,7 @@ export default function InstallerPortalV5() {
       <header className="bg-background border-b sticky top-0 z-30">
         <div className="px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Wrench className="h-6 w-6 text-amber-600" />
+            <AiosMark className="size-7" />
             <div>
               <span className="font-bold text-sm">{brand.name} Field</span>
               <span className="text-xs text-muted-foreground ml-2">{new Date().toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
@@ -95,7 +96,7 @@ export default function InstallerPortalV5() {
             const Icon = t.icon;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${tab === t.id ? 'bg-amber-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${tab === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
                 <Icon className="h-3.5 w-3.5" /> {t.label}
                 {t.count > 0 && <span className={`text-[11px] px-1 rounded-full ${tab === t.id ? 'bg-white/20' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
               </button>
@@ -114,7 +115,7 @@ export default function InstallerPortalV5() {
                 {/* Sub-tabs: Active | Completed */}
                 <div className="flex gap-1">
                   <button onClick={() => setJobSubTab('active')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'active' ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${jobSubTab === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Active ({displayActive.length})
                   </button>
                   <button onClick={() => setJobSubTab('completed')}
@@ -165,11 +166,11 @@ export default function InstallerPortalV5() {
                 {/* Sub-tabs: Per Customer | Stock */}
                 <div className="flex gap-1">
                   <button onClick={() => setMatSubTab('per_customer')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${matSubTab === 'per_customer' ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${matSubTab === 'per_customer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Per Customer
                   </button>
                   <button onClick={() => setMatSubTab('stock')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${matSubTab === 'stock' ? 'bg-amber-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium ${matSubTab === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Depot Stock
                   </button>
                 </div>
@@ -191,10 +192,10 @@ export default function InstallerPortalV5() {
                         { category: 'Safety', item: 'Harness + edge protection', qty: 2, critical: true },
                       ] : [];
                       return (
-                        <Card key={lead.id} className={isExpanded ? 'border-amber-400' : ''}>
+                        <Card key={lead.id} className={isExpanded ? 'border-primary/40' : ''}>
                           <button onClick={() => setExpandedJob(isExpanded ? null : lead.id)}
                             className="w-full p-3 flex items-center gap-3 text-left transition-colors hover:bg-muted/30">
-                            <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg"><Package className="h-4 w-4 text-amber-600" /></div>
+                            <div className="p-2 bg-primary/10 rounded-lg"><Package className="h-4 w-4 text-primary" /></div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm">{lead.name}</div>
                               <div className="text-xs text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()} · {proposal?.system_size_kw}kWp</div>
@@ -211,7 +212,7 @@ export default function InstallerPortalV5() {
                                   {item.critical && <Badge variant="outline" className="text-[11px] bg-red-50 text-red-700 border-red-200">Critical</Badge>}
                                 </div>
                               ))}
-                              <Button size="sm" className="w-full mt-2 bg-amber-600 transition-colors hover:bg-amber-700" onClick={() => navigate(`/job/${lead.id}`)}>
+                              <Button size="sm" className="w-full mt-2 bg-primary transition-opacity hover:opacity-90" onClick={() => navigate(`/job/${lead.id}`)}>
                                 Open job <ChevronRight className="h-3 w-3 ml-1" />
                               </Button>
                             </div>
@@ -281,8 +282,8 @@ export default function InstallerPortalV5() {
                   {activeJobs.map(lead => (
                     <Card key={lead.id} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/job/${lead.id}`)}>
                       <CardContent className="p-3 flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-950/40">
-                          <MapPin className="h-4 w-4 text-amber-700" />
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <MapPin className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm">{lead.name}</div>
@@ -331,7 +332,7 @@ function JobCard({ lead, variant, onClick }: { lead: DummyLead; variant: 'survey
                 <div className="text-xs text-primary mt-0.5">{survey.photo_count || 0}/8 photos · {survey.roof_type} roof</div>
               )}
               {variant === 'install' && proposal && (
-                <div className="text-xs text-amber-600 mt-0.5">{proposal.system_size_kw} kWp · {proposal.panel_count} panels{proposal.battery_model ? ' + battery' : ''}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{proposal.system_size_kw} kWp · {proposal.panel_count} panels{proposal.battery_model ? ' + battery' : ''}</div>
               )}
               {variant === 'handover' && (
                 <div className="text-xs text-primary mt-0.5">Warranty sent · Final invoice pending</div>
