@@ -265,10 +265,10 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
                 {/* Right: Calendar booking */}
                 <div className="space-y-4">
-                  <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10">
+                  <Card className="border-pop/30 bg-pop/[0.04]">
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-amber-600" /> Book site survey
+                        <Calendar className="h-4 w-4" /> Book site survey
                       </h3>
                       <p className="text-xs text-muted-foreground mb-3">
                         The estimate is ready. Next step is a site survey to confirm roof details and finalize the system design.
@@ -280,7 +280,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                             <button
                               key={slot}
                               onClick={() => setSurveyBooked({ slot })}
-                              className={`p-2 border rounded-lg text-xs hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors text-left ${isSelected ? 'border-amber-500 bg-amber-100 dark:bg-amber-950/40 font-medium' : ''}`}
+                              className={`p-2 border rounded-lg text-xs hover:border-pop/50 hover:bg-pop/5 transition-colors text-left ${isSelected ? 'border-pop bg-pop/10 font-medium' : 'border-border'}`}
                             >
                               {slot}
                             </button>
@@ -288,7 +288,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                         })}
                       </div>
                       <Button
-                        className="w-full mt-3 bg-amber-600 transition-colors hover:bg-amber-700"
+                        className="w-full mt-3 bg-pop text-pop-foreground transition-colors hover:bg-pop/90"
                         disabled={!surveyBooked}
                         onClick={() => {
                           if (!surveyBooked) return;

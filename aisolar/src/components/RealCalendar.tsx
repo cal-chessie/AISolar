@@ -53,12 +53,12 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
     // Consultations
     if (['new', 'intake_complete'].includes(lead.workflow_stage)) {
       const d = new Date(today); d.setDate(today.getDate() + (i % 4) + 1); d.setHours(10, 0);
-      events.push({ id: `cons_${lead.id}`, date: d, time: '10:00', endTime: '10:30', type: 'consultation', title: `${lead.name} — consultation`, customer: lead.name, assignee: lead.assigned_consultant, route: '/lead-flow' });
+      events.push({ id: `cons_${lead.id}`, date: d, time: '10:00', endTime: '10:30', type: 'consultation', title: `${lead.name} — consultation`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
     }
     // Site surveys
     if (lead.survey?.scheduled_date) {
       const d = new Date(lead.survey.scheduled_date);
-      events.push({ id: `survey_${lead.id}`, date: d, time: '10:00', endTime: '11:00', type: 'site_survey', title: `${lead.name} — site survey`, customer: lead.name, assignee: lead.survey.surveyor || 'TBD', route: '/job' });
+      events.push({ id: `survey_${lead.id}`, date: d, time: '10:00', endTime: '11:00', type: 'site_survey', title: `${lead.name} — site survey`, customer: lead.name, assignee: lead.survey.surveyor || 'TBD', route: `/lead-flow/${lead.id}` });
     }
     // Installs
     if (lead.assignment?.scheduled_date) {
@@ -68,13 +68,13 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
     // Follow-ups
     if (lead.workflow_stage === 'proposal_sent') {
       const d = new Date(today); d.setDate(today.getDate() + 1); d.setHours(14, 0);
-      events.push({ id: `follow_${lead.id}`, date: d, time: '14:00', endTime: '14:15', type: 'follow_up', title: `${lead.name} — follow-up call`, customer: lead.name, assignee: lead.assigned_consultant, route: '/consultant' });
+      events.push({ id: `follow_${lead.id}`, date: d, time: '14:00', endTime: '14:15', type: 'follow_up', title: `${lead.name} — follow-up call`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
     }
     // Deadlines
     if (lead.proposal?.sent_date) {
       const d = new Date(lead.proposal.sent_date); d.setDate(d.getDate() + 30);
       if (d > today) {
-        events.push({ id: `deadline_${lead.id}`, date: d, time: '23:59', type: 'deadline', title: `${lead.name} — proposal expires`, customer: lead.name, assignee: lead.assigned_consultant, route: '/lead-flow' });
+        events.push({ id: `deadline_${lead.id}`, date: d, time: '23:59', type: 'deadline', title: `${lead.name} — proposal expires`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
       }
     }
     // Payment due
@@ -193,7 +193,7 @@ export default function RealCalendar() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" /> Add</Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.open('https://cal.com/renewableireland/solar-consultation', '_blank')}><Plus className="h-3 w-3 mr-1" /> Add</Button>
         </div>
       </div>
 
