@@ -85,16 +85,25 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   });
   const [financeOption, setFinanceOption] = useState<'cash' | 'finance' | 'lease'>('cash');
   const [depositPct, setDepositPct] = useState(30);
+  // Cal: everything is automated, but mistakes must be editable. Edit mode
+  // makes the bill inputs writable and the estimate recomputes live.
+  const [editingEstimate, setEditingEstimate] = useState(false);
+  const [billOverride, setBillOverride] = useState<{ monthlyBill: string; annualKwh: string }>({
+    monthlyBill: String(lead.monthly_bill ?? ''),
+    annualKwh: String(lead.annual_kwh ?? ''),
+  });
 
   const stepIndex = STEPS.findIndex(s => s.id === step);
 
-  // Calculate estimate from bill data
+  // Calculate estimate from bill data (overrides win when the consultant edits)
   const estimate = useMemo(() => {
+    const mb = parseFloat(billOverride.monthlyBill);
+    const kwh = parseFloat(billOverride.annualKwh);
     return calculateSystemEstimate({
-      monthlyBill: lead.monthly_bill,
-      annualKwh: lead.annual_kwh,
+      monthlyBill: isFinite(mb) ? mb : lead.monthly_bill,
+      annualKwh: isFinite(kwh) && kwh > 0 ? kwh : lead.annual_kwh,
     });
-  }, [lead]);
+  }, [lead, billOverride]);
 
   // Calculate SEAI from design data
   const seai = useMemo(() => {
@@ -197,15 +206,38 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     <CardContent className="p-4">
                       <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
                         <Calculator className="h-5 w-5 text-primary" /> Estimate from bill
+                        <button
+                          type="button"
+                          onClick={() => setEditingEstimate(v => !v)}
+                          className={`ml-auto text-xs font-medium rounded-control px-2.5 py-1 border transition-colors ${editingEstimate ? 'border-tech bg-tech/10 text-tech' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                        >
+                          {editingEstimate ? 'Done' : 'Edit'}
+                        </button>
                       </h2>
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+                        <div className="flex justify-between items-center p-2 bg-muted/30 rounded">
                           <span className="text-muted-foreground">Monthly bill</span>
-                          <span className="font-semibold">€{lead.monthly_bill}</span>
+                          {editingEstimate ? (
+                            <span className="flex items-center gap-1 font-semibold">€
+                              <input inputMode="decimal" value={billOverride.monthlyBill}
+                                onChange={e => setBillOverride(o => ({ ...o, monthlyBill: e.target.value }))}
+                                className="w-20 h-7 rounded border border-tech/40 bg-background px-1.5 text-right tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-tech/30" />
+                            </span>
+                          ) : (
+                            <span className="font-semibold">€{billOverride.monthlyBill || lead.monthly_bill}</span>
+                          )}
                         </div>
-                        <div className="flex justify-between p-2 bg-muted/30 rounded">
+                        <div className="flex justify-between items-center p-2 bg-muted/30 rounded">
                           <span className="text-muted-foreground">Annual kWh</span>
-                          <span className="font-semibold">{lead.annual_kwh?.toLocaleString() || estimate.annualKwh.toLocaleString()} kWh</span>
+                          {editingEstimate ? (
+                            <span className="flex items-center gap-1 font-semibold">
+                              <input inputMode="numeric" value={billOverride.annualKwh}
+                                onChange={e => setBillOverride(o => ({ ...o, annualKwh: e.target.value }))}
+                                className="w-24 h-7 rounded border border-tech/40 bg-background px-1.5 text-right tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-tech/30" /> kWh
+                            </span>
+                          ) : (
+                            <span className="font-semibold">{estimate.annualKwh.toLocaleString()} kWh</span>
+                          )}
                         </div>
                         <div className="flex justify-between p-2 bg-muted/30 rounded">
                           <span className="text-muted-foreground">MPRN</span>
@@ -441,29 +473,34 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
 // ============= SATELLITE MAP =============
 function SatelliteMap({ eircode, address }: { eircode: string; address: string }) {
-  // Use OSM satellite tiles (free, no token needed)
-  // In production: use Mapbox satellite layer with token
-  const dublinCenter = { lat: 53.3498, lng: -6.2603 };
-  const bbox = `${dublinCenter.lng - 0.01},${dublinCenter.lat - 0.005},${dublinCenter.lng + 0.01},${dublinCenter.lat + 0.005}`;
-  const satelliteUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${dublinCenter.lat},${dublinCenter.lng}`;
+  // Google satellite keyed to the ACTUAL eircode (or address) — eircodes
+  // geocode natively on Google, which OSM can't do. Same proven embed as the
+  // homeowner front door (/start).
+  const q = eircode || address;
+  const satelliteUrl = `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=k&z=19&output=embed`;
 
   return (
     <Card className="overflow-hidden">
       <div className="aspect-[16/10] bg-muted relative">
-        <iframe
-          title="Property satellite view"
-          src={satelliteUrl}
-          className="w-full h-full border-0"
-          loading="lazy"
-        />
-        {/* Overlay badge */}
+        {q ? (
+          <iframe
+            title="Property satellite view"
+            src={satelliteUrl}
+            className="w-full h-full border-0"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">
+            Enter an Eircode to see the roof
+          </div>
+        )}
         <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur">
-          <MapPin className="h-3 w-3 inline mr-1" />
-          {eircode || address || 'Property location'}
+          <MapPin className="h-3 w-3 inline mr-1 text-tech" />
+          {q || 'Property location'}
         </div>
       </div>
       <CardContent className="p-2 text-xs text-center text-muted-foreground">
-        © OpenStreetMap · In production: Mapbox satellite with panel overlay
+        Satellite imagery · exact panel layout confirmed at the survey
       </CardContent>
     </Card>
   );
@@ -681,10 +718,10 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
             Satellite view of the property. Use + / − to adjust panel count. In production: Mapbox satellite imagery + drag-to-position panels (panel counts come from bill + survey, not an auto roof-scan).
           </p>
           <div className="relative aspect-[16/10] rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-700">
-            {/* Real satellite tiles via OSM */}
+            {/* Google satellite keyed to the property */}
             <iframe
               title="Roof satellite view"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=-6.27,53.34,-6.25,53.36&layer=mapnik&marker=53.35,-6.26`}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(eircode || address || 'Dublin')}&t=k&z=20&output=embed`}
               className="absolute inset-0 w-full h-full"
               style={{ filter: 'contrast(1.1) brightness(0.9)' }}
               loading="lazy"
@@ -1081,7 +1118,7 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
           <p className="text-xs text-muted-foreground mb-3">
             4-page branded PDF: Cover page · System design + roof layout · Investment & savings (20-year cashflow) · Terms & acceptance
           </p>
-          <div className="aspect-[210/297] max-w-xs mx-auto bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary rounded-lg border-2 border-dashed border-primary/40 dark:border-primary/40 flex items-center justify-center">
+          <div className="aspect-[210/297] max-w-xs mx-auto bg-primary/5 rounded-lg border-2 border-dashed border-primary/40 dark:border-primary/40 flex items-center justify-center">
             <div className="text-center p-4">
               <div className="text-xs font-bold mb-1">{brand.name}</div>
               <div className="text-[11px] text-muted-foreground">Solar Investment Plan</div>

@@ -273,7 +273,7 @@ export default function InstallerPortalV5() {
                 <h3 className="text-sm font-bold">Job map — Dublin area</h3>
                 <Card className="overflow-hidden">
                   <div className="aspect-[4/3] bg-muted">
-                    <iframe title="Job map" src="https://www.openstreetmap.org/export/embed.html?bbox=-6.27,53.34,-6.25,53.36&layer=mapnik&marker=53.35,-6.26"
+                    <iframe title="Job map" src="https://maps.google.com/maps?q=Dublin,Ireland&t=h&z=11&output=embed"
                       className="w-full h-full border-0" loading="lazy" />
                   </div>
                   <CardContent className="p-2 text-xs text-center text-muted-foreground">© OpenStreetMap · {activeJobs.length} jobs pinned</CardContent>

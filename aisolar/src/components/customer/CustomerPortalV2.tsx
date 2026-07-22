@@ -156,7 +156,7 @@ export default function CustomerPortalV2() {
         {/* Progress bar */}
         <div className="h-1 bg-muted">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-primary"
+            className="h-full bg-primary"
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.8 }}

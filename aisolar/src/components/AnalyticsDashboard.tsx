@@ -252,7 +252,7 @@ export default function AnalyticsDashboard() {
                       </div>
                       <div className="h-8 bg-muted rounded relative overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-primary to-primary transition-all flex items-center px-3"
+                          className="h-full bg-primary transition-all flex items-center px-3"
                           style={{ width: `${Math.max(2, pctOfTotal)}%` }}
                         >
                           <span className="text-xs font-semibold text-white">{Math.round(pctOfTotal)}%</span>

@@ -132,7 +132,7 @@ export default function GuidedPhotoCapture({
   return (
     <div className="space-y-6">
       {/* Progress Header */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-transparent rounded-xl border border-primary/20">
+      <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/20">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
             <Camera className="h-5 w-5" />

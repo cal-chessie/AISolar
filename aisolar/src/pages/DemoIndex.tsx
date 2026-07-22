@@ -20,7 +20,7 @@ export default function DemoIndex() {
   // If demo mode is not available (production build), show a lock screen
   if (!demoAvailable) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-pop-subtle p-4">
         <div className="max-w-md text-center">
           <Lock className="h-12 w-12 text-red-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Demo mode disabled</h1>
@@ -48,7 +48,7 @@ export default function DemoIndex() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-10 max-w-5xl">
         {/* Header */}
         <div className="text-center mb-10">

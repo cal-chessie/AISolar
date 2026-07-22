@@ -144,7 +144,7 @@ export function EircodeAddressLookup({
   const getMapImageUrl = () => {
     if (!coordinates) return null;
     // Using OpenStreetMap static map service
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=16&size=400x200&markers=${coordinates.lat},${coordinates.lng},lightblue`;
+    return `https://maps.google.com/maps?q=${coordinates.lat},${coordinates.lng}&t=k&z=18&output=embed`;
   };
 
   return (
