@@ -20,7 +20,7 @@ import {
   MoveRight, ShieldCheck, Sun, Zap,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
-import { AiosMark } from '@/components/brand/AiosMark';
+import { AiosWordmark } from '@/components/brand/AiosMark';
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 function Nav() {
@@ -28,8 +28,8 @@ function Nav() {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
       <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <AiosMark className="size-8" />
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <AiosWordmark className="size-9" />
           <span className="font-semibold tracking-tight">
             AISOLAR <span className="text-muted-foreground font-normal">by AIOS</span>
           </span>
@@ -351,8 +351,8 @@ function Footer() {
     <footer className="border-t border-border">
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <AiosMark className="size-8" />
+          <div className="flex items-center gap-2.5">
+            <AiosWordmark className="size-9" />
             <span className="font-semibold tracking-tight">AISOLAR</span>
           </div>
           <p className="mt-3 text-xs text-muted-foreground leading-body max-w-[15rem]">

@@ -169,11 +169,11 @@ export default function PrestigiousAuth() {
             Back to home
           </Link>
 
-          <div className="flex items-center gap-3 mb-10">
-            <AisolarWordmark className="size-11" />
+          <div className="flex items-center gap-4 mb-10">
+            <AisolarWordmark className="size-16" />
             <div>
-              <div className="text-xl font-semibold tracking-tight">{brand.name}</div>
-              <div className="text-sm text-primary-foreground/60">by AIOS</div>
+              <div className="text-3xl font-semibold tracking-tight leading-none">AISolar</div>
+              <div className="text-base text-primary-foreground/60 mt-1.5">by AIOS</div>
             </div>
           </div>
 

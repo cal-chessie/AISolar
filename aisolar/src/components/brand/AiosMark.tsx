@@ -69,11 +69,11 @@ export function Wordmark({ word, className }: { word: 'AIOS' | 'AISolar'; classN
     <Tile className={className}>
       <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true">
         <text
-          x="50" y="50" dominantBaseline="central" textAnchor="middle"
+          x="50" y="52" dominantBaseline="central" textAnchor="middle"
           fill="currentColor"
-          fontSize={word === 'AIOS' ? 34 : 26}
-          fontWeight={600}
-          letterSpacing={word === 'AIOS' ? -1 : -0.8}
+          fontSize={word === 'AIOS' ? 36 : 25}
+          fontWeight={700}
+          letterSpacing={word === 'AIOS' ? -0.5 : -0.3}
           fontFamily="Inter, system-ui, sans-serif"
         >
           {word}
