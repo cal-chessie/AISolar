@@ -75,20 +75,25 @@
        Was a single 1rem (16px) — marketing-round. Instruments are 4–10px.
        --radius stays defined so existing shadcn components inherit the change. */
     --radius-xs: 0.25rem;   /*  4 */
-    --radius-sm: 0.375rem;  /*  6 */
-    --radius-md: 0.5rem;    /*  8 — default for cards/inputs */
-    --radius-lg: 0.625rem;  /* 10 — panels */
-    --radius-control: 0.625rem; /* 10 — buttons/inputs (Cal.com measured;
-                                   slightly rounder than its 8px cards) */
-    --radius-xl: 0.875rem;  /* 14 — modals only */
-    --radius: var(--radius-md);
+    --radius-sm: 0.5rem;    /*  8 */
+    --radius-md: 0.625rem;  /* 10 — inputs, small controls */
+    --radius-lg: 1rem;      /* 16 — CARDS/panels (cal.com/pricing measured) */
+    --radius-control: 0.625rem; /* 10 — buttons/inputs (Cal.com measured) */
+    --radius-xl: 1rem;      /* 16 — modals */
+    --radius: var(--radius-lg);
 
     /* ---- ELEVATION --------------------------------------------------------
-       Borders first. Shadows only where something genuinely floats. */
+       cal.com/pricing register: white cards FLOAT on the grey canvas. The card
+       shadow below is measured off cal.com — a tight dark contact line plus a
+       soft wide diffuse. Cards lead with shadow now, not a hard border. */
     --elev-0: none;
     --elev-1: 0 1px 2px 0 hsl(var(--foreground) / 0.04);
     --elev-2: 0 2px 6px -1px hsl(var(--foreground) / 0.07);
     --elev-3: 0 8px 24px -6px hsl(var(--foreground) / 0.12);
+    --shadow-card: 0 1px 5px -4px hsl(var(--foreground) / 0.5),
+                   0 4px 8px 0 hsl(var(--foreground) / 0.05);
+    --shadow-card-hover: 0 2px 8px -4px hsl(var(--foreground) / 0.5),
+                         0 8px 16px 0 hsl(var(--foreground) / 0.08);
     --hairline: 1px solid hsl(var(--border));
 
     /* ---- MOTION -----------------------------------------------------------

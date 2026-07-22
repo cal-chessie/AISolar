@@ -95,7 +95,7 @@ export default function AgentWindow({
   };
 
   return (
-    <section className={cn('rounded-panel border border-border bg-card', compact && 'text-sm')}>
+    <section className={cn('rounded-panel border border-border/70 bg-card shadow-card', compact && 'text-sm')}>
       <header className="flex items-center gap-2 px-4 h-11 border-b border-border">
         <span className="relative flex size-2">
           <span className="absolute inline-flex size-full rounded-full bg-primary opacity-60 animate-ping" />

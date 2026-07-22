@@ -8,32 +8,35 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* cal.com/pricing register: a soft NEUTRAL grey canvas with white cards
+       floating on it. Everything monochrome except one accent, so the tokens
+       are 0-saturation greys (the old values were blue-tinted "slate"). */
+    --background: 0 0% 95.7%;          /* #F4F4F4 — measured off cal.com */
+    --foreground: 0 0% 14.1%;          /* #242424 — near-black, not pure black */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;                 /* white cards float on the grey */
+    --card-foreground: 0 0% 14.1%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 14.1%;
 
-    --primary: 142 71% 45%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 71% 45%;            /* the ONE accent (colour pass is next) */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 14.1%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;      /* cal.com's calm grey label text */
 
     --accent: 142 76% 36%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 0 0% 90%;                /* barely-there; cards float on shadow */
+    --input: 0 0% 90%;
     --ring: 142 71% 45%;
 
     --radius: 1rem;
@@ -77,32 +80,35 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark mode float: the canvas is near-black and cards sit a notch LIGHTER,
+       so they lift off the page the same way white cards lift off grey. The
+       old theme had card == background, which is why nothing floated. */
+    --background: 0 0% 7%;             /* #121212 canvas */
+    --foreground: 0 0% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 11%;                  /* #1C1C1C — lighter than canvas */
+    --card-foreground: 0 0% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 96%;
 
     --primary: 142 71% 45%;
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 62%;
 
     --accent: 142 76% 36%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
     --ring: 142 71% 45%;
     
     --sidebar-background: 240 5.9% 10%;

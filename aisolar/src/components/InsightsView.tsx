@@ -45,8 +45,8 @@ function Stat({ label, value, sub, icon, tone }: {
 }) {
   return (
     <div className={cn(
-      'rounded-panel border bg-card p-4',
-      tone === 'hero' ? 'border-primary/30 bg-primary/[0.03]' : 'border-border',
+      'rounded-panel border bg-card p-4 shadow-card',
+      tone === 'hero' ? 'border-primary/30 bg-primary/[0.03]' : 'border-border/70',
     )}>
       <div className="flex items-center gap-1.5">
         <span className="[&>svg]:size-3.5 text-muted-foreground">{icon}</span>
@@ -149,7 +149,7 @@ export default function InsightsView() {
       </div>
 
       {/* Where the time went */}
-      <section className="rounded-panel border border-border bg-card">
+      <section className="rounded-panel border border-border/70 bg-card shadow-card">
         <header className="flex items-center gap-2 px-4 h-11 border-b border-border">
           <Clock className="size-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Where the time went</h3>
@@ -177,7 +177,7 @@ export default function InsightsView() {
       </section>
 
       {/* Which lead source actually converts */}
-      <section className="rounded-panel border border-border bg-card">
+      <section className="rounded-panel border border-border/70 bg-card shadow-card">
         <header className="flex items-center gap-2 px-4 h-11 border-b border-border">
           <Wallet className="size-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Which leads become jobs</h3>

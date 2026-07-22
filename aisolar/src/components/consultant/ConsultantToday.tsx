@@ -60,7 +60,7 @@ function Panel({ title, icon, count, hint, children }: {
   title: string; icon: React.ReactNode; count: number; hint: string; children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-panel border border-border bg-card">
+    <section className="rounded-panel border border-border/70 bg-card shadow-card">
       <header className="flex items-center gap-2 px-4 h-11 border-b border-border">
         <span className="[&>svg]:size-4 text-muted-foreground">{icon}</span>
         <h2 className="text-sm font-semibold">{title}</h2>
@@ -162,7 +162,7 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
           onCorrect={(a, note) => toast.success(`Correction sent to ${a.agent}`, { description: note })}
         />
 
-        <section className="rounded-panel border border-border bg-card p-4 flex flex-col justify-between gap-3">
+        <section className="rounded-panel border border-border/70 bg-card shadow-card p-4 flex flex-col justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Sun className="size-4 text-muted-foreground" /> Your booking link
