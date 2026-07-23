@@ -1,22 +1,23 @@
 /**
- * EstimateView — the AI bill-extract estimate, clickable from pipeline.
+ * EstimateView — the in-app estimate, rebuilt as a crown jewel.
  *
- * Shows: bill-extracted data (MPRN, kWh, monthly bill), AI estimate
- * (system size, savings, payback), lead details (name, email, phone, address).
- * Owner can open this at any stage without being blocked.
+ * Was: three grey boxes showing 5 of the 21 fields — the moat, watered down
+ * exactly where the consultant sells with it. Now it's the canonical
+ * BillReadPanel (all fields, dynamic count, day/night split, honesty caveats)
+ * + the satellite of the actual roof + the money, with one primary action.
  */
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  FileText, Zap, TrendingUp, Award, MapPin, Phone, Mail,
-  Calculator, ArrowRight, Sun, Clock, Target, Download,
+  Zap, TrendingUp, Award, MapPin, Phone, Mail,
+  Calculator, ArrowRight, Sun, Clock, Download,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
-import { calculateSEAI, eur } from '@/lib/seaiPipeline';
+import { calculateSEAI } from '@/lib/seaiPipeline';
+import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -35,91 +36,85 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
     netCost: estimate.netCost,
   });
 
+  const bill = billReadFromIntake(lead.intake as Record<string, unknown>, {
+    monthlyBill: lead.monthly_bill,
+    annualKwh: lead.annual_kwh,
+    mprn: lead.mprn,
+    accountName: lead.name,
+    address: lead.address,
+  });
+  const eircode = bill.eircode ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0];
+
   return (
     <div className="space-y-3">
-      {/* Lead details */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Avatar className="h-12 w-12"><AvatarFallback>{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-            <div className="flex-1">
-              <h2 className="font-bold text-lg">{lead.name}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
-                <div className="flex items-center gap-1"><Mail className="h-3 w-3 text-muted-foreground" /> {lead.email}</div>
-                <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-muted-foreground" /> {lead.phone}</div>
-                <div className="flex items-center gap-1"><MapPin className="h-3 w-3 text-muted-foreground" /> {lead.address.split(',').slice(-1)[0]?.trim()}</div>
-                <div className="flex items-center gap-1"><Zap className="h-3 w-3 text-muted-foreground" /> MPRN: <span className="font-mono">{lead.mprn}</span></div>
-              </div>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              Confidence: <span className="capitalize ml-1 font-bold">{lead.intake.extraction_confidence}</span>
-            </Badge>
+      {/* who — one slim strip */}
+      <div className="rounded-[16px] bg-card shadow-card p-4 flex items-center gap-3">
+        <Avatar className="h-11 w-11"><AvatarFallback>{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold text-base truncate">{lead.name}</h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 truncate"><Mail className="h-3 w-3" /> {lead.email}</span>
+            <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {lead.phone}</span>
+            <span className="flex items-center gap-1 truncate"><MapPin className="h-3 w-3" /> {lead.address.split(',').slice(-1)[0]?.trim()}</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Badge variant="outline" className={`text-xs shrink-0 capitalize ${lead.intake.extraction_confidence === 'high' ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30' : lead.intake.extraction_confidence === 'medium' ? 'bg-doc-proposal/10 text-doc-proposal border-doc-proposal/30' : 'bg-muted text-muted-foreground'}`}>
+          {lead.intake.extraction_confidence} confidence
+        </Badge>
+      </div>
 
-      {/* Bill extracted data */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Bill extraction (AI)</h3>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div className="p-3 bg-muted/30 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground">Monthly bill</div>
-              <div className="text-2xl font-bold text-primary">€{lead.monthly_bill}</div>
-            </div>
-            <div className="p-3 bg-muted/30 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground">Annual consumption</div>
-              <div className="text-2xl font-bold">{(lead.annual_kwh || estimate.annualKwh).toLocaleString()} kWh</div>
-            </div>
-            <div className="p-3 bg-muted/30 rounded-lg text-center">
-              <div className="text-xs text-muted-foreground">Annual spend</div>
-              <div className="text-2xl font-bold">{eurFmt(lead.monthly_bill * 12)}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* THE READ — the moat, at full strength, everywhere */}
+      <BillReadPanel bill={bill} dense />
 
-      {/* AI estimate */}
-      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /> AI estimate</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="text-center">
-              <Sun className="h-5 w-5 text-amber-500 mx-auto mb-1" />
-              <div className="text-xs text-muted-foreground">System size</div>
-              <div className="text-lg font-bold text-amber-600">{estimate.systemSizeKw} kWp</div>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="h-5 w-5 text-primary mx-auto mb-1" />
-              <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="text-lg font-bold text-primary">{eurFmt(estimate.annualSavings)}</div>
-            </div>
-            <div className="text-center">
-              <Award className="h-5 w-5 text-primary mx-auto mb-1" />
-              <div className="text-xs text-muted-foreground">SEAI grant</div>
-              <div className="text-lg font-bold text-primary">{eurFmt(seai.solarElectricityGrant)}</div>
-            </div>
-            <div className="text-center">
-              <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
-              <div className="text-xs text-muted-foreground">Payback</div>
-              <div className="text-lg font-bold">{estimate.paybackYears} yrs</div>
-            </div>
+      {/* the roof, from the eircode */}
+      {eircode && (
+        <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
+            <MapPin className="size-4 text-tech" />
+            <span className="text-sm font-semibold">The roof, from above</span>
+            <span className="ml-auto text-2xs text-muted-foreground">{eircode}</span>
           </div>
-          <div className="mt-3 p-2 bg-background rounded text-xs grid grid-cols-2 gap-2">
-            <div><span className="text-muted-foreground">Net cost:</span> <span className="font-bold">{eurFmt(estimate.netCost)}</span></div>
-            <div><span className="text-muted-foreground">20-year savings:</span> <span className="font-bold">{eurFmt(estimate.twentyYearSavings)}</span></div>
-            <div><span className="text-muted-foreground">Solar offset:</span> <span className="font-bold">{estimate.solarOffsetPct}%</span></div>
-            <div><span className="text-muted-foreground">Annual production:</span> <span className="font-bold">{estimate.annualProductionKwh.toLocaleString()} kWh</span></div>
-          </div>
-        </CardContent>
-      </Card>
+          <iframe
+            title="Property satellite view"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(eircode)}&t=k&z=19&output=embed`}
+            className="w-full h-52 border-0"
+            loading="lazy"
+          />
+          <p className="px-4 py-1.5 text-2xs text-muted-foreground">Imagery only — exact layout is measured at the survey.</p>
+        </div>
+      )}
 
-      {/* Actions */}
+      {/* the money */}
+      <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-primary p-4">
+        <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /> The estimate, off their numbers</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { icon: Sun, label: 'System size', value: `${estimate.systemSizeKw} kWp`, tone: '' },
+            { icon: TrendingUp, label: 'Annual savings', value: eurFmt(estimate.annualSavings), tone: 'text-doc-deposit' },
+            { icon: Award, label: 'SEAI grant', value: eurFmt(seai.solarElectricityGrant), tone: 'text-tech' },
+            { icon: Clock, label: 'Payback', value: `${estimate.paybackYears} yrs`, tone: '' },
+          ].map(m => (
+            <div key={m.label} className="text-center">
+              <m.icon className={`h-4.5 w-4.5 mx-auto mb-1 ${m.tone || 'text-muted-foreground'}`} />
+              <div className="label-micro">{m.label}</div>
+              <div className={`text-lg font-semibold tabular-nums ${m.tone}`}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 p-2.5 bg-muted/40 rounded-[10px] text-xs grid grid-cols-2 gap-2">
+          <div><span className="text-muted-foreground">Net cost:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.netCost)}</span></div>
+          <div><span className="text-muted-foreground">20-year savings:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.twentyYearSavings)}</span></div>
+          <div><span className="text-muted-foreground">Solar offset:</span> <span className="font-semibold tabular-nums">{estimate.solarOffsetPct}%</span></div>
+          <div><span className="text-muted-foreground">Annual production:</span> <span className="font-semibold tabular-nums">{estimate.annualProductionKwh.toLocaleString()} kWh</span></div>
+        </div>
+      </div>
+
+      {/* one primary action */}
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download estimate</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"><Download className="h-4 w-4 mr-2" /> Download</Button>
         {onOpenProposal && (
-          <Button onClick={onOpenProposal} className="flex-1 bg-primary transition-colors hover:bg-primary">
-            Open full proposal <ArrowRight className="h-4 w-4 ml-2" />
+          <Button onClick={onOpenProposal} className="flex-[2] h-10 rounded-[10px] font-semibold">
+            Open the proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         )}
       </div>
