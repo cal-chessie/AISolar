@@ -811,6 +811,16 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                   <Bot className="size-2.5" /> {name}
                 </span>
               ))}
+              {lead.assigned_consultant && (
+                <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
+                  <Users className="size-2.5" /> {lead.assigned_consultant}
+                </span>
+              )}
+              {lead.assignment?.installer_name && (
+                <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
+                  <Wrench className="size-2.5" /> {lead.assignment.installer_name}
+                </span>
+              )}
             </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {lead.touchpoints.map((tp, i) => (
@@ -820,9 +830,14 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                   <span className="flex-1 truncate">{tp.summary}</span>
                   {tp.actor === 'agent' ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-tech flex-shrink-0"><Bot className="size-3" /> {agentFor(tp.summary ?? '')}</span>
-                  ) : (
-                    <Badge variant="outline" className="text-[11px] flex-shrink-0 capitalize">{tp.actor}</Badge>
-                  )}
+                  ) : (() => { const a = actorName(tp.actor, lead); return (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground flex-shrink-0">
+                      {a.icon === 'consultant' && <Users className="size-3" />}
+                      {a.icon === 'installer' && <Wrench className="size-3" />}
+                      {a.icon === 'customer' && <UserCircle className="size-3" />}
+                      {a.name}
+                    </span>
+                  ); })()}
                 </div>
               ))}
             </div>
@@ -874,6 +889,15 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
 }
 
 // ============= CRM PLACEHOLDER =============
+
+/** Who a touchpoint's human actor actually is, for the owner's log. */
+function actorName(actor: string | undefined, lead: DummyLead): { name: string; icon: 'consultant' | 'installer' | 'customer' | null } {
+  if (actor === 'consultant') return { name: lead.assigned_consultant || 'Consultant', icon: 'consultant' };
+  if (actor === 'installer') return { name: lead.assignment?.installer_name || 'Installer', icon: 'installer' };
+  if (actor === 'customer') return { name: lead.name.split(' ')[0], icon: 'customer' };
+  return { name: actor ?? '—', icon: null };
+}
+
 // ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
 function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
   const [tab, setTab] = useState<'estimate' | 'proposal' | 'timeline'>('estimate');
@@ -918,14 +942,24 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
         {tab === 'timeline' && (
           <div className="rounded-[16px] bg-card shadow-card p-4">
               {/* Cal: ALL agents involved + ALL touchpoints — the complete log */}
+              {/* The full crew on this client — agents AND the humans (Cal) */}
               <div className="flex flex-wrap items-center gap-1.5 pb-3 mb-3 border-b border-border">
-                <span className="label-micro mr-1">Agents on this client</span>
+                <span className="label-micro mr-1">Who's on this client</span>
                 {agentsInvolved(lead.touchpoints).map(name => (
                   <span key={name} className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">
                     <Bot className="size-2.5" /> {name}
                   </span>
                 ))}
-                {agentsInvolved(lead.touchpoints).length === 0 && <span className="text-2xs text-muted-foreground">none yet</span>}
+                {lead.assigned_consultant && (
+                  <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
+                    <Users className="size-2.5" /> {lead.assigned_consultant}
+                  </span>
+                )}
+                {lead.assignment?.installer_name && (
+                  <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
+                    <Wrench className="size-2.5" /> {lead.assignment.installer_name}
+                  </span>
+                )}
                 <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{lead.touchpoints.length} touchpoint{lead.touchpoints.length === 1 ? '' : 's'} · {lead.touchpoints.filter(t => t.actor === 'agent').length} by agents</span>
               </div>
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
@@ -936,9 +970,14 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
                     <span className="flex-1 truncate">{tp.summary}</span>
                     {tp.actor === 'agent' ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-tech flex-shrink-0"><Bot className="size-3" /> {agentFor(tp.summary ?? '')}</span>
-                    ) : (
-                      <Badge variant="outline" className="text-[11px] flex-shrink-0 capitalize">{tp.actor}</Badge>
-                    )}
+                    ) : (() => { const a = actorName(tp.actor, lead); return (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground flex-shrink-0">
+                        {a.icon === 'consultant' && <Users className="size-3" />}
+                        {a.icon === 'installer' && <Wrench className="size-3" />}
+                        {a.icon === 'customer' && <UserCircle className="size-3" />}
+                        {a.name}
+                      </span>
+                    ); })()}
                   </div>
                 ))}
               </div>
