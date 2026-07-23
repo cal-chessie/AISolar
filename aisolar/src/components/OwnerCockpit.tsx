@@ -71,21 +71,24 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
 
 type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
 
-const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
+/* Ordered as the owner thinks: run the day -> sell -> the team -> the money
+   -> compliance -> the machine -> config. Each domain carries its family
+   tint on the ICON only — a little lift and no more. */
+const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; tint?: string; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
-  { id: 'estimates', label: 'Estimates', icon: Calculator },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
+  { id: 'estimates', label: 'Estimates', icon: Calculator, tint: 'text-doc-proposal' },
+  { id: 'clients', label: 'Clients', icon: UserCircle },
   { id: 'consultants', label: 'Consultants', icon: Users },
   { id: 'installers', label: 'Installers', icon: Wrench },
-  { id: 'clients', label: 'Clients', icon: UserCircle },
-  { id: 'feedback', label: 'Help us improve', icon: Star },
-  { id: 'products', label: 'Products', icon: Package },
-  { id: 'seai', label: 'SEAI & Compliance', icon: Award },
-  { id: 'agents', label: 'Agents', icon: Bot },
+  { id: 'financials', label: 'Financials', icon: Landmark, tint: 'text-doc-deposit' },
+  { id: 'seai', label: 'SEAI & Compliance', icon: Award, tint: 'text-doc-contract' },
+  { id: 'agents', label: 'Agents', icon: Bot, tint: 'text-tech' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'financials', label: 'Financials', icon: Landmark },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'products', label: 'Products', icon: Package },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'feedback', label: 'Help us improve', icon: Star },
 ];
 
 export default function OwnerCockpit() {
@@ -225,7 +228,7 @@ export default function OwnerCockpit() {
     ...SIDEBAR_ITEMS.map(it => ({
       id: it.id as string,
       label: it.label,
-      icon: <it.icon />,
+      icon: <it.icon className={it.tint} />,
       onSelect: () => selectView(it.id),
       badge: it.id === 'agents' && data.agentFailures ? data.agentFailures : undefined,
       primary: ['overview', 'calendar', 'agents', 'analytics', 'financials'].includes(it.id),
