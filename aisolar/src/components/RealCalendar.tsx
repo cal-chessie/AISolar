@@ -35,14 +35,16 @@ interface CalEvent {
   route?: string;
 }
 
+/* Family language on the calendar: people-time is charcoal, field work is
+   tech blue, installs proposal-yellow, money green, deadlines pop-red. */
 const EVENT_META: Record<EventType, { label: string; icon: typeof Video; color: string; bg: string; text: string }> = {
-  consultation: { label: 'Consultation', icon: Video, color: 'blue', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
-  site_survey: { label: 'Site survey', icon: MapPin, color: 'indigo', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
-  install: { label: 'Install', icon: Wrench, color: 'pending', bg: 'bg-doc-proposal-subtle dark:bg-doc-proposal-subtle', text: 'text-doc-proposal dark:text-doc-proposal' },
-  follow_up: { label: 'Follow-up', icon: Phone, color: 'emerald', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
-  deadline: { label: 'Deadline', icon: Clock, color: 'red', bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300' },
-  agent_run: { label: 'Agent', icon: Bot, color: 'violet', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
-  payment: { label: 'Payment', icon: FileText, color: 'green', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
+  consultation: { label: 'Consultation', icon: Video, color: 'charcoal', bg: 'bg-muted', text: 'text-foreground' },
+  site_survey: { label: 'Site survey', icon: MapPin, color: 'tech', bg: 'bg-tech-subtle', text: 'text-tech' },
+  install: { label: 'Install', icon: Wrench, color: 'pending', bg: 'bg-doc-proposal-subtle', text: 'text-doc-proposal' },
+  follow_up: { label: 'Follow-up', icon: Phone, color: 'charcoal', bg: 'bg-muted', text: 'text-foreground' },
+  deadline: { label: 'Deadline', icon: Clock, color: 'pop', bg: 'bg-pop/10', text: 'text-pop' },
+  agent_run: { label: 'Agent', icon: Bot, color: 'tech', bg: 'bg-tech-subtle', text: 'text-tech' },
+  payment: { label: 'Payment', icon: FileText, color: 'green', bg: 'bg-doc-deposit/10', text: 'text-doc-deposit' },
 };
 
 function generateEvents(leads: DummyLead[]): CalEvent[] {
@@ -199,8 +201,7 @@ export default function RealCalendar() {
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-3">
         {/* Calendar grid */}
-        <Card>
-          <CardContent className="p-2">
+        <div className="rounded-[16px] bg-card shadow-card p-3">
             {viewMode === 'month' && (
               <>
                 {/* Day headers */}
@@ -252,7 +253,7 @@ export default function RealCalendar() {
                 {weekDays.map((day, i) => {
                   const dayEvents = eventsByDay.get(day.toDateString()) || [];
                   return (
-                    <div key={i} className={`min-h-[300px] p-1 border rounded-lg ${isToday(day) ? 'border-primary/40' : 'border-border'}`}>
+                    <div key={i} className={`min-h-[300px] p-1.5 rounded-[10px] bg-muted/20 ${isToday(day) ? 'ring-1 ring-primary/30' : ''}`}>
                       <div className={`text-xs font-bold mb-1 ${isToday(day) ? 'text-primary' : ''}`}>
                         {day.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })}
                       </div>
@@ -284,7 +285,7 @@ export default function RealCalendar() {
                     const Icon = meta.icon;
                     return (
                       <button key={e.id} onClick={() => setSelectedEvent(e)}
-                        className={`w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 text-left ${meta.bg}`}>
+                        className={`w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-muted/50 text-left ${meta.bg}`}>
                         <div className={`p-2 rounded-lg bg-background`}>
                           <Icon className={`h-4 w-4 ${meta.text}`} />
                         </div>
@@ -299,12 +300,10 @@ export default function RealCalendar() {
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
         {/* Selected day panel */}
-        <Card>
-          <CardContent className="p-3">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             {selectedDate ? (
               <>
                 <h3 className="text-sm font-bold mb-2">
@@ -350,8 +349,7 @@ export default function RealCalendar() {
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
       </div>
 
       {/* Event detail modal */}
