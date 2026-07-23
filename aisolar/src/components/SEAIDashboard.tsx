@@ -120,8 +120,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
         <Button variant="ghost" size="sm" onClick={() => setSelectedLead(null)}>← Back to compliance overview</Button>
 
         {/* Lead header */}
-        <Card>
-          <CardContent className="p-4">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10"><AvatarFallback>{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
@@ -133,12 +132,10 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                 <div className="font-bold text-primary">{eur(compliance.grantAmount)}</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
         {/* SEAI */}
-        <Card>
-          <CardContent className="p-4">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> SEAI Solar Electricity Grant</h3>
             <div className="flex items-center gap-3 mb-3">
               <Badge variant="outline" className={STATUS_META[compliance.seaiStatus].bg}>{STATUS_META[compliance.seaiStatus].label}</Badge>
@@ -150,7 +147,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                 const meta = PAPERWORK_META[item.status];
                 const Icon = meta.icon;
                 return (
-                  <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
+                  <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
                     <div className={`p-1 rounded ${meta.bg}`}><Icon className="h-3 w-3" /></div>
                     <span className="flex-1">{item.item}</span>
                     <Badge variant="outline" className={`text-[11px] ${meta.bg}`}>{item.status}</Badge>
@@ -158,32 +155,27 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
         {/* ESB */}
-        <Card>
-          <CardContent className="p-4">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-tech" /> ESB NC6 Microgen Export</h3>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className={STATUS_META[compliance.esbStatus].bg}>{STATUS_META[compliance.esbStatus].label}</Badge>
               <span className="text-xs text-muted-foreground">Export tariff: €0.14/kWh · Inverter: {selectedLead.survey?.confirmed_inverter_type || 'Single phase'}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Required for microgen export payment setup. Auto-submitted after install completion.</p>
-          </CardContent>
-        </Card>
+          </div>
 
         {/* RECI */}
-        <Card>
-          <CardContent className="p-4">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> RECI Electrical Sign-off</h3>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className={STATUS_META[compliance.reciStatus].bg}>{STATUS_META[compliance.reciStatus].label}</Badge>
               <span className="text-xs text-muted-foreground">Required for SEAI grant + commissioning</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Pre-populated from installer checklist: isolator, RCD, earth bond, SPD.</p>
-          </CardContent>
-        </Card>
+          </div>
       </div>
     );
   }
@@ -193,10 +185,10 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">Grant pipeline</div><div className="text-xl font-bold text-primary">{eur(stats.totalGrantValue)}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">SEAI submitted</div><div className="text-xl font-bold text-primary">{stats.submitted}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">ESB connected</div><div className="text-xl font-bold text-tech">{stats.esbConnected}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-primary">{stats.reciFiled}</div></CardContent></Card>
+        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">Grant pipeline</div><div className="text-xl font-bold tabular-nums text-doc-deposit">{eur(stats.totalGrantValue)}</div></div>
+        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">SEAI submitted</div><div className="text-xl font-bold tabular-nums">{stats.submitted}</div></div>
+        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">ESB connected</div><div className="text-xl font-bold tabular-nums text-tech">{stats.esbConnected}</div></div>
+        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-primary">{stats.reciFiled}</div></div>
       </div>
 
       {/* Filter */}
