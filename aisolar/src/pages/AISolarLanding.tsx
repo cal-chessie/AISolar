@@ -72,6 +72,44 @@ function HeroVisual() {
   );
 }
 
+/* ── Benefits visual: the estimate's bottom half + the roof from above ───── */
+function EstimateMapVisual() {
+  return (
+    <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+      <div className="grid grid-cols-3 gap-px bg-border">
+        {[
+          ['Recommended', '11 kWp'],
+          ['You pay', '€9,340'],
+          ['Saved / year', '€2,999'],
+        ].map(([k, v]) => (
+          <div key={k} className="bg-card px-3 py-2.5">
+            <p className="label-micro">{k}</p>
+            <p className="text-base font-semibold tabular-nums mt-0.5">{v}</p>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-2.5 border-y border-border flex items-baseline justify-between">
+        <span className="text-xs font-semibold">Day / night split</span>
+        <span className="text-xs text-muted-foreground tabular-nums">65% day · 35% night</span>
+      </div>
+      <div className="relative">
+        <iframe
+          title="Your roof from above"
+          src="https://maps.google.com/maps?q=D04%20X8N7&t=k&z=19&output=embed"
+          className="w-full h-52 border-0 pointer-events-none"
+          loading="lazy"
+        />
+        <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur">
+          Your roof from above
+        </div>
+      </div>
+      <p className="px-4 py-2 text-2xs text-muted-foreground">
+        Satellite imagery from the Eircode. Exact panel layout is measured at your free survey.
+      </p>
+    </div>
+  );
+}
+
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 function Hero() {
   return (
@@ -224,7 +262,7 @@ function Benefits() {
             'Estimated reads flagged, never hidden',
           ]}
         >
-          <HeroVisual />
+          <EstimateMapVisual />
         </Benefit>
 
         <Benefit
