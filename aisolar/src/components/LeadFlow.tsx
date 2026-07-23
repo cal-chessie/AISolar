@@ -17,7 +17,6 @@
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +40,8 @@ import { SpinnerSkeleton } from '@/components/ui/SuspenseFallbacks';
 
 // Use the REAL SiteSurveyForm — not a stripped-down version
 const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
+// The send step embeds the REAL customer artifact as a live preview
+import CustomerProposal from '@/components/customer/CustomerProposal';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -195,10 +196,9 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 pb-20">
-        <AnimatePresence mode="wait">
           {/* === STEP 1: ESTIMATE === */}
           {step === 'estimate' && (
-            <motion.div key="estimate" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div key="estimate">
               <div className="grid lg:grid-cols-2 gap-4">
                 {/* Left: Estimate details */}
                 <div className="space-y-4">
@@ -363,12 +363,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   Continue to survey <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* === STEP 2: SURVEY — uses the REAL SiteSurveyForm === */}
           {step === 'survey' && (
-            <motion.div key="survey" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div key="survey">
               <Suspense fallback={<SpinnerSkeleton label="Loading survey form…" />}>
                 <SiteSurveyForm
                   leadId={lead.id}
@@ -383,12 +383,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back to estimate
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* === STEP 3: DESIGN === */}
           {step === 'design' && (
-            <motion.div key="design" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div key="design">
               <DesignStep
                 lead={lead}
                 designData={designData}
@@ -403,12 +403,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   Continue to proposal <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* === STEP 4: PROPOSAL === */}
           {step === 'proposal' && (
-            <motion.div key="proposal" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div key="proposal">
               <ProposalStep
                 lead={lead}
                 designData={designData}
@@ -429,12 +429,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   Review & send <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* === STEP 5: SEND === */}
           {step === 'send' && (
-            <motion.div key="send" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div key="send">
               <SendStep lead={lead} designData={designData} netCost={netCost} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} proposalSent={proposalSent} />
               <div className="mt-6 flex justify-between">
                 <Button variant="outline" onClick={() => setStep('proposal')} className="h-12" disabled={proposalSent}>
@@ -463,9 +463,8 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   </Button>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </main>
     </div>
   );
@@ -1074,64 +1073,65 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
     );
   }
 
+  // The star of the send screen: the ACTUAL artifact the customer opens,
+  // built live from the design + pricing the consultant just chose — not a
+  // dashed placeholder of a PDF that doesn't exist yet.
+  const estimate = calculateSystemEstimate({ monthlyBill: lead.monthly_bill, annualKwh: lead.annual_kwh });
+  const previewLead: DummyLead = {
+    ...lead,
+    workflow_stage: 'proposal_drafted',
+    invoice: undefined,
+    proposal: {
+      id: lead.proposal?.id ?? 'DRAFT',
+      status: 'draft',
+      system_size_kw: +(designData.panelCount * 0.435).toFixed(1),
+      panel_count: designData.panelCount,
+      panel_model: designData.panelModel,
+      inverter_model: designData.inverterModel,
+      battery_model: designData.includeBattery ? designData.batteryModel : null,
+      gross_cost: netCost + seaiGrant,
+      seai_grant: seaiGrant,
+      net_cost: netCost,
+      annual_savings: lead.proposal?.annual_savings ?? estimate.annualSavings,
+      payback_years: lead.proposal?.payback_years ?? estimate.paybackYears,
+      twenty_year_savings: lead.proposal?.twenty_year_savings ?? estimate.twentyYearSavings,
+    },
+  };
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Send className="h-5 w-5 text-primary" /> Review & send
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">Final review before sending the professional proposal to {lead.name}.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          This is exactly what {lead.name.split(' ')[0]} opens — their bill read back to them, the gear, the money at their rates. Scroll it the way they will.
+        </p>
       </div>
 
-      {/* Summary card */}
-      <Card className="border-primary/40 dark:border-primary/40">
-        <CardContent className="p-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-semibold text-sm mb-2">System</h3>
-              <div className="text-xs space-y-1">
-                <div>{designData.panelCount} × {designData.panelModel}</div>
-                <div>Inverter: {designData.inverterModel}</div>
-                {designData.includeBattery && <div>Battery: {designData.batteryModel}</div>}
-                <div>System size: {(designData.panelCount * 0.435).toFixed(1)} kWp</div>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm mb-2">Financials</h3>
-              <div className="text-xs space-y-1">
-                <div>Net cost: <strong>{eurFmt(netCost)}</strong></div>
-                <div>SEAI grant: {eurFmt(seaiGrant)}</div>
-                <div>Payment: {financeOption === 'cash' ? 'Cash' : financeOption === 'finance' ? 'Finance (3.9% APR)' : 'Lease'}</div>
-                <div>Deposit: {depositPct}% ({eurFmt(netCost * depositPct / 100)})</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Slim deal strip */}
+      <div className="rounded-[16px] bg-card shadow-card p-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+        <span><strong>{(designData.panelCount * 0.435).toFixed(1)} kWp</strong> · {designData.panelCount} × {designData.panelModel}</span>
+        {designData.includeBattery && <span>Battery: {designData.batteryModel}</span>}
+        <span>Net <strong>{eurFmt(netCost)}</strong> after {eurFmt(seaiGrant)} grant</span>
+        <span>{financeOption === 'cash' ? 'Cash' : financeOption === 'finance' ? 'Finance (3.9% APR)' : 'Lease'} · {depositPct}% deposit ({eurFmt(netCost * depositPct / 100)})</span>
+      </div>
 
-      {/* Professional proposal preview */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" /> Professional proposal
-          </h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            4-page branded PDF: Cover page · System design + roof layout · Investment & savings (20-year cashflow) · Terms & acceptance
-          </p>
-          <div className="aspect-[210/297] max-w-xs mx-auto bg-primary/5 rounded-lg border-2 border-dashed border-primary/40 dark:border-primary/40 flex items-center justify-center">
-            <div className="text-center p-4">
-              <div className="text-xs font-bold mb-1">{brand.name}</div>
-              <div className="text-[11px] text-muted-foreground">Solar Investment Plan</div>
-              <div className="text-[11px] text-muted-foreground mt-2">Prepared for {lead.name}</div>
-              <div className="text-[11px] text-muted-foreground">{(designData.panelCount * 0.435).toFixed(1)} kWp · {eurFmt(netCost)}</div>
-              <FileText className="h-8 w-8 text-primary mx-auto mt-3" />
-            </div>
+      {/* The customer's window — live, full document, framed in the proposal colour */}
+      <div className="rounded-[16px] bg-card shadow-card overflow-hidden border-t-4 border-t-doc-proposal">
+        <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
+          <FileText className="size-4 text-doc-proposal" />
+          <span className="text-sm font-semibold">Their proposal, exactly as they'll see it</span>
+          <span className="ml-auto text-2xs text-muted-foreground">live preview · scroll to review</span>
+        </div>
+        <div className="max-h-[560px] overflow-y-auto bg-background">
+          {/* pointer-events off inside: the consultant reviews here, the
+              customer accepts on their own link — no accidental Accept clicks */}
+          <div className="pointer-events-none select-none">
+            <CustomerProposal lead={previewLead} />
           </div>
-          <Button variant="outline" className="w-full mt-3">
-            <FileText className="h-4 w-4 mr-2" /> Preview full proposal
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Send options */}
       <Card>
