@@ -27,14 +27,35 @@ import type { DummyLead } from '@/lib/dummyData';
 import { getTenantBrand } from '@/lib/tenantBrand';
 import { brand } from '@/config/brand';
 
-type EsbForm = 'NC6' | 'NC7';
+type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 
 /** Per-form {page,x,y,size?} maps for true in-box overlay. Empty until the
  *  calibration pass; fill these and mode 2 switches on automatically. */
 const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number }>> = {
-  NC6: [],
-  NC7: [],
+  NC6: [], NC7: [], NC8: [], NC5: [],
 };
+
+/** NC5 is ESB's ONE genuinely fillable form (531 AcroForm fields, verified).
+ *  True programmatic fill — field name -> value from the record. */
+function nc5AcroMap(lead: DummyLead): Record<string, string> {
+  const i = (lead.intake ?? {}) as Record<string, unknown>;
+  const p = lead.proposal;
+  const addr = (((i.extracted_address as string) ?? lead.address) || '').split(',').map(x => x.trim());
+  return {
+    'Applicant name': (i.extracted_account_name as string) ?? lead.name,
+    'Applicant address line 1': addr[0] ?? '',
+    'Applicant address line 2': addr.slice(1).join(', '),
+    'Telephone number': lead.phone ?? '',
+    'Email address': lead.email ?? '',
+    'Contact person': (i.extracted_account_name as string) ?? lead.name,
+    'Site name and address line 1': addr[0] ?? '',
+    'Site name and address line 2': addr.slice(1, 3).join(', '),
+    'Eircode': ((i.extracted_eircode as string) ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0]) ?? '',
+    'MEC required': p ? String(p.system_size_kw) : '',
+    'Unit 1 Installed Generation Capacity': p ? String(p.system_size_kw) : '',
+    'Total generation units inverters': p ? '1' : '',
+  };
+}
 
 function collect(lead: DummyLead): Array<[string, string]> {
   const i = (lead.intake ?? {}) as Record<string, unknown>;
@@ -65,6 +86,8 @@ function collect(lead: DummyLead): Array<[string, string]> {
  *  NC7-03 manufacturer's ELS declaration. NC6 is a single form. */
 const FORM_PARTS: Record<EsbForm, string[]> = {
   NC6: ['/forms/esbn-form-nc6.pdf'],
+  NC8: ['/forms/esbn-form-nc8.pdf'],
+  NC5: ['/forms/esbn-form-nc5.pdf'],
   NC7: [
     '/forms/esbn-form-nc7.pdf',
     '/forms/esbn-nc7-01-installation-confirmation.pdf',
@@ -86,6 +109,15 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
   }
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // NC5: true AcroForm fill — the fields exist, so the record types itself in
+  if (form === 'NC5') {
+    const acro = doc.getForm();
+    for (const [name, value] of Object.entries(nc5AcroMap(lead))) {
+      if (!value) continue;
+      try { acro.getTextField(name).setText(value); } catch { /* field renamed in a future revision — data page still carries it */ }
+    }
+  }
 
   const map = OVERLAY_MAPS[form];
   if (map.length > 0) {
