@@ -24,7 +24,9 @@ import {
   Activity, Cpu, Server, Globe, Bell, Palette, FileText, Users,
   TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink, ArrowRight, XCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { brand } from '@/config/brand';
+import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
 
@@ -388,6 +390,7 @@ export default function SystemSettingsV2() {
 
 // ============= BRAND CONFIG — touches everything =============
 function BrandConfigFull() {
+  const stored = getTenantBrand();
   const [brandData, setBrandData] = useState<{
     name: string; tagline: string; domain: string;
     primaryColor: string; accentColor: string;
@@ -539,7 +542,19 @@ function BrandConfigFull() {
           </div>
         </div>
 
-        <Button className="w-full bg-primary transition-colors hover:bg-primary"><Save className="h-4 w-4 mr-2" /> Save all branding</Button>
+        <Button className="w-full bg-primary transition-colors hover:bg-primary"
+          onClick={() => {
+            saveTenantBrand({
+              name: brandData.name,
+              tagline: brandData.tagline,
+              logoDataUrl: brandData.logo,
+              proposalCompanyName: brandData.proposalCompanyName,
+              portalTitle: brandData.portalTitle,
+            });
+            toast.success('Branding saved', { description: 'Applied across the app for this tenant.' });
+          }}>
+          <Save className="h-4 w-4 mr-2" /> Save all branding
+        </Button>
       </CardContent>
     </Card>
   );

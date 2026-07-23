@@ -30,12 +30,14 @@ import {
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
+import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 export default function InstallerPortalV5() {
+  const tb = useTenantBrand();
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [tab, setTab] = useState<'jobs' | 'materials' | 'map'>('jobs');
@@ -65,7 +67,7 @@ export default function InstallerPortalV5() {
           <div className="flex items-center gap-3">
             <AiosMark className="size-8" />
             <div>
-              <span className="font-bold text-sm">{brand.name} Field</span>
+              <span className="font-bold text-sm">{tb.name} Field</span>
               <span className="text-xs text-muted-foreground ml-2">{new Date().toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
             </div>
           </div>

@@ -39,6 +39,7 @@ import {
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
+import { useTenantBrand } from '@/lib/tenantBrand';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
 import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
@@ -94,6 +95,7 @@ const INBOX_FILTERS: Array<{ id: InboxFilter; label: string; emoji?: string }> =
 ];
 
 export default function ConsultantCockpitV5() {
+  const tb = useTenantBrand();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
@@ -276,7 +278,7 @@ export default function ConsultantCockpitV5() {
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <AiosMark className="size-8" />
-            <span className="font-bold text-sm">{brand.name}</span>
+            <span className="font-bold text-sm">{tb.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>
           <div className="flex items-center gap-1">

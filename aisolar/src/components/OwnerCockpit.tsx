@@ -40,6 +40,7 @@ import { PipelineBar } from '@/components/layout/PipelineBar';
 import InsightsView from '@/components/InsightsView';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
+import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
@@ -63,7 +64,7 @@ const CeoWindow = lazy(() => import('./CeoWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
+type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
 
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -72,6 +73,7 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
   { id: 'consultants', label: 'Consultants', icon: Users },
   { id: 'installers', label: 'Installers', icon: Wrench },
   { id: 'clients', label: 'Clients', icon: UserCircle },
+  { id: 'feedback', label: 'Help us improve', icon: Star },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'seai', label: 'SEAI & Compliance', icon: Award },
   { id: 'agents', label: 'Agents', icon: Bot },
@@ -81,6 +83,7 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
 ];
 
 export default function OwnerCockpit() {
+  const tb = useTenantBrand();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
@@ -228,7 +231,7 @@ export default function OwnerCockpit() {
   return (
     <AppShell
       persona="owner"
-      brandName={brand.name}
+      brandName={tb.name}
       personaLabel="Owner Cockpit"
       nav={shellNav}
       activeId={activeView}
@@ -254,6 +257,7 @@ export default function OwnerCockpit() {
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow /></Suspense>}
           {activeView === 'crm' && <CrmPlaceholder />}
+          {activeView === 'feedback' && <HelpUsImprove />}
           {activeView === 'seai' && <SEAIDashboard leads={leads} />}
           {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
           {activeView === 'lead_detail' && selectedLead && (
@@ -284,7 +288,7 @@ function SidebarContent({
       <div className="p-3 flex items-center gap-2 border-b">
         <AiosMark className="size-8" />
         <div>
-          <div className="font-bold text-xs">{brand.name}</div>
+          <div className="font-bold text-xs">{tb.name}</div>
           <div className="text-[11px] text-muted-foreground">Owner Cockpit</div>
         </div>
       </div>
@@ -885,5 +889,51 @@ function StatBox({ label, value, sub, color, icon: Icon }: any) {
         {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+
+// ============= HELP US IMPROVE (Cal's #23) =============
+function HelpUsImprove() {
+  const [text, setText] = useState('');
+  const [sent, setSent] = useState(false);
+  const submit = () => {
+    if (!text.trim()) return;
+    try {
+      const KEY = 'aisolar_feedback';
+      const list = JSON.parse(localStorage.getItem(KEY) || '[]');
+      list.push({ at: new Date().toISOString(), text: text.trim() });
+      localStorage.setItem(KEY, JSON.stringify(list));
+    } catch { /* ignore */ }
+    setSent(true);
+    setText('');
+  };
+  return (
+    <div className="p-4 lg:p-6 max-w-xl">
+      <h2 className="text-lg font-semibold">Help us improve</h2>
+      <p className="mt-2 text-sm text-muted-foreground leading-body">
+        What would you like to see next with AISolar? Tell us your
+        recommendations. Help us build more agents — and give you back even
+        more time while they look after your clients and help build your company.
+      </p>
+      {sent ? (
+        <div className="mt-5 rounded-panel border border-doc-deposit/30 bg-doc-deposit/5 p-4 text-sm">
+          <p className="font-medium text-doc-deposit">Thank you — we read every one.</p>
+          <button className="mt-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-4" onClick={() => setSent(false)}>
+            Send another
+          </button>
+        </div>
+      ) : (
+        <>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="e.g. an agent that rebooks cancelled surveys automatically…"
+            className="mt-5 w-full min-h-28 rounded-control border border-input bg-background px-3 py-2 text-sm leading-body placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+          />
+          <Button className="mt-3" onClick={submit} disabled={!text.trim()}>Send recommendation</Button>
+        </>
+      )}
+    </div>
   );
 }

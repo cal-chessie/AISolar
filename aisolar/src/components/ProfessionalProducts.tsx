@@ -256,6 +256,24 @@ const CATEGORY_META: Record<ProductCategory, { label: string; icon: typeof Sun; 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 export default function ProfessionalProducts() {
+  // Cal's #17: owner uploads real product photos. Stored as data URLs per
+  // product id (localStorage now; the product table at launch).
+  const [productImages, setProductImages] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('aisolar_product_images') || '{}'); } catch { return {}; }
+  });
+  const handleImageFile = (id: string, file: File) => {
+    const r = new FileReader();
+    r.onload = () => {
+      if (typeof r.result !== 'string') return;
+      setProductImages(prev => {
+        const next = { ...prev, [id]: r.result as string };
+        try { localStorage.setItem('aisolar_product_images', JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    };
+    r.readAsDataURL(file);
+  };
+
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all' | 'bundles'>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -383,6 +401,18 @@ export default function ProfessionalProducts() {
                       </Badge>
                     )}
                   </div>
+                  {/* product photo — upload once, shows on proposals (Cal #17) */}
+                  <label className="block mb-2 cursor-pointer group/photo" onClick={e => e.stopPropagation()}>
+                    {productImages[product.id] ? (
+                      <img src={productImages[product.id]} alt={product.model} className="w-full h-24 object-cover rounded-md border border-border" />
+                    ) : (
+                      <span className="flex items-center justify-center gap-1.5 w-full h-24 rounded-md border border-dashed border-border text-xs text-muted-foreground group-hover/photo:border-tech group-hover/photo:text-tech transition-colors">
+                        <Plus className="h-3.5 w-3.5" /> Add product photo
+                      </span>
+                    )}
+                    <input type="file" accept="image/*" className="sr-only"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(product.id, f); }} />
+                  </label>
                   <h3 className="font-semibold text-sm">{product.manufacturer}</h3>
                   <p className="font-medium text-base leading-tight">{product.model}</p>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description}</p>
