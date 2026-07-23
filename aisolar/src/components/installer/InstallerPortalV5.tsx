@@ -32,6 +32,7 @@ import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import NotificationsBell from '@/components/notifications/NotificationsBell';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 
 type TabId = 'today' | 'week' | 'jobs' | 'inbox' | 'materials' | 'map';
@@ -170,6 +171,7 @@ export default function InstallerPortalV5() {
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="sm" className="text-xs h-8 hidden sm:inline-flex" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
             <Button variant="ghost" size="sm" className="text-xs h-8 hidden sm:inline-flex" onClick={() => navigate('/consultant')}><Users className="h-3.5 w-3.5 mr-1" /> Consultant</Button>
+            <NotificationsBell role="installer" />
             <DarkModeToggle />
           </div>
         </div>

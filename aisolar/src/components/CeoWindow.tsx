@@ -362,6 +362,21 @@ export default function CeoWindow() {
           <AnalyticsDashboard />
         </Suspense>
       )}
+
+      {/* Cal: custom windows are part of the AIOS offer — say so where the
+          owner is already looking at their numbers. */}
+      <div className="rounded-panel bg-primary text-primary-foreground p-5 flex flex-wrap items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-sm">Want a window this page doesn't have?</p>
+          <p className="text-xs text-primary-foreground/70 mt-0.5 leading-body">
+            Custom views, reports and agent behaviours are part of the AIOS offer — we build them around how your company runs.
+          </p>
+        </div>
+        <a href="mailto:cal@renewably.ie?subject=Custom%20window%20request"
+          className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-background text-foreground px-4 text-xs font-semibold hover:opacity-90 transition-opacity shrink-0">
+          Contact our team
+        </a>
+      </div>
     </div>
   );
 }

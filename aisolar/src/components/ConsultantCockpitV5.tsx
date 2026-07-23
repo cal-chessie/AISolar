@@ -35,7 +35,9 @@ import {
   Calendar, Clock, Package, FolderOpen, BarChart3, Search,
   Phone, Mail, ArrowRight, ChevronRight, Flame, Star, Zap,
   TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
-  Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock } from 'lucide-react';
+  Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock, UserPlus, Pencil } from 'lucide-react';
+import NotificationsBell from '@/components/notifications/NotificationsBell';
+import LeadFormDialog, { leadFromForm, type LeadFormValues } from '@/components/leads/LeadFormDialog';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
@@ -99,6 +101,24 @@ export default function ConsultantCockpitV5() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
+  // Add/edit lead (Cal: "cant we add a lead too right? and edit a lead?")
+  const [leadFormOpen, setLeadFormOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<DummyLead | null>(null);
+  const saveLeadForm = (v: LeadFormValues) => {
+    if (editingLead) {
+      const patch = { name: v.name, email: v.email, phone: v.phone, address: v.address, monthly_bill: v.monthly_bill, annual_kwh: v.annual_kwh };
+      setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, ...patch } : l));
+      setSelectedLead(prev => prev?.id === editingLead.id ? { ...prev, ...patch } : prev);
+      toast.success(`${v.name.split(' ')[0]}'s details updated`);
+    } else {
+      const lead = leadFromForm(v);
+      setLeads(prev => [lead, ...prev]);
+      setSelectedLead(lead);
+      toast.success(v.billFile
+        ? `${v.name.split(' ')[0]} added — bill captured, extraction queued`
+        : `${v.name.split(' ')[0]} added to the pipeline`);
+    }
+  };
   const [activeTab, setActiveTab] = useState<TabId>('today');
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>('all');
   const [search, setSearch] = useState('');
@@ -273,6 +293,7 @@ export default function ConsultantCockpitV5() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <LeadFormDialog open={leadFormOpen} onOpenChange={setLeadFormOpen} initial={editingLead} onSave={saveLeadForm} />
       {/* Header */}
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
@@ -282,6 +303,10 @@ export default function ConsultantCockpitV5() {
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>
           <div className="flex items-center gap-1">
+            <Button size="sm" className="text-xs h-8 mr-1" onClick={() => { setEditingLead(null); setLeadFormOpen(true); }}>
+              <UserPlus className="h-3.5 w-3.5 mr-1" /> Add lead
+            </Button>
+            <NotificationsBell role="consultant" />
             <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
             <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/installer')}><Wrench className="h-3.5 w-3.5 mr-1" /> Installer</Button>
             <DarkModeToggle />
@@ -421,6 +446,10 @@ export default function ConsultantCockpitV5() {
                     <div className="font-semibold text-sm truncate">{selectedLead.name}</div>
                     <div className="text-xs text-muted-foreground truncate">{selectedLead.address.split(',').slice(-1)[0]?.trim()}</div>
                   </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit lead"
+                    onClick={() => { setEditingLead(selectedLead); setLeadFormOpen(true); }}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7 hidden sm:inline-flex" onClick={() => setSlideOutView('estimate')}><Calculator className="h-3.5 w-3.5 mr-1" /> Estimate</Button>
                   <Button variant="ghost" size="sm" className="text-xs h-7 hidden sm:inline-flex" onClick={() => setSlideOutView('proposal')}><FileText className="h-3.5 w-3.5 mr-1" /> Proposal</Button>
                   <Button

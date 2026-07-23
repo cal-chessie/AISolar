@@ -42,6 +42,7 @@ import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import NotificationsBell from '@/components/notifications/NotificationsBell';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { staggerContainer, listItem } from '@/lib/motionPresets';
@@ -236,7 +237,7 @@ export default function OwnerCockpit() {
       nav={shellNav}
       activeId={activeView}
       title={SIDEBAR_ITEMS.find(it => it.id === activeView)?.label ?? 'Overview'}
-      headerExtra={<DarkModeToggle />}
+      headerExtra={<><NotificationsBell role="owner" /><DarkModeToggle /></>}
     >
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
