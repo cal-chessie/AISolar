@@ -69,7 +69,7 @@ const FinanceWindow = lazy(() => import('./owner/FinanceWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
+type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'lead_detail' | 'seai' | 'estimates';
 
 /* Ordered as the owner thinks: run the day -> sell -> the team -> the money
    -> compliance -> the machine -> config. Each domain carries its family
@@ -86,7 +86,6 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
   { id: 'agents', label: 'Agents', icon: Bot, tint: 'text-tech' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'products', label: 'Products', icon: Package },
-  { id: 'crm', label: 'CRM', icon: MessageSquare },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'feedback', label: 'Help us improve', icon: Star },
 ];
@@ -266,7 +265,6 @@ export default function OwnerCockpit() {
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow onOpenFinancials={() => setActiveView('financials')} /></Suspense>}
           {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
-          {activeView === 'crm' && <CrmPlaceholder />}
           {activeView === 'feedback' && <HelpUsImprove />}
           {activeView === 'seai' && <SEAIDashboard leads={leads} />}
           {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
@@ -864,15 +862,6 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
 }
 
 // ============= CRM PLACEHOLDER =============
-function CrmPlaceholder() {
-  return (
-    <div className="p-8 text-center">
-      <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Your CRM add-on connects here. Share the CRM details and I'll integrate it into the owner cockpit.</p>
-    </div>
-  );
-}
-
 // ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
 function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
   const [tab, setTab] = useState<'estimate' | 'proposal' | 'timeline'>('estimate');
