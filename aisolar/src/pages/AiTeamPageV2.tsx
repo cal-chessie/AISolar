@@ -16,7 +16,7 @@ import {
   Receipt, Award, Wrench, PackageCheck, AlarmClock, Inbox, Mail,
 } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
-import { AichatWordmark } from '@/components/brand/AiosMark';
+import { AichatWordmark, AiteamWordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
@@ -37,33 +37,59 @@ const ROSTER = [
 function AgentFeed() {
   return (
     <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
-      <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
-        <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full rounded-full bg-doc-deposit opacity-60 animate-ping" />
-          <span className="relative inline-flex size-2 rounded-full bg-doc-deposit" />
+      {/* header — the product, alive */}
+      <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
+        <AiteamWordmark className="size-8" />
+        <div className="leading-tight">
+          <p className="text-sm font-semibold">Your team, working</p>
+          <p className="text-2xs text-muted-foreground">while you were on a roof</p>
+        </div>
+        <span className="ml-auto inline-flex items-center gap-1.5 text-2xs font-medium text-doc-deposit">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full rounded-full bg-doc-deposit opacity-60 animate-ping" />
+            <span className="relative inline-flex size-2 rounded-full bg-doc-deposit" />
+          </span>
+          10 agents · live
         </span>
-        <span className="text-sm font-semibold">Your team, working</span>
-        <span className="ml-auto text-2xs text-muted-foreground">10 agents · live</span>
       </div>
+
       <div className="p-4 space-y-3">
+        {/* the money moment — an approval happening right in the feed */}
+        <div className="rounded-[12px] border border-doc-proposal/40 bg-doc-proposal/5 p-3">
+          <div className="flex items-start gap-2.5">
+            <span className="size-6 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0"><FileText className="size-3.5" /></span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm leading-ui"><span className="font-medium">The drafter</span> <span className="text-muted-foreground">finished the Kelly proposal</span></p>
+              <p className="text-xs text-muted-foreground mt-0.5">12 kWp + battery · <span className="font-semibold text-foreground tabular-nums">€24,300</span> net after grant · just now</p>
+            </div>
+          </div>
+          <div className="mt-2.5 flex gap-2">
+            <span className="inline-flex h-8 items-center rounded-[10px] bg-primary px-3.5 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
+            <span className="inline-flex h-8 items-center rounded-[10px] border border-border px-3.5 text-xs font-medium">Edit first</span>
+          </div>
+        </div>
+
+        {/* the rest of the shift */}
         {[
-          ['The drafter', 'wrote the Kelly proposal — waiting on your approval', 'just now'],
-          ['The scheduler', 'booked Tuesday 10:00 survey with Mrs. Murphy', '2m ago'],
-          ['The watchdog', 'flagged the Byrne lead — quiet for 6 days', '9m ago'],
-          ['The bookkeeper', 'deposit reminder sent to J. Wilson', '31m ago'],
-        ].map(([a, s, t]) => (
-          <div key={a} className="flex items-start gap-2.5">
-            <span className="size-6 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0"><Bot className="size-3.5" /></span>
-            <p className="text-sm leading-ui">
-              <span className="font-medium">{a}</span> <span className="text-muted-foreground">{s}</span>
-              <span className="block text-2xs text-muted-foreground mt-0.5">{t}</span>
+          { icon: CalendarClock, a: 'The scheduler', s: 'booked Tuesday 10:00 survey with Mrs. Murphy', t: '2m ago', ok: true },
+          { icon: AlarmClock, a: 'The watchdog', s: 'Byrne lead quiet for 6 days — escalated to you', t: '9m ago', hot: true },
+          { icon: Receipt, a: 'The bookkeeper', s: 'deposit reminder sent to J. Wilson', t: '31m ago', money: '€7,290', ok: true },
+        ].map(r => (
+          <div key={r.a} className="flex items-start gap-2.5">
+            <span className={`size-6 rounded-md grid place-items-center shrink-0 ${r.hot ? 'bg-pop/10 text-pop' : 'bg-primary/10 text-primary'}`}><r.icon className="size-3.5" /></span>
+            <p className="text-sm leading-ui min-w-0 flex-1">
+              <span className="font-medium">{r.a}</span> <span className="text-muted-foreground">{r.s}</span>
+              <span className="block text-2xs text-muted-foreground mt-0.5">{r.t}{r.money ? <span className="tabular-nums"> · {r.money}</span> : ''}</span>
             </p>
+            {r.ok && <Check className="size-4 text-doc-deposit shrink-0 mt-0.5" />}
+            {r.hot && <span className="text-2xs font-semibold text-pop shrink-0 mt-0.5">needs you</span>}
           </div>
         ))}
       </div>
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-muted/30">
-        <span className="text-xs text-muted-foreground">You approve — nothing sends itself</span>
-        <Check className="size-4 text-doc-deposit" />
+
+      <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between text-2xs text-muted-foreground">
+        <span><span className="font-semibold text-foreground tabular-nums">2.4 hrs</span> of admin done this morning</span>
+        <span className="text-doc-deposit font-medium">you approve every send ✓</span>
       </div>
     </div>
   );
