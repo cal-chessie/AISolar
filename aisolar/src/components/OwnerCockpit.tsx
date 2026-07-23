@@ -250,7 +250,7 @@ export default function OwnerCockpit() {
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
           )}
-          {activeView === 'calendar' && <RealCalendar />}
+          {activeView === 'calendar' && <RealCalendar onOpenClient={(id) => { const l = leads.find(x => x.id === id); if (l) { setSelectedLead(l); setActiveView('lead_detail'); } }} />}
           {activeView === 'consultants' && (
             <ConsultantsView consultants={data.consultants} navigate={navigate} />
           )}

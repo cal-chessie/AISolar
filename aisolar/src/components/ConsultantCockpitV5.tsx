@@ -556,7 +556,7 @@ export default function ConsultantCockpitV5() {
 
               {activeTab === 'calendar' && (
                 <Suspense fallback={<CardListSkeleton count={3} />}>
-                  <RealCalendar />
+                  <RealCalendar onOpenClient={(id) => { const l = leads.find(x => x.id === id); if (l) { setSelectedLead(l); setActiveTab('inbox'); } }} />
                 </Suspense>
               )}
 

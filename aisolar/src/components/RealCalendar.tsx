@@ -33,6 +33,7 @@ interface CalEvent {
   customer: string;
   assignee: string;
   route?: string;
+  leadId?: string;   // present -> the event belongs to a client; opens their full log
 }
 
 /* Family language on the calendar: people-time is charcoal, field work is
@@ -55,38 +56,52 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
     // Consultations
     if (['new', 'intake_complete'].includes(lead.workflow_stage)) {
       const d = new Date(today); d.setDate(today.getDate() + (i % 4) + 1); d.setHours(10, 0);
-      events.push({ id: `cons_${lead.id}`, date: d, time: '10:00', endTime: '10:30', type: 'consultation', title: `${lead.name} — consultation`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
+      events.push({ id: `cons_${lead.id}`, date: d, time: '10:00', endTime: '10:30', type: 'consultation', title: `${lead.name} — consultation`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}`, leadId: lead.id });
     }
     // Site surveys
     if (lead.survey?.scheduled_date) {
       const d = new Date(lead.survey.scheduled_date);
-      events.push({ id: `survey_${lead.id}`, date: d, time: '10:00', endTime: '11:00', type: 'site_survey', title: `${lead.name} — site survey`, customer: lead.name, assignee: lead.survey.surveyor || 'TBD', route: `/lead-flow/${lead.id}` });
+      events.push({ id: `survey_${lead.id}`, date: d, time: '10:00', endTime: '11:00', type: 'site_survey', title: `${lead.name} — site survey`, customer: lead.name, assignee: lead.survey.surveyor || 'TBD', route: `/lead-flow/${lead.id}`, leadId: lead.id });
     }
     // Installs
     if (lead.assignment?.scheduled_date) {
       const d = new Date(lead.assignment.scheduled_date);
-      events.push({ id: `install_${lead.id}`, date: d, time: '08:00', endTime: '17:00', type: 'install', title: `${lead.name} — ${lead.proposal?.system_size_kw}kWp`, customer: lead.name, assignee: lead.assignment.installer_name, route: '/job' });
+      events.push({ id: `install_${lead.id}`, date: d, time: '08:00', endTime: '17:00', type: 'install', title: `${lead.name} — ${lead.proposal?.system_size_kw}kWp`, customer: lead.name, assignee: lead.assignment.installer_name, route: `/job/${lead.id}`, leadId: lead.id });
     }
     // Follow-ups
     if (lead.workflow_stage === 'proposal_sent') {
       const d = new Date(today); d.setDate(today.getDate() + 1); d.setHours(14, 0);
-      events.push({ id: `follow_${lead.id}`, date: d, time: '14:00', endTime: '14:15', type: 'follow_up', title: `${lead.name} — follow-up call`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
+      events.push({ id: `follow_${lead.id}`, date: d, time: '14:00', endTime: '14:15', type: 'follow_up', title: `${lead.name} — follow-up call`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}`, leadId: lead.id });
     }
     // Deadlines
     if (lead.proposal?.sent_date) {
       const d = new Date(lead.proposal.sent_date); d.setDate(d.getDate() + 30);
       if (d > today) {
-        events.push({ id: `deadline_${lead.id}`, date: d, time: '23:59', type: 'deadline', title: `${lead.name} — proposal expires`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}` });
+        events.push({ id: `deadline_${lead.id}`, date: d, time: '23:59', type: 'deadline', title: `${lead.name} — proposal expires`, customer: lead.name, assignee: lead.assigned_consultant, route: `/lead-flow/${lead.id}`, leadId: lead.id });
       }
     }
     // Payment due
     if (lead.invoice && !lead.invoice.final_paid && lead.workflow_stage === 'installed') {
       const d = new Date(today); d.setDate(today.getDate() + 2);
-      events.push({ id: `payment_${lead.id}`, date: d, time: '12:00', type: 'payment', title: `${lead.name} — final payment due`, customer: lead.name, assignee: 'System', route: '/analytics' });
+      events.push({ id: `payment_${lead.id}`, date: d, time: '12:00', type: 'payment', title: `${lead.name} — final payment due`, customer: lead.name, assignee: 'System', route: '/analytics', leadId: lead.id });
     }
   });
 
-  // Agent runs (daily)
+  // Per-client agent activity — from the actual touchpoint log, so clicking
+  // an agent event opens THAT client's full log (Cal).
+  leads.forEach(lead => {
+    lead.touchpoints.filter(tp => tp.actor === 'agent').slice(-2).forEach((tp, k) => {
+      const d = new Date(tp.timestamp);
+      events.push({
+        id: `agentlog_${lead.id}_${k}`, date: d,
+        time: d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' }),
+        type: 'agent_run', title: `${lead.name} — ${tp.summary?.slice(0, 40) ?? 'agent action'}`,
+        customer: lead.name, assignee: 'AITeam', leadId: lead.id,
+      });
+    });
+  });
+
+  // System-wide agent runs (no client — these open the agents window)
   for (let day = -2; day < 14; day++) {
     const d = new Date(today); d.setDate(today.getDate() + day);
     [{ time: '09:00', title: 'Follow-Up Agent daily run' },
@@ -102,7 +117,7 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
   return events;
 }
 
-export default function RealCalendar() {
+export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId: string) => void } = {}) {
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [events] = useState<CalEvent[]>(() => generateEvents(leads));
@@ -410,11 +425,19 @@ export default function RealCalendar() {
                       <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground" /> Customer: {selectedEvent.customer}</div>
                       <div className="flex items-center gap-2"><Wrench className="h-4 w-4 text-muted-foreground" /> Assigned to: {selectedEvent.assignee}</div>
                     </div>
-                    {selectedEvent.route && (
-                      <Button className="w-full mt-4" onClick={() => { navigate(selectedEvent.route!); setSelectedEvent(null); }}>
-                        Open {meta.label} <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    )}
+                    <div className="mt-4 space-y-2">
+                      {selectedEvent.leadId && onOpenClient && (
+                        <Button className="w-full" onClick={() => { onOpenClient(selectedEvent.leadId!); setSelectedEvent(null); }}>
+                          Open {selectedEvent.customer.split(' ')[0]}'s full log <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      )}
+                      {selectedEvent.route && (
+                        <Button variant={selectedEvent.leadId && onOpenClient ? 'outline' : 'default'} className="w-full"
+                          onClick={() => { navigate(selectedEvent.route!); setSelectedEvent(null); }}>
+                          Open {meta.label} <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      )}
+                    </div>
                   </>
                 );
               })()}
