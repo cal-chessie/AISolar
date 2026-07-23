@@ -61,30 +61,36 @@ export default function PricingPage() {
       savePct: savePct(PRICES.solo),
       yearlyNote: `+ €${PRICES.seat} per extra seat`,
       features: [
-        '1 user',
-        'Bill reader — 21 details per bill',
-        'Instant estimate + booking front door',
-        'Survey → design → proposal flow',
-        'Customer portal with chat',
-        'One cockpit for your whole pipeline',
+        '1 seat included',
+        'Bill reader — 21 details off every bill',
+        'Day/night split + battery case, from their real usage',
+        'Instant estimate with satellite view of the roof',
+        'Booking front door wired to your calendar',
+        'Guided site survey with photo checklist',
+        'Proposal builder with SEAI grant calculated',
+        'Customer portal with live chat + documents',
+        'Unlimited leads and proposals',
       ],
     },
     {
-      name: 'Team',
+      name: 'AISolar',
       price: (y) => eur(y ? PRICES.team.yearly : PRICES.team.monthly),
       priceSub: 'per month',
       yearlyNote: `+ €${PRICES.seat} per extra seat`,
-      blurb: 'For installer teams with consultants and crews on the road.',
+      blurb: 'The full installer OS — your whole company on one engine.',
       cta: { label: 'Try for free', to: '/get-started' },
       microcopy: '14 day free trial',
       featuresLead: 'Solo features, plus:',
       savePct: savePct(PRICES.team),
       features: [
-        'Consultant + installer seats',
-        'Shared pipeline board and calendar',
-        'Documents — proposals, contracts, invoices',
-        'Installer field app with job checklists',
-        'Your branding on every proposal',
+        '3 seats included, then €97 per seat',
+        'Consultant cockpit — pipeline board, calendar, inbox',
+        'Installer field app — job tabs, materials, map',
+        'Owner cockpit — analytics, agents, SEAI tracking',
+        'Documents hub — proposals, contracts, invoices',
+        'Your logo + branding on every customer page',
+        'Team scheduling with cal.com booking links',
+        'Role-based access for the whole crew',
       ],
       hasToggle: true,
     },
@@ -93,18 +99,21 @@ export default function PricingPage() {
       price: (y) => eur(y ? PRICES.aiteam.yearly : PRICES.aiteam.monthly),
       priceSub: 'per month',
       yearlyNote: `+ €${PRICES.seat} per extra seat`,
-      blurb: 'The AI workforce on top: agents that draft, schedule and chase.',
+      blurb: 'Your AI workforce on top: agents that draft, schedule and chase.',
       cta: { label: 'Try for free', to: '/aiteam' },
       microcopy: '14 day free trial',
-      featuresLead: 'Team features, plus:',
+      featuresLead: 'AISolar features, plus:',
       savePct: savePct(PRICES.aiteam),
       features: [
-        'Proposal drafts written for you',
-        'Surveys booked, follow-ups sent on time',
-        'Payment reminders and customer digests',
-        'A clear window on every agent action',
-        'One-tap corrections train your agents',
-        'You approve — nothing sends itself',
+        'The drafter — proposals written from bill + survey',
+        'The scheduler — surveys + installs booked for you',
+        'The chaser — follow-ups sent on time, every time',
+        'The bookkeeper — invoices raised, deposits chased',
+        'The analyst — weekly digest of your whole pipeline',
+        'Clear window: every action logged in plain English',
+        'One-tap corrections train each agent',
+        'Approval gates — nothing sends without you',
+        'Daily AI cost cap with automatic fallback',
       ],
       dark: true,
       hasToggle: true,
@@ -118,13 +127,16 @@ export default function PricingPage() {
       microcopy: '*Annual pricing',
       featuresLead: 'AITeam features, plus:',
       features: [
-        'Multi-tenant — many brands, one engine',
-        'Immutable record of everything',
-        'Your own agents, built with us',
-        'Dedicated onboarding and support',
+        'Multi-tenant — every brand + region isolated',
+        'Immutable, hash-chained record of everything',
+        'Custom agents built around your workflows',
+        'Bring-your-own keys — email, AI, payments',
+        'EU data residency + GDPR tooling built in',
+        'Dedicated onboarding and rollout support',
       ],
     },
   ];
+
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -135,7 +147,7 @@ export default function PricingPage() {
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
           <span className="size-1.5 rounded-full bg-primary" /> Pricing
         </span>
-        <h1 className="mt-5 max-w-3xl text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.05]">
+        <h1 className="mt-5 max-w-3xl text-[32px] leading-[38px] sm:text-[40px] sm:leading-[44px] font-semibold tracking-tight">
           Choose your AISolar subscription
         </h1>
         <p className="mt-4 max-w-xl text-base sm:text-lg text-muted-foreground leading-body">
@@ -144,21 +156,21 @@ export default function PricingPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a href={CAL_LINK} target="_blank" rel="noreferrer"
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+            className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
             Talk to us <ArrowRight className="size-4" />
           </a>
           <a href="#features"
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors">
+            className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-card px-4 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
             See feature breakdown <ArrowRight className="size-4" />
           </a>
         </div>
 
         {/* four tier cards */}
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4 items-start">
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4 items-stretch">
           {tiers.map(tier => (
             <div
               key={tier.name}
-              className={`rounded-[16px] p-4 flex flex-col ${
+              className={`rounded-[16px] p-4 flex flex-col h-full ${
                 tier.dark
                   ? 'bg-primary text-primary-foreground shadow-card'
                   : 'bg-card shadow-card'
@@ -184,13 +196,13 @@ export default function PricingPage() {
               </div>
 
               {/* price */}
-              <div className="mt-4 px-1 flex items-baseline gap-2 min-h-10">
+              <div className="mt-4 px-1 flex items-baseline gap-2 min-h-9">
                 <span className="text-[32px] leading-none font-semibold tabular-nums">{tier.price(yearly)}</span>
                 {tier.priceSub && (
                   <span className={`text-sm ${tier.dark ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{tier.priceSub}</span>
                 )}
                 {tier.hasToggle && yearly && tier.savePct && (
-                  <span className={`ml-auto text-xs rounded px-1.5 py-0.5 ${tier.dark ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-tech-subtle text-tech'}`}>
+                  <span className={`ml-auto text-xs rounded-[4px] px-1 py-0.5 ${tier.dark ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-tech-subtle text-tech'}`}>
                     Save {tier.savePct}
                   </span>
                 )}
@@ -206,14 +218,14 @@ export default function PricingPage() {
               {/* CTA + microcopy */}
               {tier.cta.external ? (
                 <a href={tier.cta.to} target="_blank" rel="noreferrer"
-                  className={`mt-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-opacity hover:opacity-90 ${
+                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-[12px] text-sm font-semibold transition-opacity hover:opacity-90 ${
                     tier.dark ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'
                   }`}>
                   {tier.cta.label} <ArrowRight className="size-4" />
                 </a>
               ) : (
                 <Link to={tier.cta.to}
-                  className={`mt-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-opacity hover:opacity-90 ${
+                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-[12px] text-sm font-semibold transition-opacity hover:opacity-90 ${
                     tier.dark ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'
                   }`}>
                   {tier.cta.label} <ArrowRight className="size-4" />
@@ -225,7 +237,7 @@ export default function PricingPage() {
 
               {/* features */}
               <p className={`mt-4 px-1 text-sm font-medium ${tier.dark ? 'text-primary-foreground/85' : ''}`}>{tier.featuresLead}</p>
-              <ul className="mt-2 px-1 space-y-2">
+              <ul className="mt-2 px-1 space-y-2 flex-1">
                 {tier.features.map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className={`size-4 mt-0.5 shrink-0 ${tier.dark ? 'text-primary-foreground' : 'text-foreground'}`} />
@@ -250,7 +262,7 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left font-medium text-muted-foreground px-4 py-3 w-[40%]">Features</th>
-                  {['Solo', 'Team', 'AITeam', 'AIOS'].map(n => (
+                  {['Solo', 'AISolar', 'AITeam', 'AIOS'].map(n => (
                     <th key={n} className={`px-4 py-3 text-center font-semibold ${n === 'AITeam' ? 'text-foreground' : ''}`}>{n}</th>
                   ))}
                 </tr>
@@ -293,7 +305,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
-    name: 'Run the team',
+    name: 'Run the company',
     rows: [
       { label: 'Seats included', solo: '1', team: '3', aiteam: '3', aios: 'Custom' },
       { label: 'Consultant cockpit — pipeline, calendar, documents', solo: false, team: true, aiteam: true, aios: true },
