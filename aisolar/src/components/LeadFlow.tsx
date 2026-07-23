@@ -702,7 +702,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Sun className="h-5 w-5 text-doc-proposal" /> System design
+          <Sun className="h-5 w-5 text-muted-foreground" /> System design
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Lay out panels on the roof, select gear, and size the system.</p>
       </div>
@@ -711,7 +711,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-doc-proposal" /> Roof layout designer
+            <MapPin className="h-4 w-4 text-muted-foreground" /> Roof layout designer
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
             Satellite view of the property. Use + / − to adjust panel count. In production: Mapbox satellite imagery + drag-to-position panels (panel counts come from bill + survey, not an auto roof-scan).
@@ -770,7 +770,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
               {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage covered
             </span>
           </div>
-          <div className="mt-2 p-2 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded text-xs text-doc-proposal dark:text-doc-proposal">
+          <div className="mt-2 p-2 bg-muted/40 rounded text-xs text-muted-foreground">
             <Info className="h-3 w-3 inline mr-1" />
             In production: Mapbox satellite imagery + drag-to-position panels. Roof dimensions come from the site survey (more accurate than a satellite scan); auto roof-detection is a post-launch maybe, gated on Google Solar API coverage in Ireland.
           </div>

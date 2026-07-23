@@ -271,7 +271,7 @@ export default function AgentTraining() {
             >
               <Bot className="h-3 w-3" />
               {a.name.replace(' Agent', '')}
-              <span className={`text-[11px] px-1 rounded ${al.successRate >= 95 ? 'bg-primary text-primary' : 'bg-doc-proposal/20 text-doc-proposal'}`}>
+              <span className={`text-[11px] px-1 rounded ${al.successRate >= 95 ? 'bg-doc-deposit/10 text-doc-deposit' : 'bg-doc-proposal-subtle text-doc-proposal'}`}>
                 {al.successRate}%
               </span>
             </button>
@@ -309,7 +309,7 @@ export default function AgentTraining() {
           {/* Behavioural rules */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-doc-proposal" /> Behavioural rules</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-muted-foreground" /> Behavioural rules</CardTitle>
               <p className="text-xs text-muted-foreground">Hard constraints the agent must follow.</p>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -368,7 +368,7 @@ export default function AgentTraining() {
                   <div className="text-[11px] text-muted-foreground">total runs</div>
                 </div>
                 <div>
-                  <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-primary' : 'text-doc-proposal'}`}>{agentLearning.successRate}%</div>
+                  <div className={`text-2xl font-bold ${agentLearning.successRate >= 95 ? 'text-doc-deposit' : 'text-doc-proposal'}`}>{agentLearning.successRate}%</div>
                   <div className="text-[11px] text-muted-foreground">success rate</div>
                 </div>
                 <div>

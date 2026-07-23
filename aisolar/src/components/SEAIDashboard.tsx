@@ -164,7 +164,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
         {/* ESB */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-doc-proposal" /> ESB NC6 Microgen Export</h3>
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-tech" /> ESB NC6 Microgen Export</h3>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className={STATUS_META[compliance.esbStatus].bg}>{STATUS_META[compliance.esbStatus].label}</Badge>
               <span className="text-xs text-muted-foreground">Export tariff: €0.14/kWh · Inverter: {selectedLead.survey?.confirmed_inverter_type || 'Single phase'}</span>
@@ -195,7 +195,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">Grant pipeline</div><div className="text-xl font-bold text-primary">{eur(stats.totalGrantValue)}</div></CardContent></Card>
         <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">SEAI submitted</div><div className="text-xl font-bold text-primary">{stats.submitted}</div></CardContent></Card>
-        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">ESB connected</div><div className="text-xl font-bold text-doc-proposal">{stats.esbConnected}</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">ESB connected</div><div className="text-xl font-bold text-tech">{stats.esbConnected}</div></CardContent></Card>
         <Card><CardContent className="p-3"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-primary">{stats.reciFiled}</div></CardContent></Card>
       </div>
 
@@ -231,7 +231,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                   {/* ESB badge */}
                   {(filter === 'all' || filter === 'esb') && (
                     <div className="flex items-center gap-1">
-                      <Zap className="h-3 w-3 text-doc-proposal" />
+                      <Zap className="h-3 w-3 text-tech" />
                       <Badge variant="outline" className={`text-[11px] ${STATUS_META[c.esbStatus].bg}`}>{STATUS_META[c.esbStatus].label}</Badge>
                     </div>
                   )}

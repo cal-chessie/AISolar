@@ -108,7 +108,7 @@ export default function SiteNavigation() {
               onClick={() => navigate('/installer')}
               variant="default"
               size="sm"
-              className="hidden sm:flex h-10 px-4 text-sm bg-doc-proposal hover:opacity-90 text-white"
+              className="hidden sm:flex h-10 px-4 text-sm"
             >
               <Wrench className="h-4 w-4 mr-2" />
               Open Cockpit

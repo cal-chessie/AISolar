@@ -130,7 +130,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
         {/* Installation */}
         {lead.assignment && (
           <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-doc-proposal" /> Installation</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-tech" /> Installation</CardTitle></CardHeader>
             <CardContent className="text-xs space-y-1">
               <Row label="Installer" value={lead.assignment.installer_name} />
               <Row label="Scheduled" value={new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE')} />
