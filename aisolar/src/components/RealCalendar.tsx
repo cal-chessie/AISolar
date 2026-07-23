@@ -129,7 +129,7 @@ export default function RealCalendar() {
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startOffset = firstDay.getDay(); // 0 = Sunday
+    const startOffset = (firstDay.getDay() + 6) % 7; // Monday-first (IE)
     const days: Date[] = [];
     // Previous month padding
     for (let i = startOffset - 1; i >= 0; i--) {
@@ -147,10 +147,10 @@ export default function RealCalendar() {
     return days;
   }, [currentDate]);
 
-  // Week days
+  // Week days (Monday-first)
   const weekDays = useMemo(() => {
     const d = new Date(currentDate);
-    d.setDate(d.getDate() - d.getDay());
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     return Array.from({ length: 7 }, (_, i) => {
       const day = new Date(d);
       day.setDate(d.getDate() + i);
@@ -171,6 +171,7 @@ export default function RealCalendar() {
   };
 
   const selectedDayEvents = selectedDate ? (eventsByDay.get(selectedDate.toDateString()) || []) : [];
+  const dayViewEvents = eventsByDay.get(currentDate.toDateString()) || [];
 
   return (
     <div className="p-3 space-y-3">
@@ -206,7 +207,7 @@ export default function RealCalendar() {
               <>
                 {/* Day headers */}
                 <div className="grid grid-cols-7 gap-0.5 mb-1">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                     <div key={day} className="text-center text-[11px] font-medium text-muted-foreground py-1">{day}</div>
                   ))}
                 </div>
@@ -219,14 +220,13 @@ export default function RealCalendar() {
                     return (
                       <button
                         key={i}
-                        onClick={() => setSelectedDate(day)}
-                        className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-lg border text-left transition-colors ${
-                          isSelected ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
-                          isToday(day) ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' :
-                          isCurrentMonth ? 'border-border hover:border-primary/40' : 'border-transparent opacity-40'
+                        onClick={() => { setSelectedDate(day); setCurrentDate(day); setViewMode('day'); }}
+                        className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-[10px] text-left transition-colors ${
+                          isToday(day) ? 'ring-1 ring-primary/40 bg-muted/40' :
+                          isCurrentMonth ? 'hover:bg-muted/50' : 'opacity-40 hover:bg-muted/30'
                         }`}
                       >
-                        <div className={`text-xs font-medium ${isToday(day) ? 'text-primary' : isCurrentMonth ? '' : 'text-muted-foreground'}`}>
+                        <div className={`text-xs mb-0.5 ${isToday(day) ? 'font-bold text-primary' : isCurrentMonth ? 'font-medium' : 'text-muted-foreground'}`}>
                           {day.getDate()}
                         </div>
                         <div className="space-y-0.5 mt-0.5">
@@ -254,9 +254,10 @@ export default function RealCalendar() {
                   const dayEvents = eventsByDay.get(day.toDateString()) || [];
                   return (
                     <div key={i} className={`min-h-[300px] p-1.5 rounded-[10px] bg-muted/20 ${isToday(day) ? 'ring-1 ring-primary/30' : ''}`}>
-                      <div className={`text-xs font-bold mb-1 ${isToday(day) ? 'text-primary' : ''}`}>
+                      <button onClick={() => { setSelectedDate(day); setCurrentDate(day); setViewMode('day'); }}
+                        className={`text-xs font-bold mb-1 hover:underline ${isToday(day) ? 'text-primary' : ''}`}>
                         {day.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })}
-                      </div>
+                      </button>
                       <div className="space-y-1">
                         {dayEvents.map(e => {
                           const meta = EVENT_META[e.type];
@@ -276,28 +277,51 @@ export default function RealCalendar() {
             )}
 
             {viewMode === 'day' && (
-              <div className="space-y-1">
-                {selectedDayEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No events on this day.</p>
-                ) : (
-                  selectedDayEvents.map(e => {
-                    const meta = EVENT_META[e.type];
-                    const Icon = meta.icon;
+              <div>
+                <button onClick={() => setViewMode('month')}
+                  className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft className="h-3.5 w-3.5" /> Back to month
+                </button>
+                {/* Hour timeline 07:00–19:00 — the full day, not a flat list */}
+                <div className="relative">
+                  {Array.from({ length: 13 }, (_, i) => i + 7).map(hour => {
+                    const hh = String(hour).padStart(2, '0');
+                    const hourEvents = dayViewEvents.filter(e => parseInt(e.time.slice(0, 2), 10) === hour);
+                    const nowHere = isToday(currentDate) && new Date().getHours() === hour;
                     return (
-                      <button key={e.id} onClick={() => setSelectedEvent(e)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-[10px] hover:bg-muted/50 text-left ${meta.bg}`}>
-                        <div className={`p-2 rounded-lg bg-background`}>
-                          <Icon className={`h-4 w-4 ${meta.text}`} />
+                      <div key={hour} className="flex gap-3 min-h-[44px] border-t border-border/60 relative">
+                        <div className="w-12 shrink-0 -mt-2 text-[11px] tabular-nums text-muted-foreground bg-card pr-1">{hh}:00</div>
+                        <div className="flex-1 py-1 space-y-1">
+                          {nowHere && (
+                            <div className="flex items-center gap-1" aria-label="Current time">
+                              <span className="size-1.5 rounded-full bg-pop" />
+                              <span className="flex-1 h-px bg-pop/60" />
+                            </div>
+                          )}
+                          {hourEvents.map(e => {
+                            const meta = EVENT_META[e.type];
+                            const Icon = meta.icon;
+                            const allDay = e.endTime && (parseInt(e.endTime, 10) - parseInt(e.time, 10)) >= 6;
+                            return (
+                              <button key={e.id} onClick={() => setSelectedEvent(e)}
+                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-left ${meta.bg} hover:opacity-90 transition-opacity`}>
+                                <Icon className={`h-3.5 w-3.5 shrink-0 ${meta.text}`} />
+                                <span className={`text-xs font-medium truncate ${meta.text}`}>{e.title}</span>
+                                <span className="ml-auto text-[11px] tabular-nums text-muted-foreground shrink-0">
+                                  {e.time}{e.endTime ? `–${e.endTime}` : ''}{allDay ? ' · all day' : ''}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:inline">{e.assignee}</span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{e.title}</div>
-                          <div className="text-xs text-muted-foreground">{e.time}{e.endTime ? ` — ${e.endTime}` : ''} · {e.assignee}</div>
-                        </div>
-                        <Badge variant="outline" className="text-[11px]">{meta.label}</Badge>
-                      </button>
+                      </div>
                     );
-                  })
-                )}
+                  })}
+                  {dayViewEvents.length === 0 && (
+                    <p className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Nothing scheduled this day.</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
