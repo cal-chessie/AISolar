@@ -46,6 +46,8 @@ function agentFor(summary: string): string {
   if (/intake|acknowledge|score/.test(s)) return 'The greeter';
   if (/digest|update/.test(s)) return 'The correspondent';
   if (/warranty|handover/.test(s)) return 'The closer';
+  if (/install.*sched|materials ordered|crew/.test(s)) return 'The coordinator';
+  if (/stale|escalat/.test(s)) return 'The watchdog';
   return 'AITeam';
 }
 
@@ -61,7 +63,7 @@ function downloadCsv(filename: string, header: string[], rows: (string | number)
   URL.revokeObjectURL(a.href);
 }
 
-type Tab = 'overview' | 'agents' | 'leads' | 'charts';
+type Tab = 'overview' | 'financials' | 'agents' | 'leads' | 'charts';
 
 export default function CeoWindow() {
   const [tab, setTab] = useState<Tab>('overview');
@@ -95,7 +97,11 @@ export default function CeoWindow() {
       cur.runs += 1; cur.minutes += r.minutes;
       byAgent.set(r.agent, cur);
     }
-    const agents = [...byAgent.entries()].map(([agent, v]) => ({ agent, ...v })).sort((a, b) => b.runs - a.runs);
+    // Full roster of 10 — agents with no logged runs still show (at 0), so the
+    // owner sees the whole team, not just the busy ones.
+    const ROSTER = ['The greeter', 'The scheduler', 'The drafter', 'The chaser', 'The grants clerk', 'The coordinator', 'The closer', 'The correspondent', 'The watchdog', 'The bookkeeper'];
+    const agents = ROSTER.map(name => ({ agent: name, ...(byAgent.get(name) ?? { runs: 0, minutes: 0 }) }))
+      .sort((a, b) => b.runs - a.runs);
 
     // Stall: biggest drop between phases
     const total = leads.length || 1;
@@ -121,7 +127,21 @@ export default function CeoWindow() {
     }
     const sources = [...bySource.entries()].map(([source, v]) => ({ source, ...v, rate: v.total ? Math.round((v.won / v.total) * 100) : 0 })).sort((a, b) => b.rate - a.rate);
 
-    return { revenueClosed, depositsHeld, pipelineValue, conversion, avgJob, autolog, minutesSaved, agents, stall, sources };
+    // Financials detail — every job with money attached, plus outstanding AR.
+    const jobs = leads.filter(l => l.proposal).map(l => ({
+      name: l.name,
+      stage: getStage(l.workflow_stage)?.label ?? l.workflow_stage,
+      gross: l.proposal!.gross_cost ?? 0,
+      grant: l.proposal!.seai_grant ?? 0,
+      net: l.proposal!.net_cost ?? 0,
+      deposit: l.invoice?.deposit_paid ? (l.invoice?.deposit_amount ?? Math.round((l.proposal!.net_cost ?? 0) * 0.3)) : 0,
+      finalPaid: !!l.invoice?.final_paid,
+      outstanding: l.invoice?.final_paid ? 0 : (l.invoice?.deposit_paid ? (l.proposal!.net_cost ?? 0) - (l.invoice?.deposit_amount ?? Math.round((l.proposal!.net_cost ?? 0) * 0.3)) : (l.proposal!.net_cost ?? 0)),
+    })).sort((a, b) => b.net - a.net);
+    const outstandingAR = jobs.filter(j => j.deposit > 0 && !j.finalPaid).reduce((s, j) => s + j.outstanding, 0);
+    const grantsInFlight = leads.filter(l => ['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)).reduce((s, l) => s + (l.proposal?.seai_grant ?? 0), 0);
+
+    return { revenueClosed, depositsHeld, pipelineValue, conversion, avgJob, autolog, minutesSaved, agents, stall, sources, jobs, outstandingAR, grantsInFlight };
   }, [leads]);
 
   const exportAutolog = () => downloadCsv(
@@ -148,6 +168,7 @@ export default function CeoWindow() {
 
   const TABS: Array<{ id: Tab; label: string; icon: typeof BarChart3 }> = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'financials', label: 'Financials', icon: Euro },
     { id: 'agents', label: 'Agents', icon: Bot },
     { id: 'leads', label: 'Leads', icon: Database },
     { id: 'charts', label: 'Charts', icon: LineChart },
@@ -178,7 +199,9 @@ export default function CeoWindow() {
       {tab === 'overview' && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held`} hero />
+            <button type="button" onClick={() => setTab('financials')} className="text-left cursor-pointer group">
+              <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} hero />
+            </button>
             <Kpi icon={<TrendingDown />} label="Pipeline value" value={eur(d.pipelineValue)} sub={`${d.conversion}% conversion`} />
             <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" />
             <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} />
@@ -205,10 +228,58 @@ export default function CeoWindow() {
         </div>
       )}
 
-      {tab === 'agents' && (
+      {tab === 'financials' && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {d.agents.slice(0, 4).map(a => (
+            <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub="final payments received" hero />
+            <Kpi icon={<Euro />} label="Deposits held" value={eur(d.depositsHeld)} sub="jobs underway" />
+            <Kpi icon={<Euro />} label="Outstanding balances" value={eur(d.outstandingAR)} sub="deposit paid, final due" />
+            <Kpi icon={<Euro />} label="SEAI grants in flight" value={eur(d.grantsInFlight)} sub="approved → installed" />
+          </div>
+
+          <div className="rounded-panel border border-border bg-card overflow-hidden">
+            <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
+              <Euro className="size-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold">Money by job</h3>
+              <span className="text-2xs text-muted-foreground">{d.jobs.length} jobs with proposals</span>
+              <Button variant="outline" size="sm" className="ml-auto h-7 text-xs" onClick={() => downloadCsv(
+                `aisolar-financials-${new Date().toISOString().slice(0, 10)}.csv`,
+                ['Customer', 'Stage', 'Gross €', 'SEAI grant €', 'Net €', 'Deposit received €', 'Final paid', 'Outstanding €'],
+                d.jobs.map(j => [j.name, j.stage, j.gross, j.grant, j.net, j.deposit, j.finalPaid ? 'yes' : 'no', j.outstanding]),
+              )}>
+                <Download className="size-3.5 mr-1" /> CSV
+              </Button>
+            </div>
+            <div className="max-h-[28rem] overflow-auto scroll-slim">
+              <table className="w-full text-sm min-w-[44rem]">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="text-left border-b border-border">
+                    {['Customer', 'Stage', 'Gross', 'Grant', 'Net', 'Deposit', 'Outstanding'].map(h => <th key={h} className="font-medium text-xs text-muted-foreground px-4 py-2 whitespace-nowrap">{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.jobs.map(j => (
+                    <tr key={j.name} className="border-b border-border/60 last:border-0">
+                      <td className="px-4 py-2 whitespace-nowrap font-medium">{j.name}</td>
+                      <td className="px-4 py-2 whitespace-nowrap text-xs text-muted-foreground">{j.stage}</td>
+                      <td className="px-4 py-2 tabular-nums">{eur(j.gross)}</td>
+                      <td className="px-4 py-2 tabular-nums text-doc-deposit">−{eur(j.grant)}</td>
+                      <td className="px-4 py-2 tabular-nums font-medium">{eur(j.net)}</td>
+                      <td className="px-4 py-2 tabular-nums">{j.deposit ? eur(j.deposit) : '—'}</td>
+                      <td className={`px-4 py-2 tabular-nums ${j.outstanding > 0 ? 'text-doc-invoice font-medium' : 'text-muted-foreground'}`}>{j.outstanding > 0 ? eur(j.outstanding) : 'settled'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'agents' && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {d.agents.map(a => (
               <div key={a.agent} className="rounded-panel border border-border bg-card p-4">
                 <div className="flex items-center gap-1.5"><Bot className="size-3.5 text-primary" /><span className="label-micro">{a.agent}</span></div>
                 <p className="mt-1.5 text-2xl font-semibold tabular-nums">{a.runs}</p>
