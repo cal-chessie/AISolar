@@ -230,8 +230,8 @@ export default function OwnerCockpit() {
       badge: it.id === 'agents' && data.agentFailures ? data.agentFailures : undefined,
       primary: ['overview', 'calendar', 'agents', 'analytics', 'financials'].includes(it.id),
     })),
-    { id: 'switch-consultant', label: 'Consultant view', icon: <Users />, onSelect: () => navigate('/consultant') },
-    { id: 'switch-installer', label: 'Installer view', icon: <Wrench />, onSelect: () => navigate('/installer') },
+    // Cal: the two POV-switch rows were redundant with the Consultants /
+    // Installers tabs — the jump now lives inside those views instead.
   ];
 
   return (
@@ -634,9 +634,12 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
     <div className="p-4 space-y-3">
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="consultant"
         onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, territory: p.extra, activeLeads: 0, hotLeads: 0, pipelineValue: 0, leads: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
-        <Button size="sm" className="ml-auto h-8 text-xs" onClick={() => setAddOpen(true)}>
+        <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/consultant')}>
+          <Users className="h-3.5 w-3.5 mr-1" /> Open consultant view
+        </Button>
+        <Button size="sm" className="h-8 text-xs" onClick={() => setAddOpen(true)}>
           <UserPlus className="h-3.5 w-3.5 mr-1" /> Add consultant
         </Button>
       </div>
@@ -705,9 +708,12 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
     <div className="p-4 space-y-3">
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="installer"
         onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, skills: p.extra.split(',').map(s => s.trim()).filter(Boolean), activeJobs: 0, completedJobs: 0, jobs: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
-        <Button size="sm" className="ml-auto h-8 text-xs" onClick={() => setAddOpen(true)}>
+        <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/installer')}>
+          <Wrench className="h-3.5 w-3.5 mr-1" /> Open installer view
+        </Button>
+        <Button size="sm" className="h-8 text-xs" onClick={() => setAddOpen(true)}>
           <UserPlus className="h-3.5 w-3.5 mr-1" /> Add installer
         </Button>
       </div>
