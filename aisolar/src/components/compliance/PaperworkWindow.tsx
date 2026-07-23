@@ -101,10 +101,18 @@ function buildPack(lead: DummyLead): PackDoc[] {
       detail: `authorises ${''}the contractor to complete, sign and submit the ${esbForm}` },
     { id: 'block_diagram', gate: 'B', name: 'Single line diagram — generated', who: 'Drawn from the design · engineer reviews and stamps', source: 'agent',
       status: lead.proposal ? 'prepared' : 'not_started',
-      detail: lead.proposal ? `array, inverter, MCB sizing and supply drawn from ${lead.name.split(' ')[0]}'s design — required with the ${esbForm}` : undefined },
+      detail: lead.proposal ? `drawn from ${lead.name.split(' ')[0]}'s design — ESB: "hand-drawn SLDs will not be accepted"` : undefined },
     { id: 'nc6', gate: 'B', name: `ESB ${esbForm} microgen notification`, who: 'Safe Electric installer submits', source: 'agent',
       status: afterSchedule ? 'sent' : lead.survey ? 'prepared' : 'not_started',
       detail: `${kW || '—'} kWp · ${threePhase ? 'three phase' : 'single phase'} → ${esbForm} (${esbForm === 'NC6' ? `within the ${nc6Limit}kW limit` : `above the ${nc6Limit}kW NC6 limit`})` },
+    ...(esbForm === 'NC7' ? [
+      { id: 'nc7_03', gate: 'B' as const, name: "NC7-03 — Manufacturer's ELS product declaration", who: 'From the manufacturer docs — if export limitation fitted', source: 'agent' as const,
+        status: (lead.survey ? 'prepared' : 'not_started') as DocStatus, detail: 'accompanies the application when an export limiter is used' },
+      { id: 'nc7_01', gate: 'C' as const, name: 'NC7-01 — Installation confirmation certificate', who: 'Installer signs after installation', source: 'installer' as const,
+        status: (afterInstall ? 'complete' : afterSchedule ? 'prepared' : 'not_started') as DocStatus },
+      { id: 'nc7_02', gate: 'C' as const, name: 'NC7-02 — Test form for ELS', who: 'Completed before energisation — if ELS fitted', source: 'installer' as const,
+        status: (afterInstall ? 'complete' : 'not_started') as DocStatus, detail: 'ESB witness testing precedes energisation' },
+    ] : []),
     { id: 'dow', gate: 'C', name: 'Declaration of Works', who: 'Installer signs', source: 'installer',
       status: afterInstall ? 'complete' : afterSchedule ? 'prepared' : 'not_started',
       detail: (() => { const a = getProposalTerms().berAssessorEmail; return afterInstall
@@ -259,11 +267,13 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
               <div className="space-y-2">
                 <Button size="sm" className="w-full font-semibold"
                   onClick={() => downloadEsbForm(lead, esbForm).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
-                  Download pre-filled {esbForm} <ArrowRight className="size-4 ml-1" />
+                  Download {esbForm === 'NC7' ? 'the full NC7 bundle (4 forms + data)' : 'pre-filled NC6'} <ArrowRight className="size-4 ml-1" />
                 </Button>
                 <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="w-full h-[45vh] rounded-[10px] border border-border" />
                 <p className="text-2xs text-muted-foreground">The official ESB Networks form, pre-fill data ready from the record — the Safe Electric installer completes and submits it{esbForm === 'NC7' ? ' with the letter of authority and single line diagram' : ''}.</p>
               </div>
+            ) : ['nc7_01', 'nc7_02', 'nc7_03'].includes(viewing.id) ? (
+              <iframe title="Official ESB form" src={viewing.id === 'nc7_01' ? '/forms/esbn-nc7-01-installation-confirmation.pdf' : viewing.id === 'nc7_02' ? '/forms/esbn-nc7-02-els-test.pdf' : '/forms/esbn-nc7-03-els-declaration.pdf'} className="w-full h-[55vh] rounded-[10px] border border-border" />
             ) : viewing.id === 'dow' ? (
               <div className="rounded-[10px] border border-border p-4"><DowTemplate lead={lead} /></div>
             ) : viewing.id === 'esb_loa' ? (

@@ -60,11 +60,30 @@ function collect(lead: DummyLead): Array<[string, string]> {
   return rows.map(([k, v]) => [k, v && String(v).trim() ? String(v) : '( not captured yet )']);
 }
 
-/** Official form + typed data appendix → returns a Blob for download. */
+/** NC7 submissions bundle the whole family (per ESB's process page):
+ *  main form + NC7-01 installation confirmation + NC7-02 ELS test +
+ *  NC7-03 manufacturer's ELS declaration. NC6 is a single form. */
+const FORM_PARTS: Record<EsbForm, string[]> = {
+  NC6: ['/forms/esbn-form-nc6.pdf'],
+  NC7: [
+    '/forms/esbn-form-nc7.pdf',
+    '/forms/esbn-nc7-01-installation-confirmation.pdf',
+    '/forms/esbn-nc7-02-els-test.pdf',
+    '/forms/esbn-nc7-03-els-declaration.pdf',
+  ],
+};
+
+/** Official form(s) + typed data appendix → returns a Blob for download. */
 export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob> {
-  const url = form === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf';
-  const bytes = await fetch(url).then(r => r.arrayBuffer());
+  const [first, ...rest] = FORM_PARTS[form];
+  const bytes = await fetch(first).then(r => r.arrayBuffer());
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  for (const partUrl of rest) {
+    const partBytes = await fetch(partUrl).then(r => r.arrayBuffer());
+    const part = await PDFDocument.load(partBytes, { ignoreEncryption: true });
+    const pages = await doc.copyPages(part, part.getPageIndices());
+    pages.forEach(pg => doc.addPage(pg));
+  }
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 

@@ -82,7 +82,11 @@ export default function BlockDiagram({ lead }: { lead: DummyLead }) {
       <circle cx="372" cy="257" r="12" {...B} />
       <text x="372" y="260" fontSize="7" textAnchor="middle" {...T}>kWh</text>
       <text x="360" y="280" fontSize="8" {...T}>GEN METER</text>
-      <line x1="384" y1="257" x2="470" y2="257" {...B} />
+      <line x1="384" y1="257" x2="410" y2="257" {...B} />
+      <rect x="410" y="243" width="44" height="28" {...B} />
+      <text x="432" y="254" fontSize="6.5" textAnchor="middle" {...T}>INTERFACE</text>
+      <text x="432" y="263" fontSize="6.5" textAnchor="middle" {...T}>PROTECTION</text>
+      <line x1="454" y1="257" x2="470" y2="257" {...B} />
       {/* export CT on the main */}
       <circle cx="470" cy="257" r="5" fill="black" />
       <text x="462" y="245" fontSize="8" {...T}>CT</text>
