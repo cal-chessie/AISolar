@@ -1,50 +1,22 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
 
 interface PageTransitionProps {
   children: ReactNode;
 }
 
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 8,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-  },
-  exit: {
-    opacity: 0,
-    y: -8,
-  },
-};
-
-const pageTransition = {
-  type: 'tween' as const,
-  ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-  duration: 0.25,
-};
-
+/**
+ * PageTransition — now a plain wrapper, deliberately.
+ *
+ * The AnimatePresence mode="wait" fade froze THREE times in this codebase
+ * (installer tabs, LeadFlow steps, and finally here at the route level) —
+ * the entrance animation stalled and the ENTIRE app rendered at ~26%
+ * opacity. Every "flat / washed out / colours off balance" complaint was
+ * partly this haze. A 250ms fade is not worth a whole product that
+ * sometimes displays at quarter strength. Pages switch instantly now.
+ */
 export default function PageTransition({ children }: PageTransitionProps) {
-  const location = useLocation();
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={pageVariants}
-        transition={pageTransition}
-        className="min-h-screen"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  );
+  return <div className="min-h-screen">{children}</div>;
 }
 
 // Loading bar component for top of page
