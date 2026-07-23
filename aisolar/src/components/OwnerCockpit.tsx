@@ -463,43 +463,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         </CardContent>
       </Card>
 
-      {/* Activity + Alerts */}
+      {/* Cal's layout: Today's schedule ABOVE live activity, BESIDE needs attention */}
       <div className="grid lg:grid-cols-2 gap-2">
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Activity className="h-3 w-3" /> Live activity</h3>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {data.activity.map((item: any, i: number) => {
-                const isAgent = item.actor === 'agent';
-                const isCustomer = item.actor === 'customer';
-                return (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
-                    <div className={`p-0.5 rounded ${isAgent ? 'bg-primary/10 dark:bg-primary/10' : isCustomer ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
-                      {isAgent && <Bot className="h-2.5 w-2.5 text-primary" />}
-                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-primary" />}
-                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-primary" />}
-                    </div>
-                    <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Needs attention</h3>
-            <div className="space-y-2">
-              {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
-              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
-              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Today's schedule */}
       <Card>
         <CardContent className="p-3">
           <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Calendar className="h-3 w-3" /> Today's schedule</h3>
@@ -523,6 +488,41 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           </div>
         </CardContent>
       </Card>
+        <Card>
+          <CardContent className="p-3">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Needs attention</h3>
+            <div className="space-y-2">
+              {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
+              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
+              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Live activity — full width, below */}
+        <Card>
+          <CardContent className="p-3">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Activity className="h-3 w-3" /> Live activity</h3>
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {data.activity.map((item: any, i: number) => {
+                const isAgent = item.actor === 'agent';
+                const isCustomer = item.actor === 'customer';
+                return (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className={`p-0.5 rounded ${isAgent ? 'bg-primary/10 dark:bg-primary/10' : isCustomer ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
+                      {isAgent && <Bot className="h-2.5 w-2.5 text-primary" />}
+                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-primary" />}
+                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-primary" />}
+                    </div>
+                    <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }
