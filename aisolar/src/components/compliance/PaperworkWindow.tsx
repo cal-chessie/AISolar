@@ -81,8 +81,12 @@ function buildPack(lead: DummyLead): PackDoc[] {
   // phase + the designed kW — never left as a "check this" note.
   const kW = lead.proposal?.system_size_kw ?? 0;
   const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
+  const commercial = ((lead.intake ?? {}) as Record<string, unknown>).extracted_premises_type === 'commercial'
+    || ((lead.intake ?? {}) as Record<string, unknown>).property_type === 'commercial';
   const nc6Limit = threePhase ? 11 : 6;
-  const esbForm = kW <= nc6Limit ? 'NC6' : 'NC7';
+  // The ladder, decided from captured data: micro -> mini -> small-scale.
+  // Domestic roofs never reach NC8; commercial can.
+  const esbForm = kW <= nc6Limit ? 'NC6' : kW <= 50 ? 'NC7' : 'NC8';
   const at = (stages: string[]) => stages.includes(s);
   const afterAccept = at(['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
   const afterSchedule = at(['install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
@@ -139,7 +143,8 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
   const pack = useMemo(() => packBase.map(d => uploads[d.id]
     ? { ...d, status: 'received' as DocStatus, detail: `${uploads[d.id]} — uploaded & filed` }
     : d), [packBase, uploads]);
-  const esbForm: 'NC6' | 'NC7' = (lead.proposal?.system_size_kw ?? 0) <= (/three/i.test(lead.survey?.confirmed_inverter_type ?? '') ? 11 : 6) ? 'NC6' : 'NC7';
+  const kW0 = lead.proposal?.system_size_kw ?? 0;
+  const esbForm: 'NC6' | 'NC7' | 'NC8' = kW0 <= (/three/i.test(lead.survey?.confirmed_inverter_type ?? '') ? 11 : 6) ? 'NC6' : kW0 <= 50 ? 'NC7' : 'NC8';
   const [viewing, setViewing] = useState<PackDoc | null>(null);
   const readyCount = pack.filter(d => ['received', 'complete', 'sent'].includes(d.status)).length;
   const allReady = pack.every(d => ['received', 'complete', 'sent'].includes(d.status));
@@ -149,7 +154,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
   const earliestInstall = addWorkingDays(new Date(), 20);
 
   const gates: Array<{ id: 'A' | 'B' | 'C'; title: string; icon: typeof Award; tint: string; rule: string }> = [
-    { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: 'Offer BEFORE any work starts' },
+    { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: (((lead.intake ?? {}) as Record<string, unknown>).extracted_premises_type === 'commercial' || ((lead.intake ?? {}) as Record<string, unknown>).property_type === 'commercial') ? 'COMMERCIAL premises — Non-Domestic Microgen scheme applies' : 'Offer BEFORE any work starts' },
     { id: 'B', title: `ESB — ${esbForm} only`, icon: Zap, tint: 'text-tech', rule: 'ONE application per customer, chosen from kW + phase — the other forms don\'t apply' },
     { id: 'C', title: 'Completion pack', icon: Shield, tint: 'text-doc-deposit', rule: 'Assembled at commissioning' },
   ];

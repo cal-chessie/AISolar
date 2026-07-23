@@ -58,3 +58,9 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 comment on table public.lead_documents is 'The paperwork pack: agents prepare/track/chase; registered humans sign and submit. DOW completion triggers send to the tenant BER assessor.';
+
+-- Cal: the bill reader captures premises type (domestic | commercial) so the
+-- agents know which ESB form + SEAI scheme applies — before anyone visits.
+alter table if exists public.lead_intake
+  add column if not exists extracted_premises_type text
+  check (extracted_premises_type in ('domestic','commercial') or extracted_premises_type is null);
