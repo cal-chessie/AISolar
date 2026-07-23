@@ -543,8 +543,10 @@ export default function ConsultantCockpitV5() {
       ) : (
         /* Tab content (non-chat views) */
         <div className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="p-3 space-y-2">
+          {/* AnimatePresence removed — FOURTH freeze site of this bug (installer
+              tabs, LeadFlow steps, route level, now here): tab highlighted but
+              content never swapped. Operator tools switch instantly. */}
+            <div key={activeTab} className="p-3 space-y-2">
 
               {activeTab === 'pipeline' && (
                 <PipelineKanban
@@ -568,7 +570,7 @@ export default function ConsultantCockpitV5() {
 
               {activeTab === 'documents' && (
                 <>
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Documents — proposals, contracts, invoices</h3>
+                  <p className="text-xs text-muted-foreground">Proposals, contracts and invoices — colour-edged by document, click through to the client</p>
                   {leads.filter(l => l.proposal || l.contract || l.invoice).length === 0 ? (
                     <EmptyState
                       icon={FolderOpen}
@@ -611,27 +613,60 @@ export default function ConsultantCockpitV5() {
                     <StatBox label="Conversion" value={`${Math.round((leads.filter(l => l.contract).length / leads.length) * 100)}%`} icon={TrendingUp} color="violet" />
                     <StatBox label="Stale" value={String(stats.staleLeads)} icon={Clock} color="pending" />
                   </div>
-                  <Card><CardContent className="p-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Pipeline by stage</h4>
-                    <div className="space-y-1">
-                      {PIPELINE_STAGES.map(s => {
-                        const count = leads.filter(l => l.workflow_stage === s.id).length;
+                  {/* Rebuilt (Cal, Last List item 16): 13 identical bars said
+                      nothing. Six PHASES with money + the family colours, and
+                      a where-to-act strip — a consultant reads this in 5s. */}
+                  <div className="rounded-[16px] bg-card shadow-card p-4">
+                    <h4 className="label-micro mb-3">Where the pipeline stands</h4>
+                    <div className="space-y-2">
+                      {STAGE_GROUPS.map(g => {
+                        const groupLeads = leads.filter(l => PIPELINE_STAGES.find(ps => ps.id === l.workflow_stage)?.group === g.id);
+                        const value = groupLeads.reduce((sum, l) => sum + (l.proposal?.net_cost ?? 0), 0);
+                        const max = Math.max(1, ...STAGE_GROUPS.map(gg => leads.filter(l => PIPELINE_STAGES.find(ps => ps.id === l.workflow_stage)?.group === gg.id).length));
+                        const tone = g.id === 'proposal' ? 'bg-doc-proposal' : g.id === 'contract' ? 'bg-doc-contract' : g.id === 'install' ? 'bg-tech' : g.id === 'closeout' ? 'bg-doc-deposit' : 'bg-foreground/60';
                         return (
-                          <div key={s.id} className="flex items-center gap-2">
-                            <div className="w-24 text-[11px] truncate">{s.label}</div>
-                            <div className="flex-1 h-4 bg-muted rounded relative overflow-hidden"><div className={`h-full bg-primary`} style={{ width: `${Math.max(2, (count / leads.length) * 100)}%` }} /></div>
-                            <span className="text-[11px] font-bold w-6 text-right">{count}</span>
+                          <div key={g.id} className="flex items-center gap-3">
+                            <div className="w-20 text-xs font-medium">{g.label}</div>
+                            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${tone}`} style={{ width: `${(groupLeads.length / max) * 100}%` }} />
+                            </div>
+                            <span className="text-xs font-semibold tabular-nums w-5 text-right">{groupLeads.length}</span>
+                            <span className="text-2xs text-muted-foreground tabular-nums w-16 text-right">{value ? eur(value) : '—'}</span>
                           </div>
                         );
                       })}
                     </div>
-                  </CardContent></Card>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => navigate('/owner')}>Full analytics <ArrowRight className="h-3 w-3 ml-1" /></Button>
+                  </div>
+                  {/* Where to act now */}
+                  <div className="rounded-[16px] bg-card shadow-card p-4">
+                    <h4 className="label-micro mb-2">Act on this</h4>
+                    <div className="space-y-1.5">
+                      {hotLeads.slice(0, 2).map(l => (
+                        <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
+                          className="w-full flex items-center gap-2 p-2 rounded-[8px] hover:bg-muted/50 text-left text-xs">
+                          <Flame className="size-3.5 text-pop shrink-0" />
+                          <span className="font-medium">{l.name}</span>
+                          <span className="text-muted-foreground truncate">is hot — {getStage(l.workflow_stage).label.toLowerCase()}</span>
+                          {l.proposal && <span className="ml-auto font-semibold tabular-nums">{eur(l.proposal.net_cost)}</span>}
+                        </button>
+                      ))}
+                      {staleLeads.slice(0, 2).map(l => (
+                        <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
+                          className="w-full flex items-center gap-2 p-2 rounded-[8px] hover:bg-muted/50 text-left text-xs">
+                          <Clock className="size-3.5 text-doc-proposal shrink-0" />
+                          <span className="font-medium">{l.name}</span>
+                          <span className="text-muted-foreground truncate">has gone quiet — 5+ days</span>
+                        </button>
+                      ))}
+                      {hotLeads.length === 0 && staleLeads.length === 0 && (
+                        <p className="text-xs text-muted-foreground p-1">Nothing urgent — the pipeline is moving on its own.</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-            </motion.div>
-          </AnimatePresence>
+            </div>
         </div>
       )}
 
