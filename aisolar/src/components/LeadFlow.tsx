@@ -86,6 +86,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   });
   const [financeOption, setFinanceOption] = useState<'cash' | 'finance' | 'lease'>('cash');
   const [depositPct, setDepositPct] = useState(30);
+  // Cal: consultant discretion on the final price — referral/advertising
+  // ("marketing budget") discounts up to 15% without the owner. The discount
+  // is priced as marketing spend, not margin leak: it buys the reviews,
+  // referrals and signage that close the next job.
+  const [discountPct, setDiscountPct] = useState(0);
+  const [discountReason, setDiscountReason] = useState('Referral programme');
   // Cal: everything is automated, but mistakes must be editable. Edit mode
   // makes the bill inputs writable and the estimate recomputes live.
   const [editingEstimate, setEditingEstimate] = useState(false);
@@ -121,7 +127,8 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
   const grossCost = designData.panelCount * 145 + 1450 + (designData.includeBattery ? designData.batterySize * 1200 : 0) + 800; // panels + inverter + battery + mounting/labour
   const seaiGrant = seai.solarElectricityGrant;
-  const netCost = grossCost - seaiGrant;
+  const listNet = grossCost - seaiGrant;
+  const netCost = Math.round(listNet * (1 - discountPct / 100));
 
   return (
     <div className="min-h-screen bg-background">
@@ -415,6 +422,11 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 grossCost={grossCost}
                 seaiGrant={seaiGrant}
                 netCost={netCost}
+                listNet={listNet}
+                discountPct={discountPct}
+                setDiscountPct={setDiscountPct}
+                discountReason={discountReason}
+                setDiscountReason={setDiscountReason}
                 estimate={estimate}
                 financeOption={financeOption}
                 setFinanceOption={setFinanceOption}
@@ -435,7 +447,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
           {/* === STEP 5: SEND === */}
           {step === 'send' && (
             <div key="send">
-              <SendStep lead={lead} designData={designData} netCost={netCost} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} proposalSent={proposalSent} />
+              <SendStep lead={lead} designData={designData} netCost={netCost} listNet={listNet} discountPct={discountPct} discountReason={discountReason} seaiGrant={seaiGrant} financeOption={financeOption} depositPct={depositPct} setDepositPct={setDepositPct} proposalSent={proposalSent} />
               <div className="mt-6 flex justify-between">
                 <Button variant="outline" onClick={() => setStep('proposal')} className="h-12" disabled={proposalSent}>
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
@@ -847,12 +859,17 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
 }
 
 // ============= PROPOSAL STEP (finance + packages) =============
-function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimate, financeOption, setFinanceOption, depositPct, setDepositPct }: {
+function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet, estimate, financeOption, setFinanceOption, depositPct, setDepositPct, discountPct, setDiscountPct, discountReason, setDiscountReason }: {
   lead: DummyLead;
   designData: any;
   grossCost: number;
   seaiGrant: number;
   netCost: number;
+  listNet: number;
+  discountPct: number;
+  setDiscountPct: (n: number) => void;
+  discountReason: string;
+  setDiscountReason: (r: string) => void;
   estimate: any;
   financeOption: 'cash' | 'finance' | 'lease';
   setFinanceOption: (v: 'cash' | 'finance' | 'lease') => void;
@@ -907,10 +924,48 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
               <span>SEAI grant</span>
               <span className="font-semibold">−{eurFmt(seaiGrant)}</span>
             </div>
+            {discountPct > 0 && (
+              <div className="flex justify-between p-2 bg-doc-deposit/10 rounded text-doc-deposit">
+                <span>{discountReason} — {discountPct}%</span>
+                <span className="font-semibold">−{eurFmt(listNet - netCost)}</span>
+              </div>
+            )}
             <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded text-lg font-bold text-primary dark:text-primary">
-              <span>Net cost</span>
+              <span>{discountPct > 0 ? 'Final price' : 'Net cost'}</span>
               <span>{eurFmt(netCost)}</span>
             </div>
+          </div>
+
+          {/* Consultant's discretion (Cal): the marketing-budget discount.
+              Capped at 15% — above that is the owner's call, by design. */}
+          <div className="mt-3 p-3 rounded-[10px] bg-muted/40">
+            <div className="flex items-center gap-2 mb-2">
+              <Percent className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold">Your discretion</span>
+              <span className="text-2xs text-muted-foreground">up to 15% — above that is the owner's call</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[0, 5, 10, 15].map(d => (
+                <button key={d} onClick={() => setDiscountPct(d)}
+                  className={`h-8 px-3 rounded-[8px] text-xs font-medium border transition-colors ${discountPct === d ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+                  {d === 0 ? 'List price' : `−${d}%`}
+                </button>
+              ))}
+              {discountPct > 0 && (
+                <select value={discountReason} onChange={e => setDiscountReason(e.target.value)}
+                  className="h-8 px-2 rounded-[8px] text-xs bg-card border border-border">
+                  <option>Referral programme</option>
+                  <option>Advertising participation</option>
+                  <option>Review + signage</option>
+                  <option>Competitive match</option>
+                </select>
+              )}
+            </div>
+            {discountPct > 0 && (
+              <p className="text-2xs text-muted-foreground mt-1.5">
+                Priced as marketing spend: {eurFmt(listNet - netCost)} buys the {discountReason.toLowerCase()} that closes the next job. Shows on the proposal as "{discountReason}".
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -1044,13 +1099,17 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, estimat
 }
 
 // ============= SEND STEP =============
-function SendStep({ lead, designData, netCost, seaiGrant, financeOption, depositPct, proposalSent }: {
+function SendStep({ lead, designData, netCost, listNet, discountPct, discountReason, seaiGrant, financeOption, depositPct, setDepositPct, proposalSent }: {
   lead: DummyLead;
   designData: any;
   netCost: number;
+  listNet: number;
+  discountPct: number;
+  discountReason: string;
   seaiGrant: number;
   financeOption: string;
   depositPct: number;
+  setDepositPct: (n: number) => void;
   proposalSent?: boolean;
 }) {
   if (proposalSent) {
@@ -1113,8 +1172,16 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
       <div className="rounded-[16px] bg-card shadow-card p-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
         <span><strong>{(designData.panelCount * 0.435).toFixed(1)} kWp</strong> · {designData.panelCount} × {designData.panelModel}</span>
         {designData.includeBattery && <span>Battery: {designData.batteryModel}</span>}
-        <span>Net <strong>{eurFmt(netCost)}</strong> after {eurFmt(seaiGrant)} grant</span>
-        <span>{financeOption === 'cash' ? 'Cash' : financeOption === 'finance' ? 'Finance (3.9% APR)' : 'Lease'} · {depositPct}% deposit ({eurFmt(netCost * depositPct / 100)})</span>
+        <span>Net <strong>{eurFmt(netCost)}</strong> after {eurFmt(seaiGrant)} grant{discountPct > 0 && <span className="text-doc-deposit"> − {discountPct}% {discountReason.toLowerCase()}</span>}</span>
+        {/* The LAST GATE (Cal): payment linkage rides the proposal but the
+            consultant can still adjust the deposit here, before send. */}
+        <span className="inline-flex items-center gap-1.5">
+          {financeOption === 'cash' ? 'Cash' : financeOption === 'finance' ? 'Finance (3.9% APR)' : 'Lease'} ·
+          <input type="number" min={10} max={50} value={depositPct}
+            onChange={e => setDepositPct(Math.max(10, Math.min(50, Number(e.target.value))))}
+            className="w-12 h-6 px-1 rounded-[6px] border border-border bg-card text-xs tabular-nums text-center" />
+          % deposit ({eurFmt(netCost * depositPct / 100)}) — the deposit link on the proposal uses this
+        </span>
       </div>
 
       {/* The customer's window — live, full document, framed in the proposal colour */}
