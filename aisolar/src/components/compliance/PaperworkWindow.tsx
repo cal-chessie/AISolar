@@ -102,12 +102,10 @@ function buildPack(lead: DummyLead): PackDoc[] {
     { id: 'block_diagram', gate: 'B', name: 'Single line diagram — generated', who: 'Drawn from the design · engineer reviews and stamps', source: 'agent',
       status: lead.proposal ? 'prepared' : 'not_started',
       detail: lead.proposal ? `drawn from ${lead.name.split(' ')[0]}'s design — ESB: "hand-drawn SLDs will not be accepted"` : undefined },
-    { id: 'nc6', gate: 'B', name: `ESB ${esbForm} microgen notification`, who: 'Safe Electric installer submits', source: 'agent',
+    { id: 'nc6', gate: 'B', name: esbForm === 'NC7' ? 'ESB NC7 application — full bundle (incl. ELS declaration)' : 'ESB NC6 microgen notification', who: 'Safe Electric installer submits', source: 'agent',
       status: afterSchedule ? 'sent' : lead.survey ? 'prepared' : 'not_started',
       detail: `${kW || '—'} kWp · ${threePhase ? 'three phase' : 'single phase'} → ${esbForm} (${esbForm === 'NC6' ? `within the ${nc6Limit}kW limit` : `above the ${nc6Limit}kW NC6 limit`})` },
     ...(esbForm === 'NC7' ? [
-      { id: 'nc7_03', gate: 'B' as const, name: "NC7-03 — Manufacturer's ELS product declaration", who: 'From the manufacturer docs — if export limitation fitted', source: 'agent' as const,
-        status: (lead.survey ? 'prepared' : 'not_started') as DocStatus, detail: 'accompanies the application when an export limiter is used' },
       { id: 'nc7_01', gate: 'C' as const, name: 'NC7-01 — Installation confirmation certificate', who: 'Installer signs after installation', source: 'installer' as const,
         status: (afterInstall ? 'complete' : afterSchedule ? 'prepared' : 'not_started') as DocStatus },
       { id: 'nc7_02', gate: 'C' as const, name: 'NC7-02 — Test form for ELS', who: 'Completed before energisation — if ELS fitted', source: 'installer' as const,
@@ -136,7 +134,11 @@ function buildPack(lead: DummyLead): PackDoc[] {
 }
 
 export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onBack?: () => void }) {
-  const pack = useMemo(() => buildPack(lead), [lead]);
+  const packBase = useMemo(() => buildPack(lead), [lead]);
+  const [uploads, setUploads] = useState<Record<string, string>>({});
+  const pack = useMemo(() => packBase.map(d => uploads[d.id]
+    ? { ...d, status: 'received' as DocStatus, detail: `${uploads[d.id]} — uploaded & filed` }
+    : d), [packBase, uploads]);
   const esbForm: 'NC6' | 'NC7' = (lead.proposal?.system_size_kw ?? 0) <= (/three/i.test(lead.survey?.confirmed_inverter_type ?? '') ? 11 : 6) ? 'NC6' : 'NC7';
   const [viewing, setViewing] = useState<PackDoc | null>(null);
   const readyCount = pack.filter(d => ['received', 'complete', 'sent'].includes(d.status)).length;
@@ -148,7 +150,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
 
   const gates: Array<{ id: 'A' | 'B' | 'C'; title: string; icon: typeof Award; tint: string; rule: string }> = [
     { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: 'Offer BEFORE any work starts' },
-    { id: 'B', title: 'ESB NC6 / NC7', icon: Zap, tint: 'text-tech', rule: '20 working days before install — form chosen from kW + phase' },
+    { id: 'B', title: `ESB — ${esbForm} only`, icon: Zap, tint: 'text-tech', rule: 'ONE application per customer, chosen from kW + phase — the other forms don\'t apply' },
     { id: 'C', title: 'Completion pack', icon: Shield, tint: 'text-doc-deposit', rule: 'Assembled at commissioning' },
   ];
 
@@ -205,16 +207,18 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                     <div className="text-2xs text-muted-foreground truncate">{doc.who}{doc.detail ? ` · ${doc.detail}` : ''}</div>
                   </div>
                   <span className={`text-2xs rounded-full px-2 py-0.5 font-medium shrink-0 ${st.cls}`}>{st.label}</span>
-                  {doc.source === 'upload' && doc.status === 'not_started' ? (
-                    <Button variant="outline" size="sm" className="h-7 text-xs shrink-0"
-                      onClick={() => toast.success('Upload slot ready', { description: 'The REC uploads their signed cert here — it is never generated.' })}>
+                  <label className="shrink-0 cursor-pointer">
+                    <input type="file" accept="image/*,application/pdf" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) { setUploads(u => ({ ...u, [doc.id]: f.name })); toast.success(`${doc.name} filed`, { description: `${f.name} — into ${lead.name.split(' ')[0]}'s pack.` }); } }} />
+                    <span className="inline-flex items-center h-7 px-2 rounded-[8px] border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
                       <Upload className="size-3 mr-1" /> Upload
-                    </Button>
-                  ) : doc.status !== 'not_started' ? (
+                    </span>
+                  </label>
+                  {doc.status !== 'not_started' && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs shrink-0" onClick={() => setViewing(doc)}>
                       <Eye className="size-3 mr-1" /> View
                     </Button>
-                  ) : null}
+                  )}
                 </div>
               );
             })}

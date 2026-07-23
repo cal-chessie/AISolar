@@ -32,7 +32,21 @@ type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 /** Per-form {page,x,y,size?} maps for true in-box overlay. Empty until the
  *  calibration pass; fill these and mode 2 switches on automatically. */
 const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number }>> = {
-  NC6: [], NC7: [], NC8: [], NC5: [],
+  NC6: [],
+  // CALIBRATED 23 Jul 2026 against ESBN_Form-NC7_Dec21 page 1 (595x842pt),
+  // browser render-verify loop, three passes. ESB wants BLOCK CAPITALS —
+  // overlay values are uppercased at draw time.
+  NC7: [
+    { field: 'Customer name', page: 0, x: 100, y: 635 },
+    { field: 'Installation address', page: 0, x: 100, y: 605 },
+    { field: 'Address line 2', page: 0, x: 100, y: 590 },
+    { field: 'Phone', page: 0, x: 132, y: 555 },
+    { field: 'Email', page: 0, x: 140, y: 540 },
+    { field: 'Contact person', page: 0, x: 138, y: 505 },
+    { field: 'Site address 1', page: 0, x: 100, y: 452 },
+    { field: 'Site address 2', page: 0, x: 100, y: 427 },
+  ],
+  NC8: [], NC5: [],
 };
 
 /** NC5 is ESB's ONE genuinely fillable form (531 AcroForm fields, verified).
@@ -121,12 +135,21 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
 
   const map = OVERLAY_MAPS[form];
   if (map.length > 0) {
-    // Mode 2 — calibrated in-box overlay
-    const data = Object.fromEntries(collect(lead));
+    // Mode 2 — calibrated in-box overlay (BLOCK CAPITALS, per the form)
+    const base = Object.fromEntries(collect(lead));
+    const addr = (base['Installation address'] ?? '').split(',').map(x => x.trim());
+    const data: Record<string, string> = {
+      ...base,
+      'Installation address': addr[0] ?? '',
+      'Address line 2': addr.slice(1).join(', '),
+      'Contact person': base['Customer name'],
+      'Site address 1': addr[0] ?? '',
+      'Site address 2': addr.slice(1).join(', '),
+    };
     const pages = doc.getPages();
     for (const m of map) {
       const v = data[m.field];
-      if (v && !v.startsWith('(')) pages[m.page]?.drawText(v, { x: m.x, y: m.y, size: m.size ?? 9, font });
+      if (v && !v.startsWith('(')) pages[m.page]?.drawText(v.toUpperCase(), { x: m.x, y: m.y, size: m.size ?? 10, font });
     }
   }
 
