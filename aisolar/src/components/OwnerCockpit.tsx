@@ -59,6 +59,7 @@ const ProposalView = lazy(() => import('./ProposalView'));
 const AgentTraining = lazy(() => import('./AgentTraining'));
 const SEAIDashboard = lazy(() => import('./SEAIDashboard'));
 const EstimatesView = lazy(() => import('./EstimatesView'));
+const CeoWindow = lazy(() => import('./CeoWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -251,7 +252,7 @@ export default function OwnerCockpit() {
           {activeView === 'products' && <ProfessionalProducts />}
           {activeView === 'settings' && <SystemSettings />}
           {activeView === 'agents' && <AgentFoundation />}
-          {activeView === 'analytics' && <InsightsView />}
+          {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow /></Suspense>}
           {activeView === 'crm' && <CrmPlaceholder />}
           {activeView === 'seai' && <SEAIDashboard leads={leads} />}
           {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
