@@ -345,196 +345,172 @@ function SidebarContent({
 
 // ============= OVERVIEW (the cockpit) =============
 function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setSelectedLead, setActiveView }: any) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const hotCount = leads.filter((l: DummyLead) => l.score > 80).length;
+  const jobCount = leads.filter((l: DummyLead) => l.assignment).length;
+  const needsYou = data.staleLeads.length + (data.agentFailures > 0 ? 1 : 0);
+  const maxStage = Math.max(1, ...data.stageCounts.map((s: any) => s.count));
+
   return (
-    <div className="p-3 space-y-3">
-      {/* Vital signs */}
-      <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-2"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-      >
-        <motion.div variants={listItem}>
-        <Card className="border-primary/40 dark:border-primary/40">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Revenue</span>
-              <TrendingUp className="h-3 w-3 text-primary" />
-            </div>
-            <div className="text-xl font-bold text-primary dark:text-primary">{eur(data.revenueClosed)}</div>
-            <div className="text-[11px] text-muted-foreground">{eur(data.revenuePending)} pending</div>
-            <div className="flex items-end gap-0.5 mt-1.5 h-6">
-              {[40, 55, 48, 62, 70, 65, 78, 85, 72, 90, 88, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-primary rounded-sm" style={{ height: `${h}%` }} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        </motion.div>
-        <motion.div variants={listItem}>
-        <Card className="border-primary/40 dark:border-primary/40">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Pipeline</span>
-              <Activity className="h-3 w-3 text-primary" />
-            </div>
-            <div className="text-xl font-bold text-primary dark:text-primary">{eur(data.stats.totalValue)}</div>
-            <div className="text-[11px] text-muted-foreground">{data.stats.activeLeads} active · {leads.filter((l: DummyLead) => l.score > 80).length} hot</div>
-            <div className="flex gap-0.5 mt-1.5">
-              {data.stageCounts.slice(0, 8).map((s: any) => (
-                <div key={s.id} className={`flex-1 h-1.5 rounded-full bg-primary`} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        </motion.div>
-        <motion.div variants={listItem}>
-        <Card className="border-tech/30">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Jobs</span>
-              <Wrench className="h-3 w-3 text-tech" />
-            </div>
-            <div className="text-xl font-bold text-tech">{leads.filter((l: DummyLead) => l.assignment).length}</div>
-            <div className="text-[11px] text-muted-foreground">{leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due</div>
-            <div className="flex gap-0.5 mt-1.5">
-              {leads.filter((l: DummyLead) => l.assignment).slice(0, 6).map((l: DummyLead, i: number) => (
-                <div key={i} className={`h-1.5 w-4 rounded-sm ${l.assignment?.status === 'completed' ? 'bg-primary' : 'bg-tech'}`} />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        </motion.div>
-        <motion.div variants={listItem}>
-        <Card className={data.agentFailures > 0 ? 'border-red-200 dark:border-red-800' : 'border-primary/40 dark:border-primary/40'}>
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Agents</span>
-              <Bot className="h-3 w-3 text-primary" />
-            </div>
-            <div className="text-xl font-bold text-primary dark:text-primary">{data.totalAgentRuns}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {data.agentFailures > 0 ? <span className="text-red-600">⚠ {data.agentFailures} failed</span> : 'all healthy'} · runs/24h
-            </div>
-            <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className={`h-full ${data.agentFailures > 0 ? 'bg-pop' : 'bg-primary'}`} style={{ width: `${data.agentHealth}%` }} />
-            </div>
-          </CardContent>
-        </Card>
-        </motion.div>
-      </motion.div>
+    <div className="p-4 lg:p-6 space-y-4 max-w-6xl">
+      {/* The morning read — one line that says how the company is doing */}
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {greeting}
+          <span className="text-muted-foreground font-normal"> · {new Date().toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          <span className="font-semibold text-doc-deposit tabular-nums">{eur(data.revenueClosed)}</span> collected ·{' '}
+          <span className="font-medium text-foreground tabular-nums">{eur(data.stats.totalValue)}</span> in the pipeline
+          {needsYou > 0 && <> · <span className="font-medium text-pop">{needsYou} {needsYou === 1 ? 'thing needs' : 'things need'} you</span></>}
+        </p>
+      </div>
 
-      {/* Pipeline — compact 6-phase bar; raw stages via progressive disclosure */}
-      <Card>
-        <CardContent className="p-0">
-          <PipelineBar
-            counts={Object.fromEntries(data.stageCounts.map((s: any) => [s.id, s.count]))}
-            onStageClick={(id) => setExpandedStage(expandedStage === id ? null : id)}
-            onGroupToggle={() => setExpandedStage(null)}
-            className="border-0"
-          />
-          {/* Expanded leads */}
-          {expandedStage && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden mx-4 mb-4 pt-3 border-t">
-              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
-                {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads (click to open)
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
-                  <div key={lead.id} className="p-3 border rounded-lg transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium truncate">{lead.name}</span>
-                          {lead.score > 80 && <Flame className="h-3 w-3 text-red-500" />}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
+      {/* Vital signs — family cards, one accent each, nothing fake */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <button onClick={() => setActiveView('financials')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="label-micro">Revenue</span>
+            <TrendingUp className="size-3.5 text-doc-deposit" />
+          </div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-doc-deposit">{eur(data.revenueClosed)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{eur(data.revenuePending)} pending</div>
+        </button>
+
+        <button onClick={() => setExpandedStage(null)} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="label-micro">Pipeline</span>
+            <Activity className="size-3.5 text-muted-foreground" />
+          </div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums">{eur(data.stats.totalValue)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{data.stats.activeLeads} active · {hotCount} hot</div>
+          {/* real stage distribution, widths from real counts */}
+          <div className="flex gap-0.5 mt-2 h-1.5">
+            {data.stageCounts.slice(0, 8).map((s: any) => (
+              <div key={s.id} className="rounded-full bg-foreground/70" style={{ flexGrow: Math.max(s.count, 0.15), opacity: s.count ? 1 : 0.15 }} />
+            ))}
+          </div>
+        </button>
+
+        <button onClick={() => navigate('/installer')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="label-micro">Jobs on site</span>
+            <Wrench className="size-3.5 text-tech" />
+          </div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-tech">{jobCount}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {leads.filter((l: DummyLead) => ['survey_scheduled','survey_complete'].includes(l.workflow_stage)).length} surveys due
+          </div>
+        </button>
+
+        <button onClick={() => setActiveView('agents')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <span className="label-micro">Agents</span>
+            <Bot className={`size-3.5 ${data.agentFailures > 0 ? 'text-pop' : 'text-doc-deposit'}`} />
+          </div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums">{data.totalAgentRuns}<span className="text-sm font-normal text-muted-foreground"> runs/24h</span></div>
+          <div className={`text-xs mt-0.5 ${data.agentFailures > 0 ? 'text-pop font-medium' : 'text-muted-foreground'}`}>
+            {data.agentFailures > 0 ? `${data.agentFailures} failed — look` : 'all healthy'}
+          </div>
+          <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className={`h-full ${data.agentFailures > 0 ? 'bg-pop' : 'bg-doc-deposit'}`} style={{ width: `${data.agentHealth}%` }} />
+          </div>
+        </button>
+      </div>
+
+      {/* Pipeline — the 6-phase bar in a family card */}
+      <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+        <PipelineBar
+          counts={Object.fromEntries(data.stageCounts.map((s: any) => [s.id, s.count]))}
+          onStageClick={(id) => setExpandedStage(expandedStage === id ? null : id)}
+          onGroupToggle={() => setExpandedStage(null)}
+          className="border-0"
+        />
+        {expandedStage && (
+          <div className="mx-4 mb-4 pt-3 border-t border-border">
+            <div className="label-micro mb-2">
+              {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
+                <button key={lead.id} className="text-left p-3 rounded-[12px] bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-medium truncate">{lead.name}</span>
+                        {lead.score > 80 && <Flame className="h-3 w-3 text-pop" />}
                       </div>
+                      <div className="text-[11px] text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()}</div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      {lead.proposal && <span className="text-[11px] font-semibold text-primary">{eur(lead.proposal.net_cost)}</span>}
-                      <button className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
-                        <Calculator className="h-2.5 w-2.5 inline mr-0.5" />Estimate
-                      </button>
-                      {lead.proposal && (
-                        <button className="text-[11px] px-1.5 py-0.5 rounded bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
-                          <FileText className="h-2.5 w-2.5 inline mr-0.5" />Proposal
-                        </button>
-                      )}
-                      <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto" />
-                    </div>
+                    {lead.proposal && <span className="text-xs font-semibold tabular-nums">{eur(lead.proposal.net_cost)}</span>}
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
-                ))}
-                {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length === 0 && (
-                  <p className="text-xs text-muted-foreground italic p-2">No leads at this stage.</p>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </CardContent>
-      </Card>
+                </button>
+              ))}
+              {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length === 0 && (
+                <p className="text-xs text-muted-foreground p-2">No leads at this stage.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Cal's layout: Today's schedule ABOVE live activity, BESIDE needs attention */}
-      <div className="grid lg:grid-cols-2 gap-2">
-      <Card>
-        <CardContent className="p-3">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Calendar className="h-3 w-3" /> Today's schedule</h3>
+      {/* Today beside what needs you */}
+      <div className="grid lg:grid-cols-2 gap-3">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
+          <h3 className="label-micro mb-3 flex items-center gap-1.5"><Calendar className="size-3.5" /> Today's schedule</h3>
           <div className="space-y-1">
             {data.todayEvents.map((event: any, i: number) => {
               const target = event.leadId
                 ? (event.type === 'install' ? `/job/${event.leadId}` : `/lead-flow/${event.leadId}`)
                 : (event.type === 'install' ? '/job' : '/lead-flow');
               return (
-                <div key={i} className="flex items-center gap-2 p-1.5 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => navigate(target)}>
-                  <span className="text-[11px] font-mono text-muted-foreground w-10">{event.time}</span>
-                  <div className={`p-1 rounded ${event.type === 'install' ? 'bg-tech/10' : 'bg-primary/10'}`}>
-                    {event.type === 'install' ? <Wrench className="h-2.5 w-2.5 text-tech" /> : <Phone className="h-2.5 w-2.5 text-primary" />}
-                  </div>
-                  <span className="text-xs flex-1 truncate">{event.title}</span>
-                  <span className="text-[11px] text-muted-foreground">{event.assignee}</span>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                </div>
+                <button key={i} className="w-full flex items-center gap-2.5 p-2 rounded-[10px] hover:bg-muted/50 transition-colors text-left" onClick={() => navigate(target)}>
+                  <span className="text-xs font-mono tabular-nums text-muted-foreground w-11 shrink-0">{event.time}</span>
+                  <span className={`p-1.5 rounded-[8px] shrink-0 ${event.type === 'install' ? 'bg-tech-subtle' : 'bg-muted'}`}>
+                    {event.type === 'install' ? <Wrench className="size-3 text-tech" /> : <Phone className="size-3 text-foreground" />}
+                  </span>
+                  <span className="text-sm flex-1 truncate">{event.title}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{event.assignee}</span>
+                  <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+                </button>
               );
             })}
+            {data.todayEvents.length === 0 && <p className="text-sm text-muted-foreground p-2">Nothing booked today.</p>}
           </div>
-        </CardContent>
-      </Card>
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Needs attention</h3>
-            <div className="space-y-2">
-              {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
-              {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
-              <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
-            </div>
-          </CardContent>
-        </Card>
+        </div>
+
+        <div className="rounded-[16px] bg-card shadow-card p-4">
+          <h3 className="label-micro mb-3 flex items-center gap-1.5"><AlertTriangle className="size-3.5" /> Needs you</h3>
+          <div className="space-y-2">
+            {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
+            {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
+            <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
+          </div>
+        </div>
       </div>
 
-      {/* Live activity — full width, below */}
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1"><Activity className="h-3 w-3" /> Live activity</h3>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {data.activity.map((item: any, i: number) => {
-                const isAgent = item.actor === 'agent';
-                const isCustomer = item.actor === 'customer';
-                return (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <span className="text-[11px] text-muted-foreground tabular-nums flex-shrink-0 mt-0.5 w-10">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
-                    <div className={`p-0.5 rounded ${isAgent ? 'bg-primary/10 dark:bg-primary/10' : isCustomer ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
-                      {isAgent && <Bot className="h-2.5 w-2.5 text-primary" />}
-                      {isCustomer && <UserCircle className="h-2.5 w-2.5 text-primary" />}
-                      {!isAgent && !isCustomer && <Users className="h-2.5 w-2.5 text-primary" />}
-                    </div>
-                    <div className="flex-1 min-w-0"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Live activity */}
+      <div className="rounded-[16px] bg-card shadow-card p-4">
+        <h3 className="label-micro mb-3 flex items-center gap-1.5"><Activity className="size-3.5" /> Live activity</h3>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {data.activity.map((item: any, i: number) => {
+            const isAgent = item.actor === 'agent';
+            const isCustomer = item.actor === 'customer';
+            return (
+              <div key={i} className="flex items-start gap-2.5 text-sm">
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0 mt-0.5 w-11">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className={`p-1 rounded-[6px] shrink-0 ${isAgent ? 'bg-tech-subtle' : 'bg-muted'}`}>
+                  {isAgent ? <Bot className="size-3 text-tech" /> : isCustomer ? <UserCircle className="size-3 text-foreground" /> : <Users className="size-3 text-foreground" />}
+                </span>
+                <div className="flex-1 min-w-0 leading-snug"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
