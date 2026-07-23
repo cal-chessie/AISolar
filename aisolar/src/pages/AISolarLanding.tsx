@@ -410,10 +410,11 @@ function FinalCTA() {
           No card required.
         </p>
         <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/auth" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-5 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
+          {/* AISolar's page colour: the pop red */}
+          <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-pop text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
             Get started <ArrowRight className="size-4" />
           </Link>
-          <Link to="/demo" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
+          <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
             Try the bill analysis
           </Link>
         </div>

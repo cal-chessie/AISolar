@@ -57,6 +57,8 @@ export const brand = {
     instagram: "https://instagram.com/aisolarie",
     linkedin: "https://linkedin.com/company/aisolarie",
     twitter: "https://twitter.com/aisolarie",
+    youtube: "https://youtube.com/@aisolarie",
+    tiktok: "https://tiktok.com/@aisolarie",
   },
   
   // ===== BRANDING =====

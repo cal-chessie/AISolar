@@ -64,27 +64,46 @@ function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; 
 /* Hero visual — the KERNEL: the hash-chained record + tenant tree. The thing
    no other page can show, so the homescreen stops looking like AITeam. */
 function KernelVisual() {
+  // A git-graph style chain rail: each event is a node linked to the last.
+  // The newest row is "sealed just now" — the record breathing, not a table.
   const events = [
-    { seq: 4812, type: 'LeadCreated',      tenant: 'Solar Roscommon', hash: '9f2e…c41a' },
-    { seq: 4813, type: 'ProposalDrafted',  tenant: 'Renewable Ireland', hash: 'b7d1…08ff' },
-    { seq: 4814, type: 'DepositPaid',      tenant: 'Solar Ireland', hash: '30aa…d9e2' },
-    { seq: 4815, type: 'InstallScheduled', tenant: 'Solar Roscommon', hash: 'e6c4…17b8' },
+    { seq: 4812, type: 'LeadCreated',      tenant: 'Solar Roscommon',   agent: 'intake',      when: '09:41', hash: '9f2e…c41a' },
+    { seq: 4813, type: 'ProposalDrafted',  tenant: 'Renewable Ireland', agent: 'drafter',     when: '09:52', hash: 'b7d1…08ff' },
+    { seq: 4814, type: 'DepositPaid',      tenant: 'Solar Ireland',     agent: 'bookkeeper',  when: '10:07', hash: '30aa…d9e2' },
+    { seq: 4815, type: 'InstallScheduled', tenant: 'Solar Roscommon',   agent: 'coordinator', when: 'now',   hash: 'e6c4…17b8' },
   ];
+  const last = events.length - 1;
   return (
     <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
       <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
         <GitBranch className="size-4 text-primary" />
         <span className="text-sm font-semibold">kernel.events</span>
+        <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-doc-deposit opacity-60" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-doc-deposit" />
+          </span>
+          live
+        </span>
         <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">append-only</span>
       </div>
-      <div className="divide-y divide-border font-mono">
+      <div className="font-mono">
         {events.map((e, i) => (
-          <div key={e.seq} className="px-4 py-2.5 flex items-center gap-3 text-xs">
-            <span className="tabular-nums text-muted-foreground">#{e.seq}</span>
-            <span className="font-semibold text-foreground">{e.type}</span>
-            <span className="hidden sm:inline text-muted-foreground truncate">{e.tenant}</span>
-            <span className="ml-auto tabular-nums text-tech">{e.hash}</span>
-            {i < events.length - 1 ? <span className="text-muted-foreground/40">⛓</span> : <span className="text-doc-deposit">✓</span>}
+          <div key={e.seq} className={`relative pl-10 pr-4 py-2.5 text-xs ${i === last ? 'bg-tech-subtle' : ''}`}>
+            {/* chain rail: node + link to the previous event */}
+            {i > 0 && <span aria-hidden className="absolute left-[19px] top-0 h-[13px] w-px bg-border" />}
+            {i < last && <span aria-hidden className="absolute left-[19px] bottom-0 h-[calc(50%-5px)] w-px bg-border" />}
+            <span aria-hidden className={`absolute left-4 top-1/2 -mt-[3.5px] size-[7px] rounded-full border ${i === last ? 'bg-tech border-tech' : 'bg-card border-muted-foreground/50'}`} />
+            <div className="flex items-center gap-3">
+              <span className="tabular-nums text-muted-foreground">#{e.seq}</span>
+              <span className="font-semibold text-foreground">{e.type}</span>
+              <span className="hidden sm:inline text-muted-foreground truncate">{e.tenant}</span>
+              <span className="ml-auto tabular-nums text-tech">{e.hash}</span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-2xs text-muted-foreground">
+              <Bot className="size-3" /> {e.agent} agent · {e.when}
+              {i === last && <span className="ml-auto font-sans font-medium text-tech">sealed just now</span>}
+            </div>
           </div>
         ))}
       </div>
@@ -120,11 +139,12 @@ export default function AiosPage() {
                 and report — on one immutable record, with you approving every
                 send.
               </p>
-              {/* Cal: the login lives on the home screen — Google first. */}
-              <div className="mt-6 flex flex-col gap-3 sm:max-w-sm">
-                <GoogleAuthButton label="Continue with Google" className="w-full" />
+              {/* Cal: the login lives on the home screen — Google first,
+                  CTAs side by side like every other page. */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <GoogleAuthButton label="Continue with Google" className="sm:w-auto sm:px-5" />
                 <Link to="/get-started"
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   Get started with email <ArrowRight className="size-4" />
                 </Link>
               </div>
@@ -214,7 +234,7 @@ export default function AiosPage() {
             </div>
             <div className="mt-10 grid md:grid-cols-3 gap-4">
               {[
-                { name: 'AISolar', tag: 'Live', body: 'The installer OS: a bill goes in, an agent-drafted proposal comes out, one cockpit runs the crew.', to: '/', cta: 'Explore AISolar' },
+                { name: 'AISolar', tag: 'Live', body: 'The installer OS: a bill goes in, an agent-drafted proposal comes out, one cockpit runs the crew.', to: '/aisolar', cta: 'Explore AISolar' },
                 { name: 'AITeam', tag: 'Early access', body: 'The workforce layer: hire the drafter, the scheduler, the chaser, the bookkeeper and the analyst.', to: '/aiteam', cta: 'See AITeam' },
                 { name: 'Your vertical', tag: 'Built with us', body: 'The same kernel, pointed at your industry. We build the agents and flows around how your business runs.', to: CAL_LINK, cta: 'Talk to us', external: true },
               ].map(c => (
@@ -343,7 +363,7 @@ export default function AiosPage() {
               a proposal without anyone touching a keyboard.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-5 text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Explore AISolar <ArrowRight className="size-4" />
               </Link>
               <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">

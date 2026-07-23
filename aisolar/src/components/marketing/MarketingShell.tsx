@@ -11,10 +11,19 @@
  * from the start.
  */
 import { Link } from 'react-router-dom';
-import { ArrowRight, Menu } from 'lucide-react';
+import { ArrowRight, Menu, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { AiosWordmark, AisolarWordmark, AiteamWordmark } from '@/components/brand/AiosMark';
+import { brand } from '@/config/brand';
 
 export type ProductKey = 'aisolar' | 'aios' | 'aiteam';
+
+/* Cal: one different CTA colour per page — the family stays monochrome, the
+   closing button carries each page's identity. */
+export const PAGE_ACCENT: Record<ProductKey, string> = {
+  aios: 'bg-primary text-primary-foreground hover:opacity-90',
+  aisolar: 'bg-pop text-white hover:opacity-90',
+  aiteam: 'bg-doc-deposit text-white hover:opacity-90',
+};
 
 const MARK: Record<ProductKey, (p: { className?: string }) => JSX.Element> = {
   aisolar: AisolarWordmark,
@@ -74,6 +83,50 @@ export function MarketingNav({ product }: { product: ProductKey }) {
   );
 }
 
+/* The closing band every page ends on — same shape everywhere, the button in
+   the page's own colour. Use INSTEAD of hand-rolled final CTAs. */
+export function MarketingCta({ product, title, sub, ctaLabel, ctaTo }: {
+  product: ProductKey; title: string; sub?: string; ctaLabel?: string; ctaTo?: string;
+}) {
+  const p = PRODUCT[product];
+  return (
+    <section className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+      <div className="rounded-[16px] bg-card shadow-card px-6 py-12 lg:py-16 text-center">
+        <h2 className="text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">{title}</h2>
+        {sub && <p className="mt-3 max-w-xl mx-auto text-base text-muted-foreground leading-body">{sub}</p>}
+        <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link to={ctaTo ?? p.cta.to}
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-6 text-sm font-semibold transition-opacity duration-instant ${PAGE_ACCENT[product]}`}>
+            {ctaLabel ?? p.cta.label} <ArrowRight className="size-4" />
+          </Link>
+          <Link to="/pricing"
+            className="inline-flex h-11 items-center justify-center rounded-[12px] bg-background px-6 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
+            See pricing
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* TikTok has no lucide glyph — a minimal inline path, same stroke language. */
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.59c.27 0 .53.04.77.12V9.75a5.76 5.76 0 0 0-.77-.05 5.66 5.66 0 1 0 5.66 5.66V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.34 4.34 0 0 1-3.22-1.48Z" />
+    </svg>
+  );
+}
+
+const SOCIALS = [
+  { label: 'LinkedIn', href: brand.social.linkedin, Icon: Linkedin },
+  { label: 'X', href: brand.social.twitter, Icon: Twitter },
+  { label: 'Instagram', href: brand.social.instagram, Icon: Instagram },
+  { label: 'Facebook', href: brand.social.facebook, Icon: Facebook },
+  { label: 'YouTube', href: brand.social.youtube, Icon: Youtube },
+  { label: 'TikTok', href: brand.social.tiktok, Icon: TikTokIcon },
+];
+
 export function MarketingFooter({ product }: { product: ProductKey }) {
   const Mark = MARK[product];
   const name = PRODUCT[product].name;
@@ -106,6 +159,14 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
               ? 'The operating system for AI-run businesses.'
               : <>An <span className="font-medium text-foreground">AIOS</span> product.</>}
           </p>
+          <div className="mt-4 flex items-center gap-1">
+            {SOCIALS.map(({ label, href, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                className="inline-grid place-items-center size-8 rounded-[8px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-instant">
+                <Icon className="size-4" />
+              </a>
+            ))}
+          </div>
         </div>
         {cols.map(c => (
           <div key={c.head}>

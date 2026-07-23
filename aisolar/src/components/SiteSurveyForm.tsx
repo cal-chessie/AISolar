@@ -33,6 +33,10 @@ const surveySchema = z.object({
   hot_water_diverter: z.boolean().optional(),
   ev_charger: z.boolean().optional(),
   customer_priorities: z.string().optional(),
+  // Cal: these two questions decide the battery — occupancy sets the load,
+  // daytime presence sets when it lands (out all day = evening peak = battery case)
+  household_occupants: z.string().optional(),
+  home_during_day: z.string().optional(),
   // Roof details
   roof_type: z.string().min(1, 'Roof type is required'),
   roof_condition: z.string().min(1, 'Roof condition is required'),
@@ -284,6 +288,8 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         access_notes: data.access_notes || null,
         customer_availability: data.customer_availability || null,
         existing_solar: data.existing_solar || false,
+        household_occupants: data.household_occupants || null,
+        home_during_day: data.home_during_day || null,
       };
 
       let surveyId;
@@ -488,6 +494,34 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     className="w-full mt-1.5 h-12" 
                   />
                   <p className="text-xs text-muted-foreground mt-1">Avg €0.35/kWh in Ireland</p>
+                </div>
+              </div>
+
+              {/* The two questions that decide the battery (Cal): how many
+                  people set the load; whether they're home in daylight sets
+                  whether solar meets it directly or a battery has to carry it
+                  to the evening. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="household_occupants">How many people live in the home?</Label>
+                  <Select onValueChange={(v) => setValue('household_occupants', v)} value={watch('household_occupants')}>
+                    <SelectTrigger className="w-full mt-1.5 h-12"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {['1', '2', '3', '4', '5+'].map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="home_during_day">Is anyone home during the day?</Label>
+                  <Select onValueChange={(v) => setValue('home_during_day', v)} value={watch('home_during_day')}>
+                    <SelectTrigger className="w-full mt-1.5 h-12"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usually">Yes — usually home</SelectItem>
+                      <SelectItem value="mixed">Some days / part-time</SelectItem>
+                      <SelectItem value="out">No — out at work</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Out all day = evening usage peak — the strongest battery case</p>
                 </div>
               </div>
 
