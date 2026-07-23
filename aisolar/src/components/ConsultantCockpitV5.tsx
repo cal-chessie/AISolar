@@ -537,6 +537,12 @@ export default function ConsultantCockpitV5() {
                         <Calendar className="size-3" /> Book survey
                       </button>
                     )}
+                    {['new','intake_complete','survey_scheduled'].includes(selectedLead.workflow_stage) && (
+                      <button onClick={() => toast.success(`Photo request sent to ${selectedLead.name.split(' ')[0]}`, { description: 'The four survey shots, prompted right in their chat — may shorten or save the visit.' })}
+                        className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-tech-subtle text-tech text-xs font-medium hover:opacity-80 transition-opacity">
+                        <Camera className="size-3" /> Request photos
+                      </button>
+                    )}
                     {(selectedLead.proposal || ['survey_complete','proposal_drafted'].includes(selectedLead.workflow_stage)) && (
                       <button onClick={() => navigate(`/lead-flow/${selectedLead.id}`)}
                         className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-doc-proposal-subtle text-doc-proposal text-xs font-medium hover:opacity-80 transition-opacity">

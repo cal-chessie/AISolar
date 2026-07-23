@@ -62,6 +62,7 @@ import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { AichatWordmark } from '@/components/brand/AiosMark';
+import PreSurveySnaps from './PreSurveySnaps';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
 
@@ -71,6 +72,11 @@ export default function CustomerPortalV2() {
   const navigate = useNavigate();
   const [lead] = useState<DummyLead>(() => {
     const leads = generateDummyLeads();
+    // ?stage=early shows the pre-survey journey (photo snaps); default stays
+    // the approved-stage money moment
+    if (new URLSearchParams(window.location.search).get('stage') === 'early') {
+      return leads.find(l => ['new', 'intake_complete', 'survey_scheduled'].includes(l.workflow_stage)) || leads[0];
+    }
     return leads.find(l => l.workflow_stage === 'approved') || leads[6];
   });
 
@@ -173,6 +179,14 @@ export default function CustomerPortalV2() {
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
         ))}
+
+        {/* Cal: prompt the customer IN CHAT to take the surveyor's four
+            photos before the visit — may shorten or save the survey. */}
+        {['new', 'intake_complete', 'survey_scheduled'].includes(lead.workflow_stage) && (
+          <div className="flex justify-start">
+            <PreSurveySnaps onAllDone={() => {}} />
+          </div>
+        )}
 
         {/* Thinking indicator */}
         {thinking && (
