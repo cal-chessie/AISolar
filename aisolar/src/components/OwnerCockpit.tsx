@@ -32,7 +32,7 @@ import {
   Star, Phone, Video, MapPin, FileText, Zap, Award, Activity,
   ChevronRight, Flame, Target, Percent, Navigation, Package,
   Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
-  Search, Calculator, Shield,
+  Search, Calculator, Shield, Landmark,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
@@ -62,10 +62,11 @@ const AgentTraining = lazy(() => import('./AgentTraining'));
 const SEAIDashboard = lazy(() => import('./SEAIDashboard'));
 const EstimatesView = lazy(() => import('./EstimatesView'));
 const CeoWindow = lazy(() => import('./CeoWindow'));
+const FinanceWindow = lazy(() => import('./owner/FinanceWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
+type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'crm' | 'lead_detail' | 'seai' | 'estimates';
 
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; badge?: string }> = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -79,6 +80,7 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
   { id: 'seai', label: 'SEAI & Compliance', icon: Award },
   { id: 'agents', label: 'Agents', icon: Bot },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'financials', label: 'Financials', icon: Landmark },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
 ];
@@ -223,7 +225,7 @@ export default function OwnerCockpit() {
       icon: <it.icon />,
       onSelect: () => selectView(it.id),
       badge: it.id === 'agents' && data.agentFailures ? data.agentFailures : undefined,
-      primary: ['overview', 'calendar', 'agents', 'analytics'].includes(it.id),
+      primary: ['overview', 'calendar', 'agents', 'analytics', 'financials'].includes(it.id),
     })),
     { id: 'switch-consultant', label: 'Consultant view', icon: <Users />, onSelect: () => navigate('/consultant') },
     { id: 'switch-installer', label: 'Installer view', icon: <Wrench />, onSelect: () => navigate('/installer') },
@@ -257,6 +259,7 @@ export default function OwnerCockpit() {
           {activeView === 'settings' && <SystemSettings />}
           {activeView === 'agents' && <AgentFoundation />}
           {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow /></Suspense>}
+          {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
           {activeView === 'crm' && <CrmPlaceholder />}
           {activeView === 'feedback' && <HelpUsImprove />}
           {activeView === 'seai' && <SEAIDashboard leads={leads} />}
