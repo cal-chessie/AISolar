@@ -16,6 +16,7 @@ import {
   Receipt, Award, Wrench, PackageCheck, AlarmClock, Inbox, Mail,
 } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import { AichatWordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
@@ -234,6 +235,69 @@ export default function AiTeamPageV2() {
                 <div className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-primary px-3 text-xs font-semibold text-primary-foreground">Send correction</div>
               </div>
               <p className="text-2xs text-muted-foreground text-center">This trains the scheduler. It won't happen twice.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ AIChat — the customer's side, included with AITeam ═══ */}
+        <section className="border-y border-border bg-card/40">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+              <div>
+                <div className="flex items-center gap-3">
+                  <AichatWordmark className="size-14" />
+                  <span className="text-2xs font-semibold uppercase tracking-wide rounded-full bg-doc-deposit/10 text-doc-deposit px-2.5 py-1">Included with AITeam</span>
+                </div>
+                <h2 className="mt-5 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+                  Every customer gets their own AI
+                </h2>
+                <p className="mt-3 text-muted-foreground leading-body max-w-lg">
+                  While your agents run the pipeline, AIChat faces the customer:
+                  answers about their project at 2am, their documents one tap
+                  away, and a straight line to your team when it matters. No
+                  phone tag, no "just checking in" calls.
+                </p>
+                <ul className="mt-5 space-y-2.5">
+                  {['Answers from THEIR project data — bill, proposal, schedule', 'Proposals, contracts and invoices right in the thread', 'Hands to a human the moment it should'].map(x => (
+                    <li key={x} className="flex items-start gap-2.5 text-sm"><Check className="size-4 text-doc-deposit mt-0.5 shrink-0" /><span>{x}</span></li>
+                  ))}
+                </ul>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                    Give your customers AIChat <ArrowRight className="size-4" />
+                  </Link>
+                  <Link to="/my-projects" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                    See the portal
+                  </Link>
+                </div>
+              </div>
+
+              {/* the wow shot: green chat on white + docs in the thread */}
+              <div className="rounded-[16px] bg-white shadow-card overflow-hidden">
+                <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
+                  <AichatWordmark className="size-8" />
+                  <div className="leading-tight">
+                    <p className="text-sm font-semibold text-zinc-900">Your project</p>
+                    <p className="text-2xs text-zinc-500">Replies in seconds, any hour</p>
+                  </div>
+                  <span className="ml-auto size-2 rounded-full bg-doc-deposit animate-pulse" />
+                </div>
+                <div className="p-4 space-y-2.5">
+                  <div className="max-w-[80%] rounded-[14px] rounded-bl-[4px] bg-zinc-100 px-3.5 py-2.5 text-sm text-zinc-800">When does my install start?</div>
+                  <div className="max-w-[85%] ml-auto rounded-[14px] rounded-br-[4px] bg-doc-deposit px-3.5 py-2.5 text-sm text-white leading-body">
+                    Tuesday the 29th at 8am — Mike's crew, one day on site. Your panels arrived at the depot this morning. ☀️
+                  </div>
+                  <div className="max-w-[80%] rounded-[14px] rounded-bl-[4px] bg-zinc-100 px-3.5 py-2.5 text-sm text-zinc-800">Can I see the contract again?</div>
+                  <div className="max-w-[85%] ml-auto rounded-[14px] rounded-br-[4px] bg-doc-deposit px-3.5 py-2.5 text-sm text-white">Here it is — and everything else, any time:</div>
+                  <div className="flex gap-2 pt-1">
+                    {[['Proposal', 'doc-proposal'], ['Contract', 'doc-contract'], ['Invoice', 'doc-invoice']].map(([d, c]) => (
+                      <span key={d} className={`inline-flex items-center gap-1.5 rounded-[10px] border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-800`}>
+                        <span className={`size-2 rounded-full bg-${c}`} /> {d}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

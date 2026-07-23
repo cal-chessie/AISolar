@@ -18,7 +18,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Check, ShieldCheck, GitBranch } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
-import { Wordmark } from '@/components/brand/AiosMark';
+import { Wordmark, AisalesWordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
@@ -258,6 +258,79 @@ export default function AiosPage() {
               body="Bill-to-proposal, survey-to-install, grant tracking — real industry flows, not a blank canvas you have to wire yourself." />
             <Numbered n="04" title="Corrections as training"
               body="When an agent gets something wrong, one tap fixes it — and the correction becomes the training data for next time." />
+          </div>
+        </section>
+
+        {/* ═══ AISales — the sales cockpit, included with the platform ═══ */}
+        <section className="border-y border-border bg-card/40">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+              <div>
+                <div className="flex items-center gap-3">
+                  <AisalesWordmark className="size-14" />
+                  <span className="text-2xs font-semibold uppercase tracking-wide rounded-full bg-tech/10 text-tech px-2.5 py-1">Included with the platform</span>
+                </div>
+                <h2 className="mt-5 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+                  The pipeline sells itself forward
+                </h2>
+                <p className="mt-3 text-muted-foreground leading-body max-w-lg">
+                  AISales is the closer's cockpit: every lead on one board with
+                  its money, the calendar that opens straight into the client,
+                  and the AI coach whispering the next best move. Drag a card,
+                  the stage advances, the agents take the admin.
+                </p>
+                <ul className="mt-5 space-y-2.5">
+                  {['Six-phase board with live pipeline value', 'A booked call opens the client — prep, survey, proposal in one flow', 'Drag to advance; the agents handle what follows'].map(x => (
+                    <li key={x} className="flex items-start gap-2.5 text-sm"><Check className="size-4 text-tech mt-0.5 shrink-0" /><span>{x}</span></li>
+                  ))}
+                </ul>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-tech px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                    Run your pipeline on AISales <ArrowRight className="size-4" />
+                  </Link>
+                  <Link to="/aisolar" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                    See it inside AISolar
+                  </Link>
+                </div>
+              </div>
+
+              {/* the wow shot: the live pipeline board, money on top */}
+              <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+                <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
+                  <AisalesWordmark className="size-8" />
+                  <div className="leading-tight">
+                    <p className="text-sm font-semibold tabular-nums">€147,600 <span className="font-normal text-muted-foreground text-xs">pipeline</span></p>
+                    <p className="text-2xs text-muted-foreground">11 active · <span className="text-pop font-medium">1 hot</span></p>
+                  </div>
+                  <span className="ml-auto text-2xs text-muted-foreground">drag to advance</span>
+                </div>
+                <div className="grid grid-cols-3 gap-px bg-border">
+                  {([
+                    ['Survey', 'bg-tech', [['Tom Brennan', '€278/mo'], ['Linda O\'S.', '€198/mo']]],
+                    ['Proposal', 'bg-doc-proposal', [['Sarah McD.', '€24,300'], ['James W.', '€16,200']]],
+                    ['Contract', 'bg-doc-contract', [['Siobhán M. 🔥', '€24,300']]],
+                  ] as const).map(([label, dot, cards]) => (
+                    <div key={label} className="bg-card min-h-[10rem]">
+                      <div className="flex items-center gap-1.5 px-2.5 h-8 border-b border-border">
+                        <span className={`size-2 rounded-full ${dot}`} />
+                        <span className="text-2xs font-semibold uppercase tracking-wide">{label}</span>
+                      </div>
+                      <div className="p-1.5 space-y-1.5">
+                        {cards.map(([n, v]) => (
+                          <div key={n} className="rounded-[8px] border border-border bg-background p-2">
+                            <p className="text-xs font-medium truncate">{n}</p>
+                            <p className="text-2xs text-muted-foreground tabular-nums">{v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-4 py-2.5 border-t border-border bg-muted/30 text-2xs text-muted-foreground">
+                  AI coach: "Siobhán's contract is signed — book the install while she's warm."
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { brand } from '@/config/brand';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import { AifieldWordmark } from '@/components/brand/AiosMark';
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 /* ── The product visual beside the hero: the moat, in miniature ──────────── */
@@ -323,6 +324,79 @@ function Benefits() {
   );
 }
 
+/* ── AIField — the crew app, included with AISolar ───────────────────────── */
+function AIFieldShowcase() {
+  return (
+    <section className="border-t border-border bg-card/40">
+      <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          {/* the wow shot: the field day — start job + customer notified */}
+          <div className="order-2 lg:order-1 rounded-[16px] bg-card shadow-card overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
+              <AifieldWordmark className="size-8" />
+              <div className="leading-tight">
+                <p className="text-sm font-semibold">Your day</p>
+                <p className="text-2xs text-muted-foreground">2 stops · first at 08:00</p>
+              </div>
+              <span className="ml-auto text-2xs font-medium rounded-full bg-pop/10 text-pop px-2 py-0.5">today</span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="rounded-[12px] border-l-4 border-l-pop bg-background shadow-card p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-semibold tabular-nums">08:00</span>
+                  <span className="font-medium">Anna Kowalski</span>
+                  <span className="text-xs text-muted-foreground">7 kWp · 14 panels + battery</span>
+                </div>
+                <div className="mt-2.5 flex gap-2">
+                  <span className="inline-flex h-8 items-center rounded-[10px] bg-pop px-3 text-xs font-semibold text-pop-foreground">▶ Start job</span>
+                  <span className="inline-flex h-8 items-center gap-1 rounded-[10px] border border-border px-3 text-xs font-medium"><span className="text-tech">➤</span> Navigate</span>
+                </div>
+              </div>
+              <div className="rounded-[12px] bg-tech/10 px-3.5 py-2.5 text-sm leading-body">
+                <p className="label-micro text-tech mb-0.5">auto · sent on start</p>
+                Hi Anna — your installation team is on the way. Please keep driveway access clear and pets indoors. Looking forward to getting your system live!
+              </div>
+              <div className="flex items-center justify-between text-2xs text-muted-foreground px-1">
+                <span>Route in time order · one tap to Google Maps</span>
+                <span className="text-doc-deposit font-medium">✓ Customer notified</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <div className="flex items-center gap-3">
+              <AifieldWordmark className="size-14" />
+              <span className="text-2xs font-semibold uppercase tracking-wide rounded-full bg-pop/10 text-pop px-2.5 py-1">Included with AISolar</span>
+            </div>
+            <h2 className="mt-5 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+              The crew's whole day, one thumb
+            </h2>
+            <p className="mt-3 text-muted-foreground leading-body max-w-lg">
+              AIField runs the van: the day in stop order, the route in Google
+              Maps, the BOM checked off as it loads. Tap Start and the customer
+              is told you're coming — with the prep steps — before you're out
+              of the yard.
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {['Start job → customer messaged automatically', 'Drag a job to another day — the customer hears why', 'Job checklists: pre-install, roof, electrical, commissioning, handover'].map(x => (
+                <li key={x} className="flex items-start gap-2.5 text-sm"><Check className="size-4 text-pop mt-0.5 shrink-0" /><span>{x}</span></li>
+              ))}
+            </ul>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
+                Put your crew on AIField <ArrowRight className="size-4" />
+              </Link>
+              <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                See pricing
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── Final CTA ───────────────────────────────────────────────────────────── */
 function FinalCTA() {
   return (
@@ -358,6 +432,7 @@ export default function AISolarLanding() {
         <Trust />
         <HowItWorks />
         <Benefits />
+        <AIFieldShowcase />
         <FinalCTA />
       </main>
       <MarketingFooter product="aisolar" />
