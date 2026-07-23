@@ -25,41 +25,47 @@ import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingS
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 /* ── The product visual beside the hero: the moat, in miniature ──────────── */
 function HeroVisual() {
+  const cells: Array<[string, string]> = [
+    ['Supplier', 'Electric Ireland'], ['Tariff', 'Night Boost'],
+    ['Day rate', '€0.35/kWh'], ['Night rate', '€0.17/kWh'],
+    ['Standing charge', '€0.60/day'], ['VAT', '9%'],
+    ['Annual usage', '10,200 kWh'], ['MPRN', '100•••••595'],
+  ];
   return (
-    <div className="rounded-panel border border-border/70 bg-card shadow-card overflow-hidden">
+    <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
         <FileText className="size-4 text-primary" />
         <span className="text-sm font-semibold">What your bill told us</span>
-        <BadgeCheck className="size-4 text-primary ml-auto" />
+        <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">21 details read</span>
       </div>
       <dl className="grid grid-cols-2 gap-px bg-border">
-        {[
-          ['Day rate', '€0.36/kWh'], ['Night rate', '€0.17/kWh'],
-          ['Annual usage', '12,200 kWh'], ['MPRN', '100•••••595'],
-        ].map(([k, v]) => (
-          <div key={k} className="bg-card px-4 py-2.5">
+        {cells.map(([k, v]) => (
+          <div key={k} className="bg-card px-4 py-2">
             <dt className="label-micro">{k}</dt>
-            <dd className="text-sm font-semibold tabular-nums mt-0.5">{v}</dd>
+            <dd className="text-sm font-semibold tabular-nums mt-0.5 truncate">{v}</dd>
           </div>
         ))}
       </dl>
-      <div className="px-4 py-3.5 border-t border-border">
+      <p className="px-4 py-1.5 text-2xs text-muted-foreground border-t border-border">
+        …plus billed usage, meter type, reading type and 10 more — from one photo.
+      </p>
+      <div className="px-4 py-3 border-t border-border">
         <div className="flex items-baseline justify-between">
           <span className="text-xs font-semibold">Day / night split</span>
-          <span className="text-xs text-muted-foreground tabular-nums">77% day · 23% night</span>
+          <span className="text-xs text-muted-foreground tabular-nums">65% day · 35% night</span>
         </div>
         <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-muted">
-          <div className="bg-primary" style={{ width: '77%' }} />
-          <div className="bg-primary/30" style={{ width: '23%' }} />
+          <div className="bg-tech" style={{ width: '65%' }} />
+          <div className="bg-tech/30" style={{ width: '35%' }} />
         </div>
       </div>
       <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-muted/30">
         <div>
-          <p className="label-micro">You pay</p>
+          <p className="label-micro">You pay after SEAI grant</p>
           <p className="text-lg font-semibold tabular-nums">€9,340</p>
         </div>
-        <span className="inline-flex h-9 items-center gap-1.5 rounded-control bg-primary px-3.5 text-sm font-medium text-primary-foreground">
-          Accept <ArrowRight className="size-4" />
+        <span className="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-primary px-3.5 text-sm font-semibold text-primary-foreground">
+          Book the survey <ArrowRight className="size-4" />
         </span>
       </div>
     </div>
@@ -75,7 +81,7 @@ function Hero() {
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
             <span className="size-1.5 rounded-full bg-primary" /> AISolar by AIOS
           </span>
-          <h1 className="mt-5 text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+          <h1 className="mt-5 text-[32px] leading-[38px] sm:text-[44px] sm:leading-[50px] font-semibold tracking-tight">
             The better way to run<br className="hidden sm:block" /> your solar business
           </h1>
           <p className="mt-5 text-base sm:text-lg text-muted-foreground leading-body max-w-xl">
@@ -84,11 +90,11 @@ function Hero() {
             crews install. The platform runs the rest.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 sm:max-w-md">
-            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-control bg-pop px-5 text-sm font-medium text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
+            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
               Get started <ArrowRight className="size-4" />
             </Link>
-            <Link to="/demo" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-control border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors duration-instant">
-              See it live
+            <Link to="/start" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
+              Try the bill analysis
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5">
@@ -153,7 +159,7 @@ function HowItWorks() {
     <section id="product" className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
       <div className="max-w-2xl">
         <p className="label-micro">How it works</p>
-        <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
+        <h2 className="mt-2 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
           Half the admin, closed twice as fast
         </h2>
         <p className="mt-3 text-muted-foreground leading-body">
@@ -164,7 +170,7 @@ function HowItWorks() {
 
       <div className="mt-10 grid md:grid-cols-3 gap-5">
         {steps.map(s => (
-          <div key={s.n} className="rounded-panel border border-border/70 bg-card shadow-card p-6">
+          <div key={s.n} className="rounded-[16px] bg-card shadow-card p-6">
             <div className="flex items-center gap-3">
               <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary">
                 <s.icon className="size-4.5" />
@@ -232,7 +238,7 @@ function Benefits() {
             'One-tap corrections from the people in the field',
           ]}
         >
-          <div className="rounded-panel border border-border/70 bg-card shadow-card p-4 space-y-3">
+          <div className="rounded-[16px] bg-card shadow-card p-4 space-y-3">
             {[
               ['ProposalDrafter', 'drafted a 6.2kW + battery proposal', 'just now'],
               ['SurveyScheduler', 'booked the survey for Tue 10am', '2m ago'],
@@ -262,7 +268,7 @@ function Benefits() {
             'One record of truth, no double entry',
           ]}
         >
-          <div className="rounded-panel border border-border/70 bg-card shadow-card p-5 grid grid-cols-2 gap-4">
+          <div className="rounded-[16px] bg-card shadow-card p-5 grid grid-cols-2 gap-4">
             {[
               ['Hours saved', '21 hrs'], ['Avg job', '€16,560'],
               ['Agent actions', '148'], ['Biggest stall', 'Closeout'],
@@ -283,7 +289,7 @@ function Benefits() {
 function FinalCTA() {
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
-      <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+      <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
         <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Ready to run on autopilot?
         </h2>
@@ -292,11 +298,11 @@ function FinalCTA() {
           No card required.
         </p>
         <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/auth" className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-background text-foreground px-6 text-sm font-medium hover:opacity-90 transition-opacity duration-instant">
+          <Link to="/auth" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-5 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
             Get started <ArrowRight className="size-4" />
           </Link>
-          <Link to="/demo" className="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-primary-foreground/25 px-6 text-sm font-medium hover:bg-primary-foreground/10 transition-colors duration-instant">
-            See it live
+          <Link to="/demo" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
+            Try the bill analysis
           </Link>
         </div>
       </div>
