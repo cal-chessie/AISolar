@@ -18,6 +18,10 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { AiosMark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +36,7 @@ import {
   Star, Phone, Video, MapPin, FileText, Zap, Award, Activity,
   ChevronRight, Flame, Target, Percent, Navigation, Package,
   Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
-  Search, Calculator, Shield, Landmark,
+  Search, Calculator, Shield, Landmark, UserPlus,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
@@ -537,11 +541,62 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
 }
 
 // ============= CONSULTANTS VIEW =============
+/* Cal: "we need to be able to add a consultant and installers in the both
+   tabs." One dialog for both — name + email invites them; role decides the
+   extra field. Local state in demo; role-gated invite email at launch. */
+function AddPersonDialog({ open, onOpenChange, role, onAdd }: {
+  open: boolean; onOpenChange: (o: boolean) => void;
+  role: 'consultant' | 'installer';
+  onAdd: (p: { name: string; email: string; phone: string; extra: string }) => void;
+}) {
+  const [p, setP] = useState({ name: '', email: '', phone: '', extra: '' });
+  useEffect(() => { if (open) setP({ name: '', email: '', phone: '', extra: '' }); }, [open]);
+  const valid = p.name.trim().length > 1 && p.email.includes('@');
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md rounded-[16px]">
+        <DialogHeader>
+          <DialogTitle>Add {role === 'consultant' ? 'a consultant' : 'an installer'}</DialogTitle>
+          <DialogDescription>They get a sign-in invite by email — {role === 'consultant' ? 'consultant' : 'installer'} access only, nothing else.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div>
+            <Label htmlFor="ap-name">Full name *</Label>
+            <Input id="ap-name" value={p.name} onChange={e => setP(s => ({ ...s, name: e.target.value }))} placeholder={role === 'consultant' ? 'Emma Ryan' : 'Mike Doyle'} className="mt-1.5" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="ap-email">Email *</Label>
+              <Input id="ap-email" type="email" value={p.email} onChange={e => setP(s => ({ ...s, email: e.target.value }))} placeholder="emma@yourcompany.ie" className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="ap-phone">Phone</Label>
+              <Input id="ap-phone" type="tel" value={p.phone} onChange={e => setP(s => ({ ...s, phone: e.target.value }))} placeholder="+353 87 123 4567" className="mt-1.5" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="ap-extra">{role === 'consultant' ? 'Patch / territory' : 'Skills'}</Label>
+            <Input id="ap-extra" value={p.extra} onChange={e => setP(s => ({ ...s, extra: e.target.value }))}
+              placeholder={role === 'consultant' ? 'Dublin South' : 'roof-mount, battery'} className="mt-1.5" />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={!valid} onClick={() => { onAdd(p); onOpenChange(false); }}>Send invite & add</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ConsultantsView({ consultants, navigate }: { consultants: any[]; navigate: (path: string) => void }) {
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [added, setAdded] = useState<any[]>([]);
+  const all = [...consultants, ...added];
 
   if (selectedConsultant) {
-    const consultant = consultants.find(c => c.name === selectedConsultant);
+    const consultant = all.find(c => c.name === selectedConsultant);
     if (!consultant) return null;
     return (
       <div className="p-4 space-y-3">
@@ -578,14 +633,23 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
+      <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="consultant"
+        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, territory: p.extra, activeLeads: 0, hotLeads: 0, pipelineValue: 0, leads: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
+        <Button size="sm" className="ml-auto h-8 text-xs" onClick={() => setAddOpen(true)}>
+          <UserPlus className="h-3.5 w-3.5 mr-1" /> Add consultant
+        </Button>
+      </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        {consultants.map(c => (
+        {all.map(c => (
           <Card key={c.name} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setSelectedConsultant(c.name)}>
             <CardContent className="p-4 flex items-center gap-3">
               <Avatar className="h-12 w-12"><AvatarFallback>{c.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
-                <div className="font-bold">{c.name}</div>
+                <div className="font-bold flex items-center gap-2">{c.name}
+                  {c.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite sent</span>}
+                </div>
                 <div className="text-xs text-muted-foreground">{c.activeLeads} active · {c.hotLeads} hot</div>
                 <div className="text-sm font-bold text-primary mt-1">{eur(c.pipelineValue)}</div>
               </div>
@@ -601,9 +665,12 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
 // ============= INSTALLERS VIEW =============
 function InstallersView({ installers, navigate }: { installers: any[]; navigate: (path: string) => void }) {
   const [selectedInstaller, setSelectedInstaller] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [added, setAdded] = useState<any[]>([]);
+  const all = [...installers, ...added];
 
   if (selectedInstaller) {
-    const installer = installers.find(i => i.name === selectedInstaller);
+    const installer = all.find(i => i.name === selectedInstaller);
     if (!installer) return null;
     return (
       <div className="p-4 space-y-3">
@@ -637,14 +704,23 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
+      <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="installer"
+        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, skills: p.extra.split(',').map(s => s.trim()).filter(Boolean), activeJobs: 0, completedJobs: 0, jobs: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
+        <Button size="sm" className="ml-auto h-8 text-xs" onClick={() => setAddOpen(true)}>
+          <UserPlus className="h-3.5 w-3.5 mr-1" /> Add installer
+        </Button>
+      </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        {installers.map(i => (
+        {all.map(i => (
           <Card key={i.name} className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setSelectedInstaller(i.name)}>
             <CardContent className="p-4 flex items-center gap-3">
               <Avatar className="h-12 w-12"><AvatarFallback>{i.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
-                <div className="font-bold">{i.name}</div>
+                <div className="font-bold flex items-center gap-2">{i.name}
+                  {i.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite sent</span>}
+                </div>
                 <div className="text-xs text-muted-foreground">{i.activeJobs} active · {i.completedJobs} completed</div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
