@@ -15,11 +15,12 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 
-/* ── Cal edits here (2026-07-23, Cal's numbers) ──────────────────────────── */
+/* ── Cal edits here (2026-07-23, Cal's numbers: base + €97/seat) ─────────── */
 const PRICES = {
-  solo:   { monthly: 99,  yearly: 83,  yearlyBilled: 997 }, // €997/yr = €83/mo
-  team:   { monthly: 199, yearly: 79 },                     // € per user / month
-  aiteam: { monthly: 399, yearly: 365 },                    // € per month
+  solo:   { monthly: 197, yearly: 148 },  // € base per month
+  team:   { monthly: 397, yearly: 298 },
+  aiteam: { monthly: 799, yearly: 599 },
+  seat: 97,                               // € per additional seat / month
 };
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 /** Honest save badge — computed from the real numbers, never hardcoded. */
@@ -58,7 +59,7 @@ export default function PricingPage() {
       featuresLead: 'Solo features:',
       hasToggle: true,
       savePct: savePct(PRICES.solo),
-      yearlyNote: `€${PRICES.solo.yearlyBilled} billed yearly`,
+      yearlyNote: `+ €${PRICES.seat} per extra seat`,
       features: [
         '1 user',
         'Bill reader — 21 details per bill',
@@ -71,7 +72,8 @@ export default function PricingPage() {
     {
       name: 'Team',
       price: (y) => eur(y ? PRICES.team.yearly : PRICES.team.monthly),
-      priceSub: 'per month/user',
+      priceSub: 'per month',
+      yearlyNote: `+ €${PRICES.seat} per extra seat`,
       blurb: 'For installer teams with consultants and crews on the road.',
       cta: { label: 'Try for free', to: '/get-started' },
       microcopy: '14 day free trial',
@@ -90,6 +92,7 @@ export default function PricingPage() {
       name: 'AITeam',
       price: (y) => eur(y ? PRICES.aiteam.yearly : PRICES.aiteam.monthly),
       priceSub: 'per month',
+      yearlyNote: `+ €${PRICES.seat} per extra seat`,
       blurb: 'The AI workforce on top: agents that draft, schedule and chase.',
       cta: { label: 'Try for free', to: '/aiteam' },
       microcopy: '14 day free trial',
@@ -144,10 +147,10 @@ export default function PricingPage() {
             className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
             Talk to us <ArrowRight className="size-4" />
           </a>
-          <Link to="/#product"
+          <a href="#features"
             className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-medium shadow-card hover:bg-muted transition-colors">
-            See how it works <ArrowRight className="size-4" />
-          </Link>
+            See feature breakdown <ArrowRight className="size-4" />
+          </a>
         </div>
 
         {/* four tier cards */}
@@ -193,8 +196,8 @@ export default function PricingPage() {
                 )}
               </div>
 
-              {tier.yearlyNote && yearly && (
-                <p className="mt-1 px-1 text-xs text-muted-foreground">{tier.yearlyNote}</p>
+              {tier.yearlyNote && (
+                <p className={`mt-1 px-1 text-xs ${tier.dark ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>{tier.yearlyNote}</p>
               )}
               <p className={`mt-3 px-1 text-sm leading-body min-h-16 ${tier.dark ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                 {tier.blurb}
@@ -234,12 +237,115 @@ export default function PricingPage() {
           ))}
         </div>
 
+        {/* ── Feature breakdown — cal.com's grouped comparison table ────────── */}
+        <section id="features" className="mt-20 scroll-mt-24">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Compare plans</h2>
+          <p className="mt-2 text-muted-foreground leading-body max-w-xl">
+            Everything in every plan, side by side. Each tier includes everything
+            below it.
+          </p>
+
+          <div className="mt-8 overflow-x-auto rounded-[16px] bg-card shadow-card">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left font-medium text-muted-foreground px-4 py-3 w-[40%]">Features</th>
+                  {['Solo', 'Team', 'AITeam', 'AIOS'].map(n => (
+                    <th key={n} className={`px-4 py-3 text-center font-semibold ${n === 'AITeam' ? 'text-foreground' : ''}`}>{n}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {FEATURE_GROUPS.map(group => (
+                  <FeatureGroupRows key={group.name} group={group} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          All prices ex-VAT. AISolar and AITeam are AIOS products — one engine, three ways in.
+          All prices ex-VAT. Every plan adds seats at €{PRICES.seat} per month. AISolar and AITeam are AIOS products — one engine, three ways in.
         </p>
       </main>
 
       <MarketingFooter product="aisolar" />
     </div>
+  );
+}
+
+
+/* ── Feature breakdown data — held to what exists (DO-NOT-CLAIM) ─────────── */
+type Avail = boolean | string;
+interface FeatureRow { label: string; solo: Avail; team: Avail; aiteam: Avail; aios: Avail }
+interface FeatureGroup { name: string; rows: FeatureRow[] }
+
+const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    name: 'Sell',
+    rows: [
+      { label: 'Bill reader — 21 details per bill', solo: true, team: true, aiteam: true, aios: true },
+      { label: 'Instant estimate + booking front door', solo: true, team: true, aiteam: true, aios: true },
+      { label: 'Satellite view of every property (Eircode)', solo: true, team: true, aiteam: true, aios: true },
+      { label: 'Survey → design → proposal flow', solo: true, team: true, aiteam: true, aios: true },
+      { label: 'Customer portal with chat', solo: true, team: true, aiteam: true, aios: true },
+      { label: 'SEAI grant calculated on every proposal', solo: true, team: true, aiteam: true, aios: true },
+    ],
+  },
+  {
+    name: 'Run the team',
+    rows: [
+      { label: 'Seats included', solo: '1', team: '3', aiteam: '3', aios: 'Custom' },
+      { label: 'Consultant cockpit — pipeline, calendar, documents', solo: false, team: true, aiteam: true, aios: true },
+      { label: 'Installer field app with job checklists', solo: false, team: true, aiteam: true, aios: true },
+      { label: 'Your branding on every proposal', solo: false, team: true, aiteam: true, aios: true },
+      { label: 'Owner cockpit with analytics', solo: false, team: true, aiteam: true, aios: true },
+    ],
+  },
+  {
+    name: 'The AI workforce',
+    rows: [
+      { label: 'Proposal drafts written for you', solo: false, team: false, aiteam: true, aios: true },
+      { label: 'Surveys booked, follow-ups sent on time', solo: false, team: false, aiteam: true, aios: true },
+      { label: 'Payment reminders + customer digests', solo: false, team: false, aiteam: true, aios: true },
+      { label: 'Clear window on every agent action', solo: false, team: false, aiteam: true, aios: true },
+      { label: 'One-tap corrections train your agents', solo: false, team: false, aiteam: true, aios: true },
+      { label: 'Approval gates — nothing sends itself', solo: false, team: false, aiteam: true, aios: true },
+    ],
+  },
+  {
+    name: 'The platform',
+    rows: [
+      { label: 'Multi-tenant — many brands, one engine', solo: false, team: false, aiteam: false, aios: true },
+      { label: 'Immutable record of everything', solo: false, team: false, aiteam: false, aios: true },
+      { label: 'Custom agents, built with us', solo: false, team: false, aiteam: false, aios: true },
+      { label: 'Dedicated onboarding and support', solo: false, team: false, aiteam: false, aios: true },
+    ],
+  },
+];
+
+function Cell({ v }: { v: Avail }) {
+  if (typeof v === 'string') return <span className="text-sm font-medium tabular-nums">{v}</span>;
+  return v
+    ? <Check className="size-4 mx-auto text-foreground" aria-label="Included" />
+    : <span className="text-muted-foreground/40" aria-label="Not included">—</span>;
+}
+
+function FeatureGroupRows({ group }: { group: FeatureGroup }) {
+  return (
+    <>
+      <tr className="border-b border-border bg-muted/40">
+        <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.name}</td>
+      </tr>
+      {group.rows.map(row => (
+        <tr key={row.label} className="border-b border-border last:border-0">
+          <td className="px-4 py-2.5">{row.label}</td>
+          <td className="px-4 py-2.5 text-center"><Cell v={row.solo} /></td>
+          <td className="px-4 py-2.5 text-center"><Cell v={row.team} /></td>
+          <td className="px-4 py-2.5 text-center bg-primary/[0.03]"><Cell v={row.aiteam} /></td>
+          <td className="px-4 py-2.5 text-center"><Cell v={row.aios} /></td>
+        </tr>
+      ))}
+    </>
   );
 }
