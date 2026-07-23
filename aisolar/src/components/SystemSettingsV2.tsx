@@ -22,7 +22,7 @@ import {
   Settings, Mail, MessageSquare, Bot, Database, Shield, CheckCircle2,
   AlertCircle, AlertTriangle, Save, Zap, Cloud, Phone, Lock, Key,
   Activity, Cpu, Server, Globe, Bell, Palette, FileText, Users,
-  TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink,
+  TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink, ArrowRight, XCircle,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
 
@@ -95,12 +95,12 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     docsUrl: 'https://openrouter.ai/keys',
   },
   {
-    id: 'mapbox', name: 'Mapbox', description: 'Satellite imagery + installer maps',
-    icon: Globe, status: 'error',
+    id: 'google_maps', name: 'Google Maps Platform', description: 'Satellite imagery, Eircode geocoding, installer routing',
+    icon: Globe, status: 'connected',
     configFields: [
-      { key: 'token', label: 'Access Token', type: 'password', placeholder: 'pk.eyJ...' },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'AIza...' },
     ],
-    docsUrl: 'https://account.mapbox.com/access-tokens',
+    docsUrl: 'https://console.cloud.google.com/google/maps-apis',
   },
   {
     id: 'met_eireann', name: 'Met Éireann', description: 'Weather warnings — auto-reschedule installs',
@@ -131,6 +131,7 @@ const AUDIT_EVENTS = [
 
 export default function SystemSettingsV2() {
   const [integrations, setIntegrations] = useState<Integration[]>(INITIAL_INTEGRATIONS);
+  const [tab, setTab] = useState('integrations');
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [auditFilter, setAuditFilter] = useState({ severity: 'all', actor: 'all', search: '' });
 
@@ -171,7 +172,7 @@ export default function SystemSettingsV2() {
         <p className="text-sm text-muted-foreground mt-1">The bedrock: integrations, branding, audit, kernel.</p>
       </div>
 
-      <Tabs defaultValue="integrations">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
@@ -272,10 +273,8 @@ export default function SystemSettingsV2() {
 
         {/* === CHANNELS === */}
         <TabsContent value="channels" className="space-y-3">
-          <EmailChannelConfig />
-          <SmsChannelConfig />
-          <WhatsAppChannelConfig />
-          <MarketingSequences />
+          <ChannelsAgentWindow integrations={integrations} onConfigure={() => setTab('integrations')} />
+          <MarketingSequencesEditor />
         </TabsContent>
 
         {/* === AUDIT LOG — detailed + filterable === */}
@@ -547,66 +546,149 @@ function BrandConfigFull() {
 }
 
 // ============= CHANNEL CONFIGS =============
-function EmailChannelConfig() {
+/* ── CHANNELS = the agent window (Cal). One source of truth: connection state
+   is PULLED from Integrations — no duplicate config here. Each channel shows
+   which agents speak on it and where the owner/consultant entry points are. */
+function ChannelsAgentWindow({ integrations, onConfigure }: {
+  integrations: Integration[];
+  onConfigure: () => void;
+}) {
+  const state = (id: string) => integrations.find(i => i.id === id)?.status ?? 'disconnected';
+  const CHANNELS = [
+    {
+      name: 'Email', integration: 'postmark',
+      agents: ['The greeter', 'The chaser', 'The correspondent', 'The closer', 'The bookkeeper'],
+      entry: 'Owner: campaigns + digests · Consultant: proposals + follow-ups',
+    },
+    {
+      name: 'SMS', integration: 'twilio',
+      agents: ['The scheduler (T-7 / T-1 reminders)'],
+      entry: 'Install reminders only — opt-in, no marketing',
+    },
+    {
+      name: 'WhatsApp Business', integration: 'whatsapp',
+      agents: ['The correspondent (phase 2 nudges)'],
+      entry: 'Notification nudge → portal thread. Never a second inbox.',
+    },
+    {
+      name: 'Portal chat', integration: null,
+      agents: ['AI assistant', 'Consultant replies', 'Installer replies'],
+      entry: 'The customer thread of record — always on',
+    },
+  ];
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Mail className="h-4 w-4" /> Email (Postmark)</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Channels — the agent window</CardTitle>
+        <p className="text-xs text-muted-foreground">Who speaks where. Connection keys live in one place — <button className="text-tech hover:underline" onClick={onConfigure}>Integrations</button>.</p>
+      </CardHeader>
       <CardContent className="space-y-2">
-        <div className="grid sm:grid-cols-2 gap-2">
-          <div><Label className="text-xs">Server token</Label><Input type="password" defaultValue="••••••••" className="mt-1 h-8 text-xs" /></div>
-          <div><Label className="text-xs">From email</Label><Input type="email" defaultValue={brand.contact.email} className="mt-1 h-8 text-xs" /></div>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-primary"><CheckCircle2 className="h-3 w-3" /> Sender verified · SPF + DKIM + DMARC · 99.4% delivery</div>
+        {CHANNELS.map(ch => {
+          const s = ch.integration ? state(ch.integration) : 'connected';
+          const on = s === 'connected';
+          return (
+            <div key={ch.name} className="p-3 border rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className={`size-2 rounded-full ${on ? 'bg-doc-deposit' : s === 'error' ? 'bg-pop' : 'bg-muted-foreground/40'}`} />
+                <span className="text-sm font-semibold">{ch.name}</span>
+                <Badge variant="outline" className={`text-[11px] ml-1 ${on ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30' : 'text-muted-foreground'}`}>
+                  {on ? 'live' : s}
+                </Badge>
+                {ch.integration && !on && (
+                  <Button variant="outline" size="sm" className="ml-auto h-6 text-[11px]" onClick={onConfigure}>Connect</Button>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground"><span className="font-medium text-foreground">Agents:</span> {ch.agents.join(' · ')}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{ch.entry}</p>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );
 }
 
-function SmsChannelConfig() {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Phone className="h-4 w-4" /> SMS (Twilio)</CardTitle></CardHeader>
-      <CardContent className="space-y-2">
-        <div className="grid sm:grid-cols-2 gap-2">
-          <div><Label className="text-xs">Account SID</Label><Input placeholder="AC..." className="mt-1 h-8 text-xs font-mono" /></div>
-          <div><Label className="text-xs">Auth token</Label><Input type="password" placeholder="••••" className="mt-1 h-8 text-xs" /></div>
-        </div>
-        <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700"><AlertCircle className="h-3 w-3 mr-1" /> Not configured</Badge>
-      </CardContent>
-    </Card>
-  );
-}
+/* ── Marketing sequences — EDITABLE, all touchpoints in view (Cal). Expand a
+   sequence to see every step; edit day + subject inline; add steps; pause. */
+interface SeqStep { day: number; subject: string }
+interface Sequence { name: string; trigger: string; active: boolean; steps: SeqStep[] }
 
-function WhatsAppChannelConfig() {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> WhatsApp Business</CardTitle></CardHeader>
-      <CardContent className="space-y-2">
-        <div className="grid sm:grid-cols-2 gap-2">
-          <div><Label className="text-xs">Phone number</Label><Input placeholder="+353..." className="mt-1 h-8 text-xs" /></div>
-          <div><Label className="text-xs">Access token</Label><Input type="password" placeholder="EAAG..." className="mt-1 h-8 text-xs font-mono" /></div>
-        </div>
-        <div className="text-xs text-primary dark:text-primary">Use cases: install reminders, document delivery, customer chat, review requests</div>
-      </CardContent>
-    </Card>
-  );
-}
+const INITIAL_SEQUENCES: Sequence[] = [
+  { name: 'Welcome sequence', trigger: 'New lead', active: true, steps: [
+    { day: 0, subject: 'Your solar estimate is ready — see your numbers' },
+    { day: 2, subject: 'What your bill told us (21 details, explained)' },
+    { day: 5, subject: 'Book your free survey — slots this week' },
+  ]},
+  { name: 'Proposal follow-up', trigger: 'Proposal sent', active: true, steps: [
+    { day: 2, subject: 'Any questions on your proposal?' },
+    { day: 5, subject: 'Your SEAI grant — what happens next' },
+    { day: 9, subject: 'Your day/night split — why your battery case is honest' },
+    { day: 14, subject: 'Proposal expiring soon — want to talk it through?' },
+  ]},
+  { name: 'Contract reminder', trigger: 'Proposal + 7d no sign', active: true, steps: [
+    { day: 7, subject: 'Ready when you are — your install slot is held' },
+    { day: 12, subject: 'Last call on this quarter\'s install schedule' },
+  ]},
+  { name: 'Post-install NPS', trigger: 'Install + 7d', active: true, steps: [
+    { day: 7, subject: 'How did we do? 60 seconds, honestly' },
+  ]},
+  { name: 'Referral request', trigger: 'Completed + 30d', active: true, steps: [
+    { day: 30, subject: 'Know a neighbour thinking about solar?' },
+  ]},
+];
 
-function MarketingSequences() {
+function MarketingSequencesEditor() {
+  const [seqs, setSeqs] = useState<Sequence[]>(INITIAL_SEQUENCES);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const update = (name: string, fn: (s: Sequence) => Sequence) =>
+    setSeqs(prev => prev.map(s => s.name === name ? fn(s) : s));
+
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4" /> Marketing sequences</CardTitle></CardHeader>
-      <CardContent className="space-y-1">
-        {[
-          { name: 'Welcome sequence', trigger: 'New lead', emails: 3, open: 68, status: 'active' },
-          { name: 'Proposal follow-up', trigger: 'Proposal sent', emails: 5, open: 54, status: 'active' },
-          { name: 'Contract reminder', trigger: 'Proposal + 7d no sign', emails: 2, open: 71, status: 'active' },
-          { name: 'Post-install NPS', trigger: 'Install + 7d', emails: 1, open: 82, status: 'active' },
-          { name: 'Referral request', trigger: 'Completed + 30d', emails: 1, open: 64, status: 'active' },
-        ].map(seq => (
-          <div key={seq.name} className="flex items-center justify-between p-2 border rounded text-xs">
-            <div><span className="font-medium">{seq.name}</span><span className="text-muted-foreground ml-2">{seq.trigger} · {seq.emails} emails</span></div>
-            <div className="flex items-center gap-2"><span className={seq.open >= 60 ? 'text-primary' : 'text-amber-600'}>{seq.open}% open</span><Badge variant="default" className="text-[11px]">{seq.status}</Badge></div>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4" /> Marketing sequences</CardTitle>
+        <p className="text-xs text-muted-foreground">Every touchpoint in view. Edit the day or the subject in place — the chaser sends what you write here.</p>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {seqs.map(seq => (
+          <div key={seq.name} className="border rounded-lg">
+            <button type="button" className="w-full flex items-center justify-between p-2.5 text-left cursor-pointer"
+              onClick={() => setOpen(o => o === seq.name ? null : seq.name)}>
+              <div className="text-xs"><span className="font-medium text-sm">{seq.name}</span><span className="text-muted-foreground ml-2">{seq.trigger} · {seq.steps.length} touchpoints</span></div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={`text-[11px] ${seq.active ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30' : 'text-muted-foreground'}`}>{seq.active ? 'active' : 'paused'}</Badge>
+                <ArrowRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open === seq.name ? 'rotate-90' : ''}`} />
+              </div>
+            </button>
+            {open === seq.name && (
+              <div className="border-t px-2.5 py-2 space-y-1.5">
+                {seq.steps.map((st, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground shrink-0">Day</span>
+                    <Input type="number" value={st.day} className="h-7 w-14 text-xs tabular-nums"
+                      onChange={e => update(seq.name, s => ({ ...s, steps: s.steps.map((x, j) => j === i ? { ...x, day: parseInt(e.target.value) || 0 } : x) }))} />
+                    <Input value={st.subject} className="h-7 flex-1 text-xs"
+                      onChange={e => update(seq.name, s => ({ ...s, steps: s.steps.map((x, j) => j === i ? { ...x, subject: e.target.value } : x) }))} />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Remove step"
+                      onClick={() => update(seq.name, s => ({ ...s, steps: s.steps.filter((_, j) => j !== i) }))}>
+                      <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button variant="outline" size="sm" className="h-7 text-xs"
+                    onClick={() => update(seq.name, s => ({ ...s, steps: [...s.steps, { day: (s.steps.at(-1)?.day ?? 0) + 3, subject: 'New touchpoint' }] }))}>
+                    + Add touchpoint
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs"
+                    onClick={() => update(seq.name, s => ({ ...s, active: !s.active }))}>
+                    {seq.active ? 'Pause' : 'Activate'}
+                  </Button>
+                  <span className="ml-auto text-[11px] text-muted-foreground">Saved locally — syncs at launch</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </CardContent>
