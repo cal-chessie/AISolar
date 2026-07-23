@@ -526,8 +526,34 @@ export default function ConsultantCockpitV5() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Reply box */}
-                <div className="border-t p-2">
+                {/* Reply box + chat TRIGGERS (Last List 17): fire the next
+                    action from inside the conversation — where the decision
+                    actually happens. Draft-first, never auto-send. */}
+                <div className="border-t p-2 space-y-1.5">
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                    {!selectedLead.proposal && ['new','intake_complete','survey_scheduled','survey_complete'].includes(selectedLead.workflow_stage) && (
+                      <button onClick={() => navigate(`/lead-flow/${selectedLead.id}`)}
+                        className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-muted/70 transition-colors">
+                        <Calendar className="size-3" /> Book survey
+                      </button>
+                    )}
+                    {(selectedLead.proposal || ['survey_complete','proposal_drafted'].includes(selectedLead.workflow_stage)) && (
+                      <button onClick={() => navigate(`/lead-flow/${selectedLead.id}`)}
+                        className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-doc-proposal-subtle text-doc-proposal text-xs font-medium hover:opacity-80 transition-opacity">
+                        <FileText className="size-3" /> {selectedLead.proposal?.status === 'presented' ? 'Re-send proposal' : 'Send proposal'}
+                      </button>
+                    )}
+                    {selectedLead.proposal && !selectedLead.invoice?.deposit_paid && ['approved','proposal_sent'].includes(selectedLead.workflow_stage) && (
+                      <button onClick={() => toast.success(`Deposit link queued for ${selectedLead.name.split(' ')[0]} — goes out with your approval`)}
+                        className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-doc-deposit/10 text-doc-deposit text-xs font-medium hover:opacity-80 transition-opacity">
+                        <DollarSign className="size-3" /> Send deposit link
+                      </button>
+                    )}
+                    <button onClick={() => setSlideOutView('estimate')}
+                      className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-muted text-xs font-medium hover:bg-muted/70 transition-colors sm:hidden">
+                      <Calculator className="size-3" /> Estimate
+                    </button>
+                  </div>
                   <div className="flex gap-2">
                     <Input placeholder="Type a reply…" value={replyText} onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} className="h-9 text-xs" />

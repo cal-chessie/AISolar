@@ -195,6 +195,12 @@ function ProductCard({ product, qty }: { product: CatalogProduct; qty?: number }
         </h3>
         <p className="text-xs text-muted-foreground">{product.spec} · {product.warrantyYears}-yr warranty</p>
         <p className="text-xs text-muted-foreground mt-1.5 leading-ui">{product.blurb}</p>
+        {product.datasheet && (
+          <a href={product.datasheet} target="_blank" rel="noopener noreferrer"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline print:hidden">
+            <FileText className="size-3" /> Data sheet (PDF)
+          </a>
+        )}
       </div>
     </article>
   );
@@ -273,6 +279,31 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
 
       {/* 1 — Evidence (the moat) */}
       <BillEvidence lead={lead} />
+
+      {/* 1b — THEIR roof (Cal: the proposal should carry the customer's roof).
+          Keyed to the eircode from their own bill; imagery only, measured at
+          survey. Print keeps it — the PDF shows their house, not clip-art. */}
+      {(() => {
+        const i = (lead.intake ?? {}) as Record<string, unknown>;
+        const eircode = (i.extracted_eircode as string) ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0];
+        if (!eircode) return null;
+        return (
+          <section className="rounded-panel border border-border bg-card overflow-hidden">
+            <header className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
+              <Sun className="size-4 text-primary" />
+              <h2 className="text-md font-semibold">Your roof</h2>
+              <span className="ml-auto text-xs text-muted-foreground">{eircode}</span>
+            </header>
+            <iframe
+              title="Your roof from above"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(eircode)}&t=k&z=19&output=embed`}
+              className="w-full h-56 border-0"
+              loading="lazy"
+            />
+            <p className="px-5 py-2 text-2xs text-muted-foreground">Satellite imagery of your property — panel positions are confirmed at the site survey.</p>
+          </section>
+        );
+      })()}
 
       {/* 2 — The system */}
       <section className="rounded-panel border border-border bg-card overflow-hidden">

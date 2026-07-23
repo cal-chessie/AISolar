@@ -14,6 +14,10 @@ export interface CatalogProduct {
   warrantyYears: number;
   /** real product photo — /public path or https URL */
   image?: string;
+  /** manufacturer data sheet — /public PDF path or https URL. Renders a
+      "Data sheet" link on proposals when present; hidden when absent, so
+      no dead links ever ship (Cal: data sheets add value). */
+  datasheet?: string;
   blurb: string;
 }
 
@@ -55,6 +59,10 @@ const KIND_DEFAULT: Record<CatalogProduct['kind'], Omit<CatalogProduct, 'model'>
   inverter: { kind: 'inverter', maker: '', spec: 'Hybrid inverter', warrantyYears: 10, blurb: 'Converts and manages the power your panels generate.' },
   battery:  { kind: 'battery', maker: '', spec: 'LFP battery storage', warrantyYears: 10, blurb: 'Stores excess solar for when you actually use power.' },
 };
+
+export function getProductsByKind(kind: CatalogProduct['kind']): CatalogProduct[] {
+  return CATALOG.filter(p => p.kind === kind);
+}
 
 export function getProduct(model: string | null | undefined, kind: CatalogProduct['kind']): CatalogProduct | null {
   if (!model) return null;

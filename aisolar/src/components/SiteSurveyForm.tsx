@@ -19,6 +19,7 @@ import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
 import { logActivity } from '@/lib/activityLog';
 import { isDemoMode } from '@/lib/demoMode';
 import { generateDummyLeads } from '@/lib/dummyData';
+import { getProductsByKind } from '@/config/productCatalog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,11 @@ const surveySchema = z.object({
   // System recommendations
   recommended_system_size: z.string().optional(),
   recommended_panel_count: z.string().optional(),
+  // Cal: the consultant picks the gear ON SITE — these flow straight into
+  // the proposal (no re-keying at the desk)
+  recommended_panel_model: z.string().optional(),
+  recommended_inverter_model: z.string().optional(),
+  recommended_battery_model: z.string().optional(),
   // Installation & logistics (merged)
   property_storeys: z.string().optional(),
   scaffolding_required: z.string().optional(),
@@ -277,6 +283,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         grid_connection_type: data.grid_connection_type || null,
         recommended_system_size: data.recommended_system_size ? parseFloat(data.recommended_system_size) : null,
         recommended_panel_count: data.recommended_panel_count ? parseInt(data.recommended_panel_count) : null,
+        recommended_panel_model: data.recommended_panel_model || null,
+        recommended_inverter_model: data.recommended_inverter_model || null,
+        recommended_battery_model: data.recommended_battery_model || null,
         installation_notes: data.installation_notes || null,
         special_requirements: data.special_requirements || null,
         status: finalStatus,
@@ -356,6 +365,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           metadata: {
             recommended_system_size: data.recommended_system_size,
             panel_count: data.recommended_panel_count,
+            panel_model: data.recommended_panel_model,
+            inverter_model: data.recommended_inverter_model,
+            battery_model: data.recommended_battery_model,
             roof_type: data.roof_type
           }
         });
@@ -732,6 +744,37 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                 <div>
                   <Label htmlFor="recommended_panel_count">Recommended Panel Count</Label>
                   <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full mt-1.5" />
+                </div>
+
+                {/* The gear, picked on the roof — lands on the proposal as-is */}
+                <div>
+                  <Label>Panel</Label>
+                  <Select onValueChange={(v) => setValue('recommended_panel_model', v)} value={watch('recommended_panel_model')}>
+                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="Pick the panel" /></SelectTrigger>
+                    <SelectContent>
+                      {getProductsByKind('panel').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Inverter</Label>
+                  <Select onValueChange={(v) => setValue('recommended_inverter_model', v)} value={watch('recommended_inverter_model')}>
+                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="Pick the inverter" /></SelectTrigger>
+                    <SelectContent>
+                      {getProductsByKind('inverter').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Battery {watch('battery_storage') ? '' : '(customer not interested — optional)'}</Label>
+                  <Select onValueChange={(v) => setValue('recommended_battery_model', v === 'none' ? '' : v)} value={watch('recommended_battery_model') || 'none'}>
+                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="No battery" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No battery</SelectItem>
+                      {getProductsByKind('battery').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">These picks pre-fill the proposal design step — change them there if the desk disagrees with the roof.</p>
                 </div>
               </div>
             </CardContent>
