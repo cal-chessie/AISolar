@@ -32,7 +32,14 @@ type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 /** Per-form {page,x,y,size?} maps for true in-box overlay. Empty until the
  *  calibration pass; fill these and mode 2 switches on automatically. */
 const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number }>> = {
-  NC6: [],
+  // CALIBRATED 23 Jul 2026 against ESB nc6-form page 1 (595x842pt), two passes.
+  NC6: [
+    { field: 'Customer name', page: 0, x: 110, y: 495 },
+    { field: 'Installation address', page: 0, x: 110, y: 472 },
+    { field: 'Phone', page: 0, x: 492, y: 442 },
+    { field: 'Email', page: 0, x: 115, y: 418 },
+    { field: 'MPRN', page: 0, x: 350, y: 336 },
+  ],
   // CALIBRATED 23 Jul 2026 against ESBN_Form-NC7_Dec21 page 1 (595x842pt),
   // browser render-verify loop, three passes. ESB wants BLOCK CAPITALS —
   // overlay values are uppercased at draw time.
@@ -140,7 +147,8 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
     const addr = (base['Installation address'] ?? '').split(',').map(x => x.trim());
     const data: Record<string, string> = {
       ...base,
-      'Installation address': addr[0] ?? '',
+      // NC6 has ONE long address comb row; NC7 splits across two
+      'Installation address': form === 'NC6' ? (base['Installation address'] ?? '') : (addr[0] ?? ''),
       'Address line 2': addr.slice(1).join(', '),
       'Contact person': base['Customer name'],
       'Site address 1': addr[0] ?? '',

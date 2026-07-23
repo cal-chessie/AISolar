@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
-import PaperworkWindow from '@/components/compliance/PaperworkWindow';
+import PaperworkWindow, { buildPack } from '@/components/compliance/PaperworkWindow';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -121,12 +121,27 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
   return (
     <div className="p-4 space-y-3">
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">Grant pipeline</div><div className="text-xl font-bold tabular-nums text-doc-deposit">{eur(stats.totalGrantValue)}</div></div>
-        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">SEAI submitted</div><div className="text-xl font-bold tabular-nums">{stats.submitted}</div></div>
-        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="label-micro">ESB connected</div><div className="text-xl font-bold tabular-nums text-tech">{stats.esbConnected}</div></div>
-        <div className="rounded-[16px] bg-card shadow-card p-4"><div className="text-xs text-muted-foreground">RECI filed</div><div className="text-xl font-bold text-primary">{stats.reciFiled}</div></div>
+      {/* The grants business at a glance — every figure traceable to a pack */}
+      <div className="rounded-[16px] bg-primary text-primary-foreground shadow-card p-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div>
+          <div className="text-2xs text-primary-foreground/60 uppercase tracking-wide">Grant pipeline</div>
+          <div className="text-2xl font-bold tabular-nums text-doc-deposit">{eur(stats.totalGrantValue)}</div>
+        </div>
+        <div>
+          <div className="text-2xs text-primary-foreground/60 uppercase tracking-wide">SEAI submitted</div>
+          <div className="text-2xl font-bold tabular-nums">{stats.submitted}</div>
+        </div>
+        <div>
+          <div className="text-2xs text-primary-foreground/60 uppercase tracking-wide">ESB connected</div>
+          <div className="text-2xl font-bold tabular-nums">{stats.esbConnected}</div>
+        </div>
+        <div>
+          <div className="text-2xs text-primary-foreground/60 uppercase tracking-wide">RECI filed</div>
+          <div className="text-2xl font-bold tabular-nums">{stats.reciFiled}</div>
+        </div>
+        <div className="ml-auto text-2xs text-primary-foreground/60 max-w-[200px]">
+          Agents prepare, track and chase every document — click a customer for their full pack.
+        </div>
       </div>
 
       {/* Filter */}
@@ -147,8 +162,27 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{c.lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{c.lead.name}</div>
+                  <div className="font-medium text-sm truncate flex items-center gap-1.5">{c.lead.name}
+                    {(() => { const i = (c.lead.intake ?? {}) as Record<string, unknown>;
+                      const commercial = i.extracted_premises_type === 'commercial' || i.property_type === 'commercial';
+                      const kW = c.lead.proposal?.system_size_kw ?? 0;
+                      const tp = /three/i.test(c.lead.survey?.confirmed_inverter_type ?? '');
+                      const form = kW <= (tp ? 11 : 6) ? 'NC6' : kW <= 50 ? 'NC7' : 'NC8';
+                      return <>
+                        <span className="text-2xs rounded-full bg-tech-subtle text-tech px-1.5 py-0.5 font-medium shrink-0">{form}</span>
+                        {commercial && <span className="text-2xs rounded-full bg-doc-contract-subtle text-doc-contract px-1.5 py-0.5 font-medium shrink-0">Commercial</span>}
+                      </>; })()}
+                  </div>
                   <div className="text-xs text-muted-foreground truncate">{c.lead.address.split(',').slice(-1)[0]?.trim()}</div>
+                  {(() => { const pk = buildPack(c.lead); const ready = pk.filter(d => ['received','complete','sent'].includes(d.status)).length;
+                    return (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 max-w-[140px] h-1 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-doc-deposit rounded-full" style={{ width: `${(ready / pk.length) * 100}%` }} />
+                        </div>
+                        <span className="text-2xs text-muted-foreground tabular-nums">{ready}/{pk.length} docs</span>
+                      </div>
+                    ); })()}
                 </div>
                 <div className="flex items-center gap-2">
                   {/* SEAI badge */}

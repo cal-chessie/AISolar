@@ -74,7 +74,7 @@ const SOURCE_META = {
 
 /** Derive the pack's demo state from the pipeline stage — never claims a
  *  document that the stage can't justify. */
-function buildPack(lead: DummyLead): PackDoc[] {
+export function buildPack(lead: DummyLead): PackDoc[] {
   const s = lead.workflow_stage;
   // ONE form or the other (Cal): NC6 covers ≤6kW single-phase / ≤11kW
   // three-phase; anything above notifies on NC7. Decided from the survey's
