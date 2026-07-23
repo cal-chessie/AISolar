@@ -15,7 +15,7 @@
  * append-only record, approval gates, BYO keys. No SOC2/ISO/SLA invention.
  */
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Check, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Bot, Check, ShieldCheck, GitBranch } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { Wordmark } from '@/components/brand/AiosMark';
@@ -61,41 +61,43 @@ function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; 
   );
 }
 
-/* Hero visual — the agent runtime at work (our real product, in miniature) */
-function AgentVisual() {
+/* Hero visual — the KERNEL: the hash-chained record + tenant tree. The thing
+   no other page can show, so the homescreen stops looking like AITeam. */
+function KernelVisual() {
+  const events = [
+    { seq: 4812, type: 'LeadCreated',      tenant: 'Solar Roscommon', hash: '9f2e…c41a' },
+    { seq: 4813, type: 'ProposalDrafted',  tenant: 'Renewable Ireland', hash: 'b7d1…08ff' },
+    { seq: 4814, type: 'DepositPaid',      tenant: 'Solar Ireland', hash: '30aa…d9e2' },
+    { seq: 4815, type: 'InstallScheduled', tenant: 'Solar Roscommon', hash: 'e6c4…17b8' },
+  ];
   return (
     <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
       <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
-        <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full rounded-full bg-doc-deposit opacity-60 animate-ping" />
-          <span className="relative inline-flex size-2 rounded-full bg-doc-deposit" />
-        </span>
-        <span className="text-sm font-semibold">Agents at work</span>
-        <span className="ml-auto text-2xs text-muted-foreground">live record</span>
+        <GitBranch className="size-4 text-primary" />
+        <span className="text-sm font-semibold">kernel.events</span>
+        <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">append-only</span>
       </div>
-      <div className="p-4 space-y-3">
-        {[
-          ['The drafter', 'wrote a proposal — waiting on approval', 'just now'],
-          ['The scheduler', 'booked Tuesday 10:00 survey', '2m ago'],
-          ['The chaser', 'sent the 7-day follow-up', '14m ago'],
-          ['The bookkeeper', 'raised the deposit invoice', '1h ago'],
-        ].map(([a, s, t]) => (
-          <div key={a as string} className="flex items-start gap-2.5">
-            <span className="size-6 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0"><Bot className="size-3.5" /></span>
-            <p className="text-sm leading-ui">
-              <span className="font-medium">{a}</span> <span className="text-muted-foreground">{s}</span>
-              <span className="block text-2xs text-muted-foreground mt-0.5">{t}</span>
-            </p>
+      <div className="divide-y divide-border font-mono">
+        {events.map((e, i) => (
+          <div key={e.seq} className="px-4 py-2.5 flex items-center gap-3 text-xs">
+            <span className="tabular-nums text-muted-foreground">#{e.seq}</span>
+            <span className="font-semibold text-foreground">{e.type}</span>
+            <span className="hidden sm:inline text-muted-foreground truncate">{e.tenant}</span>
+            <span className="ml-auto tabular-nums text-tech">{e.hash}</span>
+            {i < events.length - 1 ? <span className="text-muted-foreground/40">⛓</span> : <span className="text-doc-deposit">✓</span>}
           </div>
         ))}
       </div>
-      <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-muted/30">
-        <span className="text-xs text-muted-foreground">Every action logged, attributed, reversible</span>
-        <Check className="size-4 text-doc-deposit" />
+      <div className="px-4 py-2.5 border-t border-border flex items-center gap-4 text-2xs text-muted-foreground bg-muted/30">
+        <span>3 tenants · one engine</span>
+        <span className="hidden sm:inline">every hash chains to the last — nothing rewritten, ever</span>
+        <span className="ml-auto inline-flex items-center gap-1"><Bot className="size-3" /> 10 agents watching</span>
       </div>
     </div>
   );
 }
+
+/* (old agent feed removed — it belongs to AITeam, not the kernel page) */
 
 export default function AiosPage() {
   return (
@@ -128,31 +130,7 @@ export default function AiosPage() {
               </div>
               <p className="mt-3 text-xs text-muted-foreground">Free to start. No card required.</p>
             </div>
-            <AgentVisual />
-          </div>
-        </section>
-
-        {/* ── Trust strip ──────────────────────────────────────────────────── */}
-        <section className="border-y border-border bg-card/40">
-          <div className="mx-auto max-w-6xl px-5 py-6">
-            <p className="text-center text-xs uppercase tracking-wide text-muted-foreground">
-              One engine behind the AIOS family
-            </p>
-            <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 gap-3 max-w-3xl mx-auto">
-              {([
-                ['AISolar', '/aisolar', 'The installer OS'],
-                ['AIChat', '/my-projects', 'Customer portal'],
-                ['AIField', '/installer', 'The crew app'],
-                ['AISales', '/consultant', 'The sales cockpit'],
-                ['AITeam', '/aiteam', 'The AI workforce'],
-                ['AIOS', '/', 'The kernel'],
-              ] as const).map(([w, to, sub]) => (
-                <Link key={w} to={to} className="group flex flex-col items-center gap-1.5">
-                  <Wordmark word={w} className="size-12 group-hover:opacity-80 transition-opacity" />
-                  <span className="text-2xs text-muted-foreground text-center leading-tight">{sub}</span>
-                </Link>
-              ))}
-            </div>
+            <KernelVisual />
           </div>
         </section>
 

@@ -29,6 +29,7 @@ import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
 import AiTeamPage from "./pages/AiTeamPageV2";
 import PricingPage from "./pages/PricingPage";
+import DocsPage from "./pages/DocsPage";
 import AgentFoundation from "./components/AgentFoundation";
 
 // Components (current versions only — no legacy)
@@ -87,6 +88,7 @@ function AppRoutes() {
           <Route path="/aios" element={wrap(<AiosPage />)} />{/* alias until domains split */}
           <Route path="/aiteam" element={wrap(<AiTeamPage />)} />
           <Route path="/pricing" element={wrap(<PricingPage />)} />
+          <Route path="/docs" element={wrap(<DocsPage />)} />
           <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
           <Route path="/upsell" element={wrap(<ValueUpsell />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />

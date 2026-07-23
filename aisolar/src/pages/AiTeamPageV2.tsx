@@ -181,7 +181,27 @@ export default function AiTeamPageV2() {
                 ))}
               </ul>
             </div>
-            <AgentFeed />
+            <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+              <div className="px-4 h-11 border-b border-border flex items-center gap-2">
+                <FileText className="size-4 text-primary" />
+                <span className="text-sm font-semibold">Awaiting your approval</span>
+                <span className="ml-auto text-2xs font-medium rounded-full bg-doc-proposal/10 text-doc-proposal px-2 py-0.5">1 draft</span>
+              </div>
+              <div className="p-4">
+                <p className="text-sm font-medium">Proposal — Kelly, 12 kWp + battery</p>
+                <p className="mt-1 text-xs text-muted-foreground leading-body">Drafted by the drafter from the bill + survey. €24,300 net after the SEAI grant. Nothing sends until you say so.</p>
+                <div className="mt-3 flex gap-2">
+                  <span className="inline-flex h-9 items-center rounded-[10px] bg-primary px-4 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
+                  <span className="inline-flex h-9 items-center rounded-[10px] border border-border px-4 text-xs font-medium">Edit first</span>
+                </div>
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-muted/30">
+                <div className="flex items-baseline justify-between text-2xs text-muted-foreground">
+                  <span>Today's AI spend</span><span className="tabular-nums">€0.42 / €5.00 cap</span>
+                </div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-doc-deposit" style={{ width: '8%' }} /></div>
+              </div>
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-14 items-center">

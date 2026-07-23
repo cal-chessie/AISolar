@@ -36,12 +36,15 @@ Repo root is the parent `AI SOLAR/` folder; app lives here in `aisolar/`.
   + secrets INGEST_API_KEY, AISOLAR_TENANT_ID. Frontend: Vercel (vercel.json set).
 
 ## Known debt (docs/PIPELINE_AUTONOMY_AUDIT.md has the full graded list)
-- Bill-upload FRONT DOOR still missing: the extractor now persists, but no UI
-  screen calls it with a leadId yet. That is the next chunk. Until it lands,
-  real leads carry only the ~5 fields the web form collects; the proposal's
-  field count is computed, so it stays honest (says 5, not 21).
-- survey_scheduler + install_coordinator stamp dates without calendar logic and
-  send no email despite touchpoints claiming so.
-- Landing copy oversells (SMS/WhatsApp/roof-detection don't exist; grant agent
-  tracks, doesn't submit). Truth-pass queued. Design pass = with Cal, on real
-  screens only. Demo mode: never set VITE_ENABLE_DEMO in prod.
+- FIXED 2026-07-23: bill front door EXISTS at /start (+/upload) — upload/manual
+  → 21-point estimate + satellite → book. Still needed at launch: create the
+  lead from the booking so agents pick it up (blocked on coxmtpnq access).
+- FIXED 2026-07-22 (commit 9b56e89): survey_scheduler + install_coordinator now
+  SEND real Postmark email and record channel/emailSent honestly. Still naive
+  DATES (today+5 / today+28, no calendar logic) — calendar-aware scheduling is
+  open.
+- Truth-pass: marketing pages hold to DO-NOT-CLAIM; 2026-07-23 removed the last
+  in-app "email + SMS" toast + "SMS notification" checklist row in LeadFlow
+  (SMS/Twilio is disconnected until launch). Grant agent TRACKS, doesn't submit
+  — keep it phrased that way everywhere.
+- Demo mode: never set VITE_ENABLE_DEMO in prod.

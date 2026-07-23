@@ -54,6 +54,7 @@ export function MarketingNav({ product }: { product: ProductKey }) {
             </Link>
           ))}
           <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
+          <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Docs</Link>
           <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">About</Link>
         </nav>
 
@@ -78,9 +79,11 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
   const name = PRODUCT[product].name;
   const cols: Array<{ head: string; items: Array<{ label: string; to: string }> }> = [
     { head: 'Product', items: [
-      { label: 'How it works', to: product === 'aisolar' ? '/#product' : PRODUCT[product].home },
       { label: 'Pricing', to: '/pricing' },
-      { label: 'Start free', to: '/start' },
+      { label: 'Free bill analysis', to: '/start' },
+      { label: 'ROI calculator', to: '/calculator' },
+      { label: 'Docs', to: '/docs' },
+      { label: 'Browse every view', to: '/demo' },
     ] },
     { head: 'AIOS family', items: [
       { label: 'AISolar', to: '/aisolar' },

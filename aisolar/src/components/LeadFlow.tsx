@@ -455,7 +455,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     onClick={() => {
                       setProposalSent(true);
                       toast.success('Proposal sent to customer', {
-                        description: `${lead.name} will receive an email + SMS. Follow-Up Agent will check in, in 3 days.`,
+                        description: `${lead.name} will receive it by email. Follow-Up Agent checks in after 3 days.`,
                       });
                     }}
                   >
@@ -1146,7 +1146,7 @@ function SendStep({ lead, designData, netCost, seaiGrant, financeOption, deposit
             <div className="flex items-center gap-2 p-2 border rounded-lg">
               <input type="checkbox" className="h-4 w-4 rounded" />
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm flex-1">SMS notification to {lead.phone}</span>
+              <span className="text-sm flex-1">Portal notification to {lead.name.split(' ')[0]} (SMS arrives with Twilio at launch)</span>
             </div>
             <div className="flex items-center gap-2 p-2 border rounded-lg">
               <input type="checkbox" defaultChecked className="h-4 w-4 rounded" />
