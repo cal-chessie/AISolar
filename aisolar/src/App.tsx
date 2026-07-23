@@ -18,7 +18,7 @@ import InstallerLanding from "./pages/InstallerLanding";
 import NotFound from "./pages/NotFound";
 import ValueUpsell from "./pages/ValueUpsell";
 import AboutUs from "./pages/AboutUs";
-import PrestigiousAuth from "./pages/PrestigiousAuth";
+import AuthPage from "./pages/AuthPage";
 import OnboardingMode from "./pages/OnboardingMode";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -79,10 +79,12 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Public */}
-          <Route path="/" element={wrap(<AISolarLanding />)} />
+          {/* Cal: AIOS is the homescreen; AISolar is the first product page */}
+          <Route path="/" element={wrap(<AiosPage />)} />
+          <Route path="/aisolar" element={wrap(<AISolarLanding />)} />
           <Route path="/start" element={wrap(<StartAnalysis />)} />
           <Route path="/upload" element={wrap(<StartAnalysis />)} />
-          <Route path="/aios" element={wrap(<AiosPage />)} />
+          <Route path="/aios" element={wrap(<AiosPage />)} />{/* alias until domains split */}
           <Route path="/aiteam" element={wrap(<AiTeamPage />)} />
           <Route path="/pricing" element={wrap(<PricingPage />)} />
           <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
@@ -93,8 +95,8 @@ function AppRoutes() {
           <Route path="/terms" element={wrap(<TermsOfService />)} />
 
           {/* Auth + Onboarding */}
-          <Route path="/auth" element={wrap(<PrestigiousAuth />)} />
-          <Route path="/get-started" element={wrap(<PrestigiousAuth />)} />
+          <Route path="/auth" element={wrap(<AuthPage />)} />
+          <Route path="/get-started" element={wrap(<AuthPage />)} />
           <Route path="/onboarding" element={wrap(<OnboardingMode />)} />
           <Route path="/demo" element={wrap(<DemoIndex />)} />
 

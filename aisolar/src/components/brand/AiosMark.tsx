@@ -64,8 +64,8 @@ export function BrandMark({ className, glyphClassName, label = 'AISolar' }: {
 /** Wordmark tile — bold white type on the charcoal squircle, drawn as SVG so it
  *  scales perfectly at any tile size. Best at md+ (auth hero, footer, marketing)
  *  where the word is legible. */
-type Word = 'AIOS' | 'AISolar' | 'AITeam' | 'AIChat';
-const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 25, AITeam: 27, AIChat: 27 };
+type Word = 'AIOS' | 'AISolar' | 'AITeam' | 'AIChat' | 'AIField' | 'AISales';
+const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 25, AITeam: 27, AIChat: 27, AIField: 26, AISales: 26 };
 
 export function Wordmark({ word, className }: { word: Word; className?: string }) {
   return (
@@ -101,3 +101,5 @@ export const AichatWordmark = ({ className }: { className?: string }) => <Wordma
 export function AiosMark({ className }: { className?: string; glyphClassName?: string }) {
   return <Wordmark word="AIOS" className={className} />;
 }
+export const AifieldWordmark = ({ className }: { className?: string }) => <Wordmark word="AIField" className={className} />;
+export const AisalesWordmark = ({ className }: { className?: string }) => <Wordmark word="AISales" className={className} />;

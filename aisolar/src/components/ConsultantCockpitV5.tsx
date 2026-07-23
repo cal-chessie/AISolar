@@ -16,7 +16,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
-import { AiosMark } from "@/components/brand/AiosMark";
+import { AisalesWordmark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -277,7 +277,7 @@ export default function ConsultantCockpitV5() {
       <header className="bg-background border-b flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AiosMark className="size-8" />
+            <AisalesWordmark className="size-9" />
             <span className="font-bold text-sm">{tb.name}</span>
             <span className="text-xs text-muted-foreground">Consultant</span>
           </div>

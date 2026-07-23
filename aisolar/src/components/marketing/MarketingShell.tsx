@@ -23,16 +23,16 @@ const MARK: Record<ProductKey, (p: { className?: string }) => JSX.Element> = {
 };
 
 const PRODUCT = {
-  aisolar: { name: 'AISOLAR', sub: 'by AIOS', home: '/', cta: { label: 'Get started', to: '/get-started' } },
-  aios:    { name: 'AIOS',    sub: '',         home: '/aios', cta: { label: 'Talk to us', to: '/auth' } },
-  aiteam:  { name: 'AITEAM',  sub: 'by AIOS', home: '/aiteam', cta: { label: 'Get early access', to: '/auth' } },
+  aisolar: { name: 'AISolar', home: '/aisolar', cta: { label: 'Get started', to: '/get-started' } },
+  aios:    { name: 'AIOS',    home: '/',        cta: { label: 'Talk to us', to: '/auth' } },
+  aiteam:  { name: 'AITeam',  home: '/aiteam',  cta: { label: 'Get early access', to: '/get-started' } },
 } as const;
 
 // Cross-product nav — same on every page so the family is always one click away.
 const CROSS = [
-  { key: 'aisolar' as const, label: 'AISolar', to: '/' },
+  { key: 'aios' as const, label: 'AIOS', to: '/' },
+  { key: 'aisolar' as const, label: 'AISolar', to: '/aisolar' },
   { key: 'aiteam' as const, label: 'AITeam', to: '/aiteam' },
-  { key: 'aios' as const, label: 'AIOS', to: '/aios' },
 ];
 
 export function MarketingNav({ product }: { product: ProductKey }) {
@@ -41,11 +41,9 @@ export function MarketingNav({ product }: { product: ProductKey }) {
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/60">
       <div className="mx-auto max-w-6xl px-5 h-16 flex items-center gap-6">
-        <Link to={p.home} className="flex items-center gap-2.5 shrink-0">
-          <Mark className="size-9" />
-          <span className="font-semibold tracking-tight">
-            {p.name}{p.sub && <span className="text-muted-foreground font-normal"> {p.sub}</span>}
-          </span>
+        {/* ONE mark, no duplicate text — the tile IS the wordmark (Cal). */}
+        <Link to={p.home} className="shrink-0" aria-label={p.name}>
+          <Mark className="size-10" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 ml-2">
@@ -85,9 +83,9 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
       { label: 'Start free', to: '/start' },
     ] },
     { head: 'AIOS family', items: [
-      { label: 'AISolar', to: '/' },
+      { label: 'AISolar', to: '/aisolar' },
       { label: 'AITeam', to: '/aiteam' },
-      { label: 'AIOS', to: '/aios' },
+      { label: 'AIOS', to: '/' },
     ] },
     { head: 'Company', items: [
       { label: 'About', to: '/about' },
@@ -99,10 +97,7 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
     <footer className="border-t border-border">
       <div className="mx-auto max-w-6xl px-5 py-12 grid gap-10 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <Mark className="size-9" />
-            <span className="font-semibold tracking-tight">{name}</span>
-          </div>
+          <Mark className="size-10" />
           <p className="mt-3 text-xs text-muted-foreground leading-body max-w-[15rem]">
             {product === 'aios'
               ? 'The operating system for AI-run businesses.'

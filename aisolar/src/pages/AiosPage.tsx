@@ -17,6 +17,8 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Check, ShieldCheck } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+import { Wordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
@@ -116,7 +118,15 @@ export default function AiosPage() {
                 and report — on one immutable record, with you approving every
                 send.
               </p>
-              <CtaPair />
+              {/* Cal: the login lives on the home screen — Google first. */}
+              <div className="mt-6 flex flex-col gap-3 sm:max-w-sm">
+                <GoogleAuthButton label="Continue with Google" className="w-full" />
+                <Link to="/get-started"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                  Get started with email <ArrowRight className="size-4" />
+                </Link>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">Free to start. No card required.</p>
             </div>
             <AgentVisual />
           </div>
@@ -128,10 +138,20 @@ export default function AiosPage() {
             <p className="text-center text-xs uppercase tracking-wide text-muted-foreground">
               One engine behind the AIOS family
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm font-medium text-muted-foreground">
-              <Link to="/" className="hover:text-foreground transition-colors">AISolar — live in solar</Link>
-              <Link to="/aiteam" className="hover:text-foreground transition-colors">AITeam — the workforce</Link>
-              <span>AIOS — the kernel</span>
+            <div className="mt-5 grid grid-cols-3 sm:grid-cols-6 gap-3 max-w-3xl mx-auto">
+              {([
+                ['AISolar', '/aisolar', 'The installer OS'],
+                ['AIChat', '/my-projects', 'Customer portal'],
+                ['AIField', '/installer', 'The crew app'],
+                ['AISales', '/consultant', 'The sales cockpit'],
+                ['AITeam', '/aiteam', 'The AI workforce'],
+                ['AIOS', '/', 'The kernel'],
+              ] as const).map(([w, to, sub]) => (
+                <Link key={w} to={to} className="group flex flex-col items-center gap-1.5">
+                  <Wordmark word={w} className="size-12 group-hover:opacity-80 transition-opacity" />
+                  <span className="text-2xs text-muted-foreground text-center leading-tight">{sub}</span>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

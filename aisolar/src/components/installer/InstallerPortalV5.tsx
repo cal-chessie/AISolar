@@ -15,7 +15,7 @@
  * Subtle red (today / act now) + blue (upcoming) throughout.
  */
 import { useMemo, useState } from 'react';
-import { AiosMark } from '@/components/brand/AiosMark';
+import { AifieldWordmark } from '@/components/brand/AiosMark';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -162,9 +162,9 @@ export default function InstallerPortalV5() {
       {/* ── header: slim, cal.com ─────────────────────────────────────────── */}
       <header className="bg-background/90 backdrop-blur border-b border-border/60 sticky top-0 z-30">
         <div className="px-4 h-14 flex items-center gap-3">
-          <AiosMark className="size-8" />
+          <AifieldWordmark className="size-9" />
           <div className="leading-tight">
-            <span className="font-semibold text-sm">{tb.name} Field</span>
+            <span className="font-semibold text-sm">{tb.name}</span>
             <span className="block text-2xs text-muted-foreground">{new Date().toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>
           <div className="ml-auto flex items-center gap-1">
