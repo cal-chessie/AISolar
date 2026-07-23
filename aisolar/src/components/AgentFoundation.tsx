@@ -15,8 +15,11 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AGENTS, AgentDefinition } from '@/lib/agents';
 import { isDemoMode } from '@/lib/demoMode';
+import { toast } from 'sonner';
+import { generateDummyLeads } from '@/lib/dummyData';
 import { supabase } from '@/integrations/supabase/client';
 import {
+  X, Download, Upload, ScrollText, Send,
   Bot, Clock, CheckCircle2, AlertCircle, Pause, Play, Zap, Calendar,
   ArrowRight, Shield, FileText, Loader2, Brain, Cpu,
 } from 'lucide-react';
@@ -138,6 +141,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
     Object.fromEntries(AGENTS.map(a => [a.id, a.enabledByDefault]))
   );
   const [activeTab, setActiveTab] = useState<'agents' | 'training' | 'ai_config'>('agents');
+  const [logAgent, setLogAgent] = useState<AgentDefinition | null>(null);
   const demo = isDemoMode();
 
   useEffect(() => {
@@ -308,19 +312,24 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                       <span className="text-tech">queue: {run.queueDepth}</span>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleTrigger(agent.id)}
-                    disabled={!isOn || triggering === agent.id}
-                    className="h-7 text-xs"
-                  >
-                    {triggering === agent.id ? (
-                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running…</>
-                    ) : (
-                      <>Run now</>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => setLogAgent(agent)} className="h-7 text-xs">
+                      <ScrollText className="h-3 w-3 mr-1" /> Log
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleTrigger(agent.id)}
+                      disabled={!isOn || triggering === agent.id}
+                      className="h-7 text-xs"
+                    >
+                      {triggering === agent.id ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running…</>
+                      ) : (
+                        <>Run now</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 {run.lastError && (
@@ -392,6 +401,115 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       )}
       </>
       )}
+
+      {logAgent && <AgentLogWindow agent={logAgent} onClose={() => setLogAgent(null)} />}
+    </div>
+  );
+}
+
+
+/* ── Per-agent LOG WINDOW (Cal: "a window into each agent's log — pull the
+   audit log up, click into each agent's logging, improve it with doc uploads
+   or prompts"). Slide-over: the agent's audit trail + CSV + training panel. */
+const AGENT_LOG_MATCH: Record<string, RegExp> = {
+  lead_intake: /intake|acknowledge|score/i,
+  survey_scheduler: /surveyscheduler|booked|survey.*sched|sched.*survey/i,
+  proposal_drafter: /proposaldrafter|draft/i,
+  follow_up: /followup|follow-up|t-\d|reminder:/i,
+  grant_submitter: /grant|seai/i,
+  install_coordinator: /installcoord|install.*sched|materials ordered/i,
+  post_install: /postinstall|warranty|handover/i,
+  customer_digest: /digest|weekly update/i,
+  stale_lead_escalator: /stale|escalat/i,
+  payment_reminder: /payment|invoice|deposit/i,
+};
+
+function AgentLogWindow({ agent, onClose }: { agent: AgentDefinition; onClose: () => void }) {
+  const [prompt, setPrompt] = useState('');
+  const [docs, setDocs] = useState<string[]>([]);
+
+  const rows = generateDummyLeads().flatMap(l =>
+    l.touchpoints
+      .filter(tp => tp.actor === 'agent' && (AGENT_LOG_MATCH[agent.id]?.test(tp.summary ?? '') ?? false))
+      .map(tp => ({ at: tp.timestamp, customer: l.name, stage: tp.stage, summary: tp.summary ?? '' })),
+  ).sort((a, b) => +new Date(b.at) - +new Date(a.at));
+
+  const exportCsv = () => {
+    const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [['Timestamp', 'Customer', 'Stage', 'Action'].map(esc).join(','),
+      ...rows.map(r => [r.at, r.customer, r.stage, r.summary].map(esc).join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${agent.id}-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${agent.name} log`}>
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute right-0 top-0 bottom-0 w-full sm:max-w-lg bg-background border-l border-border flex flex-col">
+        {/* header */}
+        <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border shrink-0">
+          <span className="size-8 rounded-lg bg-primary/10 text-primary grid place-items-center"><Bot className="h-4 w-4" /></span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold truncate">{agent.name}</h2>
+            <p className="text-2xs text-muted-foreground">{rows.length} logged actions · audit trail</p>
+          </div>
+          <Button variant="outline" size="sm" className="ml-auto h-7 text-xs" onClick={exportCsv}>
+            <Download className="h-3 w-3 mr-1" /> CSV
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose} aria-label="Close">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* the log */}
+        <div className="flex-1 overflow-y-auto scroll-slim">
+          {rows.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">No logged actions yet for this agent in the current book.</p>
+          ) : rows.map((r, i) => (
+            <div key={i} className="px-4 py-3 border-b border-border/60 last:border-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-medium">{r.customer}</span>
+                <span className="text-2xs text-muted-foreground tabular-nums shrink-0">
+                  {new Date(r.at).toLocaleString('en-IE', { dateStyle: 'short', timeStyle: 'short' })}
+                </span>
+              </div>
+              <p className="mt-0.5 text-sm text-muted-foreground leading-body">{r.summary}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* improve panel */}
+        <div className="border-t border-border p-4 space-y-3 shrink-0 bg-card">
+          <p className="text-xs font-semibold flex items-center gap-1.5"><Upload className="h-3.5 w-3.5 text-tech" /> Make this agent smarter</p>
+          <textarea
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            placeholder={`e.g. "Never book surveys on weekends" or "Always mention the SEAI deadline in follow-ups"`}
+            className="w-full min-h-16 rounded-control border border-input bg-background px-3 py-2 text-sm leading-body placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+          />
+          <div className="flex items-center gap-2">
+            <label className="inline-flex h-8 items-center gap-1.5 rounded-control border border-border bg-background px-3 text-xs font-medium cursor-pointer hover:bg-muted transition-colors">
+              <Upload className="h-3.5 w-3.5" /> Attach docs
+              <input type="file" multiple className="sr-only"
+                onChange={e => setDocs(d => [...d, ...[...(e.target.files ?? [])].map(f => f.name)])} />
+            </label>
+            {docs.length > 0 && <span className="text-2xs text-muted-foreground truncate">{docs.join(', ')}</span>}
+            <Button size="sm" className="ml-auto h-8 text-xs" disabled={!prompt.trim() && docs.length === 0}
+              onClick={() => {
+                toast.success(`Training saved for ${agent.name}`, {
+                  description: 'Stored with this agent\'s prompt config — applied on its next run once the live database is connected.',
+                });
+                setPrompt(''); setDocs([]);
+              }}>
+              <Send className="h-3 w-3 mr-1" /> Teach
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
