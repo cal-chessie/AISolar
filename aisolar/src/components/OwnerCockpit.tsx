@@ -426,16 +426,22 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <PipelineBar
           counts={Object.fromEntries(data.stageCounts.map((s: any) => [s.id, s.count]))}
           onStageClick={(id) => setExpandedStage(expandedStage === id ? null : id)}
-          onGroupToggle={() => setExpandedStage(null)}
+          onGroupToggle={(gid, wasOpen) => setExpandedStage(wasOpen || !gid ? null : `group:${gid}`)}
           className="border-0"
         />
-        {expandedStage && (
+        {expandedStage && (() => {
+          const isGroup = expandedStage.startsWith('group:');
+          const gid = isGroup ? expandedStage.slice(6) : null;
+          const inScope = (l: DummyLead) => isGroup
+            ? PIPELINE_STAGES.find(ps => ps.id === l.workflow_stage)?.group === gid
+            : l.workflow_stage === expandedStage;
+          const label = isGroup ? (gid!.charAt(0).toUpperCase() + gid!.slice(1)) : getStage(expandedStage).label;
+          return (
           <div className="mx-4 mb-4 pt-3 border-t border-border">
             <div className="label-micro mb-2">
-              {getStage(expandedStage).label} — {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length} leads
-            </div>
+              {label} — {leads.filter(inScope).length} leads</div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).map((lead: DummyLead) => (
+              {leads.filter(inScope).map((lead: DummyLead) => (
                 <button key={lead.id} className="text-left p-3 rounded-[12px] bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
@@ -451,12 +457,13 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                   </div>
                 </button>
               ))}
-              {leads.filter((l: DummyLead) => l.workflow_stage === expandedStage).length === 0 && (
+              {leads.filter(inScope).length === 0 && (
                 <p className="text-xs text-muted-foreground p-2">No leads at this stage.</p>
               )}
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Today beside what needs you */}

@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getProduct, CatalogProduct } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
+import { useTenantBrand } from '@/lib/tenantBrand';
+import { getProposalTerms } from '@/lib/proposalTerms';
 import type { DummyLead } from '@/lib/dummyData';
 
 const eur = (n: number | null | undefined) =>
@@ -215,6 +217,10 @@ interface CustomerProposalProps {
 }
 
 export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuestion }: CustomerProposalProps) {
+  // The letterhead follows the OWNER's brand settings (tenantBrand), not the
+  // static config — brand edits reach the customer's legal document too.
+  const tb = useTenantBrand();
+  const tradingName = tb.proposalCompanyName || brand.legal.tradingName;
   const p = lead.proposal;
   const [accepted, setAccepted] = useState(
     ['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(lead.workflow_stage),
@@ -243,14 +249,14 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
       <header className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
           {brand.logo.image ? (
-            <img src={brand.logo.image} alt={brand.legal.tradingName} className="h-9 w-auto" />
+            <img src={brand.logo.image} alt={tradingName} className="h-9 w-auto" />
           ) : (
             <span className="size-9 rounded-md bg-primary text-primary-foreground grid place-items-center">
               <Sun className="size-5" />
             </span>
           )}
           <div className="leading-tight">
-            <div className="text-md font-semibold">{brand.legal.tradingName}</div>
+            <div className="text-md font-semibold">{tradingName}</div>
             <div className="text-2xs text-muted-foreground">
               {[brand.legal.registeredName, brand.contact.phoneDisplay].filter(Boolean).join(' · ')}
             </div>
@@ -434,10 +440,24 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
             brand.legal.seaiRegistered && 'SEAI registered installer',
           ].filter(Boolean).join(' · ')}
         </p>
-        <p className="text-2xs text-muted-foreground">
-          Prices hold for 30 days. The SEAI grant depends on your eligibility and we
-          confirm it before you pay anything.
-        </p>
+        {(() => {
+          const t = getProposalTerms();
+          return (
+            <>
+              <p className="text-2xs text-muted-foreground">
+                Prices hold for {t.validityDays} days · {t.coolingOffDays}-day cooling-off period ·{' '}
+                {t.workmanshipYears}-year workmanship warranty. The SEAI grant depends on your
+                eligibility and we confirm it before you pay anything.
+              </p>
+              {t.customTerms && <p className="text-2xs text-muted-foreground whitespace-pre-line">{t.customTerms}</p>}
+              {t.termsUrl && (
+                <a href={t.termsUrl} target="_blank" rel="noopener noreferrer" className="text-2xs text-primary hover:underline print:hidden">
+                  Full terms & conditions
+                </a>
+              )}
+            </>
+          );
+        })()}
       </footer>
     </div>
   );

@@ -25,7 +25,7 @@ interface PipelineBarProps {
   /** called with a raw stage id when the user drills to leads */
   onStageClick?: (stageId: string) => void;
   /** called when a phase opens/closes — parents should clear stale drill-downs */
-  onGroupToggle?: () => void;
+  onGroupToggle?: (groupId?: string, wasOpen?: boolean) => void;
   className?: string;
 }
 
@@ -87,7 +87,7 @@ export function PipelineBar({ counts, onStageClick, onGroupToggle, className }: 
           return (
             <button
               key={g.id}
-              onClick={() => { setOpenGroup(active ? null : g.id); onGroupToggle?.(); }}
+              onClick={() => { setOpenGroup(active ? null : g.id); onGroupToggle?.(g.id, active); }}
               aria-expanded={active}
               className={cn(
                 'group bg-card px-3 py-2.5 text-left cursor-pointer transition-colors duration-instant',

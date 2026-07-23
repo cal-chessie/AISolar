@@ -761,6 +761,11 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
   setDesignData: (data: any) => void;
   estimate: any;
 }) {
+  // eircode/address were parent state, never passed down — the whole step
+  // crashed with "eircode is not defined". Derive from the lead instead.
+  const eircode = ((lead.intake ?? {}) as Record<string, unknown>).extracted_eircode as string
+    ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? '';
+  const address = lead.address;
   const update = (field: string, value: any) => {
     setDesignData({ ...designData, [field]: value });
   };

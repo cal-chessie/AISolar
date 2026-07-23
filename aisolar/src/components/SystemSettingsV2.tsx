@@ -17,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { getProposalTerms, saveProposalTerms, type ProposalTerms } from '@/lib/proposalTerms';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Settings, Mail, MessageSquare, Bot, Database, Shield, CheckCircle2,
@@ -173,6 +175,7 @@ export default function SystemSettingsV2() {
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
           <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
+          <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
           <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit Log</TabsTrigger>
           <TabsTrigger value="kernel" className="text-xs sm:text-sm">Kernel</TabsTrigger>
         </TabsList>
@@ -274,6 +277,10 @@ export default function SystemSettingsV2() {
         </TabsContent>
 
         {/* === AUDIT LOG — detailed + filterable === */}
+        <TabsContent value="terms" className="space-y-3">
+          <ProposalTermsCard />
+        </TabsContent>
+
         <TabsContent value="audit" className="space-y-3">
           <Card>
             <CardContent className="p-3">
@@ -702,5 +709,49 @@ function MarketingSequencesEditor() {
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+
+/* Cal: "terms of service? that means there needs to be that setup in owners
+   settings" — the owner's terms, rendered verbatim on every proposal. */
+function ProposalTermsCard() {
+  const [t, setT] = useState<ProposalTerms>(() => getProposalTerms());
+  const num = (k: keyof ProposalTerms) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setT(s => ({ ...s, [k]: Number(e.target.value) }));
+  return (
+    <div className="rounded-[16px] bg-card shadow-card p-5 max-w-2xl">
+      <h3 className="text-sm font-semibold mb-1">Proposal terms</h3>
+      <p className="text-xs text-muted-foreground mb-4">These render on every proposal and its PDF — your words, your terms.</p>
+      <div className="grid sm:grid-cols-3 gap-3 mb-4">
+        <div>
+          <Label className="text-xs">Price holds for (days)</Label>
+          <Input type="number" min={1} value={t.validityDays} onChange={num('validityDays')} className="mt-1.5 h-9" />
+        </div>
+        <div>
+          <Label className="text-xs">Cooling-off (days)</Label>
+          <Input type="number" min={14} value={t.coolingOffDays} onChange={num('coolingOffDays')} className="mt-1.5 h-9" />
+          <p className="text-2xs text-muted-foreground mt-1">14 is the statutory EU minimum — can't go lower.</p>
+        </div>
+        <div>
+          <Label className="text-xs">Workmanship warranty (years)</Label>
+          <Input type="number" min={1} value={t.workmanshipYears} onChange={num('workmanshipYears')} className="mt-1.5 h-9" />
+        </div>
+      </div>
+      <div className="mb-3">
+        <Label className="text-xs">Your terms (rendered word-for-word on the proposal)</Label>
+        <Textarea value={t.customTerms} onChange={e => setT(s => ({ ...s, customTerms: e.target.value }))}
+          placeholder="e.g. Deposit refundable until materials are ordered. Installation date confirmed after deposit…"
+          rows={4} className="mt-1.5 text-sm" />
+      </div>
+      <div className="mb-4">
+        <Label className="text-xs">Link to full terms (optional)</Label>
+        <Input value={t.termsUrl} onChange={e => setT(s => ({ ...s, termsUrl: e.target.value }))}
+          placeholder="https://yourcompany.ie/terms" className="mt-1.5 h-9 text-xs" />
+      </div>
+      <Button size="sm" className="h-9 font-semibold" onClick={() => { saveProposalTerms(t); toast.success('Proposal terms saved', { description: 'Every new proposal renders these.' }); }}>
+        Save terms
+      </Button>
+    </div>
   );
 }
