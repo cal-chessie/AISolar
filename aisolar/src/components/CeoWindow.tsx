@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
+import { agentFor } from '@/lib/agentAttribution';
 
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
 
@@ -36,20 +37,6 @@ const TASK_MINUTES: Array<{ match: RegExp; label: string; minutes: number }> = [
   { match: /.*/, label: 'Customer updates', minutes: 5 },
 ];
 
-function agentFor(summary: string): string {
-  const s = summary.toLowerCase();
-  if (/draft|proposal/.test(s)) return 'The drafter';
-  if (/grant|seai/.test(s)) return 'The grants clerk';
-  if (/book|schedul|survey/.test(s)) return 'The scheduler';
-  if (/invoice|deposit|payment/.test(s)) return 'The bookkeeper';
-  if (/remind|follow|chase|t-\d/.test(s)) return 'The chaser';
-  if (/intake|acknowledge|score/.test(s)) return 'The greeter';
-  if (/digest|update/.test(s)) return 'The correspondent';
-  if (/warranty|handover/.test(s)) return 'The closer';
-  if (/install.*sched|materials ordered|crew/.test(s)) return 'The coordinator';
-  if (/stale|escalat/.test(s)) return 'The watchdog';
-  return 'AITeam';
-}
 
 /** Client-side CSV download. */
 function downloadCsv(filename: string, header: string[], rows: (string | number)[][]) {

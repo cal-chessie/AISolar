@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
 import { PipelineBar } from '@/components/layout/PipelineBar';
 import InsightsView from '@/components/InsightsView';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
@@ -804,13 +805,24 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         {/* Touchpoint timeline */}
         <div className="rounded-[16px] bg-card shadow-card p-4">
             <h3 className="label-micro mb-2">Communication history</h3>
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              {agentsInvolved(lead.touchpoints).map(name => (
+                <span key={name} className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">
+                  <Bot className="size-2.5" /> {name}
+                </span>
+              ))}
+            </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {lead.touchpoints.map((tp, i) => (
                 <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
                   <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                   <span className="text-muted-foreground flex-shrink-0 w-16 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                   <span className="flex-1 truncate">{tp.summary}</span>
-                  <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.actor}</Badge>
+                  {tp.actor === 'agent' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-tech flex-shrink-0"><Bot className="size-3" /> {agentFor(tp.summary ?? '')}</span>
+                  ) : (
+                    <Badge variant="outline" className="text-[11px] flex-shrink-0 capitalize">{tp.actor}</Badge>
+                  )}
                 </div>
               ))}
             </div>
@@ -905,13 +917,28 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
         {tab === 'proposal' && <ProposalView lead={lead} />}
         {tab === 'timeline' && (
           <div className="rounded-[16px] bg-card shadow-card p-4">
+              {/* Cal: ALL agents involved + ALL touchpoints — the complete log */}
+              <div className="flex flex-wrap items-center gap-1.5 pb-3 mb-3 border-b border-border">
+                <span className="label-micro mr-1">Agents on this client</span>
+                {agentsInvolved(lead.touchpoints).map(name => (
+                  <span key={name} className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">
+                    <Bot className="size-2.5" /> {name}
+                  </span>
+                ))}
+                {agentsInvolved(lead.touchpoints).length === 0 && <span className="text-2xs text-muted-foreground">none yet</span>}
+                <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{lead.touchpoints.length} touchpoint{lead.touchpoints.length === 1 ? '' : 's'} · {lead.touchpoints.filter(t => t.actor === 'agent').length} by agents</span>
+              </div>
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {lead.touchpoints.map((tp, i) => (
                   <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
                     <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
-                    <span className="text-muted-foreground flex-shrink-0 w-20">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-muted-foreground flex-shrink-0 w-20 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                     <span className="flex-1 truncate">{tp.summary}</span>
-                    <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.actor}</Badge>
+                    {tp.actor === 'agent' ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-tech flex-shrink-0"><Bot className="size-3" /> {agentFor(tp.summary ?? '')}</span>
+                    ) : (
+                      <Badge variant="outline" className="text-[11px] flex-shrink-0 capitalize">{tp.actor}</Badge>
+                    )}
                   </div>
                 ))}
               </div>
