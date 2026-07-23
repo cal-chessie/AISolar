@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
+import PaperworkWindow from '@/components/compliance/PaperworkWindow';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -114,70 +115,7 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
   }, [complianceData]);
 
   if (selectedLead) {
-    const compliance = getComplianceForLead(selectedLead);
-    return (
-      <div className="p-4 space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedLead(null)}>← Back to compliance overview</Button>
-
-        {/* Lead header */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10"><AvatarFallback>{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-              <div className="flex-1">
-                <div className="font-bold">{selectedLead.name}</div>
-                <div className="text-xs text-muted-foreground">{selectedLead.address} · MPRN: {selectedLead.mprn}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Grant value</div>
-                <div className="font-bold text-primary">{eur(compliance.grantAmount)}</div>
-              </div>
-            </div>
-          </div>
-
-        {/* SEAI */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Award className="h-4 w-4 text-primary" /> SEAI Solar Electricity Grant</h3>
-            <div className="flex items-center gap-3 mb-3">
-              <Badge variant="outline" className={STATUS_META[compliance.seaiStatus].bg}>{STATUS_META[compliance.seaiStatus].label}</Badge>
-              <span className="text-xs text-muted-foreground">Grant: {eur(compliance.grantAmount)} · System: {selectedLead.proposal?.system_size_kw}kWp</span>
-            </div>
-            {/* Paperwork checklist */}
-            <div className="space-y-1.5">
-              {compliance.paperwork.map((item, i) => {
-                const meta = PAPERWORK_META[item.status];
-                const Icon = meta.icon;
-                return (
-                  <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
-                    <div className={`p-1 rounded ${meta.bg}`}><Icon className="h-3 w-3" /></div>
-                    <span className="flex-1">{item.item}</span>
-                    <Badge variant="outline" className={`text-[11px] ${meta.bg}`}>{item.status}</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-        {/* ESB */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-tech" /> ESB NC6 Microgen Export</h3>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className={STATUS_META[compliance.esbStatus].bg}>{STATUS_META[compliance.esbStatus].label}</Badge>
-              <span className="text-xs text-muted-foreground">Export tariff: €0.14/kWh · Inverter: {selectedLead.survey?.confirmed_inverter_type || 'Single phase'}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">Required for microgen export payment setup. Auto-submitted after install completion.</p>
-          </div>
-
-        {/* RECI */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> RECI Electrical Sign-off</h3>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className={STATUS_META[compliance.reciStatus].bg}>{STATUS_META[compliance.reciStatus].label}</Badge>
-              <span className="text-xs text-muted-foreground">Required for SEAI grant + commissioning</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">Pre-populated from installer checklist: isolator, RCD, earth bond, SPD.</p>
-          </div>
-      </div>
-    );
+    return <PaperworkWindow lead={selectedLead} onBack={() => setSelectedLead(null)} />;
   }
 
   return (

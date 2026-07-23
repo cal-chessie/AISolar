@@ -744,6 +744,12 @@ function ProposalTermsCard() {
           placeholder="e.g. Deposit refundable until materials are ordered. Installation date confirmed after deposit…"
           rows={4} className="mt-1.5 text-sm" />
       </div>
+      <div className="mb-3">
+        <Label className="text-xs">BER assessor email</Label>
+        <Input value={t.berAssessorEmail} onChange={e => setT(s => ({ ...s, berAssessorEmail: e.target.value }))}
+          placeholder="assessments@berteam.ie" className="mt-1.5 h-9 text-xs" />
+        <p className="text-2xs text-muted-foreground mt-1">Every completed Declaration of Works is emailed here automatically — it's the trigger for the post-works BER.</p>
+      </div>
       <div className="mb-4">
         <Label className="text-xs">Link to full terms (optional)</Label>
         <Input value={t.termsUrl} onChange={e => setT(s => ({ ...s, termsUrl: e.target.value }))}

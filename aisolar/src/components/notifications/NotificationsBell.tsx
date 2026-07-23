@@ -5,7 +5,7 @@
  * Telegram are labelled "coming soon" per role — never claimed working.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Bot, CheckCheck, FileText, Calendar, Euro, Mail, MessageCircle, Send } from 'lucide-react';
+import { Bell, Bot, CheckCheck, FileText, Calendar, Euro, Mail, MessageCircle, Send, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export type CockpitRole = 'owner' | 'consultant' | 'installer';
@@ -21,16 +21,19 @@ interface Notice {
 /* Demo feeds per role — replaced by kernel events at launch. */
 const FEED: Record<CockpitRole, Notice[]> = {
   consultant: [
+    { id: 'c0', icon: Award, tone: 'text-doc-contract', text: 'SEAI grant OFFER received for Siobhán Murphy — install can now be booked', time: 'just now' },
     { id: 'c1', icon: FileText, tone: 'text-doc-proposal', text: 'Drafter finished the proposal for Sarah McDonald — waiting on your review', time: '9 min ago' },
     { id: 'c2', icon: Bot, tone: 'text-tech', text: 'James Wilson opened his proposal a 4th time — the chaser suggests a call today', time: '1 hr ago' },
     { id: 'c3', icon: Calendar, tone: 'text-muted-foreground', text: 'Survey booked for Linda O\'Sullivan, Thursday 10:00', time: '3 hrs ago' },
   ],
   owner: [
+    { id: 'o0', icon: Mail, tone: 'text-doc-deposit', text: 'BER cert emailed in for Michael Byrne — filed to his pack, handover ready to review', time: '5 min ago' },
     { id: 'o1', icon: Euro, tone: 'text-doc-deposit', text: 'Deposit received — David Walsh, €2,430', time: '22 min ago' },
     { id: 'o2', icon: Bot, tone: 'text-pop', text: 'Watchdog: one lead has gone 6 days without contact', time: '1 hr ago' },
     { id: 'o3', icon: FileText, tone: 'text-doc-invoice', text: 'Bookkeeper drafted 2 invoices for your approval', time: 'yesterday' },
   ],
   installer: [
+    { id: 'i0', icon: Bell, tone: 'text-pop', text: "Emma Ryan's job can't be closed — RECI cert + signed DOW still to upload", time: '30 min ago' },
     { id: 'i1', icon: Calendar, tone: 'text-tech', text: 'Tomorrow: 2 jobs — first on site 08:30, Clontarf', time: '1 hr ago' },
     { id: 'i2', icon: Bot, tone: 'text-muted-foreground', text: 'Materials for the Kowalski install confirmed for Wednesday', time: '4 hrs ago' },
   ],

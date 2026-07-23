@@ -17,6 +17,9 @@ export interface ProposalTerms {
   workmanshipYears: number;    // installer's own workmanship warranty
   customTerms: string;         // free text, renders verbatim on the proposal
   termsUrl: string;            // optional link to full T&Cs
+  /** Cal: "send all DOW to the BER guys" — every completed Declaration of
+   *  Works is emailed here automatically, triggering the post-works BER. */
+  berAssessorEmail: string;
 }
 
 const KEY = 'aisolar.proposalTerms.v1';
@@ -28,6 +31,7 @@ const DEFAULTS: ProposalTerms = {
   workmanshipYears: 10,
   customTerms: '',
   termsUrl: '',
+  berAssessorEmail: '',
 };
 
 export function getProposalTerms(): ProposalTerms {

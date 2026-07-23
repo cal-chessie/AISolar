@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, MapPin, Phone, Calendar, Clock, Navigation, Camera,
   Package, CheckCircle2, AlertTriangle, ChevronRight, Zap, Wrench,
-  Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind,
+  Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind, Upload,
   User, ClipboardList, X, Star, Truck, ListChecks, Award,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
@@ -319,13 +319,9 @@ export default function JobViewV2() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-4 py-4 pb-20">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+        {/* FIFTH AnimatePresence freeze site — same bug as installer tabs,
+            LeadFlow, routes, consultant tabs. Tabs switch instantly. */}
+        <div key={activeTab}
           >
             {activeTab === 'overview' && (
               <OverviewTab lead={lead} phaseCompletion={phaseCompletion} overallComplete={overallComplete} />
@@ -394,8 +390,7 @@ export default function JobViewV2() {
                 }}
               />
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </main>
     </div>
   );
@@ -752,6 +747,9 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
   jobCompleted?: boolean;
   onMarkJobComplete?: () => void;
 }) {
+  // Cal's gate: no certs, no job-complete
+  const [certs, setCerts] = useState<{ reci?: string; dow?: string }>({});
+  const certsDone = !!certs.reci && !!certs.dow;
   const [showPad, setShowPad] = useState(false);
   const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && !!signature;
 
@@ -840,8 +838,31 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
         </CardContent>
       </Card>
 
+      {/* THE CERT GATE (Cal): the electrical guy cannot end the job until his
+          signed certs are uploaded. RECI cert is I.S. 10101 — signed by the
+          Registered Electrical Contractor, uploaded, never generated. */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-sm mb-1 flex items-center gap-2"><Shield className="h-4 w-4 text-doc-contract" /> Certs — required to finish</h3>
+          <p className="text-xs text-muted-foreground mb-3">Both go straight into {lead.name.split(' ')[0]}'s paperwork pack. The Declaration of Works auto-sends to the BER assessor.</p>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {([['reci', 'Safe Electric (RECI) certificate'], ['dow', 'Signed Declaration of Works']] as const).map(([id, label]) => (
+              <label key={id} className={`flex items-center gap-2.5 p-3 rounded-[10px] border cursor-pointer transition-colors ${certs[id] ? 'border-doc-deposit/40 bg-doc-deposit/5' : 'border-dashed border-border hover:bg-muted/40'}`}>
+                <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) { setCerts(c => ({ ...c, [id]: e.target.files![0].name })); toast.success(`${label} filed`, { description: id === 'dow' ? 'Sent to the BER assessor + filed in the paperwork pack.' : 'Filed in the paperwork pack.' }); } }} />
+                {certs[id] ? <CheckCircle2 className="h-4 w-4 text-doc-deposit shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <span className="min-w-0">
+                  <span className="block text-xs font-medium">{label}</span>
+                  <span className="block text-[11px] text-muted-foreground truncate">{certs[id] ?? 'Photo or PDF — tap to upload'}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Completion status */}
-      {overallComplete ? (
+      {overallComplete && certsDone ? (
         <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
           <CardContent className="p-6 text-center">
             {jobCompleted ? (
@@ -873,7 +894,9 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
         </Card>
       ) : (
         <div className="p-4 bg-muted/30 rounded-lg text-center text-xs text-muted-foreground">
-          {!allDone ? 'Complete all handover checks + signature + photos to finish' : 'Ready to complete'}
+          {!allDone ? 'Complete all handover checks + signature + photos to finish'
+            : !certsDone ? 'Upload the RECI cert + signed Declaration of Works above — the job cannot be ended without them'
+            : 'Ready to complete'}
         </div>
       )}
 
