@@ -1243,9 +1243,9 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
       </div>
 
       {/* The customer's window — live, full document, framed in the proposal colour */}
-      <div className="rounded-[16px] bg-card shadow-card overflow-hidden border-t-4 border-t-doc-proposal">
+      <div className="rounded-[16px] bg-card shadow-card overflow-hidden border-t-4 border-t-pop">
         <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
-          <FileText className="size-4 text-doc-proposal" />
+          <FileText className="size-4 text-pop" />
           <span className="text-sm font-semibold">Their proposal, exactly as they'll see it</span>
           <span className="ml-auto text-2xs text-muted-foreground">live preview · scroll to review</span>
         </div>
@@ -1266,7 +1266,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
             <div className="flex items-center gap-2 p-2 border rounded-lg">
               <input type="checkbox" defaultChecked className="h-4 w-4 rounded" />
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm flex-1">Email proposal link to {lead.email}</span>
+              <span className="text-sm flex-1">Email proposal link to {lead.email} <span className="text-xs text-muted-foreground">· product data sheets attached · roof snapshot included</span></span>
             </div>
             <div className="flex items-center gap-2 p-2 border rounded-lg">
               <input type="checkbox" className="h-4 w-4 rounded" />

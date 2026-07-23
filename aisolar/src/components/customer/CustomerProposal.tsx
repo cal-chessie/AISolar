@@ -286,17 +286,19 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
       {(() => {
         const i = (lead.intake ?? {}) as Record<string, unknown>;
         const eircode = (i.extracted_eircode as string) ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0];
-        if (!eircode) return null;
+        // no eircode -> the address geocodes fine; every proposal shows the roof
+        const query = eircode ?? lead.address;
+        if (!query) return null;
         return (
           <section className="rounded-panel border border-border bg-card overflow-hidden">
             <header className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
               <Sun className="size-4 text-primary" />
               <h2 className="text-md font-semibold">Your roof</h2>
-              <span className="ml-auto text-xs text-muted-foreground">{eircode}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{eircode ?? lead.address.split(',').slice(-1)[0]?.trim()}</span>
             </header>
             <iframe
               title="Your roof from above"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(eircode)}&t=k&z=19&output=embed`}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=19&output=embed`}
               className="w-full h-56 border-0"
               loading="lazy"
             />
@@ -304,6 +306,43 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
           </section>
         );
       })()}
+
+      {/* 1c — What the survey CONFIRMED (Cal: lock in that wealth of data).
+          Measured on site, not assumed — the block that separates this
+          proposal from a desk quote. Renders only when a survey exists. */}
+      {lead.survey && (
+        <section className="rounded-panel border border-border bg-card overflow-hidden">
+          <header className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
+            <BadgeCheck className="size-4 text-doc-contract" />
+            <h2 className="text-md font-semibold">What our surveyor confirmed at your home</h2>
+            {lead.survey.completed_date && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {new Date(lead.survey.completed_date).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+          </header>
+          <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border">
+            {[
+              { l: 'Roof type', v: lead.survey.roof_type },
+              { l: 'Orientation', v: lead.survey.roof_orientation },
+              { l: 'Pitch', v: `${lead.survey.roof_pitch}°` },
+              { l: 'Shading', v: lead.survey.shading },
+              { l: 'Usable area', v: `${lead.survey.available_area_m2} m²` },
+              { l: 'Confirmed system', v: `${lead.survey.confirmed_system_size_kw} kWp` },
+              { l: 'Panels that fit', v: String(lead.survey.confirmed_panel_count) },
+              { l: 'Photos on file', v: String(lead.survey.photo_count) },
+            ].filter(x => x.v && x.v !== 'undefined' && !x.v.startsWith('undefined')).map(x => (
+              <div key={x.l} className="bg-card px-4 py-3">
+                <dt className="label-micro">{x.l}</dt>
+                <dd className="mt-1 text-sm font-semibold capitalize">{x.v}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="px-5 py-2 text-2xs text-muted-foreground border-t border-border">
+            Every figure below is built on these measurements — not a desk estimate of your roof.
+          </p>
+        </section>
+      )}
 
       {/* 2 — The system */}
       <section className="rounded-panel border border-border bg-card overflow-hidden">
