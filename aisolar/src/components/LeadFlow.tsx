@@ -72,6 +72,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   const [address, setAddress] = useState(lead.address || '');
   const [showMap, setShowMap] = useState(false);
   const [surveyBooked, setSurveyBooked] = useState<{ slot: string } | null>(null);
+  // Cal: "the book site survey is too limited" — nobody bends to six hard
+  // slots. Three ways in: pick a day+window, send the customer options to
+  // choose from, or take the first real gap.
+  const [bookMode, setBookMode] = useState<'pick' | 'options' | 'first'>('pick');
+  const [bookDay, setBookDay] = useState<string | null>(null);
+  const [bookWindow, setBookWindow] = useState<'Morning' | 'Afternoon' | null>(null);
   const [proposalSent, setProposalSent] = useState(false);
   const [surveyData, setSurveyData] = useState<Record<string, any>>({});
   const [designData, setDesignData] = useState({
@@ -313,35 +319,87 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                         <Calendar className="h-4 w-4" /> Book site survey
                       </h3>
                       <p className="text-xs text-muted-foreground mb-3">
-                        The estimate is ready. Next step is a site survey to confirm roof details and finalize the system design.
+                        The estimate is ready — a survey confirms the roof and locks the design. Surveys book as half-day windows, not clock times.
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['Tomorrow 10:00', 'Tomorrow 14:00', 'Wed 10:00', 'Wed 14:00', 'Thu 10:00', 'Thu 14:00'].map(slot => {
-                          const isSelected = surveyBooked?.slot === slot;
-                          return (
-                            <button
-                              key={slot}
-                              onClick={() => setSurveyBooked({ slot })}
-                              className={`p-2 border rounded-lg text-xs hover:border-pop/50 hover:bg-pop/5 transition-colors text-left ${isSelected ? 'border-pop bg-pop/10 font-medium' : 'border-border'}`}
-                            >
-                              {slot}
-                            </button>
-                          );
-                        })}
+                      {/* three ways in */}
+                      <div className="flex gap-1 mb-3">
+                        {([['pick', 'Pick a window'], ['options', 'Let them choose'], ['first', 'First available']] as const).map(([m, label]) => (
+                          <button key={m} onClick={() => { setBookMode(m); setSurveyBooked(null); }}
+                            className={`flex-1 h-8 px-1 rounded-[8px] text-[11px] font-medium border transition-colors ${bookMode === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+                            {label}
+                          </button>
+                        ))}
                       </div>
+
+                      {bookMode === 'pick' && (() => {
+                        const days = Array.from({ length: 8 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i + 1); return d; })
+                          .filter(d => d.getDay() !== 0).slice(0, 6);
+                        return (
+                          <>
+                            <div className="grid grid-cols-3 gap-1.5 mb-2">
+                              {days.map(d => {
+                                const label = d.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' });
+                                return (
+                                  <button key={label} onClick={() => { setBookDay(label); setSurveyBooked(bookWindow ? { slot: `${label} · ${bookWindow}` } : null); }}
+                                    className={`p-1.5 rounded-[8px] text-xs border transition-colors ${bookDay === label ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {(['Morning', 'Afternoon'] as const).map(w => (
+                                <button key={w} onClick={() => { setBookWindow(w); setSurveyBooked(bookDay ? { slot: `${bookDay} · ${w}` } : null); }}
+                                  className={`p-1.5 rounded-[8px] text-xs border transition-colors ${bookWindow === w ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                  {w === 'Morning' ? 'Morning · 8–1' : 'Afternoon · 1–6'}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })()}
+
+                      {bookMode === 'options' && (
+                        <div className="space-y-1.5">
+                          {['Any morning next week', 'Tuesday or Thursday afternoon', 'Saturday morning possible'].map(opt => (
+                            <label key={opt} className="flex items-center gap-2 p-2 rounded-[8px] border border-border text-xs cursor-pointer hover:bg-muted/50">
+                              <input type="checkbox" defaultChecked className="h-3.5 w-3.5 rounded" /> {opt}
+                            </label>
+                          ))}
+                          <p className="text-2xs text-muted-foreground">{lead.name.split(' ')[0]} picks in their chat — or counters with what suits. Nothing books until both sides agree.</p>
+                        </div>
+                      )}
+
+                      {bookMode === 'first' && (
+                        <div className="p-2.5 rounded-[8px] bg-muted/40 text-xs">
+                          Next real gap: <strong>{(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' }); })()} · Morning</strong> — from the surveyor's calendar, never an offered time it can't hold.
+                        </div>
+                      )}
+
                       <Button
                         className="w-full mt-3 bg-pop text-pop-foreground transition-colors hover:bg-pop/90"
-                        disabled={!surveyBooked}
+                        disabled={bookMode === 'pick' && !surveyBooked}
                         onClick={() => {
-                          if (!surveyBooked) return;
-                          toast.success(`Site survey booked for ${surveyBooked.slot}`, {
-                            description: `Survey Scheduler Agent will confirm with ${lead.name}.`,
-                          });
-                          // Advance to survey step after a brief moment
+                          const label = bookMode === 'options' ? 'options sent'
+                            : bookMode === 'first' ? (() => { const d = new Date(); d.setDate(d.getDate() + 2); return `${d.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })} · Morning`; })()
+                            : surveyBooked!.slot;
+                          if (bookMode === 'options') {
+                            toast.success(`Survey options sent to ${lead.name.split(' ')[0]}`, {
+                              description: 'They pick in their chat — the scheduler confirms and books the calendar.',
+                            });
+                          } else {
+                            setSurveyBooked({ slot: label });
+                            toast.success(`Site survey booked — ${label}`, {
+                              description: `Survey Scheduler Agent will confirm with ${lead.name}.`,
+                            });
+                          }
                           setTimeout(() => setStep('survey'), 600);
                         }}
                       >
-                        <Calendar className="h-4 w-4 mr-2" /> {surveyBooked ? `Book ${surveyBooked.slot}` : 'Select a slot above'}
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {bookMode === 'options' ? `Send options to ${lead.name.split(' ')[0]}`
+                          : bookMode === 'first' ? 'Book first available'
+                          : surveyBooked ? `Book ${surveyBooked.slot}` : 'Pick a day and window'}
                       </Button>
                     </CardContent>
                   </Card>
