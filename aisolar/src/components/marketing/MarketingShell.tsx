@@ -56,6 +56,7 @@ export function MarketingNav({ product }: { product: ProductKey }) {
             </Link>
           ))}
           <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
+          <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">About</Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-2">

@@ -1,270 +1,131 @@
-import { motion } from 'framer-motion';
-import {
-  Award, Shield, Users, Sun, Zap, Bot, TrendingUp, Wrench, Calendar,
-  CheckCircle2, FileText, MessageSquare, BarChart3, Sparkles, ArrowRight,
-  Cpu, Lock, Globe,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import SiteNavigation from '@/components/layout/SiteNavigation';
-import SEOHead from '@/components/SEOHead';
-import { brand } from '@/config/brand';
-import { useNavigate } from 'react-router-dom';
+/**
+ * AboutUs — /about
+ *
+ * Rebuilt from the old gradient-heavy page to the family standard (cal.com
+ * parity): MarketingShell, floating cards on the grey canvas, measured type.
+ * Content held honest — the real story (built in Ireland, out of a working
+ * solar operation), what we believe, the family. No invented team photos,
+ * no fabricated numbers.
+ */
+import { Link } from 'react-router-dom';
+import { ArrowRight, Bot, Eye, FileCheck, HandHeart, MapPin, Sun } from 'lucide-react';
+import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+
+const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
 export default function AboutUs() {
-  const navigate = useNavigate();
-
   return (
-    <>
-      <SEOHead
-        title={`About ${brand.name} — The Solar Installer Operating System`}
-        description="We built AISOLAR because Irish solar installers deserve better than spreadsheets and WhatsApp. Our autonomous agent foundation handles the busywork so your crews can install."
-        ogType="website"
-      />
-      <SiteNavigation />
+    <div className="min-h-dvh bg-background text-foreground">
+      <MarketingNav product="aisolar" />
 
-      {/* Hero */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary via-white to-primary dark:from-primary dark:via-background dark:to-primary">
-        <div className="container mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Badge variant="outline" className="bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary border-primary/40 dark:border-primary/40 mb-4">
-              <Sparkles className="h-3 w-3 mr-1" /> The Solar Installer Operating System
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6 leading-tight">
-              We built AISOLAR because Irish solar installers deserve better than spreadsheets and WhatsApp.
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Your crews install. The platform does the rest — bill extract at the front door,
-              autonomous agents handle survey scheduling, proposal drafting, SEAI grant paperwork,
-              install coordination, and customer follow-ups.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Button size="lg" onClick={() => navigate('/upload')} className="bg-primary hover:bg-primary">
-                See it in action <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/demo')}>
-                Browse all views
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <main>
+        {/* Hero */}
+        <section className="mx-auto max-w-6xl px-5 pt-12 pb-16 lg:pt-16 lg:pb-20 text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
+            <span className="size-1.5 rounded-full bg-primary" /> About us
+          </span>
+          <h1 className="mx-auto mt-5 max-w-3xl text-[32px] leading-[38px] sm:text-[44px] sm:leading-[50px] font-semibold tracking-tight">
+            Built on an Irish roof, not in a boardroom
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-muted-foreground leading-body">
+            AISolar came out of running a real solar operation in Ireland — the
+            quotes, the surveys, the SEAI paperwork, the chasing. We built the
+            system we needed, then made it the product.
+          </p>
+        </section>
 
-      {/* What we do */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">What AISOLAR actually does</h2>
-            <p className="text-muted-foreground">Seven automated stages, from lead to closed project.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Zap, title: 'Bill extract', desc: 'Customer uploads electricity bill. AI extracts MPRN, annual kWh, address. Lead enters pipeline automatically.' },
-              { icon: Calendar, title: 'Survey scheduling', desc: 'Survey Scheduler Agent books site visit based on installer availability + lead location + priority.' },
-              { icon: Bot, title: 'Proposal drafting', desc: 'Proposal Drafter Agent uses survey data + product catalogue to auto-draft a proposal. Consultant reviews in 2 minutes.' },
-              { icon: FileText, title: 'Contract + invoice', desc: 'Customer signs in portal. Invoice auto-created. SEAI grant paperwork auto-started.' },
-              { icon: Wrench, title: 'Install coordination', desc: 'Install Coordinator Agent schedules crew, orders materials, sends T-7/T-1 SMS reminders, auto-reschedules on weather warnings.' },
-              { icon: Shield, title: 'SEAI grant filing', desc: 'SEAI Grant Agent compiles application pack (MPRN, BER, invoice, install photos, RECI cert) and emails to SEAI.' },
-              { icon: MessageSquare, title: 'Customer comms', desc: 'Customer gets a mobile portal with timeline, paperwork, and AI chat. PostInstall Agent sends warranty + review request.' },
-              { icon: BarChart3, title: 'Analytics + BI', desc: 'Real-time funnel, conversion rates, team performance, agent impact, SEAI pipeline. Export to CSV.' },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Card className="h-full">
-                    <CardContent className="p-5">
-                      <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-lg w-fit mb-3">
-                        <Icon className="h-5 w-5 text-primary dark:text-primary" />
-                      </div>
-                      <h3 className="font-bold mb-1">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* The 10 agents */}
-      <section className="py-16 px-4 bg-gradient-to-br from-primary to-primary dark:from-primary dark:to-primary">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <Badge variant="outline" className="bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary border-primary/40 mb-3">
-              <Bot className="h-3 w-3 mr-1" /> Autonomous Foundation
-            </Badge>
-            <h2 className="text-3xl font-bold mb-3">10 agents working 24/7</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Each agent owns a recurring workflow step that doesn't need human judgment.
-              They run on pg_cron schedules + DB triggers, write to <code>agent_runs</code> for audit,
-              and have built-in guardrails.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {[
-              { name: 'Lead Intake', trigger: 'New lead' },
-              { name: 'Survey Scheduler', trigger: 'Intake complete' },
-              { name: 'Proposal Drafter', trigger: 'Survey complete' },
-              { name: 'Follow-Up', trigger: 'Daily 09:00' },
-              { name: 'SEAI Grant', trigger: 'Contract signed' },
-              { name: 'Install Coordinator', trigger: 'Deposit paid' },
-              { name: 'PostInstall', trigger: 'Install complete' },
-              { name: 'Customer Digest', trigger: 'Mon 10:00' },
-              { name: 'Stale Lead Escalator', trigger: 'Daily 08:00' },
-              { name: 'Payment Reminder', trigger: 'Daily 09:30' },
-            ].map((agent, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Card className="text-center">
-                  <CardContent className="p-4">
-                    <div className="p-2 bg-primary/10 dark:bg-primary/10 rounded-full w-fit mx-auto mb-2">
-                      <Bot className="h-4 w-4 text-primary dark:text-primary" />
+        {/* The story */}
+        <section className="border-y border-border bg-card/40">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="label-micro">The story</p>
+                <h2 className="mt-2 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+                  The admin was eating the business
+                </h2>
+                <div className="mt-4 space-y-4 text-muted-foreground leading-body">
+                  <p>
+                    Every solar job carries a chain of paperwork: the bill, the
+                    estimate, the survey, the proposal, the grant, the deposit,
+                    the install, the handover. Each link done by hand, each one
+                    a place for a customer to go quiet or a grant to stall.
+                  </p>
+                  <p>
+                    So we taught software to carry the chain. A bill goes in and
+                    gets read properly — 21 details, not three. Agents draft the
+                    proposal, book the survey, send the follow-up, chase the
+                    deposit. A person approves every send. Nothing falls between
+                    the cracks, because there are no cracks.
+                  </p>
+                  <p>
+                    That system is AISolar. The engine underneath it is AIOS,
+                    and the workforce that runs on it is AITeam.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-[16px] bg-card shadow-card p-6 space-y-4">
+                {[
+                  { icon: MapPin, title: 'Made in Ireland', body: 'Built for MPRNs, SEAI grants, RECI certs and Irish weather — because that is where we work.' },
+                  { icon: Sun, title: 'Field-first', body: 'Every screen was shaped by consultants and crews using it on real jobs, not by mockups.' },
+                  { icon: Bot, title: 'Agents with a window', body: 'Our agents post what they did in plain English, and one tap corrects them when they are wrong.' },
+                ].map(i => (
+                  <div key={i.title} className="flex items-start gap-3">
+                    <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary shrink-0"><i.icon className="size-4.5" /></span>
+                    <div>
+                      <h3 className="text-sm font-semibold">{i.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground leading-body">{i.body}</p>
                     </div>
-                    <div className="font-semibold text-sm">{agent.name}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1">{agent.trigger}</div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* What we believe */}
+        <section className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
+          <div className="max-w-2xl">
+            <p className="label-micro">What we believe</p>
+            <h2 className="mt-2 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+              Three rules we don't break
+            </h2>
+          </div>
+          <div className="mt-10 grid md:grid-cols-3 gap-4">
+            {[
+              { icon: Eye, title: 'Show the work', body: 'If an agent did it, you can see it — attributed, timestamped, reversible. "Trust us" is not a feature.' },
+              { icon: FileCheck, title: 'Never oversell', body: 'The proposal states what we actually read and actually know. If a number is not verified, it does not ship.' },
+              { icon: HandHeart, title: 'People approve', body: 'Automation does the running; a named human owns every decision a customer sees. That line never moves.' },
+            ].map(v => (
+              <div key={v.title} className="rounded-[16px] bg-card shadow-card p-6">
+                <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary"><v.icon className="size-4.5" /></span>
+                <h3 className="mt-4 text-md font-semibold">{v.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-body">{v.body}</p>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Why we built it */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Why we built AISOLAR</h2>
-            <p className="text-muted-foreground">The problem we kept seeing in Irish solar.</p>
+        {/* CTA */}
+        <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
+          <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Come see how it runs</h2>
+            <p className="mt-3 text-primary-foreground/70 leading-body max-w-lg mx-auto">
+              Try the bill analysis with your own electricity bill, or book a
+              call and we'll walk you through the whole engine.
+            </p>
+            <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/start" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-5 text-sm font-semibold hover:opacity-90 transition-opacity">
+                Try the bill analysis <ArrowRight className="size-4" />
+              </Link>
+              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+                Talk to us
+              </a>
+            </div>
           </div>
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl flex-shrink-0">
-                    <TrendingUp className="h-6 w-6 text-red-700 dark:text-red-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-2">Installers were drowning in admin</h3>
-                    <p className="text-muted-foreground">
-                      We talked to 40+ Irish solar installers. The pattern was identical: crews spending
-                      3+ hours/day on leads, surveys, proposals, follow-ups, grant paperwork, and customer
-                      comms — instead of installing solar. The pipeline was leaking at every stage.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        </section>
+      </main>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-amber-100 dark:bg-amber-950/40 rounded-xl flex-shrink-0">
-                    <Bot className="h-6 w-6 text-amber-700 dark:text-amber-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-2">Existing CRMs weren't built for solar</h3>
-                    <p className="text-muted-foreground">
-                      Generic CRMs (HubSpot, Pipedrive) don't know what an MPRN is. Don't know SEAI grant
-                      rules. Don't auto-draft proposals. Don't coordinate installs. Don't file grants.
-                      Installers were duct-taping 5+ tools together.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl flex-shrink-0">
-                    <Sparkles className="h-6 w-6 text-primary dark:text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg mb-2">So we built the operating system</h3>
-                    <p className="text-muted-foreground">
-                      AISOLAR is purpose-built for Irish solar: SEAI grant rules baked in, Eircode lookup,
-                      Met Éireann weather integration, RECI compliance, Irish microgen export tariff.
-                      10 autonomous agents do the busywork. Your crews install. The platform does the rest.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Architecture */}
-      <section className="py-16 px-4 bg-slate-50 dark:bg-slate-950/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">Built on a proper foundation</h2>
-            <p className="text-muted-foreground">Not a Lovable demo. Production-grade architecture.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { icon: Cpu, title: 'Supabase kernel', desc: 'Postgres + Auth + Edge Functions + Realtime + Storage. RLS-enforced multi-tenancy. pg_cron + Vault for agent scheduling.' },
-              { icon: Bot, title: 'Agent runtime', desc: 'claim_next_job / complete_job / fail_job SQL functions with FOR UPDATE SKIP LOCKED. Exponential backoff. Dead-letter queue. Stuck-job sweeper.' },
-              { icon: Lock, title: 'Security first', desc: 'verify_jwt=true on all non-webhook functions. Stripe + Coinbase webhook signatures mandatory. PII-safe logging. Vault-stored secrets.' },
-              { icon: Globe, title: 'Irish-specific', desc: 'Eircode lookup. Met Éireann weather. SEAI grant rules. RECI compliance. Microgen export tariff (€0.14/kWh). Irish VAT (13% on solar).' },
-              { icon: BarChart3, title: 'Analytics built-in', desc: 'Real-time funnel. Conversion rates per stage. Team performance. Agent impact (hours saved, cost saved). SEAI pipeline value.' },
-              { icon: Shield, title: 'GDPR ready', desc: 'Right-to-erasure helper. Data retention crons. Cookie consent. Privacy policy + terms. DPA templates for sub-processors.' },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg w-fit mb-3">
-                      <Icon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <h3 className="font-bold mb-1">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary to-primary text-white">
-        <div className="container mx-auto max-w-3xl text-center">
-          <Sun className="h-12 w-12 mx-auto mb-4" />
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Run your solar business on autopilot.
-          </h2>
-          <p className="text-lg text-white/80 mb-8">
-            Start your free 14-day trial. No credit card. We'll have your first lead through the pipeline today.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')} className="bg-white text-primary hover:bg-white/90">
-              Start free trial <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/demo')} className="border-white text-white hover:bg-white/10">
-              Browse all views
-            </Button>
-          </div>
-        </div>
-      </section>
-    </>
+      <MarketingFooter product="aisolar" />
+    </div>
   );
 }
