@@ -177,10 +177,7 @@ export default function CeoWindow() {
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-6xl">
       <div className="flex flex-wrap items-center gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">The CEO window</h2>
-          <p className="text-sm text-muted-foreground">Every figure traces to a row. Every table downloads.</p>
-        </div>
+        <p className="text-sm text-muted-foreground">Every figure traces to a row. Every table downloads.</p>
         <Button variant="outline" size="sm" className="ml-auto" onClick={exportKpis}>
           <Download className="size-4 mr-1.5" /> Download report
         </Button>

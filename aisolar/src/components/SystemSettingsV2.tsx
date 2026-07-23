@@ -166,13 +166,7 @@ export default function SystemSettingsV2() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="h-6 w-6 text-primary" />
-          System Settings
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">The bedrock: integrations, branding, audit, kernel.</p>
-      </div>
+      <p className="text-sm text-muted-foreground">The bedrock: integrations, branding, audit, kernel.</p>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">

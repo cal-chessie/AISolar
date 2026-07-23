@@ -63,8 +63,9 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
 
   return (
     <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold flex items-center gap-2"><Calculator className="h-5 w-5 text-primary" /> Estimates</h2>
+      {/* No in-view title — the shell header already names the page (Cal: the
+          same word three times on every screen) */}
+      <div className="flex items-center justify-end">
         <Button variant="outline" size="sm"><Download className="h-3 w-3 mr-1" /> Export CSV</Button>
       </div>
 

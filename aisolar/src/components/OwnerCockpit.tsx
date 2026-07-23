@@ -611,7 +611,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="consultant"
         onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, territory: p.extra, activeLeads: 0, hotLeads: 0, pipelineValue: 0, leads: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
       <div className="flex items-center gap-2">
-        <h2 className="text-lg font-bold">Consultants — click to see their customers</h2>
+        <span className="text-sm text-muted-foreground">Click a consultant to see their customers</span>
         <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/consultant')}>
           <Users className="h-3.5 w-3.5 mr-1" /> Open consultant view
         </Button>
@@ -685,7 +685,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="installer"
         onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, skills: p.extra.split(',').map(s => s.trim()).filter(Boolean), activeJobs: 0, completedJobs: 0, jobs: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
       <div className="flex items-center gap-2">
-        <h2 className="text-lg font-bold">Installers — click to see their jobs</h2>
+        <span className="text-sm text-muted-foreground">Click an installer to see their jobs</span>
         <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/installer')}>
           <Wrench className="h-3.5 w-3.5 mr-1" /> Open installer view
         </Button>
@@ -800,7 +800,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
   return (
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Clients — {leads.length} total</h2>
+        <span className="text-sm text-muted-foreground">{leads.length} clients</span>
         <div className="relative w-64">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder="Search name, email, address…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
@@ -844,8 +844,7 @@ function CrmPlaceholder() {
   return (
     <div className="p-8 text-center">
       <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-      <h2 className="text-xl font-bold mb-2">CRM</h2>
-      <p className="text-sm text-muted-foreground">Your CRM add-on connects here. Share the CRM details and I'll integrate it into the owner cockpit.</p>
+            <p className="text-sm text-muted-foreground">Your CRM add-on connects here. Share the CRM details and I'll integrate it into the owner cockpit.</p>
     </div>
   );
 }

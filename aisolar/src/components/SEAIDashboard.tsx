@@ -190,7 +190,6 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold flex items-center gap-2"><Award className="h-5 w-5 text-primary" /> SEAI & Compliance</h2>
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
