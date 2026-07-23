@@ -61,6 +61,7 @@ import {
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
+import { AichatWordmark } from '@/components/brand/AiosMark';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
 
@@ -133,14 +134,14 @@ export default function CustomerPortalV2() {
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-dvh flex flex-col bg-background overflow-hidden">
       {/* Header — project status */}
       <header className="bg-background/95 backdrop-blur border-b flex-shrink-0">
         <div className="px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="size-8 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0"><Bot className="h-4.5 w-4.5" /></span>
+            <AichatWordmark className="size-9 shrink-0" />
             <div>
-              <div className="font-bold text-sm">{brand.name} <span className="font-normal text-muted-foreground">Assistant</span></div>
+              <div className="font-bold text-sm">AIChat <span className="font-normal text-muted-foreground">by AISolar</span></div>
               <div className="text-[11px] text-muted-foreground">My Solar Project</div>
             </div>
           </div>
@@ -152,15 +153,6 @@ export default function CustomerPortalV2() {
               <Shield className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-        {/* Progress bar */}
-        <div className="h-1 bg-muted">
-          <motion.div
-            className="h-full bg-primary"
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: 0.8 }}
-          />
         </div>
         {/* Project summary strip */}
         {lead.proposal && (
@@ -177,7 +169,7 @@ export default function CustomerPortalV2() {
       </header>
 
       {/* Chat thread */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-card">
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
         ))}
@@ -216,7 +208,7 @@ export default function CustomerPortalV2() {
           className="flex-1 h-9"
           onClick={() => setShowDocs(true)}
         >
-          <FileText className="h-4 w-4 mr-1" /> Documents
+          <FileText className="h-4 w-4 mr-1 text-doc-contract" /> Documents
         </Button>
         <Button
           variant="outline"
@@ -227,24 +219,20 @@ export default function CustomerPortalV2() {
             setTimeout(() => handleSend(), 100);
           }}
         >
-          <Sparkles className="h-4 w-4 mr-1" /> Ask AI
+          <Sparkles className="h-4 w-4 mr-1 text-tech" /> Ask AI
         </Button>
         <Button
           variant="outline"
           size="sm"
           className="flex-1 h-9 transition-colors"
-          onClick={() => {
-            toast('Calendar booking coming soon', {
-              description: `Your consultant will reach out to schedule a call. For now, reply in this chat and we'll get back to you within 1 business day.`,
-            });
-          }}
+          onClick={() => window.open('https://cal.com/renewableireland/solar-consultation', '_blank')}
         >
-          <Calendar className="h-4 w-4 mr-1" /> Book call
+          <Calendar className="h-4 w-4 mr-1 text-doc-deposit" /> Book call
         </Button>
       </div>
 
       {/* Input bar */}
-      <div className="border-t bg-background px-4 py-3 flex-shrink-0">
+      <div className="border-t bg-background px-4 py-3 pb-safe flex-shrink-0">
         <div className="flex gap-2">
           <Input
             placeholder="Ask about your project…"

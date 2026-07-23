@@ -64,8 +64,8 @@ export function BrandMark({ className, glyphClassName, label = 'AISolar' }: {
 /** Wordmark tile — bold white type on the charcoal squircle, drawn as SVG so it
  *  scales perfectly at any tile size. Best at md+ (auth hero, footer, marketing)
  *  where the word is legible. */
-type Word = 'AIOS' | 'AISolar' | 'AITeam';
-const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 25, AITeam: 27 };
+type Word = 'AIOS' | 'AISolar' | 'AITeam' | 'AIChat';
+const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 25, AITeam: 27, AIChat: 27 };
 
 export function Wordmark({ word, className }: { word: Word; className?: string }) {
   return (
@@ -90,6 +90,7 @@ export function Wordmark({ word, className }: { word: Word; className?: string }
 export const AiosWordmark = ({ className }: { className?: string }) => <Wordmark word="AIOS" className={className} />;
 export const AisolarWordmark = ({ className }: { className?: string }) => <Wordmark word="AISolar" className={className} />;
 export const AiteamWordmark = ({ className }: { className?: string }) => <Wordmark word="AITeam" className={className} />;
+export const AichatWordmark = ({ className }: { className?: string }) => <Wordmark word="AIChat" className={className} />;
 
 /**
  * In-app header mark. Cal: the infinity "isn't doing it" inside the app — use
