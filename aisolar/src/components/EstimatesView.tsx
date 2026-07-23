@@ -77,7 +77,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         </CardContent></Card>
         <Card><CardContent className="p-3">
           <div className="text-xs text-muted-foreground">Avg system size</div>
-          <div className="text-xl font-bold text-amber-600">{totals.avgSystem.toFixed(1)} kWp</div>
+          <div className="text-xl font-bold text-doc-proposal">{totals.avgSystem.toFixed(1)} kWp</div>
         </CardContent></Card>
         <Card><CardContent className="p-3">
           <div className="text-xs text-muted-foreground">Total annual savings</div>
@@ -134,9 +134,9 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
                     <div className="text-[11px] text-muted-foreground">kWh/yr</div>
                     <div className="text-sm font-bold">{(lead.annual_kwh || estimate.annualKwh).toLocaleString()}</div>
                   </div>
-                  <div className="text-center p-1.5 bg-amber-50 dark:bg-amber-950/20 rounded">
+                  <div className="text-center p-1.5 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded">
                     <div className="text-[11px] text-muted-foreground">System</div>
-                    <div className="text-sm font-bold text-amber-600">{estimate.systemSizeKw}kWp</div>
+                    <div className="text-sm font-bold text-doc-proposal">{estimate.systemSizeKw}kWp</div>
                   </div>
                   <div className="text-center p-1.5 bg-primary/10 dark:bg-primary/10 rounded">
                     <div className="text-[11px] text-muted-foreground">Savings/yr</div>

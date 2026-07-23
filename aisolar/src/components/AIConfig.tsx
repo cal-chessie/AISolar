@@ -243,7 +243,7 @@ export default function AIConfig() {
       {/* Agent Behaviour */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-amber-600" /> Agent Behaviour</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-doc-proposal" /> Agent Behaviour</CardTitle>
           <CardDescription>Global settings applied to all agents.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

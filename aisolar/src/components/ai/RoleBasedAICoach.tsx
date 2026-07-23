@@ -138,7 +138,7 @@ export default function RoleBasedAICoach() {
                   const isExpanded = expandedTipId === tip.id;
                   const priorityColor =
                     tip.priority === 'high'   ? 'border-l-red-500' :
-                    tip.priority === 'medium' ? 'border-l-amber-500' :
+                    tip.priority === 'medium' ? 'border-l-doc-proposal' :
                                                 'border-l-slate-400';
                   const typeColor =
                     tip.type === 'action'     ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :

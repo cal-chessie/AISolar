@@ -439,14 +439,14 @@ export default function ProfessionalProducts() {
                           <AlertCircle className="h-3 w-3" /> Out of stock
                         </span>
                       ) : (
-                        <span className={product.stock < 5 ? 'text-amber-600' : 'text-primary'}>
+                        <span className={product.stock < 5 ? 'text-doc-proposal' : 'text-primary'}>
                           {product.stock} in stock
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`h-3 w-3 ${i < product.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                        <Star key={i} className={`h-3 w-3 ${i < product.rating ? 'fill-doc-proposal text-doc-proposal' : 'text-muted-foreground/30'}`} />
                       ))}
                     </div>
                   </div>

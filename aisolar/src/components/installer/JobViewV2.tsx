@@ -431,12 +431,12 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-amber-300 bg-amber-50/30 dark:bg-amber-950/10">
+        <Card className="border-doc-proposal/30 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle">
           <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-amber-600" />
+            <AlertTriangle className="h-8 w-8 text-doc-proposal" />
             <div>
-              <div className="font-bold text-amber-800 dark:text-amber-300">Job in progress</div>
-              <div className="text-xs text-amber-700 dark:text-amber-400">Work through each tab in order. Don't skip checks — they prevent call-backs.</div>
+              <div className="font-bold text-doc-proposal dark:text-doc-proposal">Job in progress</div>
+              <div className="text-xs text-doc-proposal dark:text-doc-proposal">Work through each tab in order. Don't skip checks — they prevent call-backs.</div>
             </div>
           </CardContent>
         </Card>

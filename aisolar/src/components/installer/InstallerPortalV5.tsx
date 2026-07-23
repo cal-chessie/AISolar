@@ -178,7 +178,7 @@ export default function InstallerPortalV5() {
         {/* weather strip — real signal for roof work */}
         <div className="px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
           <span className="flex items-center gap-1 shrink-0"><Cloud className="h-3 w-3" /> 18°C Dublin</span>
-          <span className="flex items-center gap-1 shrink-0 text-amber-700"><CloudRain className="h-3 w-3 text-amber-600" /> Yellow rain warning tomorrow</span>
+          <span className="flex items-center gap-1 shrink-0 text-doc-proposal"><CloudRain className="h-3 w-3 text-doc-proposal" /> Yellow rain warning tomorrow</span>
           <span className="flex items-center gap-1 shrink-0"><Wind className="h-3 w-3" /> 12 km/h SW</span>
           <span className="flex items-center gap-1 shrink-0"><Sun className="h-3 w-3" /> Sunset 21:47</span>
         </div>
@@ -515,7 +515,7 @@ export default function InstallerPortalV5() {
                             </div>
                           )}
                           <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className={`h-full ${low ? 'bg-pop' : available < 15 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
+                            <div className={`h-full ${low ? 'bg-pop' : available < 15 ? 'bg-doc-proposal-subtle0' : 'bg-primary'}`} style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
                           </div>
                         </div>
                       );

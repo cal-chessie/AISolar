@@ -55,7 +55,7 @@ export default function InstallerLanding() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-amber-500 to-primary rounded-lg">
+            <div className="p-1.5 bg-gradient-to-br from-doc-proposal to-primary rounded-lg">
               <Sun className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-lg">{brand.name}</span>

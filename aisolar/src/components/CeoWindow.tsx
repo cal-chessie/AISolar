@@ -63,9 +63,9 @@ function downloadCsv(filename: string, header: string[], rows: (string | number)
   URL.revokeObjectURL(a.href);
 }
 
-type Tab = 'overview' | 'financials' | 'agents' | 'leads' | 'charts';
+type Tab = 'overview' | 'agents' | 'leads' | 'charts';
 
-export default function CeoWindow() {
+export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () => void }) {
   const [tab, setTab] = useState<Tab>('overview');
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
 
@@ -168,7 +168,6 @@ export default function CeoWindow() {
 
   const TABS: Array<{ id: Tab; label: string; icon: typeof BarChart3 }> = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'financials', label: 'Financials', icon: Euro },
     { id: 'agents', label: 'Agents', icon: Bot },
     { id: 'leads', label: 'Leads', icon: Database },
     { id: 'charts', label: 'Charts', icon: LineChart },
@@ -196,7 +195,7 @@ export default function CeoWindow() {
       {tab === 'overview' && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <button type="button" onClick={() => setTab('financials')} className="text-left cursor-pointer group">
+            <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
               <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} hero />
             </button>
             <Kpi icon={<TrendingDown />} label="Pipeline value" value={eur(d.pipelineValue)} sub={`${d.conversion}% conversion`} />
@@ -225,54 +224,7 @@ export default function CeoWindow() {
         </div>
       )}
 
-      {tab === 'financials' && (
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub="final payments received" hero />
-            <Kpi icon={<Euro />} label="Deposits held" value={eur(d.depositsHeld)} sub="jobs underway" />
-            <Kpi icon={<Euro />} label="Outstanding balances" value={eur(d.outstandingAR)} sub="deposit paid, final due" />
-            <Kpi icon={<Euro />} label="SEAI grants in flight" value={eur(d.grantsInFlight)} sub="approved → installed" />
-          </div>
-
-          <div className="rounded-panel border border-border bg-card overflow-hidden">
-            <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
-              <Euro className="size-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold">Money by job</h3>
-              <span className="text-2xs text-muted-foreground">{d.jobs.length} jobs with proposals</span>
-              <Button variant="outline" size="sm" className="ml-auto h-7 text-xs" onClick={() => downloadCsv(
-                `aisolar-financials-${new Date().toISOString().slice(0, 10)}.csv`,
-                ['Customer', 'Stage', 'Gross €', 'SEAI grant €', 'Net €', 'Deposit received €', 'Final paid', 'Outstanding €'],
-                d.jobs.map(j => [j.name, j.stage, j.gross, j.grant, j.net, j.deposit, j.finalPaid ? 'yes' : 'no', j.outstanding]),
-              )}>
-                <Download className="size-3.5 mr-1" /> CSV
-              </Button>
-            </div>
-            <div className="max-h-[28rem] overflow-auto scroll-slim">
-              <table className="w-full text-sm min-w-[44rem]">
-                <thead className="sticky top-0 bg-card">
-                  <tr className="text-left border-b border-border">
-                    {['Customer', 'Stage', 'Gross', 'Grant', 'Net', 'Deposit', 'Outstanding'].map(h => <th key={h} className="font-medium text-xs text-muted-foreground px-4 py-2 whitespace-nowrap">{h}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.jobs.map(j => (
-                    <tr key={j.name} className="border-b border-border/60 last:border-0">
-                      <td className="px-4 py-2 whitespace-nowrap font-medium">{j.name}</td>
-                      <td className="px-4 py-2 whitespace-nowrap text-xs text-muted-foreground">{j.stage}</td>
-                      <td className="px-4 py-2 tabular-nums">{eur(j.gross)}</td>
-                      <td className="px-4 py-2 tabular-nums text-doc-deposit">−{eur(j.grant)}</td>
-                      <td className="px-4 py-2 tabular-nums font-medium">{eur(j.net)}</td>
-                      <td className="px-4 py-2 tabular-nums">{j.deposit ? eur(j.deposit) : '—'}</td>
-                      <td className={`px-4 py-2 tabular-nums ${j.outstanding > 0 ? 'text-doc-invoice font-medium' : 'text-muted-foreground'}`}>{j.outstanding > 0 ? eur(j.outstanding) : 'settled'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* financials tab folded into the Financials page — money lives in ONE place (Cal) */}
       {tab === 'agents' && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

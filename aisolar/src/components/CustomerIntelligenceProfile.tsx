@@ -98,7 +98,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
         {/* Proposal data */}
         {lead.proposal && (
           <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Sun className="h-4 w-4 text-amber-600" /> Proposal</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Sun className="h-4 w-4 text-doc-proposal" /> Proposal</CardTitle></CardHeader>
             <CardContent className="text-xs space-y-1">
               <Row label="Status" value={lead.proposal.status} />
               <Row label="System" value={`${lead.proposal.system_size_kw}kWp`} />
@@ -130,7 +130,7 @@ export default function CustomerIntelligenceProfile({ leadId }: { leadId?: strin
         {/* Installation */}
         {lead.assignment && (
           <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600" /> Installation</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-doc-proposal" /> Installation</CardTitle></CardHeader>
             <CardContent className="text-xs space-y-1">
               <Row label="Installer" value={lead.assignment.installer_name} />
               <Row label="Scheduled" value={new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE')} />

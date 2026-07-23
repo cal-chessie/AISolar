@@ -38,7 +38,7 @@ interface CalEvent {
 const EVENT_META: Record<EventType, { label: string; icon: typeof Video; color: string; bg: string; text: string }> = {
   consultation: { label: 'Consultation', icon: Video, color: 'blue', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
   site_survey: { label: 'Site survey', icon: MapPin, color: 'indigo', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
-  install: { label: 'Install', icon: Wrench, color: 'amber', bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300' },
+  install: { label: 'Install', icon: Wrench, color: 'pending', bg: 'bg-doc-proposal-subtle dark:bg-doc-proposal-subtle', text: 'text-doc-proposal dark:text-doc-proposal' },
   follow_up: { label: 'Follow-up', icon: Phone, color: 'emerald', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },
   deadline: { label: 'Deadline', icon: Clock, color: 'red', bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300' },
   agent_run: { label: 'Agent', icon: Bot, color: 'violet', bg: 'bg-primary/10 dark:bg-primary/10', text: 'text-primary dark:text-primary' },

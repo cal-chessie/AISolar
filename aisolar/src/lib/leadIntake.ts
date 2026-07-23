@@ -84,8 +84,8 @@ export const PIPELINE_STAGES = [
   { id: 'proposal_sent',    label: 'Proposal Sent',         group: 'proposal',   color: 'violet',   automation: 'Customer portal link emailed' },
   { id: 'approved',         label: 'Contract Signed',       group: 'contract',   color: 'emerald',  automation: 'Invoice auto-created + SEAI grant started' },
   { id: 'deposit_paid',     label: 'Deposit Paid',          group: 'contract',   color: 'emerald',  automation: 'InstallCoordinatorAgent schedules install' },
-  { id: 'install_scheduled',label: 'Install Scheduled',     group: 'install',    color: 'amber',    automation: 'Materials ordered + customer reminder' },
-  { id: 'installing',       label: 'Install In Progress',   group: 'install',    color: 'amber',    automation: 'Installer checklist active' },
+  { id: 'install_scheduled',label: 'Install Scheduled',     group: 'install',    color: 'pending',    automation: 'Materials ordered + customer reminder' },
+  { id: 'installing',       label: 'Install In Progress',   group: 'install',    color: 'pending',    automation: 'Installer checklist active' },
   { id: 'installed',        label: 'Install Complete',      group: 'install',    color: 'emerald',  automation: 'PostInstallAgent: warranty email + review request' },
   { id: 'final_paid',       label: 'Final Paid',            group: 'closeout',   color: 'emerald',  automation: 'GrantAgent submits SEAI paperwork' },
   { id: 'completed',        label: 'Project Closed',        group: 'closeout',   color: 'green',    automation: 'Handover pack + referral request' },
@@ -98,7 +98,7 @@ export const STAGE_GROUPS = [
   { id: 'survey',    label: 'Survey',    color: 'indigo' },
   { id: 'proposal',  label: 'Proposal',  color: 'violet' },
   { id: 'contract',  label: 'Contract',  color: 'emerald' },
-  { id: 'install',   label: 'Install',   color: 'amber' },
+  { id: 'install',   label: 'Install',   color: 'pending' },
   { id: 'closeout',  label: 'Closeout',  color: 'green' },
 ] as const;
 

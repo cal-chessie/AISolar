@@ -68,12 +68,12 @@ export default function DemoIndex() {
         <div className={`rounded-xl border p-4 mb-8 flex items-start gap-3 ${
           demoActive
             ? 'bg-primary/10 border-primary/40 dark:bg-primary/10 dark:border-primary/40'
-            : 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800'
+            : 'bg-doc-proposal-subtle border-doc-proposal/30 dark:bg-doc-proposal-subtle dark:border-doc-proposal/30'
         }`}>
           {demoActive ? (
             <Zap className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
           ) : (
-            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-doc-proposal flex-shrink-0 mt-0.5" />
           )}
           <div className="text-sm">
             <strong>{demoActive ? 'Demo mode is ACTIVE.' : 'Demo mode is OFF.'}</strong>{' '}
@@ -118,9 +118,9 @@ export default function DemoIndex() {
         </div>
 
         {/* Bug audit summary */}
-        <section className="mt-12 p-6 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+        <section className="mt-12 p-6 rounded-xl border-2 border-dashed border-doc-proposal/30 dark:border-doc-proposal/30 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle">
           <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
-            <Bug className="h-5 w-5 text-amber-600" />
+            <Bug className="h-5 w-5 text-doc-proposal" />
             Bug Audit Complete
           </h2>
           <p className="text-sm text-muted-foreground mb-4">

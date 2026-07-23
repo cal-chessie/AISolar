@@ -264,7 +264,7 @@ export default function OwnerCockpit() {
           {activeView === 'products' && <ProfessionalProducts />}
           {activeView === 'settings' && <SystemSettings />}
           {activeView === 'agents' && <AgentFoundation />}
-          {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow /></Suspense>}
+          {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow onOpenFinancials={() => setActiveView('financials')} /></Suspense>}
           {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
           {activeView === 'crm' && <CrmPlaceholder />}
           {activeView === 'feedback' && <HelpUsImprove />}
@@ -322,7 +322,7 @@ function SidebarContent({
                 <span className="bg-red-500 text-white text-[11px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">{agentFailures}</span>
               )}
               {item.id === 'clients' && staleLeadsCount > 0 && (
-                <span className="bg-amber-500 text-white text-[11px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">{staleLeadsCount}</span>
+                <span className="bg-doc-proposal-subtle0 text-white text-[11px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">{staleLeadsCount}</span>
               )}
             </button>
           );
@@ -488,7 +488,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         <div className="rounded-[16px] bg-card shadow-card p-4">
           <h3 className="label-micro mb-3 flex items-center gap-1.5"><AlertTriangle className="size-3.5" /> Needs you</h3>
           <div className="space-y-2">
-            {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="amber" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
+            {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="pending" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
             {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
             <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
           </div>
@@ -765,7 +765,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {lead.proposal ? (
             <>
-              <StatBox label="System" value={`${lead.proposal.system_size_kw}kWp`} sub={`${lead.proposal.panel_count} panels`} color="amber" icon={Zap} />
+              <StatBox label="System" value={`${lead.proposal.system_size_kw}kWp`} sub={`${lead.proposal.panel_count} panels`} color="pending" icon={Zap} />
               <StatBox label="Net cost" value={eur(lead.proposal.net_cost)} sub={`Grant: ${eur(lead.proposal.seai_grant)}`} color="emerald" icon={DollarSign} />
               <StatBox label="Annual savings" value={eur(lead.proposal.annual_savings)} sub={`${lead.proposal.payback_years}yr payback`} color="blue" icon={TrendingUp} />
               <StatBox label="Touchpoints" value={String(lead.touchpoints.length)} sub={`Last: ${new Date(lead.touchpoints[lead.touchpoints.length-1]?.timestamp || Date.now()).toLocaleDateString('en-IE')}`} color="violet" icon={MessageSquare} />
@@ -773,7 +773,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
           ) : (
             <>
               <StatBox label="Monthly bill" value={`€${lead.monthly_bill}`} sub={`${lead.annual_kwh?.toLocaleString()} kWh/yr`} color="blue" icon={FileText} />
-              <StatBox label="Est. system" value={`${lead.intake.estimated_system_size_kw}kWp`} sub="from bill" color="amber" icon={Zap} />
+              <StatBox label="Est. system" value={`${lead.intake.estimated_system_size_kw}kWp`} sub="from bill" color="pending" icon={Zap} />
               <StatBox label="Est. savings" value={eur(lead.intake.estimated_annual_savings || 0)} sub="per year" color="emerald" icon={TrendingUp} />
               <StatBox label="Touchpoints" value={String(lead.touchpoints.length)} sub="communications" color="violet" icon={MessageSquare} />
             </>

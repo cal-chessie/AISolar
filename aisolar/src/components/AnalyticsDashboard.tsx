@@ -154,7 +154,7 @@ export default function AnalyticsDashboard() {
               delta="Needs attention"
               deltaDirection="warn"
               icon={Clock}
-              color="amber"
+              color="pending"
             />
           </div>
 
@@ -242,7 +242,7 @@ export default function AnalyticsDashboard() {
                         <div className="flex items-center gap-3 text-xs">
                           <span className="text-muted-foreground">
                             {conversionRate < 100 && (
-                              <span className={conversionRate < 50 ? 'text-red-600' : conversionRate < 80 ? 'text-amber-600' : 'text-primary'}>
+                              <span className={conversionRate < 50 ? 'text-red-600' : conversionRate < 80 ? 'text-doc-proposal' : 'text-primary'}>
                                 {conversionRate}% from previous
                               </span>
                             )}
@@ -263,9 +263,9 @@ export default function AnalyticsDashboard() {
                 })}
               </div>
 
-              <div className="mt-6 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg text-sm">
-                <div className="font-semibold text-amber-800 dark:text-amber-300 mb-1">🔍 Bottleneck detected</div>
-                <p className="text-amber-700 dark:text-amber-400 text-xs">
+              <div className="mt-6 p-3 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded-lg text-sm">
+                <div className="font-semibold text-doc-proposal dark:text-doc-proposal mb-1">🔍 Bottleneck detected</div>
+                <p className="text-doc-proposal dark:text-doc-proposal text-xs">
                   Biggest drop-off: <strong>proposal_sent → approved</strong> (42% conversion).
                   Industry benchmark is 60%. Recommend: AI coach scripts for payback objection handling.
                 </p>
@@ -300,7 +300,7 @@ export default function AnalyticsDashboard() {
                       <td className="text-right tabular-nums">{c.proposals}</td>
                       <td className="text-right tabular-nums">{c.contracts}</td>
                       <td className="text-right tabular-nums">
-                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-primary' : c.conversionRate >= 25 ? 'text-amber-600' : 'text-red-600'}`}>
+                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-primary' : c.conversionRate >= 25 ? 'text-doc-proposal' : 'text-red-600'}`}>
                           {c.conversionRate}%
                         </span>
                       </td>
@@ -342,7 +342,7 @@ export default function AnalyticsDashboard() {
                   { name: 'Lead Intake Agent', runs: 312, success: 311, fail: 1, color: 'blue' },
                   { name: 'Survey Scheduler Agent', runs: 89, success: 87, fail: 2, color: 'indigo' },
                   { name: 'Proposal Drafter Agent', runs: 67, success: 65, fail: 2, color: 'violet' },
-                  { name: 'Follow-Up Agent', runs: 31, success: 31, fail: 0, color: 'amber' },
+                  { name: 'Follow-Up Agent', runs: 31, success: 31, fail: 0, color: 'pending' },
                   { name: 'SEAI Grant Agent', runs: 24, success: 22, fail: 2, color: 'emerald' },
                   { name: 'Install Coordinator Agent', runs: 28, success: 27, fail: 1, color: 'orange' },
                   { name: 'PostInstall Agent', runs: 18, success: 18, fail: 0, color: 'green' },
@@ -363,7 +363,7 @@ export default function AnalyticsDashboard() {
                         <div className={`h-full bg-primary`} style={{ width: `${successRate}%` }} />
                       </div>
                       <div className="w-12 text-right text-xs font-semibold tabular-nums">
-                        <span className={successRate >= 95 ? 'text-primary' : successRate >= 80 ? 'text-amber-600' : 'text-red-600'}>
+                        <span className={successRate >= 95 ? 'text-primary' : successRate >= 80 ? 'text-doc-proposal' : 'text-red-600'}>
                           {successRate}%
                         </span>
                       </div>
@@ -413,7 +413,7 @@ export default function AnalyticsDashboard() {
                 <>
                   <KpiCard label="Grant pipeline" value={eur(totalGrant)} icon={Award} color="emerald" delta="+€2,700 this week" deltaDirection="up" />
                   <KpiCard label="Submitted" value={num(submitted)} icon={CheckCircle2} color="emerald" delta="Awaiting payment" deltaDirection="up" />
-                  <KpiCard label="Pending submission" value={num(pending)} icon={Clock} color="amber" delta="Will auto-submit" deltaDirection="up" />
+                  <KpiCard label="Pending submission" value={num(pending)} icon={Clock} color="pending" delta="Will auto-submit" deltaDirection="up" />
                   <KpiCard label="Approval rate" value={`${approvalRate}%`} icon={Target} color="emerald" delta="Above SEAI avg" deltaDirection="up" />
                 </>
               );
@@ -437,7 +437,7 @@ export default function AnalyticsDashboard() {
                       <Badge variant="outline" className={`text-[11px] mt-1 ${
                         lead.workflow_stage === 'completed' ? 'bg-primary/10 text-primary border-primary/40' :
                         ['final_paid'].includes(lead.workflow_stage) ? 'bg-primary/10 text-primary border-primary/40' :
-                        'bg-amber-50 text-amber-700 border-amber-200'
+                        'bg-doc-proposal-subtle text-doc-proposal border-doc-proposal/30'
                       }`}>
                         {lead.workflow_stage === 'completed' ? 'Paid' :
                          ['final_paid'].includes(lead.workflow_stage) ? 'Submitted' :
@@ -474,7 +474,7 @@ function KpiCard({ label, value, delta, deltaDirection, icon: Icon, color }: {
             <div className={`text-xs flex items-center gap-0.5 ${
               deltaDirection === 'up' ? 'text-primary' :
               deltaDirection === 'down' ? 'text-red-600' :
-              'text-amber-600'
+              'text-doc-proposal'
             }`}>
               {deltaDirection === 'up' && <ArrowUpRight className="h-3 w-3" />}
               {deltaDirection === 'down' && <ArrowDownRight className="h-3 w-3" />}

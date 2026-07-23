@@ -73,7 +73,7 @@ export function PipelineBar({ counts, onStageClick, onGroupToggle, className }: 
         <h2 className="text-sm font-semibold">Pipeline</h2>
         <span className="text-xs text-muted-foreground">click a phase for its stages</span>
         {bottleneck && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-doc-proposal dark:text-doc-proposal">
             <AlertTriangle className="size-3.5" />
             Bottleneck: {bottleneck.label} (−{bottleneck.drop}%)
           </span>

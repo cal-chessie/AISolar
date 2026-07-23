@@ -148,7 +148,7 @@ export function CookieConsentBanner() {
         {!showSettings ? (
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-start gap-3 flex-1">
-              <Cookie className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              <Cookie className="h-6 w-6 text-doc-proposal flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-sm">We use cookies to power your solar journey</h3>
                 <p className="text-xs text-muted-foreground mt-1">

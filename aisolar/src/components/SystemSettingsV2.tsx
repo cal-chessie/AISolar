@@ -316,7 +316,7 @@ export default function SystemSettingsV2() {
                   <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs transition-colors hover:bg-muted/30">
                     <Badge variant="outline" className={`text-[11px] flex-shrink-0 ${
                       event.severity === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
-                      event.severity === 'warn' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      event.severity === 'warn' ? 'bg-doc-proposal-subtle text-doc-proposal border-doc-proposal/30' :
                       'bg-primary/10 text-primary border-primary/40'
                     }`}>
                       {event.severity}
@@ -336,7 +336,7 @@ export default function SystemSettingsV2() {
               {/* Summary stats */}
               <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-2 text-center text-xs">
                 <div><div className="font-bold text-primary">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
-                <div><div className="font-bold text-amber-600">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[11px] text-muted-foreground">warnings</div></div>
+                <div><div className="font-bold text-doc-proposal">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[11px] text-muted-foreground">warnings</div></div>
                 <div><div className="font-bold text-red-600">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[11px] text-muted-foreground">errors</div></div>
                 <div><div className="font-bold">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[11px] text-muted-foreground">agent actions</div></div>
               </div>

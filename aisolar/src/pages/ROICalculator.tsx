@@ -112,11 +112,11 @@ export default function ROICalculator() {
             <CardContent className="p-6">
               <h3 className="font-bold text-lg mb-4">Your estimate</h3>
               <div className="space-y-3">
-                <ResultRow icon={Sun} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} color="amber" />
+                <ResultRow icon={Sun} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} color="pending" />
                 <ResultRow icon={TrendingUp} label="Annual savings" value={eur(adjustedSavings)} color="emerald" />
                 <ResultRow icon={Award} label="SEAI grant" value={eur(seai.solarElectricityGrant)} color="violet" />
                 <ResultRow icon={Calculator} label="Net cost" value={eur(estimate.netCost)} color="blue" />
-                <ResultRow icon={Zap} label="Payback period" value={`${estimate.paybackYears} years`} color="amber" />
+                <ResultRow icon={Zap} label="Payback period" value={`${estimate.paybackYears} years`} color="pending" />
                 <ResultRow icon={TrendingUp} label="20-year savings" value={eur(estimate.twentyYearSavings)} color="emerald" />
               </div>
 

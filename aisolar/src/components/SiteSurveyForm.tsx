@@ -742,9 +742,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         return (
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-4">
-                <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-amber-800 dark:text-amber-200">
+              <div className="flex items-start gap-2 p-3 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded-lg border border-doc-proposal/30 dark:border-doc-proposal/30 mb-4">
+                <Info className="h-4 w-4 text-doc-proposal mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-doc-proposal dark:text-doc-proposal">
                   These details help installers prepare for the site visit and reduce second visits.
                 </p>
               </div>

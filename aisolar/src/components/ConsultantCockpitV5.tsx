@@ -609,7 +609,7 @@ export default function ConsultantCockpitV5() {
                     <StatBox label="Active leads" value={String(stats.activeLeads)} icon={Users} color="blue" />
                     <StatBox label="Pipeline" value={eur(stats.totalValue)} icon={DollarSign} color="emerald" />
                     <StatBox label="Conversion" value={`${Math.round((leads.filter(l => l.contract).length / leads.length) * 100)}%`} icon={TrendingUp} color="violet" />
-                    <StatBox label="Stale" value={String(stats.staleLeads)} icon={Clock} color="amber" />
+                    <StatBox label="Stale" value={String(stats.staleLeads)} icon={Clock} color="pending" />
                   </div>
                   <Card><CardContent className="p-3">
                     <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Pipeline by stage</h4>

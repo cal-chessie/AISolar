@@ -37,7 +37,7 @@ interface CalendarEvent {
 const EVENT_META = {
   consultation: { label: 'Consultation', icon: Video, color: 'blue' },
   site_survey: { label: 'Site survey', icon: MapPin, color: 'indigo' },
-  install: { label: 'Install', icon: Wrench, color: 'amber' },
+  install: { label: 'Install', icon: Wrench, color: 'pending' },
   follow_up: { label: 'Follow-up call', icon: Phone, color: 'emerald' },
   deadline: { label: 'Deadline', icon: Clock, color: 'red' },
   agent_run: { label: 'Agent', icon: Bot, color: 'violet' },
