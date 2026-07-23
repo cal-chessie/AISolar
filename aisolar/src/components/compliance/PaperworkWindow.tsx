@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import type { DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { getProposalTerms } from '@/lib/proposalTerms';
+import { decideCompliance } from '@/lib/complianceDecision';
 import { DowTemplate, LoaTemplate } from '@/components/compliance/docTemplates';
 import BlockDiagram from '@/components/compliance/BlockDiagram';
 import { downloadEsbForm } from '@/lib/pdfFill';
@@ -79,14 +80,8 @@ export function buildPack(lead: DummyLead): PackDoc[] {
   // ONE form or the other (Cal): NC6 covers ≤6kW single-phase / ≤11kW
   // three-phase; anything above notifies on NC7. Decided from the survey's
   // phase + the designed kW — never left as a "check this" note.
-  const kW = lead.proposal?.system_size_kw ?? 0;
-  const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
-  const commercial = ((lead.intake ?? {}) as Record<string, unknown>).extracted_premises_type === 'commercial'
-    || ((lead.intake ?? {}) as Record<string, unknown>).property_type === 'commercial';
-  const nc6Limit = threePhase ? 11 : 6;
-  // The ladder, decided from captured data: micro -> mini -> small-scale.
-  // Domestic roofs never reach NC8; commercial can.
-  const esbForm = kW <= nc6Limit ? 'NC6' : kW <= 50 ? 'NC7' : 'NC8';
+  // ONE decision, one place — the unneeded forms never exist (Cal)
+  const { esbForm, threePhase, kW } = decideCompliance(lead);
   const at = (stages: string[]) => stages.includes(s);
   const afterAccept = at(['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
   const afterSchedule = at(['install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
@@ -108,7 +103,7 @@ export function buildPack(lead: DummyLead): PackDoc[] {
       detail: lead.proposal ? `drawn from ${lead.name.split(' ')[0]}'s design — ESB: "hand-drawn SLDs will not be accepted"` : undefined },
     { id: 'nc6', gate: 'B', name: esbForm === 'NC7' ? 'ESB NC7 application — full bundle (incl. ELS declaration)' : 'ESB NC6 microgen notification', who: 'Safe Electric installer submits', source: 'agent',
       status: afterSchedule ? 'sent' : lead.survey ? 'prepared' : 'not_started',
-      detail: `${kW || '—'} kWp · ${threePhase ? 'three phase' : 'single phase'} → ${esbForm} (${esbForm === 'NC6' ? `within the ${nc6Limit}kW limit` : `above the ${nc6Limit}kW NC6 limit`})` },
+      detail: `${kW || '—'} kWp · ${threePhase ? 'three phase' : 'single phase'} → ${esbForm} (${esbForm === 'NC6' ? `within the ${threePhase ? 11 : 6}kW limit` : `above the NC6 limit`})` },
     ...(esbForm === 'NC7' ? [
       { id: 'nc7_01', gate: 'C' as const, name: 'NC7-01 — Installation confirmation certificate', who: 'Installer signs after installation', source: 'installer' as const,
         status: (afterInstall ? 'complete' : afterSchedule ? 'prepared' : 'not_started') as DocStatus },
@@ -143,8 +138,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
   const pack = useMemo(() => packBase.map(d => uploads[d.id]
     ? { ...d, status: 'received' as DocStatus, detail: `${uploads[d.id]} — uploaded & filed` }
     : d), [packBase, uploads]);
-  const kW0 = lead.proposal?.system_size_kw ?? 0;
-  const esbForm: 'NC6' | 'NC7' | 'NC8' = kW0 <= (/three/i.test(lead.survey?.confirmed_inverter_type ?? '') ? 11 : 6) ? 'NC6' : kW0 <= 50 ? 'NC7' : 'NC8';
+  const { esbForm } = decideCompliance(lead);
   const [viewing, setViewing] = useState<PackDoc | null>(null);
   const readyCount = pack.filter(d => ['received', 'complete', 'sent'].includes(d.status)).length;
   const allReady = pack.every(d => ['received', 'complete', 'sent'].includes(d.status));
@@ -154,7 +148,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
   const earliestInstall = addWorkingDays(new Date(), 20);
 
   const gates: Array<{ id: 'A' | 'B' | 'C'; title: string; icon: typeof Award; tint: string; rule: string }> = [
-    { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: (((lead.intake ?? {}) as Record<string, unknown>).extracted_premises_type === 'commercial' || ((lead.intake ?? {}) as Record<string, unknown>).property_type === 'commercial') ? 'COMMERCIAL premises — Non-Domestic Microgen scheme applies' : 'Offer BEFORE any work starts' },
+    { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: decideCompliance(lead).seaiScheme === 'non-domestic-microgen' ? 'COMMERCIAL premises — Non-Domestic Microgen scheme applies' : 'Offer BEFORE any work starts' },
     { id: 'B', title: `ESB — ${esbForm} only`, icon: Zap, tint: 'text-tech', rule: 'ONE application per customer, chosen from kW + phase — the other forms don\'t apply' },
     { id: 'C', title: 'Completion pack', icon: Shield, tint: 'text-doc-deposit', rule: 'Assembled at commissioning' },
   ];

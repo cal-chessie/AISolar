@@ -22,6 +22,7 @@ import {
 import { type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import PaperworkWindow, { buildPack } from '@/components/compliance/PaperworkWindow';
+import { decideCompliance } from '@/lib/complianceDecision';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -163,14 +164,10 @@ export default function SEAIDashboard({ leads }: { leads: DummyLead[] }) {
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{c.lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate flex items-center gap-1.5">{c.lead.name}
-                    {(() => { const i = (c.lead.intake ?? {}) as Record<string, unknown>;
-                      const commercial = i.extracted_premises_type === 'commercial' || i.property_type === 'commercial';
-                      const kW = c.lead.proposal?.system_size_kw ?? 0;
-                      const tp = /three/i.test(c.lead.survey?.confirmed_inverter_type ?? '');
-                      const form = kW <= (tp ? 11 : 6) ? 'NC6' : kW <= 50 ? 'NC7' : 'NC8';
+                    {(() => { const d = decideCompliance(c.lead);
                       return <>
-                        <span className="text-2xs rounded-full bg-tech-subtle text-tech px-1.5 py-0.5 font-medium shrink-0">{form}</span>
-                        {commercial && <span className="text-2xs rounded-full bg-doc-contract-subtle text-doc-contract px-1.5 py-0.5 font-medium shrink-0">Commercial</span>}
+                        <span className="text-2xs rounded-full bg-tech-subtle text-tech px-1.5 py-0.5 font-medium shrink-0">{d.esbForm}</span>
+                        {d.commercial && <span className="text-2xs rounded-full bg-doc-contract-subtle text-doc-contract px-1.5 py-0.5 font-medium shrink-0">Commercial</span>}
                       </>; })()}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{c.lead.address.split(',').slice(-1)[0]?.trim()}</div>
