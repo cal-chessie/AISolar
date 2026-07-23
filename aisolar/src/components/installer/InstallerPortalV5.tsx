@@ -34,7 +34,7 @@ import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 
-type TabId = 'today' | 'jobs' | 'inbox' | 'materials' | 'map';
+type TabId = 'today' | 'week' | 'jobs' | 'inbox' | 'materials' | 'map';
 
 interface Msg { from: 'customer' | 'installer' | 'system'; text: string; at: string }
 
@@ -53,6 +53,12 @@ export default function InstallerPortalV5() {
   const [threadLead, setThreadLead] = useState<DummyLead | null>(null);
   const [reply, setReply] = useState('');
   const [localMsgs, setLocalMsgs] = useState<Record<string, Msg[]>>({});
+  // Week view: drag-and-drop reschedules live here (assignment table at launch)
+  const [scheduleOverride, setScheduleOverride] = useState<Record<string, string>>({});
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [pendingMove, setPendingMove] = useState<{ lead: DummyLead; from: string; to: string } | null>(null);
+  const [moveReason, setMoveReason] = useState<string | null>(null);
+  const [moveNote, setMoveNote] = useState('');
 
   // ── job pools ────────────────────────────────────────────────────────────
   const activeJobs = useMemo(() => leads.filter(l => l.assignment && ['install_scheduled', 'installing'].includes(l.workflow_stage)), [leads]);
@@ -62,10 +68,14 @@ export default function InstallerPortalV5() {
   const displayActive = [...surveyJobs, ...activeJobs, ...handoverJobs];
   const inboxJobs = [...surveyJobs, ...activeJobs, ...handoverJobs, ...completedJobs];
 
+  /** Scheduled date with any drag-and-drop move applied. */
+  const effDate = (l: DummyLead): string | undefined =>
+    scheduleOverride[l.id] ?? l.assignment?.scheduled_date ?? l.survey?.scheduled_date;
+
   // ── Today: jobs scheduled today, else the next scheduled day ────────────
   const { dayJobs, dayLabel, isToday } = useMemo(() => {
     const withDate = displayActive
-      .map(l => ({ l, d: l.assignment?.scheduled_date ?? l.survey?.scheduled_date }))
+      .map(l => ({ l, d: effDate(l) }))
       .filter((x): x is { l: DummyLead; d: string } => !!x.d)
       .sort((a, b) => +new Date(a.d) - +new Date(b.d));
     const todayStr = new Date().toDateString();
@@ -79,7 +89,7 @@ export default function InstallerPortalV5() {
       dayLabel: new Date(next.d).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' }),
       isToday: false,
     };
-  }, [displayActive]);
+  }, [displayActive, scheduleOverride]);
 
   // ── start job → the system messages the client ──────────────────────────
   const startJob = (lead: DummyLead) => {
@@ -92,6 +102,28 @@ export default function InstallerPortalV5() {
     toast.success(`${lead.name.split(' ')[0]} has been messaged`, {
       description: 'Arrival notice + prep steps sent to their portal and email.',
     });
+  };
+
+  const MOVE_REASONS = [
+    'Weather warning on your original day — roofs and rain don\'t mix',
+    'Materials arriving later than planned',
+    'The job before yours is running over',
+    'Crew availability changed',
+    'A slot opened up — we can get to you sooner',
+  ];
+
+  const confirmMove = () => {
+    if (!pendingMove || !moveReason) return;
+    const { lead, from, to } = pendingMove;
+    // keep the original time of day on the new date
+    const src = new Date(from); const dst = new Date(to);
+    dst.setHours(src.getHours(), src.getMinutes(), 0, 0);
+    setScheduleOverride(prev => ({ ...prev, [lead.id]: dst.toISOString() }));
+    const fmt = (d: Date) => d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' });
+    const msg = `Hi ${lead.name.split(' ')[0]} — we've moved your ${lead.workflow_stage.includes('survey') ? 'survey' : 'installation'} from ${fmt(src)} to ${fmt(dst)} at ${src.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}. Why: ${moveReason.toLowerCase()}.${moveNote.trim() ? ` ${moveNote.trim()}` : ''} Everything else stays the same — reply here if the new day doesn't suit and we'll sort it.`;
+    setLocalMsgs(prev => ({ ...prev, [lead.id]: [...(prev[lead.id] ?? []), { from: 'system', text: msg, at: new Date().toISOString() }] }));
+    toast.success(`${lead.name.split(' ')[0]} notified of the move`, { description: `Rescheduled to ${fmt(dst)} — reason sent to their portal + email.` });
+    setPendingMove(null); setMoveReason(null); setMoveNote('');
   };
 
   const sendReply = (lead: DummyLead) => {
@@ -118,6 +150,7 @@ export default function InstallerPortalV5() {
 
   const TABS: Array<{ id: TabId; label: string; icon: typeof Sun; count?: number }> = [
     { id: 'today', label: 'Today', icon: CalendarClock, count: dayJobs.length },
+    { id: 'week', label: 'Week', icon: Calendar },
     { id: 'jobs', label: 'Jobs', icon: Wrench, count: displayActive.length },
     { id: 'inbox', label: 'Inbox', icon: MessageSquare, count: inboxJobs.length },
     { id: 'materials', label: 'Materials', icon: Package },
@@ -234,6 +267,69 @@ export default function InstallerPortalV5() {
                 )}
               </div>
             )}
+
+            {/* ═══ WEEK — drag a job to another day; the customer hears why ═══ */}
+            {tab === 'week' && (() => {
+              const days = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() + i); d.setHours(0, 0, 0, 0);
+                return d;
+              });
+              const jobsFor = (day: Date) => displayActive
+                .map(l => ({ l, d: effDate(l) }))
+                .filter((x): x is { l: DummyLead; d: string } => !!x.d && new Date(x.d).toDateString() === day.toDateString())
+                .sort((a, b) => +new Date(a.d) - +new Date(b.d));
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h2 className="text-lg font-semibold tracking-tight">This week</h2>
+                    <p className="text-sm text-muted-foreground">Drag a job to another day — the customer gets told why.</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+                    {days.map((day, di) => {
+                      const dayJobsHere = jobsFor(day);
+                      const isDayToday = di === 0;
+                      return (
+                        <div key={di}
+                          onDragOver={e => e.preventDefault()}
+                          onDrop={() => {
+                            if (!dragId) return;
+                            const lead = displayActive.find(l => l.id === dragId);
+                            const from = lead ? effDate(lead) : undefined;
+                            setDragId(null);
+                            if (!lead || !from) return;
+                            if (new Date(from).toDateString() === day.toDateString()) return;
+                            setPendingMove({ lead, from, to: day.toISOString() });
+                          }}
+                          className={`rounded-[12px] bg-card shadow-card min-h-[9rem] flex flex-col ${isDayToday ? 'ring-1 ring-pop/40' : ''}`}>
+                          <div className="px-2.5 py-1.5 border-b border-border flex items-baseline gap-1">
+                            <span className={`text-xs font-semibold ${isDayToday ? 'text-pop' : ''}`}>{day.toLocaleDateString('en-IE', { weekday: 'short' })}</span>
+                            <span className="text-2xs text-muted-foreground tabular-nums">{day.getDate()}</span>
+                            {dayJobsHere.length > 0 && <span className="ml-auto text-2xs tabular-nums text-muted-foreground">{dayJobsHere.length}</span>}
+                          </div>
+                          <div className="flex-1 p-1.5 space-y-1.5">
+                            {dayJobsHere.map(({ l, d }) => {
+                              const isSurvey = l.workflow_stage.includes('survey');
+                              return (
+                                <div key={l.id}
+                                  draggable
+                                  onDragStart={() => setDragId(l.id)}
+                                  onDragEnd={() => setDragId(null)}
+                                  className={`rounded-[10px] border-l-4 ${isSurvey ? 'border-l-tech' : 'border-l-primary'} bg-background shadow-card p-2 cursor-grab active:cursor-grabbing ${dragId === l.id ? 'opacity-40' : ''}`}>
+                                  <p className="text-xs font-medium truncate">{l.name}</p>
+                                  <p className="text-2xs text-muted-foreground tabular-nums">{new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })} · {isSurvey ? 'Survey' : 'Install'}</p>
+                                </div>
+                              );
+                            })}
+                            {dayJobsHere.length === 0 && <p className="text-2xs text-muted-foreground/50 text-center pt-4">—</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-2xs text-muted-foreground">Sunday work needs the customer's OK — the message asks them to reply if it doesn't suit.</p>
+                </div>
+              );
+            })()}
 
             {/* ═══ JOBS ═══ */}
             {tab === 'jobs' && (
@@ -477,6 +573,41 @@ export default function InstallerPortalV5() {
 
           </div>
       </main>
+
+      {/* move-reason modal: tell the customer WHY before the move lands */}
+      {pendingMove && (
+        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Reschedule reason">
+          <div className="absolute inset-0 bg-black/50" onClick={() => { setPendingMove(null); setMoveReason(null); }} />
+          <div className="absolute inset-x-3 bottom-3 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[26rem] rounded-[16px] bg-background shadow-card p-5">
+            <h3 className="text-md font-semibold">Moving {pendingMove.lead.name.split(' ')[0]}'s job</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {new Date(pendingMove.from).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })} → {new Date(pendingMove.to).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })}. Pick the reason they'll be given:
+            </p>
+            <div className="mt-3 space-y-1.5">
+              {MOVE_REASONS.map(r => (
+                <button key={r} type="button" onClick={() => setMoveReason(r)}
+                  className={`w-full text-left rounded-[10px] border px-3 py-2 text-sm transition-colors ${moveReason === r ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <input
+              value={moveNote}
+              onChange={e => setMoveNote(e.target.value)}
+              placeholder="Optional personal note…"
+              className="mt-3 w-full h-10 rounded-[10px] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+            />
+            <div className="mt-4 flex items-center gap-2">
+              <Button className="flex-1 h-10" onClick={confirmMove} disabled={!moveReason}>
+                Move + notify customer
+              </Button>
+              <Button variant="outline" className="h-10" onClick={() => { setPendingMove(null); setMoveReason(null); }}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <RoleBasedAICoach />
     </div>
