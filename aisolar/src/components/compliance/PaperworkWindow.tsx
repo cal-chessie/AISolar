@@ -31,6 +31,7 @@ import { getStage } from '@/lib/leadIntake';
 import { getProposalTerms } from '@/lib/proposalTerms';
 import { DowTemplate, LoaTemplate } from '@/components/compliance/docTemplates';
 import BlockDiagram from '@/components/compliance/BlockDiagram';
+import { downloadEsbForm } from '@/lib/pdfFill';
 import { getProduct } from '@/config/productCatalog';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -256,7 +257,11 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
               </div>
             ) : viewing.id === 'nc6' ? (
               <div className="space-y-2">
-                <iframe title="Official ESB NC form" src="/forms/esbn-form-nc7.pdf" className="w-full h-[50vh] rounded-[10px] border border-border" />
+                <Button size="sm" className="w-full font-semibold"
+                  onClick={() => downloadEsbForm(lead, esbForm).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
+                  Download pre-filled {esbForm} <ArrowRight className="size-4 ml-1" />
+                </Button>
+                <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="w-full h-[45vh] rounded-[10px] border border-border" />
                 <p className="text-2xs text-muted-foreground">The official ESB Networks form, pre-fill data ready from the record — the Safe Electric installer completes and submits it{esbForm === 'NC7' ? ' with the letter of authority and single line diagram' : ''}.</p>
               </div>
             ) : viewing.id === 'dow' ? (
