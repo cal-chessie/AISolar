@@ -735,15 +735,14 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         <Button variant="ghost" size="sm" onClick={() => setSelectedClient(null)}><ChevronLeft className="h-4 w-4 mr-1" /> Back to clients</Button>
 
         {/* Client header */}
-        <Card>
-          <CardContent className="p-4">
+        <div className="rounded-[16px] bg-card shadow-card p-4">
             <div className="flex items-start gap-4">
               <Avatar className="h-16 w-16"><AvatarFallback className="text-lg">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold">{lead.name}</h1>
                   <Badge className={`bg-primary text-white text-[11px]`}>{stage.label}</Badge>
-                  {lead.score > 80 && <Badge className="bg-red-500 text-white text-[11px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
+                  {lead.score > 80 && <Badge className="bg-pop text-white text-[11px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
                   <div><span className="text-muted-foreground">Phone:</span> {lead.phone}</div>
@@ -758,8 +757,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                 <Button size="sm" variant="outline" onClick={() => navigate('/my-projects')}><UserCircle className="h-3 w-3 mr-1" /> Portal</Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -780,22 +778,45 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
           )}
         </div>
 
+        {/* SEAI & Compliance — per customer (Cal: "wheres the SEAI & Compliance
+            window for every customer?"). Status derives from the stage; the
+            grants clerk TRACKS, never submits. */}
+        <div className="rounded-[16px] bg-card shadow-card p-4">
+          <h3 className="label-micro mb-3 flex items-center gap-1.5"><Award className="size-3.5 text-doc-contract" /> SEAI & Compliance</h3>
+          <div className="grid sm:grid-cols-3 gap-2">
+            {[
+              { org: 'SEAI', what: 'Solar Electricity Grant', done: lead.workflow_stage === 'completed', busy: ['approved','deposit_paid','install_scheduled','installing','installed','final_paid'].includes(lead.workflow_stage), detail: lead.proposal ? eur(lead.proposal.seai_grant) : 'sized at proposal' },
+              { org: 'ESB', what: 'NC6 microgen export', done: ['installed','final_paid','completed'].includes(lead.workflow_stage), busy: ['install_scheduled','installing'].includes(lead.workflow_stage), detail: 'export tariff €0.14/kWh' },
+              { org: 'RECI', what: 'Electrical sign-off', done: ['installed','final_paid','completed'].includes(lead.workflow_stage), busy: lead.workflow_stage === 'installing', detail: 'required for commissioning' },
+            ].map(c => (
+              <div key={c.org} className="p-3 rounded-[10px] bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">{c.org}</span>
+                  <span className={`ml-auto text-2xs rounded-full px-2 py-0.5 font-medium ${c.done ? 'bg-doc-deposit/10 text-doc-deposit' : c.busy ? 'bg-tech-subtle text-tech' : 'bg-muted text-muted-foreground'}`}>
+                    {c.done ? 'Done' : c.busy ? 'Tracking' : 'Not started'}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">{c.what}</div>
+                <div className="text-2xs text-muted-foreground mt-0.5">{c.detail}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Touchpoint timeline */}
-        <Card>
-          <CardContent className="p-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Communication history</h3>
+        <div className="rounded-[16px] bg-card shadow-card p-4">
+            <h3 className="label-micro mb-2">Communication history</h3>
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {lead.touchpoints.map((tp, i) => (
-                <div key={i} className="flex items-center gap-2 p-1.5 border rounded text-xs">
+                <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
                   <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
-                  <span className="text-muted-foreground flex-shrink-0 w-16">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
+                  <span className="text-muted-foreground flex-shrink-0 w-16 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                   <span className="flex-1 truncate">{tp.summary}</span>
                   <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.actor}</Badge>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -821,16 +842,16 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
           filtered.map(lead => {
             const stage = getStage(lead.workflow_stage);
             return (
-              <div key={lead.id} className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer transition-colors hover:bg-muted/30" onClick={() => setSelectedClient(lead)}>
+              <div key={lead.id} className="flex items-center gap-3 p-2.5 rounded-[10px] cursor-pointer transition-colors hover:bg-muted/50" onClick={() => setSelectedClient(lead)}>
                 <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm truncate">{lead.name}</span>
-                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-pop" />}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
                 </div>
-                <Badge variant="outline" className={`text-[11px] bg-primary/10 text-primary border-primary/40`}>{stage.label}</Badge>
+                <Badge variant="outline" className="text-[11px]">{stage.label}</Badge>
                 {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -854,7 +875,7 @@ function CrmPlaceholder() {
 
 // ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
 function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
-  const [tab, setTab] = useState<'estimate' | 'proposal' | 'compliance' | 'timeline'>('estimate');
+  const [tab, setTab] = useState<'estimate' | 'proposal' | 'timeline'>('estimate');
 
   return (
     <div className="p-3 space-y-3">
@@ -870,10 +891,11 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
 
       {/* Tabs — no blocks, owner can view all */}
       <div className="flex gap-1 border-b">
+        {/* Compliance tab removed — it rendered a full duplicate ProposalView;
+            the papertrail lives in Proposal (one home per concept) */}
         {[
           { id: 'estimate' as const, label: 'Estimate', icon: FileText },
           { id: 'proposal' as const, label: 'Proposal', icon: FileText },
-          { id: 'compliance' as const, label: 'Compliance', icon: Shield },
           { id: 'timeline' as const, label: 'Timeline', icon: Clock },
         ].map(t => {
           const Icon = t.icon;
@@ -892,13 +914,11 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
       <Suspense fallback={<CardListSkeleton count={4} />}>
         {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
         {tab === 'proposal' && <ProposalView lead={lead} />}
-        {tab === 'compliance' && <ProposalView lead={lead} />}
         {tab === 'timeline' && (
-          <Card>
-            <CardContent className="p-3">
+          <div className="rounded-[16px] bg-card shadow-card p-4">
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {lead.touchpoints.map((tp, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 border rounded text-xs">
+                  <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
                     <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                     <span className="text-muted-foreground flex-shrink-0 w-20">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                     <span className="flex-1 truncate">{tp.summary}</span>
@@ -906,8 +926,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+          </div>
         )}
       </Suspense>
 

@@ -63,13 +63,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
 
   return (
     <div className="p-4 space-y-3">
-      {/* No in-view title — the shell header already names the page (Cal: the
-          same word three times on every screen) */}
-      <div className="flex items-center justify-end">
-        <Button variant="outline" size="sm"><Download className="h-3 w-3 mr-1" /> Export CSV</Button>
-      </div>
-
-      {/* Summary */}
+      {/* Summary — no title row, no orphan rows: content starts immediately */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Card><CardContent className="p-3">
           <div className="text-xs text-muted-foreground">Total leads</div>
@@ -98,11 +92,12 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         <div className="flex gap-1">
           {(['savings', 'bill', 'payback', 'score'] as const).map(s => (
             <button key={s} onClick={() => setSortBy(s)}
-              className={`px-2 py-1 rounded text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
+              className={`px-2 py-1 rounded-[8px] text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
               {s}
             </button>
           ))}
         </div>
+        <Button variant="outline" size="sm" className="ml-auto h-8 text-xs"><Download className="h-3 w-3 mr-1" /> Export CSV</Button>
       </div>
 
       {/* Estimate cards */}
