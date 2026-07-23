@@ -271,10 +271,10 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
           const TriggerIcon = TRIGGER_ICONS[agent.trigger];
           const isOn = enabled[agent.id];
           const statusColor =
-            run.status === 'success' ? 'text-primary bg-primary/10 dark:bg-primary/10' :
-            run.status === 'failed'  ? 'text-red-600 bg-red-50 dark:bg-red-950/30' :
-            run.status === 'running' ? 'text-primary bg-primary/10 dark:bg-primary/10' :
-                                       'text-slate-600 bg-slate-50 dark:bg-slate-900/30';
+            run.status === 'success' ? 'text-doc-deposit bg-doc-deposit/10' :
+            run.status === 'failed'  ? 'text-pop bg-pop/10' :
+            run.status === 'running' ? 'text-tech bg-tech-subtle' :
+                                       'text-muted-foreground bg-muted';
 
           return (
             <Card key={agent.id} className={!isOn ? "opacity-60" : ""}>
@@ -340,7 +340,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                 )}
 
                 {run.lastOutputs && !run.lastError && run.status === 'success' && (
-                  <div className="mt-2 p-2 rounded bg-primary/10 dark:bg-primary/10 text-xs text-primary dark:text-primary">
+                  <div className="mt-2 p-2 rounded-[8px] bg-tech-subtle text-xs text-tech">
                     <CheckCircle2 className="h-3 w-3 inline mr-1" />
                     {typeof run.lastOutputs === 'object' ? JSON.stringify(run.lastOutputs).slice(0, 80) + '...' : String(run.lastOutputs)}
                   </div>

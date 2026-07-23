@@ -191,15 +191,15 @@ export default function SystemSettingsV2() {
                     onClick={() => setSelectedIntegration(isSelected ? null : integration.id)}
                   >
                     <div className={`p-2 rounded-lg ${
-                      integration.status === 'connected' ? 'bg-primary/10 dark:bg-primary/10' :
-                      integration.status === 'error' ? 'bg-red-100 dark:bg-red-950/40' :
-                      integration.status === 'connecting' ? 'bg-primary/10 dark:bg-primary/10' :
+                      integration.status === 'connected' ? 'bg-doc-deposit/10' :
+                      integration.status === 'error' ? 'bg-pop/10' :
+                      integration.status === 'connecting' ? 'bg-tech-subtle' :
                       'bg-muted'
                     }`}>
                       <Icon className={`h-4 w-4 ${
-                        integration.status === 'connected' ? 'text-primary' :
-                        integration.status === 'error' ? 'text-red-600' :
-                        integration.status === 'connecting' ? 'text-primary animate-pulse' :
+                        integration.status === 'connected' ? 'text-doc-deposit' :
+                        integration.status === 'error' ? 'text-pop' :
+                        integration.status === 'connecting' ? 'text-tech animate-pulse' :
                         'text-muted-foreground'
                       }`} />
                     </div>
@@ -208,9 +208,9 @@ export default function SystemSettingsV2() {
                       <div className="text-xs text-muted-foreground">{integration.description}</div>
                     </div>
                     <Badge variant="outline" className={`text-[11px] ${
-                      integration.status === 'connected' ? 'bg-primary/10 text-primary border-primary/40' :
-                      integration.status === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
-                      integration.status === 'connecting' ? 'bg-primary/10 text-primary border-primary/40' :
+                      integration.status === 'connected' ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30' :
+                      integration.status === 'error' ? 'bg-pop/10 text-pop border-pop/30' :
+                      integration.status === 'connecting' ? 'bg-tech-subtle text-tech border-tech/30' :
                       'bg-muted text-muted-foreground'
                     }`}>
                       {integration.status === 'connecting' && <RefreshCw className="h-2.5 w-2.5 mr-0.5 animate-spin" />}

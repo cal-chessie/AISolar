@@ -300,15 +300,7 @@ export default function ProfessionalProducts() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Package className="h-6 w-6 text-tech" />
-          Product Catalogue
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Irish market · SEAI-approved · Real-time Dublin depot stock · Connected to proposal editor
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">Irish market · SEAI-approved · Real-time Dublin depot stock · Connected to proposal editor</p>
 
       {/* Search + category tabs */}
       <div className="flex flex-col sm:flex-row gap-3">
