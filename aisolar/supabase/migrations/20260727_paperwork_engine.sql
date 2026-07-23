@@ -14,7 +14,7 @@ create table if not exists public.lead_documents (
   id uuid primary key default gen_random_uuid(),
   lead_id uuid not null references public.leads(id) on delete cascade,
   doc_type text not null check (doc_type in (
-    'seai_application','seai_offer','nc6','declaration_of_works',
+    'seai_application','seai_offer','esb_loa','nc6','nc7','block_diagram','declaration_of_works','datasheet',
     'inspection_test_cert','reci_cert','ber_cert','handover_pack','other'
   )),
   status text not null default 'not_started' check (status in (

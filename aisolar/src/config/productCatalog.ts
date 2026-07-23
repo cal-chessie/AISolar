@@ -28,6 +28,17 @@ const CATALOG: CatalogProduct[] = [
     blurb: 'Tier-1 panels with 25-year performance warranty — still ≥84.5% output in year 25.',
   },
   {
+    model: 'TrinaSolar TSM-440 NEG9RC.28', kind: 'panel', maker: 'TrinaSolar',
+    spec: '440 W · Vertex S+ · dual-glass', warrantyYears: 25,
+    datasheet: '/datasheets/trinasolar-tsm-440-neg9rc28.pdf',
+    blurb: 'Vertex S+ dual-glass — the datasheet the BER assessor needs ships with your proposal.',
+  },
+  {
+    model: 'SolaX X1-HYBRID-5.0T', kind: 'inverter', maker: 'SolaX',
+    spec: '5 kW hybrid · battery-ready', warrantyYears: 10,
+    blurb: 'Hybrid inverter proven on Irish domestic installs — panels, battery and export in one unit.',
+  },
+  {
     model: 'Longi 430W', kind: 'panel', maker: 'LONGi',
     spec: '430 W · all-black mono', warrantyYears: 25,
     blurb: 'Tier-1 manufacturer, proven Irish-climate performance in low light.',

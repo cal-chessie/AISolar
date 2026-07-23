@@ -29,6 +29,9 @@ import { toast } from 'sonner';
 import type { DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { getProposalTerms } from '@/lib/proposalTerms';
+import { DowTemplate, LoaTemplate } from '@/components/compliance/docTemplates';
+import BlockDiagram from '@/components/compliance/BlockDiagram';
+import { getProduct } from '@/config/productCatalog';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -72,6 +75,13 @@ const SOURCE_META = {
  *  document that the stage can't justify. */
 function buildPack(lead: DummyLead): PackDoc[] {
   const s = lead.workflow_stage;
+  // ONE form or the other (Cal): NC6 covers ≤6kW single-phase / ≤11kW
+  // three-phase; anything above notifies on NC7. Decided from the survey's
+  // phase + the designed kW — never left as a "check this" note.
+  const kW = lead.proposal?.system_size_kw ?? 0;
+  const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
+  const nc6Limit = threePhase ? 11 : 6;
+  const esbForm = kW <= nc6Limit ? 'NC6' : 'NC7';
   const at = (stages: string[]) => stages.includes(s);
   const afterAccept = at(['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
   const afterSchedule = at(['install_scheduled', 'installing', 'installed', 'final_paid', 'completed']);
@@ -85,9 +95,15 @@ function buildPack(lead: DummyLead): PackDoc[] {
     { id: 'seai_offer', gate: 'A', name: 'SEAI grant offer', who: 'SEAI issues · agent tracks', source: 'email-in',
       status: afterAccept ? 'received' : 'not_started',
       detail: 'work cannot start before the offer exists' },
-    { id: 'nc6', gate: 'B', name: 'ESB NC6 microgen notification', who: 'Safe Electric installer submits', source: 'agent',
+    { id: 'esb_loa', gate: 'B', name: `Letter of Authority — ESB ${esbForm}`, who: 'Agent prepares · homeowner signs with the contract', source: 'agent',
+      status: afterAccept ? 'received' : lead.proposal ? 'prepared' : 'not_started',
+      detail: `authorises ${''}the contractor to complete, sign and submit the ${esbForm}` },
+    { id: 'block_diagram', gate: 'B', name: 'Single line diagram — generated', who: 'Drawn from the design · engineer reviews and stamps', source: 'agent',
+      status: lead.proposal ? 'prepared' : 'not_started',
+      detail: lead.proposal ? `array, inverter, MCB sizing and supply drawn from ${lead.name.split(' ')[0]}'s design — required with the ${esbForm}` : undefined },
+    { id: 'nc6', gate: 'B', name: `ESB ${esbForm} microgen notification`, who: 'Safe Electric installer submits', source: 'agent',
       status: afterSchedule ? 'sent' : lead.survey ? 'prepared' : 'not_started',
-      detail: `${lead.proposal?.system_size_kw ?? '—'} kWp · ${(lead.survey?.confirmed_inverter_type ?? 'single phase').toLowerCase()} → ${(lead.proposal?.system_size_kw ?? 0) <= 6 ? 'NC6' : 'NC7 territory — check'}` },
+      detail: `${kW || '—'} kWp · ${threePhase ? 'three phase' : 'single phase'} → ${esbForm} (${esbForm === 'NC6' ? `within the ${nc6Limit}kW limit` : `above the ${nc6Limit}kW NC6 limit`})` },
     { id: 'dow', gate: 'C', name: 'Declaration of Works', who: 'Installer signs', source: 'installer',
       status: afterInstall ? 'complete' : afterSchedule ? 'prepared' : 'not_started',
       detail: (() => { const a = getProposalTerms().berAssessorEmail; return afterInstall
@@ -99,6 +115,9 @@ function buildPack(lead: DummyLead): PackDoc[] {
     { id: 'reci', gate: 'C', name: 'Safe Electric (RECI) certificate', who: 'Registered Electrical Contractor signs — I.S. 10101', source: 'upload',
       status: afterInstall ? 'received' : 'not_started',
       detail: 'uploaded by the REC — never generated' },
+    { id: 'datasheet', gate: 'C', name: 'Product data sheets (for the BER assessor)', who: 'From the product catalogue — attached automatically', source: 'agent',
+      status: (() => { const pd = lead.proposal ? getProduct(lead.proposal.panel_model, 'panel') : null; return pd?.datasheet ? 'complete' : lead.proposal ? 'prepared' : 'not_started'; })(),
+      detail: lead.proposal ? `${lead.proposal.panel_model}${(getProduct(lead.proposal.panel_model, 'panel')?.datasheet) ? ' — sheet attached' : ' — add the sheet in Products'}` : undefined },
     { id: 'ber', gate: 'C', name: 'Post-works BER assessment', who: '3rd-party assessor · emailed in', source: 'email-in',
       status: done ? 'received' : afterInstall ? 'awaiting_signature' : 'not_started',
       detail: getProposalTerms().berAssessorEmail
@@ -109,6 +128,7 @@ function buildPack(lead: DummyLead): PackDoc[] {
 
 export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onBack?: () => void }) {
   const pack = useMemo(() => buildPack(lead), [lead]);
+  const esbForm: 'NC6' | 'NC7' = (lead.proposal?.system_size_kw ?? 0) <= (/three/i.test(lead.survey?.confirmed_inverter_type ?? '') ? 11 : 6) ? 'NC6' : 'NC7';
   const [viewing, setViewing] = useState<PackDoc | null>(null);
   const readyCount = pack.filter(d => ['received', 'complete', 'sent'].includes(d.status)).length;
   const allReady = pack.every(d => ['received', 'complete', 'sent'].includes(d.status));
@@ -119,7 +139,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
 
   const gates: Array<{ id: 'A' | 'B' | 'C'; title: string; icon: typeof Award; tint: string; rule: string }> = [
     { id: 'A', title: 'SEAI grant', icon: Award, tint: 'text-doc-contract', rule: 'Offer BEFORE any work starts' },
-    { id: 'B', title: 'ESB NC6', icon: Zap, tint: 'text-tech', rule: '20 working days before install' },
+    { id: 'B', title: 'ESB NC6 / NC7', icon: Zap, tint: 'text-tech', rule: '20 working days before install — form chosen from kW + phase' },
     { id: 'C', title: 'Completion pack', icon: Shield, tint: 'text-doc-deposit', rule: 'Assembled at commissioning' },
   ];
 
@@ -229,6 +249,23 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
               <Button variant="ghost" size="sm" onClick={() => setViewing(null)}><X className="size-4" /></Button>
             </div>
             {/* The prepared document, from the data we hold — a DRAFT preview */}
+            {viewing.id === 'block_diagram' ? (
+              <div className="space-y-2">
+                <BlockDiagram lead={lead} />
+                <p className="text-2xs text-muted-foreground">Generated from the job's design data. An engineer reviews and stamps before it goes to ESB — the drawing draws itself, the sign-off stays human.</p>
+              </div>
+            ) : viewing.id === 'nc6' ? (
+              <div className="space-y-2">
+                <iframe title="Official ESB NC form" src="/forms/esbn-form-nc7.pdf" className="w-full h-[50vh] rounded-[10px] border border-border" />
+                <p className="text-2xs text-muted-foreground">The official ESB Networks form, pre-fill data ready from the record — the Safe Electric installer completes and submits it{esbForm === 'NC7' ? ' with the letter of authority and single line diagram' : ''}.</p>
+              </div>
+            ) : viewing.id === 'dow' ? (
+              <div className="rounded-[10px] border border-border p-4"><DowTemplate lead={lead} /></div>
+            ) : viewing.id === 'esb_loa' ? (
+              <div className="rounded-[10px] border border-border p-4"><LoaTemplate lead={lead} esbForm={esbForm} /></div>
+            ) : viewing.id === 'datasheet' && lead.proposal && getProduct(lead.proposal.panel_model, 'panel')?.datasheet ? (
+              <iframe title="Product data sheet" src={getProduct(lead.proposal.panel_model, 'panel')!.datasheet} className="w-full h-[55vh] rounded-[10px] border border-border" />
+            ) : (
             <div className="rounded-[10px] border border-border p-4 text-sm space-y-2 font-mono text-xs">
               <div className="text-center font-bold text-sm pb-2 border-b border-border">{viewing.name.toUpperCase()}</div>
               <div>Applicant: {lead.name}</div>
@@ -245,6 +282,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                   : 'DRAFT — prepared by the grants clerk from the customer record. A registered person reviews and submits.'}
               </div>
             </div>
+            )}
             <p className="text-2xs text-muted-foreground mt-3">At launch this renders the actual PDF. The data above is live from {lead.name.split(' ')[0]}'s record.</p>
           </div>
         </div>
