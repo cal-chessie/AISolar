@@ -27,7 +27,7 @@ import ROICalculator from "./pages/ROICalculator";
 import AISolarLanding from "./pages/AISolarLanding";
 import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
-import AiTeamPage from "./pages/AiTeamPage";
+import AiTeamPage from "./pages/AiTeamPageV2";
 import PricingPage from "./pages/PricingPage";
 import AgentFoundation from "./components/AgentFoundation";
 

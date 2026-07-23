@@ -84,6 +84,7 @@ export default function PricingPage() {
       savePct: savePct(PRICES.team),
       features: [
         '3 seats included, then €97 per seat',
+        '21-point bill read on every single lead',
         'Consultant cockpit — pipeline board, calendar, inbox',
         'Installer field app — job tabs, materials, map',
         'Owner cockpit — analytics, agents, SEAI tracking',
@@ -105,6 +106,7 @@ export default function PricingPage() {
       featuresLead: 'AISolar features, plus:',
       savePct: savePct(PRICES.aiteam),
       features: [
+        'All 10 agents — intake to install to invoice',
         'The drafter — proposals written from bill + survey',
         'The scheduler — surveys + installs booked for you',
         'The chaser — follow-ups sent on time, every time',
