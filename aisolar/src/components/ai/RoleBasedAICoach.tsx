@@ -13,30 +13,49 @@
  * The coach is also context-aware: it knows which page the user is on and filters tips accordingly.
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Bot,
-  Sparkles, X, Copy, Check, ChevronDown, ChevronUp, ChevronRight,
-  AlertTriangle, Lightbulb, TrendingUp, Zap, ArrowRight,
+  Bot, Sparkles, X, ChevronRight, ArrowRight, Send,
 } from 'lucide-react';
-import { useAuth, type AppRole } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import {
-  getTipsForRole, getCoachSummary, COACH_SYSTEM_PROMPTS, type CoachRole, type CoachTip,
+  getCoachSummary, COACH_SYSTEM_PROMPTS, type CoachRole,
 } from '@/lib/aiCoach';
+import { coachAnswer, coachBriefing, COACH_PROMPTS, type CoachAnswer } from '@/lib/coachBrain';
 import { isDemoMode } from '@/lib/demoMode';
+
+interface ChatMsg { id: string; from: 'coach' | 'you'; text: string; actions?: CoachAnswer['actions']; }
+
+/** Render **bold** spans without a markdown lib. */
+function RichText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split('\n').map((line, li) => (
+        <span key={li} className="block">
+          {line.split(/(\*\*[^*]+\*\*)/g).map((part, pi) =>
+            part.startsWith('**') && part.endsWith('**')
+              ? <strong key={pi} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>
+              : <span key={pi}>{part}</span>,
+          )}
+        </span>
+      ))}
+    </>
+  );
+}
 
 export default function RoleBasedAICoach() {
   const [isOpen, setIsOpen] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [expandedTipId, setExpandedTipId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, roles, loading } = useAuth();
+  const endRef = useRef<HTMLDivElement>(null);
 
   // Determine role from auth + page context
   const role: CoachRole = useMemo(() => {
@@ -60,25 +79,36 @@ export default function RoleBasedAICoach() {
   }, [user, roles, loading, location.pathname]);
 
   const summary = getCoachSummary(role);
-  const allTips = getTipsForRole(role);
+  const prompts = COACH_PROMPTS[role] ?? COACH_PROMPTS.consultant;
 
-  // Filter tips by current page context (basic version)
-  const contextualTips = useMemo(() => {
-    // Show all tips for now — future: filter by page
-    return allTips.sort((a, b) => {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
-  }, [allTips]);
+  // Seed the conversation with a live briefing the first time it opens.
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      const brief = coachBriefing(role);
+      setMessages([{ id: 'brief', from: 'coach', text: brief.text, actions: brief.actions }]);
+    }
+  }, [isOpen, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const highPriorityCount = contextualTips.filter(t => t.priority === 'high').length;
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, thinking]);
 
-  const handleCopy = (tip: CoachTip) => {
-    if (!tip.copyText) return;
-    navigator.clipboard.writeText(tip.copyText);
-    setCopiedId(tip.id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const ask = (raw: string) => {
+    const text = raw.trim();
+    if (!text || thinking) return;
+    setInput('');
+    setMessages(m => [...m, { id: `u${Date.now()}`, from: 'you', text }]);
+    setThinking(true);
+    // A short beat so it reads as a considered answer, not an instant lookup.
+    window.setTimeout(() => {
+      const a = coachAnswer(role, text);
+      setMessages(m => [...m, { id: `c${Date.now()}`, from: 'coach', text: a.text, actions: a.actions }]);
+      setThinking(false);
+    }, 450);
   };
+
+  const runAction = (route: string) => { setIsOpen(false); navigate(route); };
+
+  // High-signal count for the button badge: does the briefing flag anything hot?
+  const highPriorityCount = useMemo(() => (isDemoMode() && (role === 'consultant' || role === 'owner')) ? 1 : 0, [role]);
 
   return (
     <>
@@ -131,102 +161,80 @@ export default function RoleBasedAICoach() {
                 </div>
               </div>
 
-              {/* Tip list */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {contextualTips.map(tip => {
-                  const Icon = tip.icon;
-                  const isExpanded = expandedTipId === tip.id;
-                  const priorityColor =
-                    tip.priority === 'high'   ? 'border-l-red-500' :
-                    tip.priority === 'medium' ? 'border-l-doc-proposal' :
-                                                'border-l-slate-400';
-                  const typeColor =
-                    tip.type === 'action'     ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
-                    tip.type === 'warning'    ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300' :
-                    tip.type === 'opportunity'? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
-                                                'bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300';
-
-                  return (
-                    <div
-                      key={tip.id}
-                      className={`bg-card border border-l-4 ${priorityColor} rounded-md p-3 shadow-sm`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Icon className="h-4 w-4 flex-shrink-0 mt-0.5 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold text-sm leading-tight">{tip.title}</h3>
-                            <Badge variant="outline" className={`text-[9px] h-4 px-1 flex-shrink-0 ${typeColor}`}>
-                              {tip.priority}
-                            </Badge>
-                          </div>
-                          <p className={`text-xs text-muted-foreground mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
-                            {tip.body}
-                          </p>
-
-                          {/* Copy-text script (consultant only typically) */}
-                          {tip.copyText && isExpanded && (
-                            <div className="mt-2 p-2 bg-muted/50 rounded text-[11px] font-mono leading-relaxed">
-                              "{tip.copyText}"
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            {tip.cta?.route && (
-                              <a
-                                href={tip.cta.route}
-                                className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1"
-                              >
-                                {tip.cta.label}
-                                <ArrowRight className="h-3 w-3" />
-                              </a>
-                            )}
-                            {tip.copyText && (
-                              <button
-                                onClick={() => handleCopy(tip)}
-                                className="text-[11px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-                              >
-                                {copiedId === tip.id ? (
-                                  <><Check className="h-3 w-3" /> Copied</>
-                                ) : (
-                                  <><Copy className="h-3 w-3" /> Copy script</>
-                                )}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setExpandedTipId(isExpanded ? null : tip.id)}
-                              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1 ml-auto"
-                            >
-                              {isExpanded ? (
-                                <><ChevronUp className="h-3 w-3" /> Less</>
-                              ) : (
-                                <><ChevronDown className="h-3 w-3" /> More</>
-                              )}
-                            </button>
-                          </div>
-                        </div>
+              {/* Conversation */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {messages.map(m => (
+                  m.from === 'you' ? (
+                    <div key={m.id} className="flex justify-end">
+                      <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-3 py-2 text-sm">
+                        {m.text}
                       </div>
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div key={m.id} className="flex justify-start gap-2">
+                      <span className="mt-0.5 shrink-0 size-6 rounded-full bg-foreground text-background grid place-items-center">
+                        <Sparkles className="size-3.5" />
+                      </span>
+                      <div className="max-w-[85%] space-y-2">
+                        <div className="rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-sm leading-relaxed text-muted-foreground">
+                          <RichText text={m.text} />
+                        </div>
+                        {m.actions?.map((a, i) => (
+                          <button key={i} onClick={() => runAction(a.route)}
+                            className="inline-flex items-center gap-1 h-7 px-2.5 mr-1.5 rounded-full bg-card border border-border text-xs font-medium hover:bg-muted/60 transition-colors">
+                            {a.label} <ArrowRight className="size-3" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ))}
+                {thinking && (
+                  <div className="flex justify-start gap-2">
+                    <span className="mt-0.5 shrink-0 size-6 rounded-full bg-foreground text-background grid place-items-center">
+                      <Sparkles className="size-3.5" />
+                    </span>
+                    <div className="rounded-2xl rounded-bl-sm bg-muted px-3 py-2.5 flex gap-1">
+                      {[0, 150, 300].map(d => <span key={d} className="size-1.5 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
+                    </div>
+                  </div>
+                )}
+                <div ref={endRef} />
+              </div>
 
-                {/* Footer: coach system prompt */}
-                <details className="mt-4 group">
-                  <summary className="text-xs text-muted-foreground cursor-pointer hover:underline list-none flex items-center gap-1">
-                    <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
-                    How this coach thinks (system prompt)
+              {/* Suggested prompts + input */}
+              <div className="border-t p-2.5 space-y-2">
+                {messages.length <= 1 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {prompts.map(p => (
+                      <button key={p} onClick={() => ask(p)}
+                        className="text-2xs font-medium h-7 px-2.5 rounded-full bg-muted hover:bg-muted/70 transition-colors">
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); } }}
+                    placeholder="Ask about a lead, what's stuck, who to call…"
+                    className="flex-1 h-9 rounded-[10px] border border-border bg-background px-3 text-sm outline-none focus:border-primary transition-colors"
+                  />
+                  <Button onClick={() => ask(input)} disabled={!input.trim() || thinking} className="h-9 px-3">
+                    <Send className="size-4" />
+                  </Button>
+                </div>
+                <details className="group">
+                  <summary className="text-2xs text-muted-foreground cursor-pointer hover:underline list-none flex items-center gap-1">
+                    <ChevronRight className="size-3 group-open:rotate-90 transition-transform" />
+                    How this coach thinks
                   </summary>
-                  <div className="mt-2 p-3 bg-muted/30 rounded text-[11px] text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap">
+                  <div className="mt-1.5 p-2.5 bg-muted/30 rounded text-2xs text-muted-foreground leading-relaxed whitespace-pre-wrap max-h-32 overflow-y-auto">
                     {COACH_SYSTEM_PROMPTS[role]}
                   </div>
                 </details>
-              </div>
-
-              {/* Footer */}
-              <div className="p-3 border-t bg-muted/30 text-[10px] text-muted-foreground">
-                Tips are personalized for the <strong className="capitalize">{role}</strong> role.
-                {role !== 'customer' && ' Different roles see different priorities and scripts.'}
               </div>
             </Card>
           </motion.div>

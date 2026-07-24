@@ -205,6 +205,8 @@ export function generateDummyLeads(): DummyLead[] {
       name: 'Siobhán Murphy', stage: 'approved', daysAgo: 6, bill: 412, kwh: 14100,
       address: DUBLIN_ADDRESSES[6], consultant: CONSULTANTS[1],
       touchpoints: [
+        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (1st time)', timestamp: iso(2, 20), actor: 'customer' },
+        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(1, 9), actor: 'customer' },
         { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed contract', timestamp: iso(0, 14), actor: 'customer' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Invoice auto-created + deposit link emailed', timestamp: iso(0, 14), actor: 'agent' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent started SEAI application', timestamp: iso(0, 14), actor: 'agent' },

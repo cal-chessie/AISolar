@@ -20,7 +20,7 @@
  * is walkable — the estimate maths (calculateSystemEstimate) is the real thing.
  */
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Upload, Pencil, FileText, Loader2, Check,
   Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck,
@@ -34,6 +34,15 @@ const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 type Step = 'choose' | 'upload' | 'manual' | 'estimate' | 'book';
+
+/** What the calculator carries forward when the customer clicks through. */
+interface CarriedCalc {
+  monthlyBill?: number; nightPct?: number;
+  orientation?: string; battery?: boolean;
+  roofPanels?: number; roofKwp?: number; roofAddress?: string;
+  systemSizeKw?: number; annualSavings?: number;
+  seaiGrant?: number; netCost?: number; paybackYears?: number;
+}
 
 interface BillData {
   // the full 21-field read (whatever the extractor found)
@@ -72,9 +81,33 @@ const SAMPLE: BillData = {
   fieldsRead: 19,
 };
 
+/**
+ * Turn what the calculator carried into a BillData so the customer lands on the
+ * estimate directly — not the old questionnaire. Annual usage is derived from
+ * the monthly bill the same way the manual path does it (÷ €0.35/kWh).
+ */
+function billFromCarried(c: CarriedCalc): BillData {
+  const mb = c.monthlyBill ?? null;
+  const annualKwh = mb ? Math.round((mb * 12) / 0.35) : null;
+  return {
+    monthlyBill: mb,
+    annualKwh,
+    dayNightMeter: (c.nightPct ?? 0) >= 40,
+    eircode: c.roofAddress || null,
+    notes: [c.battery ? 'Wants a battery' : null, c.roofKwp ? `Drew ~${c.roofKwp} kWp on their roof` : null].filter(Boolean).join(' · ') || null,
+    fieldsRead: [mb, c.nightPct, c.roofAddress].filter(Boolean).length,
+  };
+}
+
 export default function StartAnalysis() {
-  const [step, setStep] = useState<Step>('choose');
-  const [bill, setBill] = useState<BillData | null>(null);
+  // The calculator (widget, /calculator, landing) hands off what the customer
+  // already did — bill, night split, the roof they drew — via navigation state.
+  // They've done the work, so we land them straight on the estimate + book,
+  // NOT the old questionnaire (Cal: don't re-ask what the widget captured).
+  const carried = (useLocation().state as { calc?: CarriedCalc } | null)?.calc ?? null;
+
+  const [step, setStep] = useState<Step>(carried ? 'estimate' : 'choose');
+  const [bill, setBill] = useState<BillData | null>(() => carried ? billFromCarried(carried) : null);
   const [busy, setBusy] = useState(false);
   const [contact, setContact] = useState({ name: '', mobile: '', email: '' });
   const fileRef = useRef<HTMLInputElement>(null);

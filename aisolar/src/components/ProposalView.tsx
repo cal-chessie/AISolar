@@ -8,19 +8,21 @@
  * below it is visibly theirs — not an average home's.
  */
 
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
-  Sun, Zap, Award, FileText, Download, CheckCircle2, Shield,
-  Battery, Printer, Calculator,
+  Sun, Zap, Award, FileText, CheckCircle2, Shield,
+  Battery, Calculator,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI } from '@/lib/seaiPipeline';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
+import DocumentActions from '@/components/consultant/DocumentActions';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 export default function ProposalView({ lead }: { lead: DummyLead }) {
+  const navigate = useNavigate();
   const proposal = lead.proposal;
   const survey = lead.survey;
   if (!proposal) {
@@ -155,12 +157,9 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"><Printer className="h-4 w-4 mr-2" /> Print PDF</Button>
-        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"><Download className="h-4 w-4 mr-2" /> Download</Button>
-        <Button className="flex-1 h-10 rounded-[10px] font-semibold"><FileText className="h-4 w-4 mr-2" /> Open in LeadFlow</Button>
-      </div>
+      {/* Review-and-act: bottleneck intelligence + notify, not print/download */}
+      <DocumentActions lead={lead} forwardLabel="Open in LeadFlow" forwardIcon={FileText}
+        onForward={() => navigate(`/lead-flow/${lead.id}`)} />
     </div>
   );
 }

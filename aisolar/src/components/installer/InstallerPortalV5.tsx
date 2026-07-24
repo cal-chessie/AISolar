@@ -33,7 +33,6 @@ import { getStage } from '@/lib/leadIntake';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
-import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 
 type TabId = 'today' | 'week' | 'jobs' | 'inbox' | 'materials' | 'map';
 
@@ -610,8 +609,7 @@ export default function InstallerPortalV5() {
           </div>
         </div>
       )}
-
-      <RoleBasedAICoach />
+      {/* AI Coach mounted once globally in App.tsx — no local copy (double-mount). */}
     </div>
   );
 }

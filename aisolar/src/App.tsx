@@ -21,6 +21,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
+import CalculatorWidget from "./components/calculator/CalculatorWidget";
 import AISolarLanding from "./pages/AISolarLanding";
 import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
@@ -57,6 +58,10 @@ function AppRoutes() {
     location.pathname.startsWith(path)
   );
 
+  // /embed is the chrome-less widget dropped into a tenant's own site (iframe) —
+  // the host page owns its own banners, so we suppress ours entirely here.
+  const isEmbed = location.pathname.startsWith('/embed');
+
   const useRoleCoach = isDemoMode();
 
   // Wrap each route in an ErrorBoundary so a render crash in one view doesn't
@@ -70,8 +75,8 @@ function AppRoutes() {
 
   return (
     <>
-      <DemoBanner />
-      <CookieConsentBanner />
+      {!isEmbed && <DemoBanner />}
+      {!isEmbed && <CookieConsentBanner />}
       <GlobalSearchModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
       {showAICoach && useRoleCoach && <RoleBasedAICoach />}
       <Routes location={location} key={location.pathname}>
@@ -87,6 +92,8 @@ function AppRoutes() {
           <Route path="/docs" element={wrap(<DocsPage />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
           <Route path="/calculator" element={wrap(<ROICalculator />)} />
+          {/* Chrome-less embeddable widget — tenant pastes this in an iframe */}
+          <Route path="/embed" element={<ErrorBoundary><CalculatorWidget /></ErrorBoundary>} />
           <Route path="/privacy" element={wrap(<PrivacyPolicy />)} />
           <Route path="/terms" element={wrap(<TermsOfService />)} />
 

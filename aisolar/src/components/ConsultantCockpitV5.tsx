@@ -43,9 +43,9 @@ import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
+import EngagementBadge from '@/components/consultant/EngagementBadge';
 import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
-import RoleBasedAICoach from '@/components/ai/RoleBasedAICoach';
 import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';
 
 const EstimateView = lazy(() => import('./EstimateView'));
@@ -442,7 +442,10 @@ export default function ConsultantCockpitV5() {
                   )}
                   <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{selectedLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">{selectedLead.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm truncate">{selectedLead.name}</span>
+                      <EngagementBadge lead={selectedLead} compact />
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">{selectedLead.address.split(',').slice(-1)[0]?.trim()}</div>
                   </div>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit lead"
@@ -627,6 +630,7 @@ export default function ConsultantCockpitV5() {
                             {lead.contract && <Badge variant="outline" className="text-[11px] bg-doc-contract/10 text-doc-contract border-doc-contract/30">Contract</Badge>}
                             {lead.invoice && <Badge variant="outline" className="text-[11px] bg-doc-invoice/10 text-doc-invoice border-doc-invoice/30">Invoice</Badge>}
                             {lead.invoice?.deposit_paid && <Badge variant="outline" className="text-[11px] bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30">Deposit paid</Badge>}
+                            <EngagementBadge lead={lead} compact />
                           </div></div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </CardContent>
@@ -709,7 +713,7 @@ export default function ConsultantCockpitV5() {
             initial="hidden"
             animate="show"
             exit="exit"
-            className="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 overflow-y-auto"
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-[560px] lg:w-[58vw] lg:max-w-[900px] bg-background border-l shadow-2xl z-50 overflow-y-auto"
             role="dialog"
             aria-modal="true"
             aria-label={`${slideOutView} panel for ${selectedLead.name}`}
@@ -734,8 +738,8 @@ export default function ConsultantCockpitV5() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <RoleBasedAICoach />
+      {/* AI Coach is mounted once globally in App.tsx for these routes — no
+          local copy here or it double-mounts (one visible, one swallowing clicks). */}
     </div>
   );
 }
@@ -843,6 +847,7 @@ function LeadListContent({
                   <div className="flex items-center gap-1 mt-0.5">
                     <Badge variant="outline" className={`text-[11px] bg-primary/10 text-primary border-primary/40`}>{getStage(lead.workflow_stage).label}</Badge>
                     {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                    <EngagementBadge lead={lead} compact />
                   </div>
                 </div>
               </motion.button>
@@ -1029,6 +1034,7 @@ function PipelineKanban({
                       <Avatar className="h-5 w-5"><AvatarFallback className="text-[10px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                       <span className="text-xs font-medium truncate flex-1">{lead.name}</span>
                       {lead.score > 80 && <Flame className="h-3 w-3 text-pop shrink-0" />}
+                      <EngagementBadge lead={lead} compact />
                     </div>
                     <div className="text-2xs text-muted-foreground mt-1 truncate">{getStage(lead.workflow_stage).label}</div>
                     <div className="text-2xs font-medium tabular-nums mt-0.5">

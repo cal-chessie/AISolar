@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { getStage } from '@/lib/leadIntake';
 import type { DummyLead } from '@/lib/dummyData';
+import EngagementBadge from '@/components/consultant/EngagementBadge';
 import AgentWindow, { useAgentActions } from '@/components/agents/AgentWindow';
 import { toast } from 'sonner';
 
@@ -43,6 +44,7 @@ function Row({ lead, meta, accent, onOpen }: {
         <span className="flex items-center gap-1.5">
           <span className="text-sm font-medium truncate">{lead.name}</span>
           {accent === 'hot' && <Flame className="size-3.5 text-pop shrink-0" aria-label="hot lead" />}
+          <EngagementBadge lead={lead} compact />
         </span>
         <span className="block text-xs text-muted-foreground truncate">{meta}</span>
       </span>

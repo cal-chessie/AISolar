@@ -42,16 +42,32 @@ function Money({ value, className }: { value: number; className?: string }) {
   return <span className={className}>{eur(Math.round(n))}</span>;
 }
 
-export default function SolarCalculator({ showHeader = true }: { showHeader?: boolean }) {
+export default function SolarCalculator({ showHeader = true, initialBill = 250 }: { showHeader?: boolean; initialBill?: number }) {
   const navigate = useNavigate();
-  const [monthlyBill, setMonthlyBill] = useState(250);
+  const [monthlyBill, setMonthlyBill] = useState(initialBill);
   const [nightPct, setNightPct] = useState(35);
   const [orientation, setOrientation] = useState<'south' | 'east' | 'west' | 'north'>('south');
   const [battery, setBattery] = useState(false);
   const [roofPanels, setRoofPanels] = useState(0);
   const [roofKwp, setRoofKwp] = useState(0);
+  const [roofAddress, setRoofAddress] = useState('');
 
   const cfg = getPricingConfig();
+
+  // Carry everything the customer just did into /start so the estimate
+  // continues from THEIR numbers — bill, night split, orientation, battery
+  // and the roof they drew — instead of starting blank (Cal: the drawn array
+  // must automate to the estimate → survey → proposal).
+  const goToStart = () => navigate('/start', {
+    state: {
+      calc: {
+        monthlyBill, nightPct, orientation, battery,
+        roofPanels, roofKwp, roofAddress,
+        systemSizeKw: r.systemSizeKw, annualSavings: r.annualSavings,
+        seaiGrant: r.seaiGrant, netCost: r.netCost, paybackYears: r.paybackYears,
+      },
+    },
+  });
 
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
@@ -94,7 +110,7 @@ export default function SolarCalculator({ showHeader = true }: { showHeader?: bo
         <div className="rounded-[16px] bg-card shadow-card p-6 space-y-7">
           <div>
             <label className="text-sm font-medium mb-2 block">Your roof</label>
-            <RoofDesigner panelWatts={cfg.panelWatts} onChange={(panels, kwp) => { setRoofPanels(panels); setRoofKwp(kwp); }} />
+            <RoofDesigner panelWatts={cfg.panelWatts} onChange={({ panels, kwp, address }) => { setRoofPanels(panels); setRoofKwp(kwp); setRoofAddress(address); }} />
             {roofPanels > 0 && (
               <p className="mt-2 text-xs font-medium text-doc-deposit">Your roof fits ~{roofPanels} panels ({roofKwp} kWp) — feeding your estimate.</p>
             )}
@@ -152,7 +168,7 @@ export default function SolarCalculator({ showHeader = true }: { showHeader?: bo
           <div className="rounded-[12px] bg-muted/40 p-3.5 flex items-center gap-3">
             <Upload className="size-4 text-muted-foreground shrink-0" />
             <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
-            <button onClick={() => navigate('/start')} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
+            <button onClick={goToStart} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
           </div>
         </div>
 
@@ -222,7 +238,7 @@ export default function SolarCalculator({ showHeader = true }: { showHeader?: bo
           </div>
 
           <div className="p-4 pt-0">
-            <button onClick={() => navigate('/start')}
+            <button onClick={goToStart}
               className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
               Get this on my real numbers <ArrowRight className="size-4" />
             </button>

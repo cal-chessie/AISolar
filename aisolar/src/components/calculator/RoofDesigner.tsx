@@ -28,7 +28,7 @@ export default function RoofDesigner({
   onChange,
 }: {
   panelWatts: number;
-  onChange?: (panels: number, kwp: number) => void;
+  onChange?: (roof: { panels: number; kwp: number; address: string }) => void;
 }) {
   const [address, setAddress] = useState('45 Griffith Avenue, Drumcondra, Dublin 9');
   const [query, setQuery] = useState(address);
@@ -44,12 +44,12 @@ export default function RoofDesigner({
   const [noCoverage, setNoCoverage] = useState(false);
 
   const emit = useCallback((r: Rect | null) => {
-    if (!r) { onChange?.(0, 0); return; }
+    if (!r) { onChange?.({ panels: 0, kwp: 0, address }); return; }
     const cols = Math.max(0, Math.floor((r.w + GAP) / (PW + GAP)));
     const rows = Math.max(0, Math.floor((r.h + GAP) / (PH + GAP)));
     const panels = Math.min(40, cols * rows);
-    onChange?.(panels, Math.round((panels * panelWatts) / 100) / 10);
-  }, [onChange, panelWatts]);
+    onChange?.({ panels, kwp: Math.round((panels * panelWatts) / 100) / 10, address });
+  }, [onChange, panelWatts, address]);
 
   const find = async () => {
     setQuery(address); setRect(null); setRotation(0); emit(null); setDrawing(false);
@@ -60,7 +60,7 @@ export default function RoofDesigner({
     setChecking(false);
     if (insight) setAuto(insight); else setNoCoverage(true);
   };
-  const useAuto = () => { if (auto) { onChange?.(auto.panels, auto.kwp); setAutoUsed(true); } };
+  const useAuto = () => { if (auto) { onChange?.({ panels: auto.panels, kwp: auto.kwp, address }); setAutoUsed(true); } };
 
   const rel = (e: React.PointerEvent) => {
     const b = boxRef.current!.getBoundingClientRect();

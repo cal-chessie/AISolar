@@ -12,12 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Zap, TrendingUp, Award, MapPin, Phone, Mail,
-  Calculator, ArrowRight, Sun, Clock, Download,
+  Calculator, ArrowRight, Sun, Clock,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { calculateSEAI } from '@/lib/seaiPipeline';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
+import DocumentActions from '@/components/consultant/DocumentActions';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -109,15 +110,8 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
         </div>
       </div>
 
-      {/* one primary action */}
-      <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"><Download className="h-4 w-4 mr-2" /> Download</Button>
-        {onOpenProposal && (
-          <Button onClick={onOpenProposal} className="flex-[2] h-10 rounded-[10px] font-semibold">
-            Open the proposal <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        )}
-      </div>
+      {/* Review-and-act: bottleneck intelligence + notify, not print/download */}
+      <DocumentActions lead={lead} forwardLabel="Open the proposal" forwardIcon={ArrowRight} onForward={onOpenProposal} />
     </div>
   );
 }
