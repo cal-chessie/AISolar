@@ -76,7 +76,7 @@ export default function AnalyticsDashboard() {
     runs24h: 47,
     runs30d: 1342,
     emailsSent: 312,
-    smsSent: 89,
+    portalAlerts: 89,   // in-app/portal notifications (live). SMS joins at launch.
     proposalsAutoDrafted: 24,
     surveysAutoScheduled: 18,
     followUpsSent: 156,
@@ -385,8 +385,8 @@ export default function AnalyticsDashboard() {
                   <div className="text-xs text-muted-foreground">Emails sent</div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{agentImpact.smsSent}</div>
-                  <div className="text-xs text-muted-foreground">SMS sent</div>
+                  <div className="text-2xl font-bold text-primary">{agentImpact.portalAlerts}</div>
+                  <div className="text-xs text-muted-foreground">Portal alerts</div>
                 </div>
                 <div className="p-3 bg-muted/30 rounded-lg">
                   <div className="text-2xl font-bold text-primary">{agentImpact.proposalsAutoDrafted}</div>

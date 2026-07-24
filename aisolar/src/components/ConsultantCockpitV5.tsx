@@ -411,7 +411,7 @@ export default function ConsultantCockpitV5() {
                 <div>
                   <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                   <h3 className="font-semibold text-muted-foreground">Select a lead to view conversation</h3>
-                  <p className="text-xs text-muted-foreground mt-1">All emails, SMS, calls, AI chat, and agent actions in one thread.</p>
+                  <p className="text-xs text-muted-foreground mt-1">All emails, calls, AI chat, and agent actions in one thread.</p>
                   {isMobile && (
                     <Button
                       variant="outline"

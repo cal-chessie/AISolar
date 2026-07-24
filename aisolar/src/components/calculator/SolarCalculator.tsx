@@ -112,7 +112,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
             <label className="text-sm font-medium mb-2 block">Your roof</label>
             <RoofDesigner panelWatts={cfg.panelWatts} onChange={({ panels, kwp, address }) => { setRoofPanels(panels); setRoofKwp(kwp); setRoofAddress(address); }} />
             {roofPanels > 0 && (
-              <p className="mt-2 text-xs font-medium text-doc-deposit">Your roof fits ~{roofPanels} panels ({roofKwp} kWp) — feeding your estimate.</p>
+              <p className="mt-2 text-xs font-medium text-doc-deposit">Room for about {roofPanels} panels here — a {roofKwp} kWp system, now in your estimate.</p>
             )}
           </div>
 
