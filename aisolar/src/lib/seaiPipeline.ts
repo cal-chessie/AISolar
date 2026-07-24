@@ -308,3 +308,32 @@ export function buildSEAIApplicationPack(
 /** Format EUR for display. */
 export const eur = (n: number) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+
+
+/* ── Grants engine (Cal: commercial + domestic + EV) ─────────────────────────
+   RATES ARE A VERSIONED TABLE, marked INDICATIVE everywhere they render —
+   SEAI publishes changes; the number is confirmed at application, never
+   promised. Sources on record: seai.ie business-grants/commercial-solar-pv,
+   purevolt.ie NDMG guide (Jul 2026 search). */
+
+/** SEAI Non-Domestic Microgen Grant — piecewise per kWp, hard cap €162,600.
+ *  €900/kWp→2 · €300→20 · €200→200 · €150→1000. */
+export function calculateNDMG(kwp: number): number {
+  if (kwp < 1) return 0;
+  let g = 0;
+  g += Math.min(kwp, 2) * 900;
+  if (kwp > 2) g += (Math.min(kwp, 20) - 2) * 300;
+  if (kwp > 20) g += (Math.min(kwp, 200) - 20) * 200;
+  if (kwp > 200) g += (Math.min(kwp, 1000) - 200) * 150;
+  return Math.min(Math.round(g), 162600);
+}
+
+/** ZEVI workplace charger grant: 60% of eligible cost, capped €5,000/point. */
+export function calculateZEVIWorkplace(totalCost: number, chargePoints: number): number {
+  return Math.round(Math.min(totalCost * 0.6, chargePoints * 5000));
+}
+
+/** SEAI EV Home Charger Grant — fixed. No ESB form exists for chargers
+ *  (they are load, not generation): domestic = RECI cert only; commercial =
+ *  LCT register note. */
+export const EV_HOME_CHARGER_GRANT = 300;

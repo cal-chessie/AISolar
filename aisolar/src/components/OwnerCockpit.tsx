@@ -63,7 +63,7 @@ const RealCalendar = lazy(() => import('./RealCalendar'));
 const EstimateView = lazy(() => import('./EstimateView'));
 const ProposalView = lazy(() => import('./ProposalView'));
 const AgentTraining = lazy(() => import('./AgentTraining'));
-const SEAIDashboard = lazy(() => import('./SEAIDashboard'));
+const ComplianceCommand = lazy(() => import('./compliance/ComplianceCommand'));
 const EstimatesView = lazy(() => import('./EstimatesView'));
 const CeoWindow = lazy(() => import('./CeoWindow'));
 const FinanceWindow = lazy(() => import('./owner/FinanceWindow'));
@@ -267,7 +267,7 @@ export default function OwnerCockpit() {
           {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow onOpenFinancials={() => setActiveView('financials')} /></Suspense>}
           {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
           {activeView === 'feedback' && <HelpUsImprove />}
-          {activeView === 'seai' && <SEAIDashboard leads={leads} />}
+          {activeView === 'seai' && <Suspense fallback={<CockpitSkeleton />}><ComplianceCommand /></Suspense>}
           {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
           {activeView === 'lead_detail' && selectedLead && (
             <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
