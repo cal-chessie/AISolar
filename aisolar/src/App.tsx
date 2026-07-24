@@ -22,6 +22,7 @@ import TermsOfService from "./pages/TermsOfService";
 import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
 import CalculatorWidget from "./components/calculator/CalculatorWidget";
+import FAQ from "./pages/FAQ";
 import AISolarLanding from "./pages/AISolarLanding";
 import StartAnalysis from "./pages/StartAnalysis";
 import AiosPage from "./pages/AiosPage";
@@ -91,6 +92,7 @@ function AppRoutes() {
           <Route path="/pricing" element={wrap(<PricingPage />)} />
           <Route path="/docs" element={wrap(<DocsPage />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
+          <Route path="/faq" element={wrap(<FAQ />)} />
           <Route path="/calculator" element={wrap(<ROICalculator />)} />
           {/* Chrome-less embeddable widget — tenant pastes this in an iframe */}
           <Route path="/embed" element={<ErrorBoundary><CalculatorWidget /></ErrorBoundary>} />

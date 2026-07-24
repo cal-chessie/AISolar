@@ -11,9 +11,9 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-  title = 'Solar Automation Platform - Smart Solar Solutions for Ireland',
-  description = 'Get instant solar panel proposals with accurate savings calculations. Upload your electricity bill and receive a customized solar installation plan within minutes. Free consultation available.',
-  keywords = 'solar panels Ireland, solar installation, solar savings calculator, renewable energy, solar proposal, SEAI grants, solar consultation',
+  title = 'AISOLAR — The Solar Installer Operating System (Ireland)',
+  description = 'AISOLAR is the operating system for Irish solar installers. It reads the day/night split from your electricity bill, then ten agents handle survey scheduling, proposal drafting, SEAI grant tracking, install coordination and follow-ups.',
+  keywords = 'solar installer software Ireland, solar CRM, SEAI grant, solar proposal software, solar bill analysis, day night meter, solar automation Ireland',
   ogType = 'website',
   ogImage = '/placeholder.svg',
   canonical,
@@ -22,21 +22,23 @@ export default function SEOHead({
   const siteUrl = window.location.origin;
   const currentUrl = canonical || window.location.href;
 
+  // Honest defaults only — no invented ratings/reviews in structured data.
   const defaultStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Solar Automation Platform',
-    applicationCategory: 'UtilitiesApplication',
+    name: 'AISOLAR',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description,
+    url: 'https://aisolar.ie',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'EUR',
+      description: 'Free solar savings estimate — no signup.',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '127',
-    },
+    provider: { '@type': 'Organization', name: 'AISOLAR', url: 'https://aisolar.ie' },
+    areaServed: { '@type': 'Country', name: 'Ireland' },
   };
 
   return (

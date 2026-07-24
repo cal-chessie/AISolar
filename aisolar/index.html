@@ -8,7 +8,7 @@
     <title>AISOLAR — The Solar Installer Operating System</title>
     <meta name="description" content="AISOLAR is the operating system for Irish solar installers. Bill extract at the front door. Ten autonomous agents handle survey scheduling, proposal drafting, SEAI grants, install coordination, and follow-ups. Your crews install. The platform does the rest." />
     <meta name="author" content="AISOLAR" />
-    <meta name="theme-color" content="#10b981" />
+    <meta name="theme-color" content="#26262B" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="AISOLAR — The Solar Installer Operating System" />
@@ -34,6 +34,32 @@
     <!-- Favicon (inline SVG, no external file needed) -->
     <!-- The AIOS tile: charcoal squircle, white wordmark (matches AiosMark) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8.3' fill='%2326262B'/%3E%3Ctext x='16' y='17' dominant-baseline='central' text-anchor='middle' fill='white' font-size='11' font-weight='700' letter-spacing='-0.2' font-family='Inter, system-ui, sans-serif'%3EAIOS%3C/text%3E%3C/svg%3E" />
+
+    <!-- Entity foundation: Organization + WebSite (JSON-LD, @id cross-referenced) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://aisolar.ie/#organization",
+          "name": "AISOLAR",
+          "url": "https://aisolar.ie",
+          "description": "The operating system for Irish solar installers. Reads the day/night split from an electricity bill; ten agents run survey scheduling, proposal drafting, SEAI grant tracking, install coordination and follow-ups.",
+          "areaServed": { "@type": "Country", "name": "Ireland" },
+          "parentOrganization": { "@type": "Organization", "name": "AIOS" }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://aisolar.ie/#website",
+          "url": "https://aisolar.ie",
+          "name": "AISOLAR",
+          "inLanguage": "en-IE",
+          "publisher": { "@id": "https://aisolar.ie/#organization" }
+        }
+      ]
+    }
+    </script>
   </head>
 
   <body>
