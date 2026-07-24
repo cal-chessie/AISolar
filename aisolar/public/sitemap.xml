@@ -31,6 +31,31 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aisolar.ie/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aisolar.ie/blog/seai-solar-grant-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aisolar.ie/blog/day-night-meter-solar</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aisolar.ie/blog/solar-payback-ireland</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aisolar.ie/blog/esb-microgeneration-nc6-nc7</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aisolar.ie/aiteam</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
