@@ -19,7 +19,7 @@
  * Until that Supabase is reachable it falls back to a worked sample so the flow
  * is walkable — the estimate maths (calculateSystemEstimate) is the real thing.
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Upload, Pencil, FileText, Loader2, Check,
@@ -117,6 +117,11 @@ export default function StartAnalysis() {
   // manual inputs — the few that actually move the estimate, most-weighted first,
   // plus two sticky yes/no questions that sharpen it and pull the user in.
   const [manual, setManual] = useState({ monthlyBill: '', dayNight: false, eircode: '', ev: null as boolean | null, daytime: null as boolean | null });
+
+  // Wizard steps swap content without a route change, so the global
+  // ScrollToTop never fires — you'd submit the form and land halfway down your
+  // own estimate. Take them to the top of each new step.
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
   const estimate = bill
     ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh })
