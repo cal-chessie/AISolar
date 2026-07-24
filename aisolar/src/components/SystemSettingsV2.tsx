@@ -18,7 +18,6 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { getProposalTerms, saveProposalTerms, type ProposalTerms } from '@/lib/proposalTerms';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Settings, Mail, MessageSquare, Bot, Database, Shield, CheckCircle2,
@@ -171,7 +170,7 @@ export default function SystemSettingsV2() {
       <p className="text-sm text-muted-foreground">The bedrock: integrations, branding, audit, kernel.</p>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
           <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>

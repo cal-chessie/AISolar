@@ -76,7 +76,7 @@ export default function FinanceWindow() {
   };
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 max-w-6xl">
+    <div className="space-y-4">
       {/* 1 — Cash position: the four numbers an owner checks before coffee */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[

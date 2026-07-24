@@ -159,11 +159,30 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     fetchExistingSurvey();
   }, [leadId]);
 
-  // Scroll to survey top when step changes
+  // Scroll to the top of the survey on every step change. scrollIntoView proved
+  // unreliable here (a smooth scroll got cancelled by the AnimatePresence remount
+  // of key={currentStep}, and even instant did nothing against the page scroller),
+  // so Next left you stranded mid-page. Do it after paint (rAF): reset the nearest
+  // scrolling ancestor if there is one (the cockpit shell), otherwise scroll the
+  // window to the survey top, offset to clear the sticky flow header.
   useEffect(() => {
-    if (surveyContainerRef.current) {
-      surveyContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    requestAnimationFrame(() => {
+      const el = surveyContainerRef.current;
+      if (!el) return;
+      // Reset every scrolling ancestor (the cockpit shell has one)…
+      let scrolledAncestor = false;
+      let node: HTMLElement | null = el.parentElement;
+      while (node) {
+        const oy = getComputedStyle(node).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+          node.scrollTop = 0;
+          scrolledAncestor = true;
+        }
+        node = node.parentElement;
+      }
+      // …and if nothing internal scrolls (LeadFlow scrolls the page), reset the window.
+      if (!scrolledAncestor) window.scrollTo({ top: 0, behavior: 'auto' });
+    });
   }, [currentStep]);
 
   const fetchExistingSurvey = async () => {

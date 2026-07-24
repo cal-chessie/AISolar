@@ -33,7 +33,7 @@ import {
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
-import { systemCost } from '@/lib/pricing';
+import { systemCost, getPricingConfig } from '@/lib/pricing';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from 'sonner';
@@ -948,6 +948,11 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
   const depositAmount = Math.round(netCost * (depositPct / 100));
   const balanceAmount = netCost - depositAmount;
 
+  // Breakdown lines that reconcile to grossCost, from the tenant pricing model.
+  const pricing = getPricingConfig();
+  const batteryCost = designData.includeBattery ? Math.round(designData.batterySize * pricing.batteryPerKwh) : 0;
+  const baseCost = grossCost - batteryCost;
+
   // Finance calc (3.9% APR over 10 years)
   const financeMonthly = financeOption === 'finance' ? Math.round((netCost * 1.21) / 120) : 0; // ~21% total interest over 10yr
   const annualSavings = estimate.annualSavings;
@@ -966,25 +971,20 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3">Cost breakdown</h3>
+          {/* Lines reconcile to Gross cost exactly — same tenant pricing model
+              as the estimate (src/lib/pricing.ts). Base = the kWp system
+              (panels + inverter + mounting + labour); battery is priced per kWh. */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between p-2 bg-muted/30 rounded">
-              <span>{designData.panelCount} × {designData.panelModel}</span>
-              <span className="font-semibold">{eurFmt(designData.panelCount * 145)}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-muted/30 rounded">
-              <span>{designData.inverterModel}</span>
-              <span className="font-semibold">{eurFmt(1450)}</span>
+              <span>{designData.panelCount} × {designData.panelModel} + {designData.inverterModel} — {(designData.panelCount * pricing.panelWatts / 1000).toFixed(1)} kWp installed</span>
+              <span className="font-semibold">{eurFmt(baseCost)}</span>
             </div>
             {designData.includeBattery && (
               <div className="flex justify-between p-2 bg-muted/30 rounded">
-                <span>{designData.batteryModel}</span>
-                <span className="font-semibold">{eurFmt(designData.batterySize * 1200)}</span>
+                <span>{designData.batteryModel} — {designData.batterySize} kWh storage</span>
+                <span className="font-semibold">{eurFmt(batteryCost)}</span>
               </div>
             )}
-            <div className="flex justify-between p-2 bg-muted/30 rounded">
-              <span>Mounting + cabling + labour</span>
-              <span className="font-semibold">{eurFmt(800)}</span>
-            </div>
             <div className="flex justify-between p-2 border-t-2 font-bold">
               <span>Gross cost</span>
               <span>{eurFmt(grossCost)}</span>

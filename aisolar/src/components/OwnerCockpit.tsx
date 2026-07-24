@@ -355,7 +355,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
   const maxStage = Math.max(1, ...data.stageCounts.map((s: any) => s.count));
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 max-w-6xl">
+    <div className="space-y-4">
       {/* The morning read — one line that says how the company is doing */}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
