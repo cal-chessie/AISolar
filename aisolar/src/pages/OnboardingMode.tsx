@@ -70,11 +70,11 @@ const STEPS: OnboardingStep[] = [
   {
     id: 'comms',
     title: 'Communication Hub',
-    description: 'Every customer touchpoint in one inbox — emails, SMS, calls, AI chat history. Filterable + searchable.',
+    description: 'Every customer touchpoint in one inbox — emails, calls, AI chat history. Filterable + searchable.',
     route: '/comms',
     icon: MessageSquare,
     duration: '1 min',
-    whatToDo: 'Click a lead in the left panel. See their full comms history. Try the channel filter (Email / SMS / AI Chat).',
+    whatToDo: 'Click a lead in the left panel. See their full comms history. Try the channel filter (Email / AI Chat).',
     whatToLook: 'AI Chat touchpoints are tagged. You can see exactly what the customer asked the AI assistant.',
   },
   {
@@ -130,7 +130,7 @@ const STEPS: OnboardingStep[] = [
   {
     id: 'settings',
     title: 'System Settings',
-    description: 'The bedrock: email/SMS channels, Supabase kernel, Vault secrets, pg_cron schedules, integration health.',
+    description: 'The bedrock: email channels, Supabase kernel, Vault secrets, pg_cron schedules, integration health.',
     route: '/system-settings',
     icon: Settings,
     duration: '1 min',

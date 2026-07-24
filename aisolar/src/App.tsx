@@ -13,9 +13,7 @@ import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // Pages
-import InstallerLanding from "./pages/InstallerLanding";
 import NotFound from "./pages/NotFound";
-import ValueUpsell from "./pages/ValueUpsell";
 import AboutUs from "./pages/AboutUs";
 import AuthPage from "./pages/AuthPage";
 import OnboardingMode from "./pages/OnboardingMode";
@@ -87,8 +85,6 @@ function AppRoutes() {
           <Route path="/aiteam" element={wrap(<AiTeamPage />)} />
           <Route path="/pricing" element={wrap(<PricingPage />)} />
           <Route path="/docs" element={wrap(<DocsPage />)} />
-          <Route path="/old-landing" element={wrap(<InstallerLanding />)} />
-          <Route path="/upsell" element={wrap(<ValueUpsell />)} />
           <Route path="/about" element={wrap(<AboutUs />)} />
           <Route path="/calculator" element={wrap(<ROICalculator />)} />
           <Route path="/privacy" element={wrap(<PrivacyPolicy />)} />

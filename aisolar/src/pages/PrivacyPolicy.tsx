@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
                 <li><strong>Energy usage:</strong> electricity bill data (annual kWh, monthly spend, tariff)</li>
                 <li><strong>Property details:</strong> roof type, orientation, pitch, shading, available area (from site survey)</li>
                 <li><strong>Financial:</strong> invoice details, payment history, contract details</li>
-                <li><strong>Communications:</strong> emails, SMS, call logs, AI chat history</li>
+                <li><strong>Communications:</strong> emails, call logs, AI chat history</li>
                 <li><strong>Photos:</strong> roof photos, install photos, meter photos (from site survey + installation)</li>
                 <li><strong>Consent records:</strong> what you've consented to, when, and the policy version</li>
               </ul>

@@ -175,7 +175,7 @@ export default function StartAnalysis() {
                 <span className="size-11 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0"><Upload className="size-5" /></span>
                 <span className="flex-1">
                   <span className="font-semibold flex items-center gap-2">Upload your bill <span className="text-2xs font-medium bg-doc-deposit/10 text-doc-deposit rounded-full px-2 py-0.5">most accurate</span></span>
-                  <span className="block text-sm text-muted-foreground mt-0.5">A photo or PDF. We read 21 details off it.</span>
+                  <span className="block text-sm text-muted-foreground mt-0.5">A photo or PDF. We read up to 21 details off it.</span>
                 </span>
                 <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
               </button>

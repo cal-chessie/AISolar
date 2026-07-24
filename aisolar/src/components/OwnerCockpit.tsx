@@ -51,7 +51,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { staggerContainer, listItem } from '@/lib/motionPresets';
 import { useIsMobile } from '@/hooks/use-mobile';
-import UnifiedCalendar from './UnifiedCalendar';
 
 // Lazy-load heavy components only when their sidebar item is clicked
 const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
