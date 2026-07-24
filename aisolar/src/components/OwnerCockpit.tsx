@@ -76,19 +76,21 @@ type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'ins
    -> compliance -> the machine -> config. Each domain carries its family
    tint on the ICON only — a little lift and no more. */
 const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; tint?: string; badge?: string }> = [
-  { id: 'overview', label: 'Overview', icon: Home },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
+  // Family accent on every icon (Cal) — the label stays neutral, the icon
+  // carries the colour, so the rail reads as the family pack, not a grey list.
+  { id: 'overview', label: 'Overview', icon: Home, tint: 'text-tech' },
+  { id: 'calendar', label: 'Calendar', icon: Calendar, tint: 'text-pop' },
   { id: 'estimates', label: 'Estimates', icon: Calculator, tint: 'text-doc-proposal' },
-  { id: 'clients', label: 'Clients', icon: UserCircle },
-  { id: 'consultants', label: 'Consultants', icon: Users },
-  { id: 'installers', label: 'Installers', icon: Wrench },
+  { id: 'clients', label: 'Clients', icon: UserCircle, tint: 'text-doc-deposit' },
+  { id: 'consultants', label: 'Consultants', icon: Users, tint: 'text-tech' },
+  { id: 'installers', label: 'Installers', icon: Wrench, tint: 'text-doc-contract' },
   { id: 'financials', label: 'Financials', icon: Landmark, tint: 'text-doc-deposit' },
   { id: 'seai', label: 'SEAI & Compliance', icon: Award, tint: 'text-doc-contract' },
   { id: 'agents', label: 'Agents', icon: Bot, tint: 'text-tech' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'products', label: 'Products', icon: Package },
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'feedback', label: 'Help us improve', icon: Star },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, tint: 'text-doc-proposal' },
+  { id: 'products', label: 'Products', icon: Package, tint: 'text-pop' },
+  { id: 'settings', label: 'Settings', icon: Settings, tint: 'text-tech' },
+  { id: 'feedback', label: 'Help us improve', icon: Star, tint: 'text-pop' },
 ];
 
 export default function OwnerCockpit() {
