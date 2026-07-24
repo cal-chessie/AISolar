@@ -30,6 +30,8 @@ import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { AisolarWordmark } from '@/components/brand/AiosMark';
 import SEOHead from '@/components/SEOHead';
 import { toast } from 'sonner';
+import { captureLead } from '@/lib/leadCapture';
+import { brand } from '@/config/brand';
 import SolarCalculator from '@/components/calculator/SolarCalculator';
 import { Field, InputGroup } from '@/components/ui/field';
 
@@ -112,6 +114,7 @@ export default function StartAnalysis() {
   const [step, setStep] = useState<Step>(carried ? 'estimate' : 'choose');
   const [bill, setBill] = useState<BillData | null>(() => carried ? billFromCarried(carried) : null);
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   const [contact, setContact] = useState({ name: '', mobile: '', email: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -612,13 +615,43 @@ export default function StartAnalysis() {
             </div>
 
             <button
-              disabled={!contact.name.trim() || !contact.email.trim() || !contact.mobile.trim()}
-              onClick={() => toast.success(`Thanks ${contact.name.split(' ')[0] || ''} — a consultant will be in touch`, {
-                description: 'Your estimate is saved against your name. Usually within one working day.',
-              })}
+              disabled={sending || !contact.name.trim() || !contact.email.trim() || !contact.mobile.trim()}
+              onClick={async () => {
+                setSending(true);
+                const res = await captureLead({
+                  name: contact.name,
+                  email: contact.email,
+                  phone: contact.mobile,
+                  source: 'website_callback',
+                  message: estimate
+                    ? `Wants a callback. Estimate: ${estimate.systemSizeKw} kWp · ${eur(estimate.netCost)} after grant · ${eur(estimate.annualSavings)}/yr saved.`
+                    : 'Wants a callback about solar.',
+                  meta: estimate ? {
+                    systemSizeKw: estimate.systemSizeKw,
+                    netCost: estimate.netCost,
+                    annualSavings: estimate.annualSavings,
+                    seaiGrant: estimate.seaiGrant,
+                    paybackYears: estimate.paybackYears,
+                    billFieldsRead: bill?.fieldsRead ?? 0,
+                    eircode: bill?.eircode ?? null,
+                  } : null,
+                });
+                setSending(false);
+                if (res.ok) {
+                  toast.success(`Thanks ${contact.name.split(' ')[0] || ''} — a consultant will be in touch`, {
+                    description: 'Your estimate is saved against your name. Usually within one working day.',
+                  });
+                } else {
+                  // Fail honestly and give them a way through, rather than
+                  // claiming a capture that never happened.
+                  toast.error(res.error ?? "We couldn't save your details", {
+                    description: `Please call us on ${brand.contact?.phoneDisplay ?? '01 234 5678'} and we'll pick it up straight away.`,
+                  });
+                }
+              }}
               className="mt-5 w-full h-12 rounded-control bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
             >
-              Ask a consultant to call me
+              {sending ? 'Sending…' : 'Ask a consultant to call me'}
             </button>
             <p className="mt-2 text-center text-2xs text-muted-foreground">
               Usually within one working day. No sales pressure.

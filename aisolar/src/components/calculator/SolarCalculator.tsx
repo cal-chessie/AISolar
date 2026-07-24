@@ -14,7 +14,31 @@ import { getPricingConfig } from '@/lib/pricing';
 import { eur } from '@/lib/seaiPipeline';
 import RoofDesigner from '@/components/calculator/RoofDesigner';
 
-const ORIENT: Record<'south' | 'east' | 'west' | 'north', number> = { south: 1, east: 0.85, west: 0.85, north: 0.65 };
+type Face = 'south' | 'east' | 'west' | 'north';
+
+/** Yield relative to due south for a pitched Irish roof. */
+const ORIENT: Record<Face, number> = { south: 1, east: 0.85, west: 0.85, north: 0.65 };
+
+/**
+ * Real roofs have more than one face. An east–west dual pitch is one of the
+ * most common shapes in Ireland — half the panels each side — and forcing a
+ * single choice mis-models it badly.
+ *
+ * Panels are split evenly across the faces you pick, so the effective yield is
+ * the mean of those faces. East+west also spreads generation across the day
+ * (morning on one side, evening on the other) rather than peaking at noon,
+ * which usually means MORE of it is used in the house instead of exported —
+ * so we give it a small self-consumption credit rather than treating it as
+ * simply worse than south.
+ */
+function orientFactor(faces: Face[]): number {
+  if (faces.length === 0) return ORIENT.south;
+  const mean = faces.reduce((s, f) => s + ORIENT[f], 0) / faces.length;
+  const eastWestSpread = faces.includes('east') && faces.includes('west');
+  return mean * (eastWestSpread ? 1.04 : 1);
+}
+
+const FACE_LABEL: Record<Face, string> = { south: 'South', east: 'East', west: 'West', north: 'North' };
 
 /** Count-up number — tweens to its value on change; shows the value instantly if rAF never runs. */
 function useCountUp(value: number, ms = 500) {
@@ -63,7 +87,12 @@ export default function SolarCalculator({
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
   const [nightPct, setNightPct] = useState(initialNightPct ?? 35);
-  const [orientation, setOrientation] = useState<'south' | 'east' | 'west' | 'north'>('south');
+  // Multi-select: a roof can face more than one way (east+west dual pitch is
+  // extremely common here). Never allow an empty set — fall back to keeping the
+  // last face selected.
+  const [faces, setFaces] = useState<Face[]>(['south']);
+  const toggleFace = (f: Face) => setFaces(cur =>
+    cur.includes(f) ? (cur.length === 1 ? cur : cur.filter(x => x !== f)) : [...cur, f]);
   const [battery, setBattery] = useState(false);
   const [roofPanels, setRoofPanels] = useState(0);
   const [roofKwp, setRoofKwp] = useState(0);
@@ -78,7 +107,7 @@ export default function SolarCalculator({
   const goToStart = () => navigate('/start', {
     state: {
       calc: {
-        monthlyBill, nightPct, orientation, battery,
+        monthlyBill, nightPct, orientation: faces.join('+'), battery,
         roofPanels, roofKwp, roofAddress,
         systemSizeKw: r.systemSizeKw, annualSavings: r.annualSavings,
         seaiGrant: r.seaiGrant, netCost: r.netCost, paybackYears: r.paybackYears,
@@ -89,7 +118,7 @@ export default function SolarCalculator({
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
     const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined });
-    const orient = ORIENT[orientation];
+    const orient = orientFactor(faces);
     const baseSavings = Math.round(est.annualSavings * orient);
     const batteryKwh = 10.2;
     const batteryBoost = battery ? Math.round(baseSavings * (0.10 + (nightPct / 100) * 0.30)) : 0;
@@ -102,7 +131,7 @@ export default function SolarCalculator({
     return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
       seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
       annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear, grossCost: est.grossCost };
-  }, [monthlyBill, nightPct, orientation, battery, roofKwp, annualKwh, cfg]);
+  }, [monthlyBill, nightPct, faces, battery, roofKwp, annualKwh, cfg]);
 
   return (
     /* When embedded in a page that already has its own container (the bill
@@ -160,16 +189,30 @@ export default function SolarCalculator({
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">Roof faces</label>
-            <div className="grid grid-cols-4 gap-2">
-              {(['south', 'east', 'west', 'north'] as const).map(dir => (
-                <button key={dir} onClick={() => setOrientation(dir)}
-                  className={`py-2.5 rounded-control border text-xs font-medium capitalize transition-colors ${orientation === dir ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}>
-                  <Sun className={`size-4 mx-auto mb-1 ${orientation === dir ? 'text-doc-proposal' : 'text-muted-foreground'}`} />
-                  {dir}
-                </button>
-              ))}
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <label className="text-sm font-medium">Which way does your roof face?</label>
+              <span className="text-2xs text-muted-foreground">pick all that apply</span>
             </div>
+            <div className="grid grid-cols-4 gap-2">
+              {(['south', 'east', 'west', 'north'] as const).map(dir => {
+                const on = faces.includes(dir);
+                return (
+                  <button key={dir} onClick={() => toggleFace(dir)}
+                    aria-pressed={on}
+                    className={`py-2.5 rounded-control border text-xs font-medium transition-colors ${on ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}>
+                    <Sun className={`size-4 mx-auto mb-1 ${on ? 'text-doc-proposal' : 'text-muted-foreground'}`} />
+                    {FACE_LABEL[dir]}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-2xs text-muted-foreground mt-1.5">
+              {faces.includes('east') && faces.includes('west')
+                ? 'East + west splits the panels across both pitches — generation spreads from morning to evening instead of peaking at noon, so more of it gets used in the house.'
+                : faces.length > 1
+                  ? `Panels split across ${faces.length} faces — we blend the yield accordingly.`
+                  : 'Most Irish homes have two pitches. Tap both if yours does.'}
+            </p>
           </div>
 
           <button onClick={() => setBattery(b => !b)}
