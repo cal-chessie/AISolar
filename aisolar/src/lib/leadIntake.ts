@@ -28,6 +28,7 @@
  *   )
  */
 import { systemCost } from './pricing';
+import { domesticSolarGrant } from './seaiPipeline';
 
 export interface LeadIntake {
   id: string;
@@ -197,7 +198,7 @@ export function calculateSystemEstimate(input: {
   const solarOffset = annualKwh > 0 ? Math.min(85, Math.round((annualProduction / annualKwh) * 100)) : 0;
 
   const grossCost = systemCost({ systemSizeKw: systemSize });
-  const seaiGrant = Math.min(IE_ENERGY.SEAI_GRANT_MAX, systemSize * IE_ENERGY.SEAI_PER_KWP);
+  const seaiGrant = domesticSolarGrant(systemSize);   // verified tiered €700/€200 (was flat €900/kWp)
   const netCost = grossCost - seaiGrant;
   const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
   const twentyYearSavings = annualSavings * 20 - netCost;

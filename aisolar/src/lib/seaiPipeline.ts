@@ -78,11 +78,11 @@ export interface SEAIPaperworkItem {
 // 2026 SEAI rates (Ireland)
 export const SEAI_RATES = {
   DOMESTIC: {
-    grantPerKwp: 900,
+    grantPerKwp: 700,         // headline rate for the first 2 kWp; see domesticSolarGrant() for the tiers
     grantMax: 1800,
-    grantMaxKwp: 2,           // grant caps at 2 kWp equivalent
-    berUplift: 300,
-    berThreshold: 'B3',
+    grantMaxKwp: 4,           // cap is reached at 4 kWp
+    // NOTE: no €300 "BER uplift" exists in the current grant — a post-works BER
+    // is a REQUIREMENT to claim, not extra money. Removed from the amount.
   },
   COMMERCIAL: {
     // Non-Domestic Microgen Grant (NDMG) — simplified tiers
@@ -103,8 +103,19 @@ export const SEAI_RATES = {
     maxTermYears: 10,
   },
   // Tax
-  VAT_SOLAR: 0.13,             // 13% VAT on solar installations (Ireland)
+  VAT_SOLAR: 0,                // DOMESTIC solar is 0% VAT since 1 May 2023 (gov.ie / revenue.ie). Commercial differs.
 } as const;
+
+/**
+ * SEAI Solar Electricity Grant — DOMESTIC. THE one function; import it everywhere.
+ * Verified Jul 2026 vs seai.ie / citizensinformation.ie:
+ *   €700/kWp for the first 2 kWp, €200/kWp for 2–4 kWp, capped €1,800 (at 4 kWp).
+ * (Was wrongly modelled as flat €900/kWp cap €1,800, which overstated small systems.)
+ */
+export function domesticSolarGrant(kwp: number): number {
+  const g = Math.min(kwp, 2) * 700 + Math.max(0, Math.min(kwp, 4) - 2) * 200;
+  return Math.min(Math.round(g), 1800);
+}
 
 /**
  * Calculate the full SEAI grant + incentives picture for a proposal.
@@ -117,12 +128,9 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
   let solarElectricityGrantMax = 0;
 
   if (input.propertyType === 'domestic') {
-    solarElectricityGrantRate = SEAI_RATES.DOMESTIC.grantPerKwp;
+    solarElectricityGrantRate = SEAI_RATES.DOMESTIC.grantPerKwp;   // headline rate (first 2 kWp)
     solarElectricityGrantMax = SEAI_RATES.DOMESTIC.grantMax;
-    solarElectricityGrant = Math.min(
-      solarElectricityGrantMax,
-      Math.min(input.systemSizeKw, SEAI_RATES.DOMESTIC.grantMaxKwp) * solarElectricityGrantRate
-    );
+    solarElectricityGrant = domesticSolarGrant(input.systemSizeKw); // tiered €700/€200, cap €1,800
   } else {
     // Commercial: find the right tier
     const tier = SEAI_RATES.COMMERCIAL.tiers.find(t => input.systemSizeKw <= t.maxKwp)
@@ -137,16 +145,10 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
   const microgenExportRate = SEAI_RATES.EXPORT_RATE;
   const microgenExportAnnualValue = Math.round(exportedKwhPerYear * microgenExportRate);
 
-  // 3. BER uplift (domestic only, if post-works BER is B3 or better)
-  let berUplift = 0;
-  if (input.propertyType === 'domestic' && input.berRating) {
-    const ratingOrder = ['A1','A2','A3','B1','B2','B3','C1','C2','C3','D1','D2','E1','E2','F','G'];
-    const berIdx = ratingOrder.indexOf(input.berRating);
-    const thresholdIdx = ratingOrder.indexOf(SEAI_RATES.DOMESTIC.berThreshold);
-    if (berIdx >= 0 && berIdx <= thresholdIdx) {
-      berUplift = SEAI_RATES.DOMESTIC.berUplift;
-    }
-  }
+  // 3. BER uplift — there is NO €300 BER bonus in the current SEAI grant. A
+  // post-works BER is a REQUIREMENT to claim, not extra money. Always 0; the
+  // field is kept so consumers don't break.
+  const berUplift = 0;
 
   // 4. HEUL loan eligibility (domestic retrofit only, net cost > €5k)
   const heulEligible = input.propertyType === 'domestic'

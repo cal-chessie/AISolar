@@ -232,7 +232,7 @@ export default function SolarCalculator({ showHeader = true }: { showHeader?: bo
       </div>
 
       <p className="text-2xs text-center text-muted-foreground mt-6 max-w-2xl mx-auto">
-        Estimate only — Irish retail rate €0.35/kWh, SEAI grant €900/kWp (max €1,800), 70% self-consumption.
+        Estimate only — Irish retail rate €0.35/kWh, SEAI grant €700/kWp to 2 kWp then €200/kWp to 4 kWp (max €1,800), 70% self-consumption, 0% VAT.
         Your real figures come off your bill at upload; actual savings vary with roof, shading and usage.
       </p>
     </div>
