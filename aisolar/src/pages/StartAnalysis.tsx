@@ -294,30 +294,79 @@ export default function StartAnalysis() {
 
         {/* ── UPLOAD ─────────────────────────────────────────────────────── */}
         {step === 'upload' && (
-          <div className="max-w-xl mx-auto">
+          <div className="max-w-2xl mx-auto min-w-0">
             <BackBtn onClick={() => setStep('choose')} />
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Upload your electricity bill</h1>
-            <p className="mt-2 text-muted-foreground leading-body">A clear photo or PDF of any recent bill. It never leaves the EU, and we only read the energy figures.</p>
+            <div className="mt-4 text-center">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                Take a photo of your bill
+              </h1>
+              <p className="mt-2 text-muted-foreground leading-body max-w-lg mx-auto">
+                That's the whole job. In about twenty seconds you'll have your system
+                size, your grant and your payback year — off your own numbers.
+              </p>
+            </div>
 
+            {/* THE DROPZONE — the moment. Busy state names what it's doing rather
+                than spinning silently, because a blank wait feels broken. */}
             <button
               onClick={() => fileRef.current?.click()}
               disabled={busy}
-              className="mt-6 w-full rounded-panel border-2 border-dashed border-border bg-card p-10 grid place-items-center gap-3 text-center hover:border-primary/50 transition-colors disabled:opacity-70"
+              className={`mt-6 w-full rounded-panel border-2 border-dashed bg-card p-8 sm:p-12 grid place-items-center gap-3 text-center transition-colors disabled:cursor-wait ${busy ? 'border-brand-aisolar/60' : 'border-border hover:border-brand-aisolar/50'}`}
             >
               {busy ? (
-                <><Loader2 className="size-7 text-primary animate-spin" /><span className="text-sm font-medium">Reading your bill…</span></>
+                <>
+                  <Loader2 className="size-8 text-brand-aisolar animate-spin" />
+                  <span className="text-sm font-semibold">Reading your bill…</span>
+                  <span className="text-xs text-muted-foreground">Pulling out your MPRN, usage, rates and day/night split</span>
+                </>
               ) : (
-                <><span className="size-12 rounded-full bg-primary/10 text-primary grid place-items-center"><Upload className="size-6" /></span>
-                  <span className="font-medium">Tap to add your bill</span>
-                  <span className="text-xs text-muted-foreground">JPG, PNG or PDF · up to 5&nbsp;MB</span></>
+                <>
+                  <span className="size-14 rounded-full bg-brand-aisolar-subtle text-brand-aisolar grid place-items-center"><Upload className="size-7" /></span>
+                  <span className="font-semibold text-base">Tap to add your bill</span>
+                  <span className="text-xs text-muted-foreground">JPG, PNG or PDF · up to 5&nbsp;MB</span>
+                </>
               )}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only"
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
 
-            <button onClick={() => setStep('manual')} className="mt-4 text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
-              I don't have my bill — enter it manually
-            </button>
+            {/* Kill the three reasons people hesitate here. */}
+            <div className="mt-4 grid sm:grid-cols-3 gap-3 min-w-0">
+              {[
+                { icon: Check, t: 'A phone photo is fine', s: "It doesn't need to be flat, straight or perfect. Any recent bill works." },
+                { icon: ShieldCheck, t: 'It stays in the EU', s: 'We read the energy figures only — not your bank details.' },
+                { icon: FileText, t: 'Any supplier', s: 'Electric Ireland, Bord Gáis, SSE, Energia, Pinergy — all of them.' },
+              ].map(({ icon: I, t, s }) => (
+                <div key={t} className="rounded-panel bg-card shadow-card p-3.5 min-w-0">
+                  <I className="size-4 text-doc-deposit" />
+                  <p className="mt-1.5 text-xs font-semibold">{t}</p>
+                  <p className="mt-0.5 text-2xs text-muted-foreground leading-snug">{s}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* What's about to happen — anticipation, and it explains the wait. */}
+            <div className="mt-4 rounded-panel bg-muted/40 p-4 min-w-0">
+              <p className="text-xs font-semibold">What happens next</p>
+              <ol className="mt-2 space-y-1.5">
+                {[
+                  'We read up to 21 details off the page',
+                  'Your system, grant and payback are worked out on those numbers',
+                  'You keep the estimate — email it to yourself or book the full proposal',
+                ].map((s, i) => (
+                  <li key={s} className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                    <span className="size-4 shrink-0 rounded-full bg-background border border-border grid place-items-center text-[9px] font-semibold text-foreground tabular-nums">{i + 1}</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <p className="mt-5 text-center">
+              <button onClick={() => setStep('manual')} className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+                I don't have my bill — build it on screen instead
+              </button>
+            </p>
           </div>
         )}
 
