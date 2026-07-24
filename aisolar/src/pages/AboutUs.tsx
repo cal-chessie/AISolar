@@ -103,7 +103,7 @@ export default function AboutUs() {
                   </p>
                   <p>
                     So we taught software to carry the chain. A bill goes in and
-                    gets read properly — 21 details, not three. Agents draft the
+                    gets read properly — up to 21 details, not three. Agents draft the
                     proposal, book the survey, send the follow-up, chase the
                     deposit. A person approves every send. Nothing falls between
                     the cracks, because there are no cracks.

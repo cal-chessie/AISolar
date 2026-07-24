@@ -38,7 +38,7 @@ function HeroVisual() {
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
         <FileText className="size-4 text-primary" />
         <span className="text-sm font-semibold">What your bill told us</span>
-        <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">21 details read</span>
+        <span className="ml-auto text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">up to 21 read</span>
       </div>
       <dl className="grid grid-cols-2 gap-px bg-border">
         {cells.map(([k, v]) => (
@@ -181,7 +181,7 @@ function HowItWorks() {
   const steps = [
     {
       n: '01', title: 'Upload the bill',
-      body: 'We read 21 details off the homeowner\'s last bill — tariff, day/night split, MPRN, standing charge. Every proposal runs off their real numbers, not an average home.',
+      body: 'We read up to 21 details off the homeowner\'s last bill — tariff, day/night split, MPRN, standing charge. Every proposal runs off their real numbers, not an average home.',
       icon: FileText,
     },
     {

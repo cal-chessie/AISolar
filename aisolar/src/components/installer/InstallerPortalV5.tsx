@@ -140,7 +140,7 @@ export default function InstallerPortalV5() {
   /** Thread = comms touchpoints + local messages. */
   const threadFor = (lead: DummyLead): Msg[] => {
     const fromTouchpoints: Msg[] = lead.touchpoints
-      .filter(tp => ['email', 'sms', 'portal', 'phone'].includes(tp.channel))
+      .filter(tp => ['email', 'portal', 'phone'].includes(tp.channel))
       .map(tp => ({
         from: tp.direction === 'inbound' ? 'customer' as const : 'system' as const,
         text: tp.summary ?? '',
@@ -242,7 +242,7 @@ export default function InstallerPortalV5() {
                             {started ? (
                               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — customer notified</span>
                             ) : (
-                              <Button size="sm" className="h-9 bg-pop text-pop-foreground hover:bg-pop/90" onClick={() => startJob(l)}>
+                              <Button size="sm" className="h-9 bg-primary text-primary-foreground hover:opacity-90 transition-opacity" onClick={() => startJob(l)}>
                                 <Play className="h-3.5 w-3.5 mr-1" /> Start job
                               </Button>
                             )}

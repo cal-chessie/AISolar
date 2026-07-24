@@ -33,7 +33,7 @@
  *   - Stage transitions as system messages
  *   - Agent actions ("Proposal sent", "Install scheduled")
  *   - AI chat history (customer questions + AI answers)
- *   - Company messages (emails, SMS)
+ *   - Company messages (email)
  *   - Customer can type questions → AI responds
  *
  * Quick actions give access to:

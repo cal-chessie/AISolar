@@ -62,6 +62,17 @@ interface PhotoItem {
 // ============= TAB DEFINITIONS =============
 type TabId = 'overview' | 'pre_install' | 'roof' | 'electrical' | 'commissioning' | 'handover';
 
+// Family accent per phase — the icon carries the colour (like the owner rail),
+// so the job reads as the family pack, not a grey checklist (Cal, item 24).
+const PHASE_TINT: Record<string, string> = {
+  overview: 'text-foreground',
+  pre_install: 'text-tech',
+  roof: 'text-doc-contract',
+  electrical: 'text-pop',
+  commissioning: 'text-doc-proposal',
+  handover: 'text-doc-deposit',
+};
+
 const TABS: Array<{ id: TabId; label: string; icon: typeof Home; shortLabel: string }> = [
   { id: 'overview', label: 'Overview', icon: ClipboardList, shortLabel: 'Overview' },
   { id: 'pre_install', label: 'Pre-install checks', icon: Shield, shortLabel: 'Pre-install' },
@@ -308,7 +319,7 @@ export default function JobViewV2() {
                     : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                 }`}
               >
-                <Icon className="size-4 shrink-0" />
+                <Icon className={`size-4 shrink-0 ${isActive ? '' : phaseDone ? 'text-doc-deposit' : PHASE_TINT[tab.id] ?? ''}`} />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden truncate">{tab.shortLabel}</span>
                 {phaseDone && <CheckCircle2 className="size-3.5 shrink-0" />}
@@ -426,12 +437,14 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-doc-proposal/30 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle">
+        // Guidance, not a warning — calm/neutral, never amber (Cal's rule:
+        // yellow is reserved for pending/warning states only).
+        <Card className="border-border bg-muted/40">
           <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-doc-proposal" />
+            <ListChecks className="h-7 w-7 text-muted-foreground shrink-0" />
             <div>
-              <div className="font-bold text-doc-proposal dark:text-doc-proposal">Job in progress</div>
-              <div className="text-xs text-doc-proposal dark:text-doc-proposal">Work through each tab in order. Don't skip checks — they prevent call-backs.</div>
+              <div className="font-semibold text-sm">Work through each tab in order</div>
+              <div className="text-xs text-muted-foreground">Don't skip the checks — they're what prevent call-backs.</div>
             </div>
           </CardContent>
         </Card>
@@ -447,7 +460,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
             return (
               <Card key={phase.id} className={done ? 'border-primary/40' : ''}>
                 <CardContent className="p-3 text-center">
-                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-doc-deposit' : PHASE_TINT[phase.id] ?? 'text-muted-foreground'}`} />
                   <div className="text-[11px] font-medium leading-tight">{phase.label}</div>
                   {done ? (
                     <Badge variant="outline" className="mt-1 text-[11px] bg-primary/10 text-primary border-primary/40">
