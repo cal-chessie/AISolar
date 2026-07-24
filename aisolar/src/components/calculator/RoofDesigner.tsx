@@ -16,9 +16,10 @@ import { useRef, useState, useCallback } from 'react';
 import { MapPin, Pencil, RotateCcw, Sparkles, Loader2 } from 'lucide-react';
 import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 
-// Keyless panel footprint in map pixels at the fixed zoom — approximate, tuned
-// so a typical domestic roof box lands ~10–24 panels.
-const PW = 26, PH = 44, GAP = 5;
+// Keyless panel footprint in map pixels at the fixed satellite zoom (~z20).
+// A real 1m×1.7m panel is only ~8×13px at this zoom — sized so a domestic roof
+// box holds a realistic 10–25 panels, not four slabs.
+const PW = 9, PH = 14, GAP = 2;
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -33,6 +34,7 @@ export default function RoofDesigner({
   const [query, setQuery] = useState(address);
   const [drawing, setDrawing] = useState(false);   // draw mode on → map locked
   const [rect, setRect] = useState<Rect | null>(null);
+  const [rotation, setRotation] = useState(0);     // align the panel grid to an angled roof
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   // Level 2: Google Solar auto-detect
@@ -50,7 +52,7 @@ export default function RoofDesigner({
   }, [onChange, panelWatts]);
 
   const find = async () => {
-    setQuery(address); setRect(null); emit(null); setDrawing(false);
+    setQuery(address); setRect(null); setRotation(0); emit(null); setDrawing(false);
     setAuto(null); setAutoUsed(false); setNoCoverage(false);
     if (!hasMapsKey()) return;   // no key → keyless Level 1 only
     setChecking(true);
@@ -81,13 +83,14 @@ export default function RoofDesigner({
     setRect(r => { emit(r && r.w > 20 && r.h > 20 ? r : null); return r && r.w > 20 && r.h > 20 ? r : null; });
   };
 
-  // grid of panels inside the drawn rect
+  // grid of panels inside the drawn rect, positioned RELATIVE to the box so the
+  // whole group can be rotated as one to line up with an angled roof.
   const panels: Array<{ left: number; top: number }> = [];
   if (rect) {
     const cols = Math.floor((rect.w + GAP) / (PW + GAP));
     const rows = Math.floor((rect.h + GAP) / (PH + GAP));
     for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++)
-      if (panels.length < 40) panels.push({ left: rect.x + c * (PW + GAP), top: rect.y + r * (PH + GAP) });
+      if (panels.length < 40) panels.push({ left: c * (PW + GAP), top: r * (PH + GAP) });
   }
 
   return (
@@ -143,12 +146,14 @@ export default function RoofDesigner({
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         >
           {rect && (
-            <div className="absolute border-2 border-white/90 rounded-[2px]" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, boxShadow: '0 0 0 9999px rgba(0,0,0,0.25)' }} />
+            <div className="absolute" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }}>
+              <div className="absolute inset-0 border-2 border-white/90 rounded-[2px]" style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.25)' }} />
+              {panels.map((p, i) => (
+                <div key={i} className="absolute rounded-[2px] bg-primary/85 border border-white/40"
+                  style={{ left: p.left, top: p.top, width: PW, height: PH }} />
+              ))}
+            </div>
           )}
-          {panels.map((p, i) => (
-            <div key={i} className="absolute rounded-[2px] bg-primary/85 border border-white/40"
-              style={{ left: p.left, top: p.top, width: PW, height: PH }} />
-          ))}
         </div>
 
         {/* controls */}
@@ -163,7 +168,7 @@ export default function RoofDesigner({
             <span className="inline-flex h-8 items-center rounded-[8px] bg-background/90 px-3 text-2xs font-medium shadow-card">Drag a box over your roof</span>
           )}
           {rect && (
-            <button onClick={() => { setRect(null); emit(null); setDrawing(true); }}
+            <button onClick={() => { setRect(null); setRotation(0); emit(null); setDrawing(true); }}
               className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-background/90 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
               <RotateCcw className="size-3.5" /> Redraw
             </button>
@@ -171,8 +176,18 @@ export default function RoofDesigner({
         </div>
       </div>
 
+      {rect && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-2xs font-medium text-muted-foreground shrink-0">Angle</span>
+          <input type="range" min={-45} max={45} step={1} value={rotation}
+            onChange={e => setRotation(Number(e.target.value))}
+            className="flex-1 accent-primary cursor-pointer" />
+          <span className="text-2xs tabular-nums text-muted-foreground w-9 text-right shrink-0">{rotation}°</span>
+        </div>
+      )}
+
       <p className="mt-1.5 text-2xs text-muted-foreground">
-        Rough layout on your real roof — exact count and positions are confirmed at the site survey.
+        Rough layout on your real roof — line the panels up with the roof, count and positions confirmed at the survey.
       </p>
     </div>
   );
