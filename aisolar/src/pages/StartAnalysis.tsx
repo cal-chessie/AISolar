@@ -23,13 +23,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Upload, Pencil, FileText, Loader2, Check,
-  Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck, Award,
+  Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck, Award, Mail,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { AisolarWordmark } from '@/components/brand/AiosMark';
 import SEOHead from '@/components/SEOHead';
 import { toast } from 'sonner';
+import SolarCalculator from '@/components/calculator/SolarCalculator';
 import { Field, InputGroup } from '@/components/ui/field';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
@@ -321,12 +322,41 @@ export default function StartAnalysis() {
         )}
 
         {/* ── MANUAL ─────────────────────────────────────────────────────── */}
+        {/* ── NO BILL? THE CALCULATOR IS THE TOOL ─────────────────────────────
+            Cal: the manual path should BE the calculator, not a generic form.
+            If you haven't got your bill, playing with the real thing — drawing
+            your roof, moving the sliders — is both the better experience and a
+            live demo of the tool installers embed on their own sites. */}
         {step === 'manual' && (
-          <div className="max-w-md mx-auto">
+          <div className="max-w-5xl mx-auto min-w-0">
             <BackBtn onClick={() => setStep('choose')} />
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight">A few quick numbers</h1>
-            <p className="mt-2 text-muted-foreground leading-body">Just the ones that move the estimate. You can confirm the rest on the call.</p>
+            <div className="mt-4 text-center max-w-xl mx-auto">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Build it on screen</h1>
+              <p className="mt-2 text-muted-foreground leading-body">
+                No bill to hand? Draw your roof, set your usage, and watch the grant,
+                the saving and the payback year work themselves out live.
+              </p>
+            </div>
 
+            <div className="mt-6">
+              <SolarCalculator showHeader={false} showUploadCta={false} />
+            </div>
+
+            {/* the ask, same as the estimate step */}
+            <TheAsk onBook={() => setStep('book')} onCallback={() => setStep('callback')} />
+
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Got your bill after all?{' '}
+              <button onClick={() => setStep('upload')} className="underline underline-offset-2 hover:no-underline font-medium text-foreground">
+                Upload it for the exact numbers
+              </button>
+            </p>
+          </div>
+        )}
+
+        {/* legacy manual form — retained but unused; the calculator replaced it */}
+        {false && (
+          <div className="max-w-md mx-auto">
             <div className="mt-6 space-y-5">
               <Field label="Your typical monthly electricity bill" htmlFor="mb" required helper="The single biggest driver of your system size.">
                 <InputGroup prefix="€">
@@ -428,80 +458,7 @@ export default function StartAnalysis() {
               </div>
             )}
 
-            {/* ── THE ASK — Problem → Solution → Ask ──────────────────────────
-                An estimate on its own doesn't get anyone a system. This says
-                plainly what the estimate CAN'T tell you, what a proposal adds,
-                and then gives two honest doors: the full thing, or just have
-                someone ring you. */}
-            <section className="mt-8 rounded-panel bg-card shadow-card overflow-hidden">
-              <div className="p-5 sm:p-6 border-b border-border">
-                <p className="label-micro text-brand-aisolar">What this estimate can't tell you</p>
-                <h2 className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">
-                  It's your numbers. It isn't your roof yet.
-                </h2>
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xl">
-                  The figures above run off your real usage, so they're honest — but they
-                  assume a standard roof. What they can't know is your pitch and shading,
-                  exactly how many panels fit, where the inverter goes, or what your
-                  MPRN allows for export. That's what turns an estimate into a firm price.
-                </p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                {/* Door 1 — the full thing */}
-                <div className="p-5 sm:p-6 min-w-0">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-brand-aisolar">Recommended</p>
-                  <h3 className="mt-1.5 font-semibold">Turn this into a full proposal</h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                    A free 30-minute survey, then a fixed written proposal.
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {[
-                      'Your exact panel layout, measured on your roof',
-                      'A firm price — not a ballpark',
-                      'Your SEAI grant application prepared for you',
-                      'ESB registration handled as part of the job',
-                    ].map(x => (
-                      <li key={x} className="flex items-start gap-2 text-xs">
-                        <Check className="size-3.5 text-doc-deposit mt-0.5 shrink-0" />
-                        <span>{x}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button onClick={() => setStep('book')}
-                    className="mt-4 w-full h-control rounded-control bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-                    <CalendarClock className="size-4" /> Book my free survey
-                  </button>
-                  <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no obligation · 30 minutes</p>
-                </div>
-
-                {/* Door 2 — low friction */}
-                <div className="p-5 sm:p-6 min-w-0">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">Not ready to book?</p>
-                  <h3 className="mt-1.5 font-semibold">Have a consultant call you</h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                    Leave your details and we'll come back to you — no calendars, no pressure.
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {[
-                      'We keep this estimate on file against your name',
-                      'A real person answers your questions',
-                      'You decide if a survey is worth your time',
-                    ].map(x => (
-                      <li key={x} className="flex items-start gap-2 text-xs">
-                        <Check className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                        <span>{x}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button onClick={() => setStep('callback')}
-                    className="mt-4 w-full h-control rounded-control border border-border bg-background text-sm font-semibold flex items-center justify-center gap-2 hover:bg-muted transition-colors">
-                    Ask a consultant to call
-                  </button>
-                  <p className="mt-2 text-2xs text-center text-muted-foreground">Name, email and number — that's it</p>
-                </div>
-              </div>
-            </section>
+            <TheAsk onBook={() => setStep('book')} onCallback={() => setStep('callback')} />
             <p className="mt-3 text-center text-xs text-muted-foreground">
               Figures are indicative and confirmed at your survey and on your SEAI application.
             </p>
@@ -624,6 +581,130 @@ export default function StartAnalysis() {
         )}
       </main>
     </div>
+  );
+}
+
+/**
+ * TheAsk — the conversion block that follows every estimate.
+ *
+ * Built mobile-first, because that's where this gets used: play → estimate →
+ * boom → keep it. The lowest-friction door is FIRST (email me this estimate,
+ * one field) because a phone user will give an email long before they'll open
+ * a calendar. Booking the survey is the high-intent door, and it names what
+ * the proposal actually contains and when it lands (48 hours).
+ *
+ * Problem → Solution → Ask: it opens by naming what the estimate can't know,
+ * so the next step has a reason to exist.
+ */
+function TheAsk({ onBook, onCallback }: { onBook: () => void; onCallback: () => void }) {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const sendIt = () => {
+    if (!email.trim()) return;
+    setSent(true);
+    toast.success('Estimate on its way', {
+      description: `Sent to ${email.trim()} — it keeps your figures so you don't lose them.`,
+    });
+  };
+
+  return (
+    <section className="mt-8 rounded-panel bg-card shadow-card overflow-hidden min-w-0">
+      {/* Problem */}
+      <div className="p-5 sm:p-6 border-b border-border">
+        <p className="label-micro text-brand-aisolar">What this estimate can't tell you</p>
+        <h2 className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">
+          It's your numbers. It isn't your roof yet.
+        </h2>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xl">
+          These figures are honest, but they assume a standard roof. What they can't
+          know is your pitch and shading, exactly how many panels fit, where the
+          inverter goes, or what your MPRN allows for export. That's the difference
+          between an estimate and a firm price.
+        </p>
+      </div>
+
+      {/* Ask 1 — lowest friction, mobile's favourite: keep the estimate */}
+      <div className="p-5 sm:p-6 border-b border-border bg-muted/30">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Mail className="size-4 text-brand-aisolar shrink-0" /> Send this estimate to my email
+        </h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          So you don't lose it, and you've something to compare the other quotes against.
+        </p>
+        {sent ? (
+          <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-doc-deposit">
+            <Check className="size-4" /> Sent — check your inbox.
+          </p>
+        ) : (
+          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.ie"
+              className="w-full sm:flex-1 h-control rounded-control border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+            />
+            <button onClick={sendIt} disabled={!email.trim()}
+              className="w-full sm:w-auto h-control px-5 rounded-control bg-foreground text-background text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity">
+              Send it
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Ask 2 + 3 — the real conversion */}
+      <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-5 sm:p-6 min-w-0">
+          <p className="text-2xs font-semibold uppercase tracking-wide text-brand-aisolar">Recommended</p>
+          <h3 className="mt-1.5 font-semibold">Get the full proposal</h3>
+          <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+            A remote consultation, then your written proposal <strong className="text-foreground">within 48 hours</strong>.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {[
+              'Your exact panel layout, measured on your roof',
+              'A firm price — not a ballpark',
+              'The full product stack: panels, inverter, battery options',
+              'Your SEAI grant prepared and ESB registration handled',
+            ].map(x => (
+              <li key={x} className="flex items-start gap-2 text-xs">
+                <Check className="size-3.5 text-doc-deposit mt-0.5 shrink-0" />
+                <span>{x}</span>
+              </li>
+            ))}
+          </ul>
+          <button onClick={onBook}
+            className="mt-4 w-full h-control rounded-control bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <CalendarClock className="size-4" /> Book my consultation
+          </button>
+          <p className="mt-2 text-2xs text-center text-muted-foreground">Free · 30 minutes · remote or on site</p>
+        </div>
+
+        <div className="p-5 sm:p-6 min-w-0">
+          <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">Not ready to book?</p>
+          <h3 className="mt-1.5 font-semibold">Have a consultant call you</h3>
+          <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+            Leave your number and we'll come back to you — no calendars, no pressure.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {[
+              'We keep this estimate on file against your name',
+              'A real person answers your questions',
+              'You decide if a survey is worth your time',
+            ].map(x => (
+              <li key={x} className="flex items-start gap-2 text-xs">
+                <Check className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <span>{x}</span>
+              </li>
+            ))}
+          </ul>
+          <button onClick={onCallback}
+            className="mt-4 w-full h-control rounded-control border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors">
+            Ask a consultant to call
+          </button>
+          <p className="mt-2 text-2xs text-center text-muted-foreground">Usually within one working day</p>
+        </div>
+      </div>
+    </section>
   );
 }
 

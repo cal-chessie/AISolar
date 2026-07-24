@@ -105,7 +105,11 @@ export default function SolarCalculator({
   }, [monthlyBill, nightPct, orientation, battery, roofKwp, annualKwh, cfg]);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10 lg:py-14">
+    /* When embedded in a page that already has its own container (the bill
+       analyser, the widget), don't impose a second max-width and a big vertical
+       rhythm on top — it reads as badly fitted. Standalone keeps the lander
+       spacing. */
+    <div className={showHeader ? 'mx-auto max-w-6xl px-5 py-10 lg:py-14' : 'w-full px-0'}>
       {showHeader && (
         <div className="text-center max-w-2xl mx-auto">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
