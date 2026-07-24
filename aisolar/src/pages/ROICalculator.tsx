@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sun, TrendingUp, Zap, Award, ArrowRight, Calculator, MapPin } from 'lucide-react';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { calculateSEAI, eur } from '@/lib/seaiPipeline';
-import SiteNavigation from '@/components/layout/SiteNavigation';
+import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
 
@@ -42,12 +42,12 @@ export default function ROICalculator() {
   const adjustedSavings = Math.round(estimate.annualSavings * orientationMultiplier);
 
   return (
-    <>
+    <div className="min-h-dvh bg-background text-foreground">
       <SEOHead
         title="Solar ROI Calculator Ireland | Free Savings Estimate — AISOLAR"
         description="Calculate your solar savings in 30 seconds. Enter your monthly bill and roof orientation. Get instant estimate of system size, savings, SEAI grant, and payback period."
       />
-      <SiteNavigation />
+      <MarketingNav product="aisolar" />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="text-center mb-8">
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 mb-3">
@@ -140,7 +140,8 @@ export default function ROICalculator() {
           Actual savings vary with roof, shading, and usage patterns.
         </p>
       </div>
-    </>
+      <MarketingFooter product="aisolar" />
+    </div>
   );
 }
 

@@ -2,20 +2,19 @@
  * Terms of Service — GDPR/Irish consumer law compliant
  */
 
-import { motion } from 'framer-motion';
 import { FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import SiteNavigation from '@/components/layout/SiteNavigation';
+import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
 
 export default function TermsOfService() {
   return (
-    <>
+    <div className="min-h-dvh bg-background text-foreground">
       <SEOHead title={`Terms of Service — ${brand.name}`} description="The terms under which we provide our solar installation services." />
-      <SiteNavigation />
+      <MarketingNav product="aios" />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
               <FileText className="h-6 w-6 text-primary dark:text-primary" />
@@ -101,9 +100,10 @@ export default function TermsOfService() {
               </p>
             </Section>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </>
+      <MarketingFooter product="aios" />
+    </div>
   );
 }
 

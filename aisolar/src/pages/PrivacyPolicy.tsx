@@ -5,20 +5,19 @@
  * Irish DPC template adapted for AISolar.
  */
 
-import { motion } from 'framer-motion';
 import { Shield, Mail, Database, Globe, Clock, User, FileText, Lock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import SiteNavigation from '@/components/layout/SiteNavigation';
+import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
 import { brand } from '@/config/brand';
 
 export default function PrivacyPolicy() {
   return (
-    <>
+    <div className="min-h-dvh bg-background text-foreground">
       <SEOHead title={`Privacy Policy — ${brand.name}`} description="How we collect, use, and protect your personal data. GDPR compliant." />
-      <SiteNavigation />
+      <MarketingNav product="aios" />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
               <Shield className="h-6 w-6 text-primary dark:text-primary" />
@@ -139,9 +138,10 @@ export default function PrivacyPolicy() {
               </p>
             </Section>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </>
+      <MarketingFooter product="aios" />
+    </div>
   );
 }
 
