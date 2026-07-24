@@ -348,7 +348,19 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
   const batteryKwh = intake.confirmed_battery_kwh || survey.recommended_battery_kwh || null;
   const inverterType = intake.confirmed_inverter_type || survey.recommended_inverter_type || "SolarEdge SE5K";
   const grossCost = systemSize * 1800;
-  const seaiGrant = Math.min(1800, Math.min(systemSize, 2) * 900);
+  // Domestic: €900/kWp capped €1,800. Commercial (NDMG): SEAI piecewise
+  // €900→2kWp · €300→20 · €200→200 · €150→1000, cap €162,600 — mirrors
+  // src/lib/seaiPipeline.ts (edge functions cannot import from src/).
+  const premises = (intake.extracted_premises_type || "").toLowerCase();
+  const isCommercial = ["commercial", "farm", "business", "industrial"].some(t => premises.includes(t));
+  const ndmg = (kwp: number) => {
+    let g = Math.min(kwp, 2) * 900;
+    if (kwp > 2) g += (Math.min(kwp, 20) - 2) * 300;
+    if (kwp > 20) g += (Math.min(kwp, 200) - 20) * 200;
+    if (kwp > 200) g += (Math.min(kwp, 1000) - 200) * 150;
+    return Math.min(Math.round(g), 162600);
+  };
+  const seaiGrant = isCommercial ? ndmg(systemSize) : Math.min(1800, Math.min(systemSize, 2) * 900);
   const netCost = grossCost - seaiGrant;
 
   // Phase 4: call LLM to draft a proposal narrative (falls back to deterministic text if LLM unavailable)
@@ -581,7 +593,7 @@ async function handleGrantSubmitter({ supabase, leadId }: AgentRunParams): Promi
 
   await supabase.from("touchpoints").insert({
     lead_id: leadId, stage: "approved", channel: "email", direction: "outbound",
-    summary: `SEAI Grant Agent started application for ${eur(proposal.seai_grant)} grant.`,
+    summary: `SEAI Grant Agent is preparing and tracking the application for ${eur(proposal.seai_grant)} grant.`,
     actor: "agent", agent_id: "grant_submitter",
   });
 

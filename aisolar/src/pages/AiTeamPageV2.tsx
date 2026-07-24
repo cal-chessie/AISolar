@@ -116,11 +116,13 @@ export default function AiTeamPageV2() {
                 scheduling, chasing, invoicing, reporting — while you approve
                 the work. Proven inside AISolar, opening up to more businesses.
               </p>
-              <div className="mt-7 flex flex-col gap-3 sm:max-w-sm">
-                <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+              {/* Cal: CTAs beside each other, AITeam family green. Also fixes
+                  the "See it working" link — it pointed at the AIOS homepage. */}
+              <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                   Get early access <ArrowRight className="size-4" />
                 </Link>
-                <Link to="/" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   See it working in AISolar
                 </Link>
               </div>

@@ -117,6 +117,49 @@ function KernelVisual() {
   );
 }
 
+
+/* ── Privacy visual: the refs-only split, shown not told. The kernel sees
+   references and hashes; the tenant vault (EU) holds the person.
+   Erasure removes the person; the chain stays intact. */
+function PrivacyVisual() {
+  return (
+    <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
+      <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xs font-medium rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">the kernel sees</span>
+          </div>
+          <div className="font-mono text-xs space-y-1.5">
+            <div className="flex justify-between"><span className="text-muted-foreground">event</span><span>DepositPaid</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">lead_ref</span><span className="text-tech">a4f2…9c1e</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">amount_ref</span><span className="text-tech">tx_88…41</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">name</span><span className="text-muted-foreground/50">— none, ever —</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">hash</span><span className="text-tech">30aa…d9e2 ⛓</span></div>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">the tenant vault — EU 🇪🇺</span>
+          </div>
+          <div className="font-mono text-xs space-y-1.5">
+            <div className="flex justify-between"><span className="text-muted-foreground">customer</span><span>Anna K—</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">address</span><span>9 Howth R—</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">MPRN</span><span>100•••••271</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">access</span><span className="text-doc-deposit">RLS · tenant-locked</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">at rest</span><span className="text-doc-deposit">encrypted</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center gap-2 text-2xs text-muted-foreground">
+        <span className="font-medium text-foreground">Art. 17 erasure:</span>
+        <span className="font-mono">anonymise_lead()</span>
+        <span>→ the person is gone from the vault; the chain stays intact and auditable.</span>
+        <span className="ml-auto text-doc-deposit font-medium">✓</span>
+      </div>
+    </div>
+  );
+}
+
 /* (old agent feed removed — it belongs to AITeam, not the kernel page) */
 
 export default function AiosPage() {
@@ -176,8 +219,8 @@ export default function AiosPage() {
 
         {/* ── Compliance band ──────────────────────────────────────────────── */}
         <section className="border-y border-border bg-card/40">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
-            <div className="max-w-2xl">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <div>
               <p className="label-micro">Compliance</p>
               <h2 className="mt-2 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
                 Privacy by design, on EU soil
@@ -190,14 +233,15 @@ export default function AiosPage() {
                 one.
               </p>
               <CtaPair />
+              <div className="mt-6 flex flex-wrap gap-2">
+                {['GDPR tooling built in', 'EU data residency', 'Refs-only kernel — no PII', 'Right to erasure (Art. 17)', 'Encrypted in transit + at rest'].map(m => (
+                  <span key={m} className="inline-flex items-center gap-1.5 rounded-full bg-card shadow-card px-3 py-1.5 text-xs font-medium">
+                    <ShieldCheck className="size-3.5 text-doc-deposit" /> {m}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {['GDPR tooling built in', 'EU data residency (Frankfurt)', 'Refs-only kernel — no PII', 'Right to erasure (Art. 17)', 'Encrypted in transit + at rest'].map(m => (
-                <span key={m} className="inline-flex items-center gap-1.5 rounded-full bg-card shadow-card px-3 py-1.5 text-xs font-medium">
-                  <ShieldCheck className="size-3.5 text-doc-deposit" /> {m}
-                </span>
-              ))}
-            </div>
+            <PrivacyVisual />
           </div>
         </section>
 

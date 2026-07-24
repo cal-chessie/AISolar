@@ -7,7 +7,7 @@
 export default function PaperworkVisual() {
   const rows = [
     { name: 'Sarah McDonald', form: 'NC6', dots: ['moving', 'moving', 'idle'], next: 'SEAI grant application — prepared, ready to send', grant: '\u20ac1,800' },
-    { name: 'Siobh\u00e1n Murphy', form: 'NC6', dots: ['done', 'moving', 'idle'], next: 'Single line diagram — generated, engineer stamps', grant: '\u20ac1,800' },
+    { name: 'Siobh\u00e1n Murphy', form: 'NC6', dots: ['done', 'done', 'done'], next: 'Pack complete — release it', grant: '\u20ac1,800' },
     { name: 'Byrne Agri Ltd', form: 'NC7', dots: ['done', 'done', 'waiting'], next: 'RECI cert — waiting on the electrical contractor', grant: '\u20ac13,200', commercial: true },
   ];
   const dotCls: Record<string, string> = { done: 'bg-doc-deposit', moving: 'bg-tech', waiting: 'bg-doc-proposal', idle: 'bg-muted-foreground/25' };
