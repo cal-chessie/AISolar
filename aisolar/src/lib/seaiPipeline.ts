@@ -313,8 +313,7 @@ export const eur = (n: number) =>
 /* ── Grants engine (Cal: commercial + domestic + EV) ─────────────────────────
    RATES ARE A VERSIONED TABLE, marked INDICATIVE everywhere they render —
    SEAI publishes changes; the number is confirmed at application, never
-   promised. Sources on record: seai.ie business-grants/commercial-solar-pv,
-   purevolt.ie NDMG guide (Jul 2026 search). */
+   promised. Sources on record: seai.ie business-grants/commercial-solar-pv   (Jul 2026 search). */
 
 /** SEAI Non-Domestic Microgen Grant — piecewise per kWp, hard cap €162,600.
  *  €900/kWp→2 · €300→20 · €200→200 · €150→1000. */
