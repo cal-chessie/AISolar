@@ -234,7 +234,7 @@ function Benefit({ eyebrow, title, body, points, reverse, children }: {
 }) {
   return (
     <div className={`grid lg:grid-cols-2 gap-8 lg:gap-14 items-center ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
-      <div>
+      <div className="min-w-0">
         <p className="label-micro">{eyebrow}</p>
         <h3 className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">{title}</h3>
         <p className="mt-3 text-muted-foreground leading-body">{body}</p>
@@ -247,7 +247,7 @@ function Benefit({ eyebrow, title, body, points, reverse, children }: {
           ))}
         </ul>
       </div>
-      <div>{children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

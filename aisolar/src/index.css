@@ -186,6 +186,12 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  /* No page ever scrolls sideways — a stray wide child clips, never overflows.
+     `clip` (not `hidden`) keeps position: sticky working. */
+  html {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -193,6 +199,7 @@ All colors MUST be HSL.
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow-x: clip;
   }
 
   /* Numerical / mono text uses JetBrains Mono */
