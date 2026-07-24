@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
 import { ThemeProvider } from 'next-themes';
 import PageTransition from "@/components/layout/PageTransition";
 import GlobalSearchModal from "@/components/search/GlobalSearchModal";
@@ -46,6 +46,35 @@ import { CookieConsentBanner } from "./lib/gdpr";
 import { isDemoMode } from "./lib/demoMode";
 
 const queryClient = new QueryClient();
+
+/**
+ * ScrollToTop — React Router keeps the window scroll position across route
+ * changes, so clicking any link while scrolled down dropped you into the middle
+ * (or bottom) of the next page. Every click-through in the app was doing this.
+ *
+ * Rules:
+ *  - PUSH/REPLACE (a click) → go to the top of the new page.
+ *  - POP (browser back/forward) → leave it alone; the browser restores the
+ *    position the user expects.
+ *  - #hash links → scroll to that element instead of the top.
+ */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  const navType = useNavigationType();
+
+  useEffect(() => {
+    if (navType === 'POP') return;
+
+    if (hash) {
+      // Let the target render before we look for it.
+      const el = document.getElementById(hash.slice(1));
+      if (el) { el.scrollIntoView({ block: 'start' }); return; }
+    }
+    window.scrollTo(0, 0);
+  }, [pathname, hash, navType]);
+
+  return null;
+}
 
 function AppRoutes() {
   const location = useLocation();
@@ -139,6 +168,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
