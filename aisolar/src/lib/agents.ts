@@ -141,7 +141,7 @@ export const AGENTS: AgentDefinition[] = [
     guardrails: [
       'Never schedules before materials are confirmed in stock',
       'Requires 2 installer-days for systems > 6kWp',
-      'Sends customer SMS 24h before with installer name + ETA',
+      'Emails the customer 24h before with installer name + ETA',
       'Auto-reschedules on weather warning (Met Éireann orange/red)',
     ],
     enabledByDefault: true,

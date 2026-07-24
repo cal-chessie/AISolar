@@ -29,7 +29,7 @@ export interface CoachTip {
   body: string;
   /** One-click action — navigates to a route or triggers a function */
   cta?: { label: string; route?: string; action?: string };
-  /** Copy-to-clipboard text (e.g. SMS script for the consultant) */
+  /** Copy-to-clipboard text (e.g. a message script for the consultant) */
   copyText?: string;
 }
 
@@ -264,7 +264,7 @@ export const CUSTOMER_TIPS: CoachTip[] = [
     type: 'info',
     icon: Calendar,
     title: 'Your installation is scheduled for July 24',
-    body: 'Our installer team will arrive between 8-9am. Please ensure roof access is clear and someone over 18 is home all day. You\'ll get a reminder SMS the day before.',
+    body: 'Our installer team will arrive between 8-9am. Please ensure roof access is clear and someone over 18 is home all day. You\'ll get an email reminder the day before.',
   },
   {
     id: 'cus-2',

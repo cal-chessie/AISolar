@@ -124,7 +124,7 @@ export function buildConversation(lead: DummyLead): ChatMessage[] {
     msgs.push({
       id: 'ai_chat_2',
       type: 'ai',
-      body: `Your installation is scheduled based on your deposit payment. Once you pay the 30% deposit, the Install Coordinator Agent will book your install within 4-6 weeks, weather permitting. You'll get an SMS 7 days and 1 day before.`,
+      body: `Your installation is scheduled based on your deposit payment. Once you pay the 30% deposit, the Install Coordinator Agent will book your install within 4-6 weeks, weather permitting. You'll get an email reminder 7 days and 1 day before.`,
       timestamp: new Date(Date.now() - 2 * 86400000).toISOString(),
     });
   }
@@ -244,7 +244,7 @@ export function generateAIResponse(question: string, lead: DummyLead): string {
   const q = question.toLowerCase();
   if (q.includes('when') && (q.includes('install') || q.includes('date'))) {
     return lead.assignment?.scheduled_date
-      ? `Your installation is scheduled for ${new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}. The crew will arrive between 8-9am. You'll get a reminder SMS the day before.`
+      ? `Your installation is scheduled for ${new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}. The crew will arrive between 8-9am. You'll get an email reminder the day before.`
       : `Your installation will be scheduled once you pay the deposit. Typically within 4-6 weeks of deposit payment, weather permitting.`;
   }
   if (q.includes('save') || q.includes('saving') || q.includes('bill')) {

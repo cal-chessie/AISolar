@@ -346,7 +346,7 @@ export function generateDummyLeads(): DummyLead[] {
         status: s.stage === 'proposal_drafted' ? 'draft' : s.stage === 'proposal_sent' ? 'presented' : 'approved',
         system_size_kw: estimate.systemSizeKw,
         panel_count: estimate.systemSizeKw * 2,
-        panel_model: 'Longi Hi-MO 6 435W',
+        panel_model: 'TrinaSolar TSM-440 NEG9RC.28',
         inverter_model: 'SolarEdge SE5K',
         battery_model: idx % 2 === 0 ? 'Tesla Powerwall 3 (13.5kWh)' : null,
         gross_cost: estimate.grossCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0), // battery premium (tenant €/kWh)
