@@ -84,16 +84,8 @@ export const SEAI_RATES = {
     // NOTE: no €300 "BER uplift" exists in the current grant — a post-works BER
     // is a REQUIREMENT to claim, not extra money. Removed from the amount.
   },
-  COMMERCIAL: {
-    // Non-Domestic Microgen Grant (NDMG) — simplified tiers
-    tiers: [
-      { maxKwp: 6, grant: 2500 },
-      { maxKwp: 10, grant: 3500 },
-      { maxKwp: 20, grant: 5500 },
-      { maxKwp: 50, grant: 12000 },
-      { maxKwp: 1000, grant: 25000 },
-    ],
-  },
+  // Commercial (Non-Domestic Microgen) grant lives in calculateNDMG() — the one
+  // formula. The old fixed-tier table (cap €25k) was wrong and is deleted.
   // ESB Networks microgen export tariff (2026)
   EXPORT_RATE: 0.14,           // €/kWh
   // HEUL loan
@@ -132,11 +124,10 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
     solarElectricityGrantMax = SEAI_RATES.DOMESTIC.grantMax;
     solarElectricityGrant = domesticSolarGrant(input.systemSizeKw); // tiered €700/€200, cap €1,800
   } else {
-    // Commercial: find the right tier
-    const tier = SEAI_RATES.COMMERCIAL.tiers.find(t => input.systemSizeKw <= t.maxKwp)
-      ?? SEAI_RATES.COMMERCIAL.tiers[SEAI_RATES.COMMERCIAL.tiers.length - 1];
-    solarElectricityGrant = tier.grant;
-    solarElectricityGrantMax = tier.grant;
+    // Commercial: SEAI Non-Domestic Microgen — ONE formula, shared with the
+    // compliance window (was a separate, wrong tier table that disagreed).
+    solarElectricityGrant = calculateNDMG(input.systemSizeKw);
+    solarElectricityGrantMax = 162600;
   }
 
   // 2. Microgen export tariff (annual value)

@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Search, ChevronRight, Bot, CheckCircle2, FileText, ExternalLink } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { decideCompliance } from '@/lib/complianceDecision';
-import { calculateNDMG } from '@/lib/seaiPipeline';
+import { calculateNDMG, domesticSolarGrant } from '@/lib/seaiPipeline';
 import PaperworkWindow, { buildPack } from '@/components/compliance/PaperworkWindow';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -37,7 +37,7 @@ const DOT: Record<GateState, string> = {
 function story(lead: DummyLead) {
   const d = decideCompliance(lead);
   const pack = buildPack(lead);
-  const grant = d.commercial ? calculateNDMG(d.kW) : (lead.proposal?.seai_grant ?? (d.kW ? Math.min(Math.round(d.kW * 900), 1800) : 0));
+  const grant = d.commercial ? calculateNDMG(d.kW) : (lead.proposal?.seai_grant ?? (d.kW ? domesticSolarGrant(d.kW) : 0));
 
   const gateState = (g: 'A' | 'B' | 'C'): GateState => {
     const docs = pack.filter(p => p.gate === g);
