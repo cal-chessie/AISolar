@@ -1,160 +1,290 @@
 /**
- * E. Solar ROI Calculator — public page for SEO + lead capture.
+ * Solar ROI Calculator — the interactive lander (Cal's 2026 rebuild).
  *
- * No bill upload needed. Customer enters:
- *   - Monthly bill (slider)
- *   - County (dropdown)
- *   - Roof orientation (4 buttons)
- * Get instant estimate + CTA to upload bill for detailed analysis.
+ * Layout stays a lander, split two-up: you PLAY on the left (bill, day/night
+ * split, orientation, battery), the estimate rebuilds itself IN FULL GLORY on
+ * the right — live. One engine both sides (calculateSystemEstimate), so the
+ * slider and the real bill-read merge into the same result. The payback curve
+ * redraws and the numbers count as you poke it — "a little play on screen".
+ *
+ * Honest: this is an estimate off Irish rates + your inputs. The real numbers
+ * come off your actual bill at /start (up to 21 details). Monochrome + family
+ * accents, never yellow.
  */
-
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Sun, TrendingUp, Zap, Award, ArrowRight, Calculator, MapPin } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea, Tooltip } from 'recharts';
+import { Sun, TrendingUp, Zap, ArrowRight, Calculator, BatteryCharging, Leaf, Upload, Moon } from 'lucide-react';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
-import { calculateSEAI, eur } from '@/lib/seaiPipeline';
+import { getPricingConfig } from '@/lib/pricing';
+import { eur } from '@/lib/seaiPipeline';
+import RoofDesigner from '@/components/calculator/RoofDesigner';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
-import { brand } from '@/config/brand';
+
+const ORIENT: Record<'south' | 'east' | 'west' | 'north', number> = { south: 1, east: 0.85, west: 0.85, north: 0.65 };
+
+/** Count-up number — tweens to its value on change. Falls back to the value
+ *  instantly if rAF never runs (never shows blank). */
+function useCountUp(value: number, ms = 500) {
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = performance.now();
+    const a = from.current, b = value;
+    let raf = 0;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setShown(a + (b - a) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = b;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, ms]);
+  return shown;
+}
+
+function Money({ value, className }: { value: number; className?: string }) {
+  const n = useCountUp(value);
+  return <span className={className}>{eur(Math.round(n))}</span>;
+}
 
 export default function ROICalculator() {
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(250);
-  const [county, setCounty] = useState('Dublin');
+  const [nightPct, setNightPct] = useState(35);       // % of usage at night — drives battery value
   const [orientation, setOrientation] = useState<'south' | 'east' | 'west' | 'north'>('south');
+  const [battery, setBattery] = useState(false);
+  const [roofPanels, setRoofPanels] = useState(0);   // panels drawn on the roof
+  const [roofKwp, setRoofKwp] = useState(0);
 
-  const estimate = useMemo(() => calculateSystemEstimate({ monthlyBill }), [monthlyBill]);
-  const seai = useMemo(() => calculateSEAI({
-    systemSizeKw: estimate.systemSizeKw,
-    propertyType: 'domestic',
-    installType: 'retrofit',
-    annualKwhUsage: estimate.annualKwh,
-    annualProductionKwh: estimate.annualProductionKwh,
-    selfConsumptionPct: 0.7,
-    netCost: estimate.netCost,
-  }), [estimate]);
+  const cfg = getPricingConfig();
 
-  const orientationMultiplier = orientation === 'south' ? 1 : orientation === 'east' || orientation === 'west' ? 0.85 : 0.65;
-  const adjustedSavings = Math.round(estimate.annualSavings * orientationMultiplier);
+  const r = useMemo(() => {
+    // The merge: your bill sizes the system, your roof caps it at what fits.
+    const est = calculateSystemEstimate({ monthlyBill, roofCapKwp: roofKwp || undefined });
+    const orient = ORIENT[orientation];
+    const baseSavings = Math.round(est.annualSavings * orient);
+    // A battery earns more the more you use at night (you store cheap sun for
+    // the evening). Night-heavy homes gain most — that's the honest hook.
+    const batteryKwh = 10.2;
+    const batteryBoost = battery ? Math.round(baseSavings * (0.10 + (nightPct / 100) * 0.30)) : 0;
+    const batteryCost = battery ? Math.round(batteryKwh * cfg.batteryPerKwh) : 0;
+    const annualSavings = baseSavings + batteryBoost;
+    const netCost = est.netCost + batteryCost;
+    const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
+    const twentyYear = annualSavings * 20 - netCost;
+    // Cumulative-savings curve vs the up-front net cost — the crossover is payback.
+    const curve = Array.from({ length: 21 }, (_, y) => ({ year: y, saved: annualSavings * y - netCost }));
+    return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
+      seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
+      annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear,
+      grossCost: est.grossCost, gridSpend20: monthlyBill * 12 * 20 };
+  }, [monthlyBill, nightPct, orientation, battery, roofKwp, cfg]);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <SEOHead
         title="Solar ROI Calculator Ireland | Free Savings Estimate — AISOLAR"
-        description="Calculate your solar savings in 30 seconds. Enter your monthly bill and roof orientation. Get instant estimate of system size, savings, SEAI grant, and payback period."
+        description="Play with your numbers and watch your solar payback build in real time. Instant estimate on Irish energy rates + the SEAI grant. Or upload your bill for the exact read."
       />
       <MarketingNav product="aisolar" />
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="text-center mb-8">
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/40 mb-3">
-            <Calculator className="h-3 w-3 mr-1" /> Free · No signup
-          </Badge>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3">Solar Savings Calculator</h1>
-          <p className="text-muted-foreground">See how much you could save with solar. Instant estimate based on Irish energy rates + SEAI grants.</p>
+
+      <div className="mx-auto max-w-6xl px-5 py-10 lg:py-14">
+        {/* Lander header */}
+        <div className="text-center max-w-2xl mx-auto">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
+            <Calculator className="size-3.5" /> Free · no signup · instant
+          </span>
+          <h1 className="mt-5 text-[32px] leading-[38px] sm:text-[42px] sm:leading-[48px] font-semibold tracking-tight">
+            Watch solar pay for itself
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-body">
+            Move the sliders and your estimate rebuilds live — grant, savings, payback, the lot.
+            Then upload your bill and we run it on your real numbers.
+          </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Inputs */}
-          <Card>
-            <CardContent className="p-6 space-y-6">
-              {/* Monthly bill slider */}
-              <div>
-                <label className="text-sm font-semibold flex items-center justify-between mb-2">
-                  <span>Monthly electricity bill</span>
-                  <span className="text-2xl font-bold text-primary">€{monthlyBill}</span>
-                </label>
-                <input
-                  type="range" min="80" max="600" step="10"
-                  value={monthlyBill}
-                  onChange={e => setMonthlyBill(Number(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>€80</span><span>€300</span><span>€600+</span>
-                </div>
-              </div>
+        {/* The split: play left · full-glory estimate right */}
+        <div className="mt-10 grid lg:grid-cols-2 gap-6 items-start">
+          {/* ── LEFT · play ─────────────────────────────────────────── */}
+          <div className="rounded-[16px] bg-card shadow-card p-6 space-y-7">
+            {/* Your actual roof — draw the panels on (Level 1, keyless) */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Your roof</label>
+              <RoofDesigner panelWatts={cfg.panelWatts} onChange={(panels, kwp) => { setRoofPanels(panels); setRoofKwp(kwp); }} />
+              {roofPanels > 0 && (
+                <p className="mt-2 text-xs font-medium text-doc-deposit">Your roof fits ~{roofPanels} panels ({roofKwp} kWp) — feeding your estimate.</p>
+              )}
+            </div>
 
-              {/* County */}
-              <div>
-                <label className="text-sm font-semibold mb-2 block">Your county</label>
-                <select value={county} onChange={e => setCounty(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                  {['Dublin','Cork','Galway','Limerick','Waterford','Kildare','Meath','Wicklow','Other'].map(c => <option key={c}>{c}</option>)}
-                </select>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium">Your monthly electricity bill</label>
+                <span className="text-xl font-semibold tabular-nums">€{monthlyBill}</span>
               </div>
+              <input type="range" min={80} max={600} step={10} value={monthlyBill}
+                onChange={e => setMonthlyBill(Number(e.target.value))}
+                className="w-full accent-primary cursor-pointer" />
+              <div className="flex justify-between text-2xs text-muted-foreground mt-1"><span>€80</span><span>€600+</span></div>
+            </div>
 
-              {/* Orientation */}
-              <div>
-                <label className="text-sm font-semibold mb-2 block">Roof orientation</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(['south','east','west','north'] as const).map(dir => (
-                    <button
-                      key={dir}
-                      onClick={() => setOrientation(dir)}
-                      className={`p-3 rounded-lg border-2 text-xs font-medium transition-all ${
-                        orientation === dir ? 'border-primary/40 bg-primary/10 dark:bg-primary/10' : 'border-border'
-                      }`}
-                    >
-                      <Sun className={`h-4 w-4 mx-auto mb-1 ${orientation === dir ? 'text-primary' : 'text-muted-foreground'}`} />
-                      {dir.charAt(0).toUpperCase() + dir.slice(1)}
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium flex items-center gap-1.5"><Moon className="size-3.5 text-tech" /> How much do you use at night?</label>
+                <span className="text-xl font-semibold tabular-nums">{nightPct}%</span>
               </div>
-            </CardContent>
-          </Card>
+              <input type="range" min={10} max={70} step={5} value={nightPct}
+                onChange={e => setNightPct(Number(e.target.value))}
+                className="w-full accent-primary cursor-pointer" />
+              <p className="text-2xs text-muted-foreground mt-1">The more you use after dark, the more a battery earns you.</p>
+            </div>
 
-          {/* Results */}
-          <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
-            <CardContent className="p-6">
-              <h3 className="font-bold text-lg mb-4">Your estimate</h3>
-              <div className="space-y-3">
-                <ResultRow icon={Sun} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} color="pending" />
-                <ResultRow icon={TrendingUp} label="Annual savings" value={eur(adjustedSavings)} color="emerald" />
-                <ResultRow icon={Award} label="SEAI grant" value={eur(seai.solarElectricityGrant)} color="violet" />
-                <ResultRow icon={Calculator} label="Net cost" value={eur(estimate.netCost)} color="blue" />
-                <ResultRow icon={Zap} label="Payback period" value={`${estimate.paybackYears} years`} color="pending" />
-                <ResultRow icon={TrendingUp} label="20-year savings" value={eur(estimate.twentyYearSavings)} color="emerald" />
+            <div>
+              <label className="text-sm font-medium mb-2 block">Roof faces</label>
+              <div className="grid grid-cols-4 gap-2">
+                {(['south', 'east', 'west', 'north'] as const).map(dir => (
+                  <button key={dir} onClick={() => setOrientation(dir)}
+                    className={`py-2.5 rounded-[10px] border text-xs font-medium capitalize transition-colors ${orientation === dir ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}>
+                    <Sun className={`size-4 mx-auto mb-1 ${orientation === dir ? 'text-doc-proposal' : 'text-muted-foreground'}`} />
+                    {dir}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6 p-3 bg-background rounded-lg border"
-              >
-                <p className="text-xs text-muted-foreground mb-2">Want a detailed proposal with your exact roof?</p>
-                <Button onClick={() => navigate('/upload')} className="w-full bg-primary hover:bg-primary">
-                  Upload bill for full analysis <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </motion.div>
-            </CardContent>
-          </Card>
+            <button onClick={() => setBattery(b => !b)}
+              className={`w-full flex items-center gap-3 rounded-[12px] border p-3.5 text-left transition-colors ${battery ? 'border-doc-deposit/50 bg-doc-deposit/5' : 'border-border hover:bg-muted/50'}`}>
+              <span className={`size-9 rounded-[10px] grid place-items-center shrink-0 ${battery ? 'bg-doc-deposit/15 text-doc-deposit' : 'bg-muted text-muted-foreground'}`}>
+                <BatteryCharging className="size-4.5" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-medium">Add a home battery</span>
+                <span className="block text-2xs text-muted-foreground">Store the day's sun for the evening · +{eur(r.batteryCost || Math.round(10.2 * cfg.batteryPerKwh))}</span>
+              </span>
+              <span className={`size-5 rounded-full border-2 grid place-items-center shrink-0 ${battery ? 'border-doc-deposit bg-doc-deposit' : 'border-muted-foreground/40'}`}>
+                {battery && <span className="size-2 rounded-full bg-white" />}
+              </span>
+            </button>
+
+            {/* the merge — play here, or hand us the real bill */}
+            <div className="rounded-[12px] bg-muted/40 p-3.5 flex items-center gap-3">
+              <Upload className="size-4 text-muted-foreground shrink-0" />
+              <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
+              <button onClick={() => navigate('/start')} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
+            </div>
+          </div>
+
+          {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
+          <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+            {/* hero — the saving, in context of what you'd pay the grid */}
+            <div className="px-6 pt-6 pb-5 border-b border-border">
+              <p className="label-micro">Over 20 years, solar saves you</p>
+              <Money value={r.twentyYear} className="block mt-1 text-4xl sm:text-[44px] sm:leading-[48px] font-semibold tracking-tight text-doc-deposit tabular-nums" />
+              <p className="mt-2 text-xs text-muted-foreground leading-body">
+                You'd hand your supplier about <span className="font-semibold text-foreground tabular-nums">{eur(r.gridSpend20)}</span> over that time at today's rates.
+                Solar turns most of it back into your pocket — after paying for itself in <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>.
+              </p>
+            </div>
+
+            {/* key facts — three, clean, divided */}
+            <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+              <KeyFact label="System" value={`${r.systemSizeKw} kWp`} sub={`${r.panels} panels${battery ? ' + batt' : ''}`} />
+              <KeyFact label="Net cost" valueEl={<Money value={r.netCost} />} sub="after grant" />
+              <KeyFact label="Payback" value={`${r.paybackYears} yrs`} sub="then it's free" />
+            </div>
+
+            {/* the money story — gross → grant → net, reconciled */}
+            <div className="px-6 py-4 border-b border-border space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">System installed</span><span className="tabular-nums"><Money value={r.grossCost} /></span></div>
+              {battery && <div className="flex justify-between"><span className="text-muted-foreground">Home battery</span><span className="tabular-nums">{eur(r.batteryCost)}</span></div>}
+              <div className="flex justify-between text-doc-deposit"><span>SEAI grant</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
+              <div className="flex justify-between font-semibold border-t border-border pt-1.5"><span>Your net cost</span><span className="tabular-nums"><Money value={r.netCost} /></span></div>
+            </div>
+
+            {/* premium payback curve — red while paying back, green in profit */}
+            <div className="px-6 pt-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="label-micro">Where you stand, year by year</p>
+                <span className="text-2xs text-muted-foreground">20-yr view</span>
+              </div>
+              <div className="h-40 -mx-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={r.curve} margin={{ top: 14, right: 16, left: 16, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="save" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--doc-deposit))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--doc-deposit))" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    {r.paybackYears > 0 && r.paybackYears <= 20 && (
+                      <ReferenceArea x1={0} x2={r.paybackYears} fill="hsl(var(--pop))" fillOpacity={0.05} />
+                    )}
+                    <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(y: number) => (y % 5 === 0 ? `${y}y` : '')} />
+                    <YAxis hide domain={['dataMin', 'dataMax']} />
+                    <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
+                    {r.paybackYears > 0 && r.paybackYears <= 20 && (
+                      <ReferenceLine x={Math.round(r.paybackYears)} stroke="hsl(var(--doc-deposit))" strokeDasharray="4 3" strokeWidth={1.5}
+                        label={{ value: `paid back · yr ${r.paybackYears}`, position: 'insideTopRight', fontSize: 10, fontWeight: 600, fill: 'hsl(var(--doc-deposit))' }} />
+                    )}
+                    <Tooltip
+                      cursor={{ stroke: 'hsl(var(--border))' }}
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 10, fontSize: 12, boxShadow: 'var(--shadow-card)' }}
+                      labelFormatter={(y) => `Year ${y}`}
+                      formatter={(v: number) => [eur(Math.round(v)), v >= 0 ? 'In profit' : 'Still paying back']}
+                    />
+                    <Area type="monotone" dataKey="saved" stroke="hsl(var(--doc-deposit))" strokeWidth={2.5} fill="url(#save)" dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* supporting facts */}
+            <div className="px-6 py-4 grid grid-cols-3 gap-3 border-t border-border">
+              <MiniStat icon={Zap} tint="text-tech" value={`${(r.annualProduction / 1000).toFixed(1)}k`} label="kWh made a year" />
+              <MiniStat icon={TrendingUp} tint="text-doc-deposit" valueEl={<Money value={r.annualSavings} />} label="saved a year" />
+              <MiniStat icon={Leaf} tint="text-doc-deposit" value={`${r.co2} t`} label="CO₂ cut a year" />
+            </div>
+
+            <div className="p-4 pt-0">
+              <button onClick={() => navigate('/start')}
+                className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                Get this on my real numbers <ArrowRight className="size-4" />
+              </button>
+              <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no signup · we read up to 21 details off your bill</p>
+            </div>
+          </div>
         </div>
 
-        <p className="text-xs text-center text-muted-foreground mt-6">
-          Estimates based on Irish retail rate €0.35/kWh, SEAI grant €900/kWp (max €1,800), 70% self-consumption.
-          Actual savings vary with roof, shading, and usage patterns.
+        <p className="text-2xs text-center text-muted-foreground mt-6 max-w-2xl mx-auto">
+          Estimate only — Irish retail rate €0.35/kWh, SEAI grant €900/kWp (max €1,800), 70% self-consumption.
+          Your real figures come off your bill at upload; actual savings vary with roof, shading and usage.
         </p>
       </div>
+
       <MarketingFooter product="aisolar" />
     </div>
   );
 }
 
-function ResultRow({ icon: Icon, label, value, color }: { icon: typeof Sun; label: string; value: string; color: string }) {
+function KeyFact({ label, value, valueEl, sub }: { label: string; value?: string; valueEl?: React.ReactNode; sub: string }) {
   return (
-    <div className="flex items-center justify-between p-2 bg-background/60 rounded-lg">
-      <div className="flex items-center gap-2">
-        <div className={`p-1.5 rounded bg-primary/10 dark:bg-primary/10`}>
-          <Icon className={`h-3 w-3 text-primary dark:text-primary`} />
-        </div>
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-      <span className="font-bold text-sm">{value}</span>
+    <div className="px-4 py-3.5 text-center">
+      <div className="label-micro">{label}</div>
+      <div className="mt-0.5 text-lg font-semibold tabular-nums">{valueEl ?? value}</div>
+      <div className="text-2xs text-muted-foreground">{sub}</div>
+    </div>
+  );
+}
+
+function MiniStat({ icon: Icon, tint, value, valueEl, label }: { icon: typeof Sun; tint: string; value?: string; valueEl?: React.ReactNode; label: string }) {
+  return (
+    <div>
+      <Icon className={`size-4 ${tint}`} />
+      <div className="mt-1.5 text-base font-semibold tabular-nums leading-none">{valueEl ?? value}</div>
+      <div className="mt-1 text-2xs text-muted-foreground leading-tight">{label}</div>
     </div>
   );
 }

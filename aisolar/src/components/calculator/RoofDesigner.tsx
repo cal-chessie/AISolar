@@ -1,0 +1,140 @@
+/**
+ * RoofDesigner — Level 1 (keyless) "panels land on your roof".
+ *
+ * Cal's unlock, isolated to the client calculator first as a proof. Same
+ * keyless Google satellite embed the proposal already uses, plus a draw layer:
+ * find your house, drag a box over the roof, and panels auto-fill it as a grid.
+ * The count feeds the live estimate.
+ *
+ * HONEST: keyless means the layout is approximate (we can't measure pixels to
+ * metres without the Maps Static key — on the GATE 0 rotation list). Framed as
+ * "rough layout — exact count + positions confirmed at survey". When the key is
+ * live this upgrades to true-scale, and Google Solar auto-detect (Level 2)
+ * layers in where Ireland has coverage. Reused by the design step + proposal.
+ */
+import { useRef, useState, useCallback } from 'react';
+import { MapPin, Pencil, RotateCcw } from 'lucide-react';
+
+// Keyless panel footprint in map pixels at the fixed zoom — approximate, tuned
+// so a typical domestic roof box lands ~10–24 panels.
+const PW = 26, PH = 44, GAP = 5;
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+export default function RoofDesigner({
+  panelWatts,
+  onChange,
+}: {
+  panelWatts: number;
+  onChange?: (panels: number, kwp: number) => void;
+}) {
+  const [address, setAddress] = useState('45 Griffith Avenue, Drumcondra, Dublin 9');
+  const [query, setQuery] = useState(address);
+  const [drawing, setDrawing] = useState(false);   // draw mode on → map locked
+  const [rect, setRect] = useState<Rect | null>(null);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  const emit = useCallback((r: Rect | null) => {
+    if (!r) { onChange?.(0, 0); return; }
+    const cols = Math.max(0, Math.floor((r.w + GAP) / (PW + GAP)));
+    const rows = Math.max(0, Math.floor((r.h + GAP) / (PH + GAP)));
+    const panels = Math.min(40, cols * rows);
+    onChange?.(panels, Math.round((panels * panelWatts) / 100) / 10);
+  }, [onChange, panelWatts]);
+
+  const rel = (e: React.PointerEvent) => {
+    const b = boxRef.current!.getBoundingClientRect();
+    return { x: e.clientX - b.left, y: e.clientY - b.top };
+  };
+  const onDown = (e: React.PointerEvent) => {
+    if (!drawing) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStart.current = rel(e);
+    setRect({ ...dragStart.current, w: 0, h: 0 });
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drawing || !dragStart.current) return;
+    const p = rel(e), s = dragStart.current;
+    setRect({ x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) });
+  };
+  const onUp = () => {
+    if (!dragStart.current) return;
+    dragStart.current = null;
+    setRect(r => { emit(r && r.w > 20 && r.h > 20 ? r : null); return r && r.w > 20 && r.h > 20 ? r : null; });
+  };
+
+  // grid of panels inside the drawn rect
+  const panels: Array<{ left: number; top: number }> = [];
+  if (rect) {
+    const cols = Math.floor((rect.w + GAP) / (PW + GAP));
+    const rows = Math.floor((rect.h + GAP) / (PH + GAP));
+    for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++)
+      if (panels.length < 40) panels.push({ left: rect.x + c * (PW + GAP), top: rect.y + r * (PH + GAP) });
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input value={address} onChange={e => setAddress(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { setQuery(address); setRect(null); emit(null); setDrawing(false); } }}
+            placeholder="Your address or Eircode"
+            className="w-full h-10 pl-9 pr-3 rounded-[10px] border border-border bg-background text-sm" />
+        </div>
+        <button onClick={() => { setQuery(address); setRect(null); emit(null); setDrawing(false); }}
+          className="h-10 px-3 rounded-[10px] bg-primary text-primary-foreground text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity">Find</button>
+      </div>
+
+      <div ref={boxRef} className="relative mt-2 rounded-[12px] overflow-hidden border border-border bg-muted select-none" style={{ height: 240 }}>
+        {/* fallback backdrop if the embed is blocked */}
+        <div className="absolute inset-0 grid place-items-center text-2xs text-muted-foreground">Loading satellite…</div>
+        <iframe
+          title="Your roof from above"
+          src={`https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=20&output=embed`}
+          className="absolute inset-0 w-full h-full border-0"
+          style={{ pointerEvents: drawing ? 'none' : 'auto' }}
+          loading="lazy"
+        />
+        {/* draw layer — only captures when drawing */}
+        <div
+          className="absolute inset-0"
+          style={{ pointerEvents: drawing ? 'auto' : 'none', cursor: drawing ? 'crosshair' : 'default' }}
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
+        >
+          {rect && (
+            <div className="absolute border-2 border-white/90 rounded-[2px]" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, boxShadow: '0 0 0 9999px rgba(0,0,0,0.25)' }} />
+          )}
+          {panels.map((p, i) => (
+            <div key={i} className="absolute rounded-[2px] bg-primary/85 border border-white/40"
+              style={{ left: p.left, top: p.top, width: PW, height: PH }} />
+          ))}
+        </div>
+
+        {/* controls */}
+        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2">
+          {!drawing && !rect && (
+            <button onClick={() => setDrawing(true)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-primary text-primary-foreground px-3 text-2xs font-semibold shadow-card hover:opacity-90 transition-opacity">
+              <Pencil className="size-3.5" /> Draw your roof
+            </button>
+          )}
+          {drawing && !dragStart.current && (
+            <span className="inline-flex h-8 items-center rounded-[8px] bg-background/90 px-3 text-2xs font-medium shadow-card">Drag a box over your roof</span>
+          )}
+          {rect && (
+            <button onClick={() => { setRect(null); emit(null); setDrawing(true); }}
+              className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-background/90 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
+              <RotateCcw className="size-3.5" /> Redraw
+            </button>
+          )}
+        </div>
+      </div>
+
+      <p className="mt-1.5 text-2xs text-muted-foreground">
+        Rough layout on your real roof — exact count and positions are confirmed at the site survey.
+      </p>
+    </div>
+  );
+}
