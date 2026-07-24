@@ -436,7 +436,7 @@ export default function AiosPage() {
               <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Explore AISolar <ArrowRight className="size-4" />
               </Link>
-              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
                 Talk to us
               </a>
             </div>
