@@ -16,6 +16,7 @@ import {
   Receipt, Award, Wrench, PackageCheck, AlarmClock, Inbox, Mail,
 } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import SEOHead from '@/components/SEOHead';
 import { AichatWordmark, AiteamWordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
@@ -98,6 +99,12 @@ function AgentFeed() {
 export default function AiTeamPageV2() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="AITeam — Your back office, run by agents"
+        description="AITeam is ten AI agents that draft, schedule, chase, invoice and report while you approve the work. Proven inside AISolar, now for more businesses. From €997/mo."
+        canonical="https://aisolar.ie/aiteam"
+        keywords="AI agents for business, back office automation, autonomous agents, AI operations software, agent runtime"
+      />
       <MarketingNav product="aiteam" />
 
       <main>

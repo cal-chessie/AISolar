@@ -17,6 +17,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Check, ShieldCheck, GitBranch } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import SEOHead from '@/components/SEOHead';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import PaperworkVisual from '@/components/marketing/PaperworkVisual';
 import { Wordmark, AisalesWordmark } from '@/components/brand/AiosMark';
@@ -165,6 +166,12 @@ function PrivacyVisual() {
 export default function AiosPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="AIOS — The operating system for AI-run business"
+        description="AIOS runs your company on agents that draft, schedule, chase and report — on one immutable record, with you approving every send. Built in Ireland. Free to start."
+        canonical="https://aisolar.ie/"
+        keywords="AI operating system, agent-run business, autonomous business software, AI back office, immutable audit record"
+      />
       <MarketingNav product="aios" />
 
       <main>

@@ -28,6 +28,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { AisolarWordmark } from '@/components/brand/AiosMark';
+import SEOHead from '@/components/SEOHead';
 import { Field, InputGroup } from '@/components/ui/field';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
@@ -180,6 +181,11 @@ export default function StartAnalysis() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="Your free solar estimate — AISOLAR"
+        description="Upload your electricity bill or draw your roof and get a solar estimate on your real numbers: system size, SEAI grant, annual saving and payback. Free, no signup."
+        canonical="https://aisolar.ie/start"
+      />
       {/* slim header */}
       <header className="border-b border-border/60">
         <div className="mx-auto max-w-3xl px-5 h-16 flex items-center justify-between">

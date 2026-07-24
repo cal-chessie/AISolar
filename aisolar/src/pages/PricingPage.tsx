@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import SEOHead from '@/components/SEOHead';
 
 /* ── Cal edits here (2026-07-24, Cal's numbers: base + €97/seat) ─────────── */
 const PRICES = {
@@ -142,6 +143,12 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="Pricing — AISOLAR plans for solar installers"
+        description="Simple per-seat pricing for Irish solar installers: Solo from €197/mo, plus team and AITeam plans, and €97 per extra seat. Every plan starts with a free trial."
+        canonical="https://aisolar.ie/pricing"
+        keywords="solar installer software pricing, solar CRM cost, AISOLAR plans, solar software Ireland price"
+      />
       <MarketingNav product="aisolar" />
 
       <main className="mx-auto max-w-6xl px-5 pt-12 pb-20 lg:pt-16 lg:pb-28">

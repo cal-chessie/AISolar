@@ -11,12 +11,18 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Check, Eye, FileCheck, HandHeart, MapPin, Sun, User } from 'lucide-react';
 import { Wordmark } from '@/components/brand/AiosMark';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import SEOHead from '@/components/SEOHead';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 
 export default function AboutUs() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="About AISOLAR — built for Irish solar installers"
+        description="AISOLAR is built by AIOS for Irish solar installers: bill-based quotes, SEAI grant tracking and ten agents that run the back office. See who's behind it and why."
+        canonical="https://aisolar.ie/about"
+      />
       <MarketingNav product="aisolar" />
 
       <main>

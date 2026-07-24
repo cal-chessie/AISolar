@@ -6,6 +6,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, FileText, Rocket, Bot, Calculator, Shield, Compass } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import SEOHead from '@/components/SEOHead';
 
 const SECTIONS = [
   {
@@ -44,6 +45,11 @@ const SECTIONS = [
 export default function DocsPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="Docs — how AISOLAR works | AISOLAR"
+        description="AISOLAR documentation: how bill analysis, proposals, SEAI grants, ESB microgen forms and the ten-agent runtime work for Irish solar installers."
+        canonical="https://aisolar.ie/docs"
+      />
       <MarketingNav product="aios" />
       <main className="mx-auto max-w-6xl px-5 pt-12 pb-20 lg:pt-16 lg:pb-28">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
