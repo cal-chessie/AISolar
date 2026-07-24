@@ -13,7 +13,7 @@
  * layers in where Ireland has coverage. Reused by the design step + proposal.
  */
 import { useRef, useState, useCallback } from 'react';
-import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 
 // Keyless panel footprint in map pixels at the fixed satellite zoom (~z20).
@@ -180,52 +180,87 @@ export default function RoofDesigner({
           )}
         </div>
 
+        {/* ── DRAW MODE OVERLAY ───────────────────────────────────────────────
+            The old hint was a tiny badge that also vanished the moment you
+            started dragging, and nothing signalled that the mode had changed.
+            Now entering draw mode visibly takes over the map and tells you
+            exactly what to do, for as long as you're doing it. */}
+        {drawing && !rect && (
+          <div className="absolute inset-0 z-20 grid place-items-center bg-black/45 pointer-events-none">
+            <div className="text-center px-6">
+              <span className="mx-auto grid size-11 place-items-center rounded-full bg-white/95 text-foreground shadow-lg">
+                <Pencil className="size-5" />
+              </span>
+              <p className="mt-2.5 text-sm font-semibold text-white drop-shadow">
+                Drag a box over your roof
+              </p>
+              <p className="mt-1 text-2xs text-white/80 drop-shadow max-w-[15rem] mx-auto leading-snug">
+                Press, drag across the roof, let go. The panels fill it automatically.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* controls */}
-        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2">
+        <div className="absolute bottom-2 left-2 right-2 z-30 flex items-center gap-2 flex-wrap">
           {!drawing && !rect && (
             <button onClick={() => setDrawing(true)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control bg-primary text-primary-foreground px-3 text-2xs font-semibold shadow-card hover:opacity-90 transition-opacity">
-              <Pencil className="size-3.5" /> Draw your roof
+              className="inline-flex h-9 items-center gap-2 rounded-control bg-primary text-primary-foreground px-4 text-xs font-semibold shadow-lg hover:opacity-90 transition-opacity">
+              <Pencil className="size-4" /> Draw your roof
             </button>
           )}
-          {drawing && !dragStart.current && (
-            <span className="inline-flex h-8 items-center rounded-control bg-background/90 px-3 text-2xs font-medium shadow-card">Drag a box over your roof</span>
+          {drawing && (
+            <button onClick={() => setDrawing(false)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-control bg-background/95 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
+              Cancel
+            </button>
           )}
           {rect && (
-            <button onClick={() => { setRect(null); setRotation(0); emit(null); setDrawing(true); }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-control bg-background/90 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
-              <RotateCcw className="size-3.5" /> Redraw
-            </button>
+            <>
+              <span className="inline-flex h-9 items-center gap-1.5 rounded-control bg-doc-deposit text-white px-3 text-2xs font-semibold shadow-card">
+                <Check className="size-3.5" /> Roof set
+              </span>
+              <button onClick={() => { setRect(null); setRotation(0); emit(null); setDrawing(true); }}
+                className="inline-flex h-9 items-center gap-1.5 rounded-control bg-background/95 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
+                <RotateCcw className="size-3.5" /> Redraw
+              </button>
+            </>
           )}
         </div>
       </div>
 
+      {/* Fine-tuning only appears once there's something to tune — and each
+          control says what it's FOR, not just what it is. */}
       {rect && (
-        <div className="mt-2 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-2xs font-medium text-muted-foreground shrink-0 w-9">Angle</span>
+        <div className="mt-3 rounded-control border border-border bg-muted/30 p-3 space-y-2.5">
+          <p className="text-2xs font-semibold">Line it up with your roof</p>
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xs text-muted-foreground shrink-0 w-24">Match the angle</span>
             <input type="range" min={-45} max={45} step={1} value={rotation}
               onChange={e => setRotation(Number(e.target.value))}
+              aria-label="Rotate the panel layout to match your roof angle"
               className="flex-1 accent-primary cursor-pointer" />
             <span className="text-2xs tabular-nums text-muted-foreground w-9 text-right shrink-0">{rotation}°</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xs font-medium text-muted-foreground shrink-0 w-9">Move</span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-2xs text-muted-foreground shrink-0 w-24">Nudge into place</span>
             <div className="flex gap-1">
-              {([[ArrowLeft, -4, 0], [ArrowUp, 0, -4], [ArrowDown, 0, 4], [ArrowRight, 4, 0]] as const).map(([Ic, dx, dy], i) => (
-                <button key={i} onClick={() => nudge(dx, dy)}
-                  className="size-7 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors">
+              {([[ArrowLeft, -4, 0, 'left'], [ArrowUp, 0, -4, 'up'], [ArrowDown, 0, 4, 'down'], [ArrowRight, 4, 0, 'right']] as const).map(([Ic, dx, dy, dir]) => (
+                <button key={dir} onClick={() => nudge(dx, dy)} aria-label={`Nudge ${dir}`}
+                  className="size-8 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors">
                   <Ic className="size-3.5" />
                 </button>
               ))}
             </div>
-            <span className="text-2xs text-muted-foreground">or drag the panels on the map</span>
+            <span className="text-2xs text-muted-foreground">or just drag it on the map</span>
           </div>
         </div>
       )}
 
-      <p className="mt-1.5 text-2xs text-muted-foreground">
-        Rough layout on your real roof — drag to move, slide to angle, nudge to line it up. Count and positions confirmed at the survey.
+      <p className="mt-2 text-2xs text-muted-foreground leading-snug">
+        {rect
+          ? 'This is a rough layout to size your system — the exact panel count and positions are measured at your free survey.'
+          : 'Find your address above, then draw a box over your roof. The panels fill it automatically and your estimate updates as you go.'}
       </p>
     </div>
   );
