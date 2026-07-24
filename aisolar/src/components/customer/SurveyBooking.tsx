@@ -26,10 +26,14 @@ const PARTS = ['Morning', 'Afternoon', 'Evening'] as const;
 export default function SurveyBooking({
   offered = ['Any morning next week', 'Tuesday or Thursday afternoon', 'Saturday morning'],
   surveyorName = 'your surveyor',
+  photosIn = false,
   onConfirm,
 }: {
   offered?: string[];
   surveyorName?: string;
+  /** All four pre-survey photos are in — the visit may shrink to a shorter
+   *  window or a desk review (booking spec item 6). */
+  photosIn?: boolean;
   onConfirm?: (choice: { kind: 'offered' | 'counter'; label: string }) => void;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -116,6 +120,13 @@ export default function SurveyBooking({
           ? `Pick a new window or tell us when suits — we'll let ${surveyorName} know.`
           : `${surveyorName} offered these windows. Tap one that suits — or tell us when you're around. Surveys run as half-days, not fixed clock times.`}
       </p>
+
+      {photosIn && !rescheduling && (
+        <p className="mt-2 text-2xs text-doc-deposit bg-doc-deposit/10 rounded-[8px] px-2.5 py-1.5 leading-snug">
+          Your four photos are in — this visit may be shorter, or a quick desk review.
+          {' '}{surveyorName} will confirm once they've had a look.
+        </p>
+      )}
 
       {!countering && (
         <div className="mt-3 space-y-1.5">

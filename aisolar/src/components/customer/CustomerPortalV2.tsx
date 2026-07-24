@@ -88,6 +88,8 @@ export default function CustomerPortalV2() {
   const [thinking, setThinking] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
   const [showRights, setShowRights] = useState(false);
+  // All four pre-survey photos in → the booking card offers a shorter visit.
+  const [snapsComplete, setSnapsComplete] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -187,7 +189,7 @@ export default function CustomerPortalV2() {
             photos before the visit — may shorten or save the survey. */}
         {['new', 'intake_complete', 'survey_scheduled'].includes(lead.workflow_stage) && (
           <div className="flex justify-start">
-            <PreSurveySnaps onAllDone={() => {}} />
+            <PreSurveySnaps onAllDone={() => setSnapsComplete(true)} />
           </div>
         )}
 
@@ -195,7 +197,10 @@ export default function CustomerPortalV2() {
             chat — the other half of LeadFlow's "Let them choose". */}
         {['intake_complete', 'survey_scheduled'].includes(lead.workflow_stage) && (
           <div className="flex justify-start">
-            <SurveyBooking surveyorName={lead.survey?.surveyor?.split(' ')[0] || lead.assigned_consultant?.split(' ')[0] || 'your surveyor'} />
+            <SurveyBooking
+              surveyorName={lead.survey?.surveyor?.split(' ')[0] || lead.assigned_consultant?.split(' ')[0] || 'your surveyor'}
+              photosIn={snapsComplete}
+            />
           </div>
         )}
 
