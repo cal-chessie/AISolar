@@ -13,7 +13,7 @@
  * layers in where Ireland has coverage. Reused by the design step + proposal.
  */
 import { useRef, useState, useCallback } from 'react';
-import { MapPin, Pencil, RotateCcw, Sparkles, Loader2 } from 'lucide-react';
+import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 
 // Keyless panel footprint in map pixels at the fixed satellite zoom (~z20).
@@ -80,8 +80,30 @@ export default function RoofDesigner({
   const onUp = () => {
     if (!dragStart.current) return;
     dragStart.current = null;
-    setRect(r => { emit(r && r.w > 20 && r.h > 20 ? r : null); return r && r.w > 20 && r.h > 20 ? r : null; });
+    setRect(r => {
+      const valid = !!(r && r.w > 20 && r.h > 20);
+      emit(valid ? r : null);
+      if (valid) setDrawing(false);   // drawn → leave draw mode so the next drag MOVES it, not redraws
+      return valid ? r : null;
+    });
   };
+
+  // Drag the finished box to move it (adjust mode); a drag outside it pans the map.
+  const moveStart = useRef<{ mx: number; my: number; rx: number; ry: number } | null>(null);
+  const onBoxDown = (e: React.PointerEvent) => {
+    if (drawing || !rect) return;
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const p = rel(e);
+    moveStart.current = { mx: p.x, my: p.y, rx: rect.x, ry: rect.y };
+  };
+  const onBoxMove = (e: React.PointerEvent) => {
+    if (!moveStart.current || !rect) return;
+    const p = rel(e), s = moveStart.current;
+    setRect({ ...rect, x: s.rx + (p.x - s.mx), y: s.ry + (p.y - s.my) });
+  };
+  const onBoxUp = () => { moveStart.current = null; };
+  const nudge = (dx: number, dy: number) => setRect(r => (r ? { ...r, x: r.x + dx, y: r.y + dy } : r));
 
   // grid of panels inside the drawn rect, positioned RELATIVE to the box so the
   // whole group can be rotated as one to line up with an angled roof.
@@ -146,7 +168,9 @@ export default function RoofDesigner({
           onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         >
           {rect && (
-            <div className="absolute" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, transform: `rotate(${rotation}deg)`, transformOrigin: 'center' }}>
+            <div className="absolute"
+              onPointerDown={onBoxDown} onPointerMove={onBoxMove} onPointerUp={onBoxUp}
+              style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, transform: `rotate(${rotation}deg)`, transformOrigin: 'center', pointerEvents: drawing ? 'none' : 'auto', cursor: drawing ? 'default' : 'move' }}>
               <div className="absolute inset-0 border-2 border-white/90 rounded-[2px]" style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.25)' }} />
               {panels.map((p, i) => (
                 <div key={i} className="absolute rounded-[2px] bg-primary/85 border border-white/40"
@@ -177,17 +201,31 @@ export default function RoofDesigner({
       </div>
 
       {rect && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-2xs font-medium text-muted-foreground shrink-0">Angle</span>
-          <input type="range" min={-45} max={45} step={1} value={rotation}
-            onChange={e => setRotation(Number(e.target.value))}
-            className="flex-1 accent-primary cursor-pointer" />
-          <span className="text-2xs tabular-nums text-muted-foreground w-9 text-right shrink-0">{rotation}°</span>
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xs font-medium text-muted-foreground shrink-0 w-9">Angle</span>
+            <input type="range" min={-45} max={45} step={1} value={rotation}
+              onChange={e => setRotation(Number(e.target.value))}
+              className="flex-1 accent-primary cursor-pointer" />
+            <span className="text-2xs tabular-nums text-muted-foreground w-9 text-right shrink-0">{rotation}°</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xs font-medium text-muted-foreground shrink-0 w-9">Move</span>
+            <div className="flex gap-1">
+              {([[ArrowLeft, -4, 0], [ArrowUp, 0, -4], [ArrowDown, 0, 4], [ArrowRight, 4, 0]] as const).map(([Ic, dx, dy], i) => (
+                <button key={i} onClick={() => nudge(dx, dy)}
+                  className="size-7 grid place-items-center rounded-[8px] border border-border bg-background hover:bg-muted transition-colors">
+                  <Ic className="size-3.5" />
+                </button>
+              ))}
+            </div>
+            <span className="text-2xs text-muted-foreground">or drag the panels on the map</span>
+          </div>
         </div>
       )}
 
       <p className="mt-1.5 text-2xs text-muted-foreground">
-        Rough layout on your real roof — line the panels up with the roof, count and positions confirmed at the survey.
+        Rough layout on your real roof — drag to move, slide to angle, nudge to line it up. Count and positions confirmed at the survey.
       </p>
     </div>
   );
