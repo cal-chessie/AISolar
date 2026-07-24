@@ -37,6 +37,18 @@ export default function SurveyBooking({
   const [days, setDays] = useState<string[]>([]);
   const [parts, setParts] = useState<string[]>([]);
   const [confirmed, setConfirmed] = useState<{ kind: 'offered' | 'counter'; label: string } | null>(null);
+  // Reschedule (vault booking spec item 5): the confirmed card can re-open the
+  // picker to move the visit; the copy then reads "moved" and the surveyor is told.
+  const [rescheduling, setRescheduling] = useState(false);
+
+  const reopenToReschedule = () => {
+    setConfirmed(null);
+    setPicked(null);
+    setCountering(false);
+    setDays([]);
+    setParts([]);
+    setRescheduling(true);
+  };
 
   const toggle = (list: string[], set: (v: string[]) => void, v: string) =>
     set(list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
@@ -64,13 +76,14 @@ export default function SurveyBooking({
           <span className="size-7 rounded-full bg-doc-deposit/15 grid place-items-center shrink-0">
             <Check className="size-4 text-doc-deposit" />
           </span>
-          <div>
+          <div className="min-w-0">
             {confirmed.kind === 'offered' ? (
               <>
-                <p className="text-sm font-semibold">Survey set — {confirmed.label}</p>
+                <p className="text-sm font-semibold">{rescheduling ? 'Survey moved' : 'Survey set'} — {confirmed.label}</p>
                 <p className="text-xs text-muted-foreground mt-1 leading-snug">
-                  {surveyorName} has it locked in. We'll send a reminder the day
-                  before, and you can reply here if anything changes.
+                  {rescheduling
+                    ? `${surveyorName} has been told and it's locked to the new time. Reminder still comes the day before.`
+                    : `${surveyorName} has it locked in. We'll send a reminder the day before, and you can move it any time.`}
                 </p>
               </>
             ) : (
@@ -82,6 +95,10 @@ export default function SurveyBooking({
                 </p>
               </>
             )}
+            <button type="button" onClick={reopenToReschedule}
+              className="mt-2 text-2xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors">
+              Need to move it?
+            </button>
           </div>
         </div>
       </div>
@@ -92,11 +109,12 @@ export default function SurveyBooking({
     <div className="rounded-[16px] bg-card shadow-card p-4 max-w-sm">
       <div className="flex items-center gap-2">
         <Calendar className="size-4 text-doc-deposit" />
-        <p className="text-sm font-semibold">Your site survey</p>
+        <p className="text-sm font-semibold">{rescheduling ? 'Move your survey' : 'Your site survey'}</p>
       </div>
       <p className="text-xs text-muted-foreground mt-1 leading-snug">
-        {surveyorName} offered these windows. Tap one that suits — or tell us when
-        you're around. Surveys run as half-days, not fixed clock times.
+        {rescheduling
+          ? `Pick a new window or tell us when suits — we'll let ${surveyorName} know.`
+          : `${surveyorName} offered these windows. Tap one that suits — or tell us when you're around. Surveys run as half-days, not fixed clock times.`}
       </p>
 
       {!countering && (
@@ -148,7 +166,7 @@ export default function SurveyBooking({
 
       <button type="button" disabled={!canConfirm} onClick={confirm}
         className="mt-3 w-full h-9 rounded-[10px] bg-doc-deposit text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
-        {countering ? 'Send my availability' : picked ? `Confirm ${picked}` : 'Pick a window'}
+        {countering ? 'Send my availability' : picked ? `${rescheduling ? 'Move to' : 'Confirm'} ${picked}` : 'Pick a window'}
       </button>
     </div>
   );
