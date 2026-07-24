@@ -154,7 +154,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
   ];
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 max-w-4xl">
+    <div className="p-4 lg:p-6 space-y-4">
       {onBack && (
         <button onClick={onBack} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
           <X className="size-3.5" /> Back
@@ -177,9 +177,37 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
         </div>
       </div>
 
+      {/* THE ATTRIBUTES — every input the decision runs on, on one strip.
+          This is the "why" behind the form choice, visible at a glance. */}
+      {(() => {
+        const dec = decideCompliance(lead);
+        const i = (lead.intake ?? {}) as Record<string, unknown>;
+        const cells: Array<[string, string, string?]> = [
+          ['MPRN', (i.extracted_mprn as string) ?? lead.mprn ?? '—'],
+          ['Eircode', ((i.extracted_eircode as string) ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0]) ?? '—'],
+          ['Premises', dec.commercial ? 'Commercial' : 'Domestic'],
+          ['Array', dec.kW ? `${dec.kW} kWp` : '—'],
+          ['Inverter (TIIC)', dec.tiic ? `${dec.tiic} kW` : '—', 'decides the ESB form'],
+          ['Phase', dec.threePhase ? 'Three' : 'Single'],
+          ['ESB form', dec.esbForm],
+          ['SEAI scheme', dec.seaiScheme === 'domestic-grant' ? 'Domestic grant' : 'Non-Domestic Microgen'],
+          ['G10 relay', dec.requiresG10 ? 'Required' : 'Not required'],
+        ];
+        return (
+          <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-doc-contract px-4 py-3 flex flex-wrap gap-x-5 gap-y-2">
+            {cells.map(([k, v, hint]) => (
+              <div key={k} title={hint}>
+                <div className="text-2xs text-muted-foreground uppercase tracking-wide">{k}</div>
+                <div className={`text-sm font-semibold ${k === 'ESB form' ? 'text-tech' : k === 'G10 relay' && v === 'Required' ? 'text-doc-proposal' : ''}`}>{v}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* NC6 clock — the rule made visible */}
       {nc6.status !== 'sent' && (
-        <div className="rounded-[16px] bg-card shadow-card p-3 flex items-center gap-3 text-sm">
+        <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-tech p-3 flex items-center gap-3 text-sm">
           <CalendarClock className="size-4 text-tech shrink-0" />
           <span>If the NC6 goes to ESB <strong>today</strong>, the earliest legal install day is{' '}
             <strong className="text-tech">{earliestInstall.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</strong> — the booking calendar enforces this.</span>
@@ -188,7 +216,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
 
       {/* The three gates */}
       {gates.map(g => (
-        <div key={g.id} className="rounded-[16px] bg-card shadow-card overflow-hidden">
+        <div key={g.id} className={`rounded-[16px] bg-card shadow-card overflow-hidden border-l-4 ${g.id === 'A' ? 'border-l-doc-contract' : g.id === 'B' ? 'border-l-tech' : 'border-l-doc-deposit'}`}>
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <g.icon className={`size-4 ${g.tint}`} />
             <span className="text-sm font-semibold">Gate {g.id} — {g.title}</span>
