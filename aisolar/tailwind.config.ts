@@ -60,6 +60,12 @@ export default {
         "doc-contract": { DEFAULT: "hsl(var(--doc-contract))", subtle: "hsl(var(--doc-contract-subtle))" },
         "doc-invoice": { DEFAULT: "hsl(var(--doc-invoice))", subtle: "hsl(var(--doc-invoice-subtle))" },
         "doc-deposit": { DEFAULT: "hsl(var(--doc-deposit))", subtle: "hsl(var(--doc-deposit-subtle))" },
+        // The family colour system: one hue per product (see index.css).
+        // AIOS=blue · AISolar=red · AITeam=green · accent=yellow.
+        "brand-aios": { DEFAULT: "hsl(var(--brand-aios))", subtle: "hsl(var(--brand-aios-subtle))" },
+        "brand-aisolar": { DEFAULT: "hsl(var(--brand-aisolar))", subtle: "hsl(var(--brand-aisolar-subtle))" },
+        "brand-aiteam": { DEFAULT: "hsl(var(--brand-aiteam))", subtle: "hsl(var(--brand-aiteam-subtle))" },
+        "brand-accent": { DEFAULT: "hsl(var(--brand-accent))", subtle: "hsl(var(--brand-accent-subtle))" },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",

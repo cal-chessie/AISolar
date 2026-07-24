@@ -16,10 +16,16 @@ import { ArrowRight, Check } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
 
-/* ── Cal edits here (2026-07-24, Cal's numbers: base + €97/seat) ─────────── */
+/* ── Cal edits here (2026-07-24, Cal's numbers: base + €97/seat) ─────────────
+   Ladder logic: €197 → €497 → €997 → custom. Each step is a clear doubling-ish
+   jump tied to what you actually get (one seat → the whole company + a lead
+   engine → the agent workforce). Annual is a flat 25% off every tier, and the
+   save badge computes it from these numbers so it can never drift.
+   AISolar moved 397→497: it now carries AISales, AIField, the embeddable
+   calculator widget, consultant intelligence and the SEAI/ESB pack. */
 const PRICES = {
   solo:   { monthly: 197, yearly: 148 },  // € base per month
-  team:   { monthly: 397, yearly: 298 },
+  team:   { monthly: 497, yearly: 373 },
   aiteam: { monthly: 997, yearly: 748 },  // Cal 24 Jul: €997/mo, annual 25% off
   seat: 97,                               // € per additional seat / month
 };
@@ -65,10 +71,11 @@ export default function PricingPage() {
         '1 seat included',
         'Bill reader — 21 details off every bill',
         'Day/night split + battery case, from their real usage',
-        'Instant estimate with satellite view of the roof',
+        'Draw-your-roof calculator on satellite, panels and all',
+        'Instant estimate: system size, SEAI grant, payback year',
         'Booking front door wired to your calendar',
         'Guided site survey with photo checklist',
-        'Proposal builder with SEAI grant calculated',
+        'Proposal builder with the SEAI grant calculated',
         'Customer portal with live chat + documents',
         'Unlimited leads and proposals',
       ],
@@ -78,20 +85,21 @@ export default function PricingPage() {
       price: (y) => eur(y ? PRICES.team.yearly : PRICES.team.monthly),
       priceSub: 'per month',
       yearlyNote: `+ €${PRICES.seat} per extra seat`,
-      blurb: 'The full installer OS — your whole company on one engine.',
+      blurb: 'The full installer OS — a home for every seat, and a lead engine on your own site.',
       cta: { label: 'Try for free', to: '/get-started' },
       microcopy: '14 day free trial',
       featuresLead: 'Solo features, plus:',
       savePct: savePct(PRICES.team),
       features: [
-        '3 seats included, then €97 per seat',
-        '21-point bill read on every single lead',
-        'Consultant cockpit — pipeline board, calendar, inbox',
-        'Installer field app — job tabs, materials, map',
+        `3 seats included, then €${PRICES.seat} per seat`,
+        'AISales — the closer\'s cockpit: pipeline, calendar, inbox',
+        'See who\'s ready to sign: "opened 4×" on every proposal',
+        'Consultant Intelligence — the holdup and the next move',
+        'AIField — the crew app: jobs, route, materials, checklists',
+        'Embeddable calculator for your own website — leads land in your pipeline',
+        'SEAI + ESB pack: grant tracking and NC5/NC6/NC7 prepared',
         'Owner cockpit — analytics, agents, SEAI tracking',
-        'Documents hub — proposals, contracts, invoices',
         'Your logo + branding on every customer page',
-        'Team scheduling with cal.com booking links',
         'Role-based access for the whole crew',
       ],
       hasToggle: true,
@@ -108,6 +116,7 @@ export default function PricingPage() {
       savePct: savePct(PRICES.aiteam),
       features: [
         'All 10 agents — intake to install to invoice',
+        'AI Coach you can actually talk to — asks answered off your live pipeline',
         'The drafter — proposals written from bill + survey',
         'The scheduler — surveys + installs booked for you',
         'The chaser — follow-ups sent on time, every time',

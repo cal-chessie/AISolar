@@ -60,6 +60,25 @@ All colors MUST be HSL.
     --doc-deposit:     152 52% 40%;    /* muted green — money received */
     --doc-deposit-subtle: 152 45% 95%;
 
+    /* ── THE FAMILY COLOUR SYSTEM (Cal, 24 Jul 2026) ───────────────────────
+       One hue per product, used for that product's accents, emblems and its
+       primary CTA. These alias the doc hues above, so everything stays on the
+       same contrast-checked palette — no new raw colours.
+         AIOS    = blue   (--brand-aios)     · the kernel / parent
+         AISolar = red    (--brand-aisolar)  · the installer OS
+         AITeam  = green  (--brand-aiteam)   · the agent workforce
+         accent  = yellow (--brand-accent)   · used where it earns it
+       The blog uses all four. Charcoal/white/grey remain the canvas — colour
+       is the accent, never the background. */
+    --brand-aios:      212 88% 48%;    /* blue */
+    --brand-aios-subtle: 212 90% 96%;
+    --brand-aisolar:   358 74% 59%;    /* red */
+    --brand-aisolar-subtle: 358 80% 96%;
+    --brand-aiteam:    152 52% 40%;    /* green */
+    --brand-aiteam-subtle: 152 45% 95%;
+    --brand-accent:     38 82% 47%;    /* yellow/amber-gold */
+    --brand-accent-subtle: 40 90% 95%;
+
     --border: 240 5% 89%;              /* barely-there; cards float on shadow */
     --input: 240 5% 89%;
     --ring: 240 6% 16%;

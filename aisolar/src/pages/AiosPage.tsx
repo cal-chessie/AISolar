@@ -180,7 +180,7 @@ export default function AiosPage() {
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium shadow-card">
-                <span className="size-1.5 rounded-full bg-primary" /> Enterprise
+                <span className="size-1.5 rounded-full bg-brand-aios" /> Enterprise
               </span>
               <h1 className="mt-5 text-[32px] leading-[38px] sm:text-[44px] sm:leading-[50px] font-semibold tracking-tight">
                 The operating system for AI-run business
@@ -431,22 +431,33 @@ export default function AiosPage() {
           </div>
         </section>
 
-{/* ── Final CTA ────────────────────────────────────────────────────── */}
+{/* ── Final CTA — Problem → Solution → Ask, in AIOS blue ─────────────── */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
           <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">See it running</h2>
-            <p className="mt-3 text-primary-foreground/70 leading-body max-w-lg mx-auto">
-              AISolar is the kernel in production today. Watch a bill turn into
-              a proposal without anyone touching a keyboard.
+            {/* Problem */}
+            <p className="label-micro text-brand-aios">The problem</p>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
+              Your business runs on people doing admin
+            </h2>
+            {/* Solution */}
+            <p className="mt-4 text-primary-foreground/75 leading-body max-w-xl mx-auto">
+              Every quote, every follow-up, every invoice needs a human to remember
+              it. AIOS puts that work on agents that draft, schedule, chase and
+              report — on one immutable record, with a person approving every send.
+              It runs AISolar in production today.
             </p>
+            {/* Ask */}
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-background text-foreground px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
-                Explore AISolar <ArrowRight className="size-4" />
+              <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-brand-aios px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                See it running on AISolar <ArrowRight className="size-4" />
               </Link>
               <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
                 Talk to us
               </a>
             </div>
+            <p className="mt-4 text-2xs text-primary-foreground/50">
+              Free to start · no card required
+            </p>
           </div>
         </section>
       </main>
