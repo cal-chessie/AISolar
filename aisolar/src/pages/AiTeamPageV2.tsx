@@ -36,7 +36,7 @@ const ROSTER = [
 
 function AgentFeed() {
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden text-left">
       {/* header — the product, alive */}
       <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
         <AiteamWordmark className="size-8" />
@@ -55,7 +55,7 @@ function AgentFeed() {
 
       <div className="p-4 space-y-3">
         {/* the money moment — an approval happening right in the feed */}
-        <div className="rounded-[12px] border border-doc-proposal/40 bg-doc-proposal/5 p-3">
+        <div className="rounded-panel border border-doc-proposal/40 bg-doc-proposal/5 p-3">
           <div className="flex items-start gap-2.5">
             <span className="size-6 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0"><FileText className="size-3.5" /></span>
             <div className="min-w-0 flex-1">
@@ -64,8 +64,8 @@ function AgentFeed() {
             </div>
           </div>
           <div className="mt-2.5 flex gap-2">
-            <span className="inline-flex h-8 items-center rounded-[10px] bg-primary px-3.5 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
-            <span className="inline-flex h-8 items-center rounded-[10px] border border-border px-3.5 text-xs font-medium">Edit first</span>
+            <span className="inline-flex h-8 items-center rounded-control bg-primary px-3.5 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
+            <span className="inline-flex h-8 items-center rounded-control border border-border px-3.5 text-xs font-medium">Edit first</span>
           </div>
         </div>
 
@@ -119,10 +119,10 @@ export default function AiTeamPageV2() {
               {/* Cal: CTAs beside each other, AITeam family green. Also fixes
                   the "See it working" link — it pointed at the AIOS homepage. */}
               <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                   Get early access <ArrowRight className="size-4" />
                 </Link>
-                <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   See it working in AISolar
                 </Link>
               </div>
@@ -159,7 +159,7 @@ export default function AiTeamPageV2() {
               { n: '02', title: 'Set the guardrails', body: 'Approval gates on everything customer-facing, a daily AI cost cap, and your working hours. The team runs inside the lines you draw.' },
               { n: '03', title: 'Watch the window', body: 'Every action posts in plain English as it happens. If one gets it wrong, one tap corrects it — and the correction trains them.' },
             ].map(s => (
-              <div key={s.n} className="rounded-[16px] bg-card shadow-card p-6">
+              <div key={s.n} className="rounded-panel bg-card shadow-card p-6">
                 <span className="text-sm font-semibold tabular-nums text-muted-foreground">{s.n}</span>
                 <h3 className="mt-3 text-md font-semibold">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-body">{s.body}</p>
@@ -183,7 +183,7 @@ export default function AiTeamPageV2() {
             </div>
             <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {ROSTER.map(r => (
-                <div key={r.name} className="rounded-[16px] bg-card shadow-card p-5">
+                <div key={r.name} className="rounded-panel bg-card shadow-card p-5">
                   <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary"><r.icon className="size-4.5" /></span>
                   <h3 className="mt-3 text-sm font-semibold">{r.name}</h3>
                   <p className="mt-1.5 text-xs text-muted-foreground leading-body">{r.job}</p>
@@ -210,7 +210,7 @@ export default function AiTeamPageV2() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+            <div className="rounded-panel bg-card shadow-card overflow-hidden">
               <div className="px-4 h-11 border-b border-border flex items-center gap-2">
                 <FileText className="size-4 text-primary" />
                 <span className="text-sm font-semibold">Awaiting your approval</span>
@@ -220,8 +220,8 @@ export default function AiTeamPageV2() {
                 <p className="text-sm font-medium">Proposal — Kelly, 12 kWp + battery</p>
                 <p className="mt-1 text-xs text-muted-foreground leading-body">Drafted by the drafter from the bill + survey. €24,300 net after the SEAI grant. Nothing sends until you say so.</p>
                 <div className="mt-3 flex gap-2">
-                  <span className="inline-flex h-9 items-center rounded-[10px] bg-primary px-4 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
-                  <span className="inline-flex h-9 items-center rounded-[10px] border border-border px-4 text-xs font-medium">Edit first</span>
+                  <span className="inline-flex h-9 items-center rounded-control bg-primary px-4 text-xs font-semibold text-primary-foreground">Approve &amp; send</span>
+                  <span className="inline-flex h-9 items-center rounded-control border border-border px-4 text-xs font-medium">Edit first</span>
                 </div>
               </div>
               <div className="px-4 py-3 border-t border-border bg-muted/30">
@@ -248,7 +248,7 @@ export default function AiTeamPageV2() {
                 ))}
               </ul>
             </div>
-            <div className="lg:order-1 rounded-[16px] bg-card shadow-card p-4 space-y-3">
+            <div className="lg:order-1 rounded-panel bg-card shadow-card p-4 space-y-3">
               <div className="flex items-start gap-2.5">
                 <span className="size-6 rounded-md bg-primary/10 text-primary grid place-items-center shrink-0"><Bot className="size-3.5" /></span>
                 <div className="flex-1">
@@ -260,7 +260,7 @@ export default function AiTeamPageV2() {
               <div className="rounded-md border border-border bg-background p-3">
                 <p className="text-xs font-medium">What should it have done?</p>
                 <p className="mt-1.5 text-xs text-muted-foreground italic">"Never book weekends for this customer — weekdays after 10am only."</p>
-                <div className="mt-2 inline-flex h-8 items-center rounded-[10px] bg-primary px-3 text-xs font-semibold text-primary-foreground">Send correction</div>
+                <div className="mt-2 inline-flex h-8 items-center rounded-control bg-primary px-3 text-xs font-semibold text-primary-foreground">Send correction</div>
               </div>
               <p className="text-2xs text-muted-foreground text-center">This trains the scheduler. It won't happen twice.</p>
             </div>
@@ -291,17 +291,17 @@ export default function AiTeamPageV2() {
                   ))}
                 </ul>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                     Give your customers AIChat <ArrowRight className="size-4" />
                   </Link>
-                  <Link to="/my-projects" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                  <Link to="/my-projects" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                     See the portal
                   </Link>
                 </div>
               </div>
 
               {/* the wow shot: green chat on white + docs in the thread */}
-              <div className="rounded-[16px] bg-white shadow-card overflow-hidden">
+              <div className="rounded-panel bg-white shadow-card overflow-hidden">
                 <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
                   <AichatWordmark className="size-8" />
                   <div className="leading-tight">
@@ -319,7 +319,7 @@ export default function AiTeamPageV2() {
                   <div className="max-w-[85%] ml-auto rounded-[14px] rounded-br-[4px] bg-doc-deposit px-3.5 py-2.5 text-sm text-white">Here it is — and everything else, any time:</div>
                   <div className="flex gap-2 pt-1">
                     {[['Proposal', 'doc-proposal'], ['Contract', 'doc-contract'], ['Invoice', 'doc-invoice']].map(([d, c]) => (
-                      <span key={d} className={`inline-flex items-center gap-1.5 rounded-[10px] border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-800`}>
+                      <span key={d} className={`inline-flex items-center gap-1.5 rounded-control border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-800`}>
                         <span className={`size-2 rounded-full bg-${c}`} /> {d}
                       </span>
                     ))}
@@ -332,7 +332,7 @@ export default function AiTeamPageV2() {
 
         {/* Final CTA */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
-          <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+          <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Want the team first?</h2>
             <p className="mt-3 text-primary-foreground/70 leading-body max-w-lg mx-auto">
               We're opening AITeam to a handful of businesses beyond solar.
@@ -340,10 +340,10 @@ export default function AiTeamPageV2() {
             </p>
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
               {/* AITeam's page colour: the deposit green */}
-              <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-doc-deposit text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Request early access <ArrowRight className="size-4" />
               </Link>
-              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
                 Talk to us
               </a>
             </div>

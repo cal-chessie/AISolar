@@ -309,7 +309,7 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
           </p>
         </div>
         <a href="mailto:cal@renewably.ie?subject=Custom%20window%20request"
-          className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-background text-foreground px-4 text-xs font-semibold hover:opacity-90 transition-opacity shrink-0">
+          className="inline-flex h-9 items-center gap-1.5 rounded-control bg-background text-foreground px-4 text-xs font-semibold hover:opacity-90 transition-opacity shrink-0">
           Contact our team
         </a>
       </div>

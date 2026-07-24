@@ -331,7 +331,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                       <div className="flex gap-1 mb-3">
                         {([['pick', 'Pick a window'], ['options', 'Let them choose'], ['first', 'First available']] as const).map(([m, label]) => (
                           <button key={m} onClick={() => { setBookMode(m); setSurveyBooked(null); }}
-                            className={`flex-1 h-8 px-1 rounded-[8px] text-[11px] font-medium border transition-colors ${bookMode === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+                            className={`flex-1 h-8 px-1 rounded-control text-[11px] font-medium border transition-colors ${bookMode === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
                             {label}
                           </button>
                         ))}
@@ -347,7 +347,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                                 const label = d.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' });
                                 return (
                                   <button key={label} onClick={() => { setBookDay(label); setSurveyBooked(bookWindow ? { slot: `${label} · ${bookWindow}` } : null); }}
-                                    className={`p-1.5 rounded-[8px] text-xs border transition-colors ${bookDay === label ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                    className={`p-1.5 rounded-control text-xs border transition-colors ${bookDay === label ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
                                     {label}
                                   </button>
                                 );
@@ -356,7 +356,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                             <div className="grid grid-cols-2 gap-1.5">
                               {(['Morning', 'Afternoon'] as const).map(w => (
                                 <button key={w} onClick={() => { setBookWindow(w); setSurveyBooked(bookDay ? { slot: `${bookDay} · ${w}` } : null); }}
-                                  className={`p-1.5 rounded-[8px] text-xs border transition-colors ${bookWindow === w ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                  className={`p-1.5 rounded-control text-xs border transition-colors ${bookWindow === w ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
                                   {w === 'Morning' ? 'Morning · 8–1' : 'Afternoon · 1–6'}
                                 </button>
                               ))}
@@ -368,7 +368,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                       {bookMode === 'options' && (
                         <div className="space-y-1.5">
                           {['Any morning next week', 'Tuesday or Thursday afternoon', 'Saturday morning possible'].map(opt => (
-                            <label key={opt} className="flex items-center gap-2 p-2 rounded-[8px] border border-border text-xs cursor-pointer hover:bg-muted/50">
+                            <label key={opt} className="flex items-center gap-2 p-2 rounded-control border border-border text-xs cursor-pointer hover:bg-muted/50">
                               <input type="checkbox" defaultChecked className="h-3.5 w-3.5 rounded" /> {opt}
                             </label>
                           ))}
@@ -377,7 +377,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                       )}
 
                       {bookMode === 'first' && (
-                        <div className="p-2.5 rounded-[8px] bg-muted/40 text-xs">
+                        <div className="p-2.5 rounded-control bg-muted/40 text-xs">
                           Next real gap: <strong>{(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' }); })()} · Morning</strong> — from the surveyor's calendar, never an offered time it can't hold.
                         </div>
                       )}
@@ -1007,7 +1007,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
 
           {/* Consultant's discretion (Cal): the marketing-budget discount.
               Capped at 15% — above that is the owner's call, by design. */}
-          <div className="mt-3 p-3 rounded-[10px] bg-muted/40">
+          <div className="mt-3 p-3 rounded-control bg-muted/40">
             <div className="flex items-center gap-2 mb-2">
               <Percent className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs font-semibold">Your discretion</span>
@@ -1016,13 +1016,13 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
             <div className="flex flex-wrap items-center gap-1.5">
               {[0, 5, 10, 15].map(d => (
                 <button key={d} onClick={() => setDiscountPct(d)}
-                  className={`h-8 px-3 rounded-[8px] text-xs font-medium border transition-colors ${discountPct === d ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+                  className={`h-8 px-3 rounded-control text-xs font-medium border transition-colors ${discountPct === d ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
                   {d === 0 ? 'List price' : `−${d}%`}
                 </button>
               ))}
               {discountPct > 0 && (
                 <select value={discountReason} onChange={e => setDiscountReason(e.target.value)}
-                  className="h-8 px-2 rounded-[8px] text-xs bg-card border border-border">
+                  className="h-8 px-2 rounded-control text-xs bg-card border border-border">
                   <option>Referral programme</option>
                   <option>Advertising participation</option>
                   <option>Review + signage</option>
@@ -1238,7 +1238,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
       </div>
 
       {/* Slim deal strip */}
-      <div className="rounded-[16px] bg-card shadow-card p-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+      <div className="rounded-panel bg-card shadow-card p-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
         <span><strong>{(designData.panelCount * 0.435).toFixed(1)} kWp</strong> · {designData.panelCount} × {designData.panelModel}</span>
         {designData.includeBattery && <span>Battery: {designData.batteryModel}</span>}
         <span>Net <strong>{eurFmt(netCost)}</strong> after {eurFmt(seaiGrant)} grant{discountPct > 0 && <span className="text-doc-deposit"> − {discountPct}% {discountReason.toLowerCase()}</span>}</span>
@@ -1254,7 +1254,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
       </div>
 
       {/* The customer's window — live, full document, framed in the proposal colour */}
-      <div className="rounded-[16px] bg-card shadow-card overflow-hidden border-t-4 border-t-pop">
+      <div className="rounded-panel bg-card shadow-card overflow-hidden border-t-4 border-t-pop">
         <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
           <FileText className="size-4 text-pop" />
           <span className="text-sm font-semibold">Their proposal, exactly as they'll see it</span>

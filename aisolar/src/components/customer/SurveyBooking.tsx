@@ -75,7 +75,7 @@ export default function SurveyBooking({
 
   if (confirmed) {
     return (
-      <div className="rounded-[16px] bg-card shadow-card p-4 max-w-sm">
+      <div className="rounded-panel bg-card shadow-card p-4 max-w-sm">
         <div className="flex items-start gap-2.5">
           <span className="size-7 rounded-full bg-doc-deposit/15 grid place-items-center shrink-0">
             <Check className="size-4 text-doc-deposit" />
@@ -110,7 +110,7 @@ export default function SurveyBooking({
   }
 
   return (
-    <div className="rounded-[16px] bg-card shadow-card p-4 max-w-sm">
+    <div className="rounded-panel bg-card shadow-card p-4 max-w-sm">
       <div className="flex items-center gap-2">
         <Calendar className="size-4 text-doc-deposit" />
         <p className="text-sm font-semibold">{rescheduling ? 'Move your survey' : 'Your site survey'}</p>
@@ -122,7 +122,7 @@ export default function SurveyBooking({
       </p>
 
       {photosIn && !rescheduling && (
-        <p className="mt-2 text-2xs text-doc-deposit bg-doc-deposit/10 rounded-[8px] px-2.5 py-1.5 leading-snug">
+        <p className="mt-2 text-2xs text-doc-deposit bg-doc-deposit/10 rounded-control px-2.5 py-1.5 leading-snug">
           Your four photos are in — this visit may be shorter, or a quick desk review.
           {' '}{surveyorName} will confirm once they've had a look.
         </p>
@@ -132,7 +132,7 @@ export default function SurveyBooking({
         <div className="mt-3 space-y-1.5">
           {offered.map(opt => (
             <button key={opt} type="button" onClick={() => setPicked(opt)}
-              className={`w-full flex items-center gap-2 rounded-[10px] p-2.5 text-left text-xs transition-colors ${
+              className={`w-full flex items-center gap-2 rounded-control p-2.5 text-left text-xs transition-colors ${
                 picked === opt ? 'bg-doc-deposit/10 border border-doc-deposit/50 font-medium' : 'bg-muted/40 border border-transparent hover:bg-muted/70'
               }`}>
               <span className={`size-3.5 rounded-full border shrink-0 grid place-items-center ${picked === opt ? 'border-doc-deposit' : 'border-muted-foreground/40'}`}>
@@ -142,7 +142,7 @@ export default function SurveyBooking({
             </button>
           ))}
           <button type="button" onClick={() => { setCountering(true); setPicked(null); }}
-            className="w-full flex items-center gap-1.5 rounded-[10px] p-2.5 text-left text-xs text-muted-foreground hover:bg-muted/50 transition-colors">
+            className="w-full flex items-center gap-1.5 rounded-control p-2.5 text-left text-xs text-muted-foreground hover:bg-muted/50 transition-colors">
             <Clock className="size-3.5" /> None of these suit — here's when I'm around
           </button>
         </div>
@@ -154,7 +154,7 @@ export default function SurveyBooking({
           <div className="grid grid-cols-6 gap-1">
             {DAYS.map(d => (
               <button key={d} type="button" onClick={() => toggle(days, setDays, d)}
-                className={`py-1.5 rounded-[8px] text-[11px] border transition-colors ${days.includes(d) ? 'border-doc-deposit bg-doc-deposit/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                className={`py-1.5 rounded-control text-[11px] border transition-colors ${days.includes(d) ? 'border-doc-deposit bg-doc-deposit/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
                 {d}
               </button>
             ))}
@@ -163,7 +163,7 @@ export default function SurveyBooking({
           <div className="grid grid-cols-3 gap-1">
             {PARTS.map(p => (
               <button key={p} type="button" onClick={() => toggle(parts, setParts, p)}
-                className={`py-1.5 rounded-[8px] text-[11px] border transition-colors ${parts.includes(p) ? 'border-doc-deposit bg-doc-deposit/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                className={`py-1.5 rounded-control text-[11px] border transition-colors ${parts.includes(p) ? 'border-doc-deposit bg-doc-deposit/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
                 {p}
               </button>
             ))}
@@ -176,7 +176,7 @@ export default function SurveyBooking({
       )}
 
       <button type="button" disabled={!canConfirm} onClick={confirm}
-        className="mt-3 w-full h-9 rounded-[10px] bg-doc-deposit text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        className="mt-3 w-full h-9 rounded-control bg-doc-deposit text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
         {countering ? 'Send my availability' : picked ? `${rescheduling ? 'Move to' : 'Confirm'} ${picked}` : 'Pick a window'}
       </button>
     </div>

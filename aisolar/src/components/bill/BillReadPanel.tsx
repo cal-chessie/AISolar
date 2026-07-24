@@ -117,7 +117,7 @@ export default function BillReadPanel({ bill, dense, className, showSplit = true
   const pad = (cols - (cells.length % cols)) % cols;
 
   return (
-    <div className={cn('rounded-[16px] bg-card shadow-card overflow-hidden', className)}>
+    <div className={cn('rounded-panel bg-card shadow-card overflow-hidden', className)}>
       <div className={cn('px-4 border-b border-border', dense ? 'py-2.5' : 'py-3')}>
         <div className="flex items-center gap-2">
           <FileText className="size-4 text-primary" />

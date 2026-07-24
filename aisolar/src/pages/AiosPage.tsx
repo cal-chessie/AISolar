@@ -28,11 +28,11 @@ function CtaPair({ light }: { light?: boolean }) {
   return (
     <div className="mt-6 flex flex-wrap gap-3">
       <a href={CAL_LINK} target="_blank" rel="noreferrer"
-        className={`inline-flex h-10 items-center gap-2 rounded-[12px] px-4 text-sm font-semibold transition-opacity hover:opacity-90 ${light ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'}`}>
+        className={`inline-flex h-10 items-center gap-2 rounded-panel px-4 text-sm font-semibold transition-opacity hover:opacity-90 ${light ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'}`}>
         Talk to us <ArrowRight className="size-4" />
       </a>
       <Link to="/get-started"
-        className={`inline-flex h-10 items-center gap-2 rounded-[12px] px-4 text-sm font-semibold transition-colors ${light ? 'border border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10' : 'bg-card shadow-card hover:bg-muted'}`}>
+        className={`inline-flex h-10 items-center gap-2 rounded-panel px-4 text-sm font-semibold transition-colors ${light ? 'border border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10' : 'bg-card shadow-card hover:bg-muted'}`}>
         Get started <ArrowRight className="size-4" />
       </Link>
     </div>
@@ -42,7 +42,7 @@ function CtaPair({ light }: { light?: boolean }) {
 /* cal.com/enterprise's numbered 01–04 item */
 function Numbered({ n, title, body }: { n: string; title: string; body: string }) {
   return (
-    <div className="rounded-[16px] bg-card shadow-card p-6">
+    <div className="rounded-panel bg-card shadow-card p-6">
       <span className="text-sm font-semibold tabular-nums text-muted-foreground">{n}</span>
       <h3 className="mt-3 text-md font-semibold leading-tight">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground leading-body">{body}</p>
@@ -75,7 +75,7 @@ function KernelVisual() {
   ];
   const last = events.length - 1;
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden text-left">
       <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
         <GitBranch className="size-4 text-primary" />
         <span className="text-sm font-semibold">kernel.events</span>
@@ -123,7 +123,7 @@ function KernelVisual() {
    Erasure removes the person; the chain stays intact. */
 function PrivacyVisual() {
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden text-left">
       <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -188,7 +188,7 @@ export default function AiosPage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <GoogleAuthButton label="Continue with Google" className="sm:w-auto sm:px-5" />
                 <Link to="/get-started"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   Get started with email <ArrowRight className="size-4" />
                 </Link>
               </div>
@@ -284,7 +284,7 @@ export default function AiosPage() {
                 { name: 'Your vertical', tag: 'Built with us', body: 'The same kernel, pointed at your industry. We build the agents and flows around how your business runs.', to: CAL_LINK, cta: 'Talk to us', external: true },
               ].map(c => (
                 c.external ? (
-                  <a key={c.name} href={c.to} target="_blank" rel="noreferrer" className="group rounded-[16px] bg-card shadow-card p-6 flex flex-col hover:shadow-md transition-shadow">
+                  <a key={c.name} href={c.to} target="_blank" rel="noreferrer" className="group rounded-panel bg-card shadow-card p-6 flex flex-col hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold tracking-tight">{c.name}</h3>
                       <span className="text-2xs font-medium rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{c.tag}</span>
@@ -293,7 +293,7 @@ export default function AiosPage() {
                     <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium group-hover:gap-2.5 transition-all">{c.cta} <ArrowRight className="size-4" /></span>
                   </a>
                 ) : (
-                  <Link key={c.name} to={c.to} className="group rounded-[16px] bg-card shadow-card p-6 flex flex-col hover:shadow-md transition-shadow">
+                  <Link key={c.name} to={c.to} className="group rounded-panel bg-card shadow-card p-6 flex flex-col hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold tracking-tight">{c.name}</h3>
                       <span className="text-2xs font-medium rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{c.tag}</span>
@@ -350,17 +350,17 @@ export default function AiosPage() {
                   ))}
                 </ul>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-tech px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-tech px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                     Run your pipeline on AISales <ArrowRight className="size-4" />
                   </Link>
-                  <Link to="/aisolar" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                  <Link to="/aisolar" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                     See it inside AISolar
                   </Link>
                 </div>
               </div>
 
               {/* the wow shot: the live pipeline board, money on top */}
-              <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+              <div className="rounded-panel bg-card shadow-card overflow-hidden">
                 <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
                   <AisalesWordmark className="size-8" />
                   <div className="leading-tight">
@@ -382,7 +382,7 @@ export default function AiosPage() {
                       </div>
                       <div className="p-1.5 space-y-1.5">
                         {cards.map(([n, v]) => (
-                          <div key={n} className="rounded-[8px] border border-border bg-background p-2">
+                          <div key={n} className="rounded-control border border-border bg-background p-2">
                             <p className="text-xs font-medium truncate">{n}</p>
                             <p className="text-2xs text-muted-foreground tabular-nums">{v}</p>
                           </div>
@@ -426,17 +426,17 @@ export default function AiosPage() {
 
 {/* ── Final CTA ────────────────────────────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
-          <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+          <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">See it running</h2>
             <p className="mt-3 text-primary-foreground/70 leading-body max-w-lg mx-auto">
               AISolar is the kernel in production today. Watch a bill turn into
               a proposal without anyone touching a keyboard.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-background text-foreground px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-background text-foreground px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Explore AISolar <ArrowRight className="size-4" />
               </Link>
-              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
                 Talk to us
               </a>
             </div>

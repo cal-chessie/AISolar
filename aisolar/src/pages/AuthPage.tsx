@@ -61,7 +61,7 @@ export default function AuthPage() {
     setLoading(false);
   };
 
-  const input = 'w-full h-11 rounded-[10px] border border-input bg-background px-3.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25';
+  const input = 'w-full h-11 rounded-control border border-input bg-background px-3.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25';
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
@@ -82,7 +82,7 @@ export default function AuthPage() {
       <main className="flex-1 grid place-items-center px-5 py-10">
         <div className="w-full max-w-sm">
           {/* the card */}
-          <div className="rounded-[16px] bg-card shadow-card p-6 sm:p-8">
+          <div className="rounded-panel bg-card shadow-card p-6 sm:p-8">
             <AisolarWordmark className="size-14" />
             <h1 className="mt-5 text-2xl font-semibold tracking-tight">
               {isSignup ? 'Create your workspace' : 'Welcome back'}
@@ -109,7 +109,7 @@ export default function AuthPage() {
                     {([['owner', 'Owner', Building2], ['consultant', 'Sales', User], ['installer', 'Field', Wrench]] as const).map(([id, label, Icon]) => (
                       <button key={id} type="button" role="radio" aria-checked={role === id}
                         onClick={() => setRole(id)}
-                        className={`h-10 rounded-[10px] border text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors ${role === id ? 'border-primary bg-primary/5' : 'border-border text-muted-foreground hover:bg-muted'}`}>
+                        className={`h-10 rounded-control border text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors ${role === id ? 'border-primary bg-primary/5' : 'border-border text-muted-foreground hover:bg-muted'}`}>
                         <Icon className="size-3.5" /> {label}
                       </button>
                     ))}
@@ -118,7 +118,7 @@ export default function AuthPage() {
               )}
               <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@company.ie" autoComplete="email" className={input} />
               <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder={isSignup ? 'Choose a password' : 'Password'} autoComplete={isSignup ? 'new-password' : 'current-password'} className={input} />
-              <Button type="submit" disabled={loading} className="w-full h-11 rounded-[10px] text-sm font-semibold">
+              <Button type="submit" disabled={loading} className="w-full h-11 rounded-control text-sm font-semibold">
                 {isSignup ? 'Create workspace' : 'Sign in'} <ArrowRight className="size-4 ml-1" />
               </Button>
             </form>

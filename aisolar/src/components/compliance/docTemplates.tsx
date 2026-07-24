@@ -33,7 +33,7 @@ function Row({ label, value, from }: { label: string; value?: string | number | 
 
 function SignatureSlot({ who, when }: { who: string; when: string }) {
   return (
-    <div className="mt-2 p-2.5 rounded-[8px] border border-dashed border-border">
+    <div className="mt-2 p-2.5 rounded-control border border-dashed border-border">
       <div className="flex justify-between text-2xs text-muted-foreground"><span>Signed</span><span>Date __ / __ / ____</span></div>
       <div className="h-8 grid place-items-center text-2xs text-muted-foreground italic">signature slot — {who}, captured {when}</div>
     </div>

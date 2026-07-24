@@ -82,7 +82,7 @@ export default function LeadFormDialog({ open, onOpenChange, initial, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-[16px]">
+      <DialogContent className="sm:max-w-md rounded-panel">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {editing ? <Pencil className="size-4" /> : <UserPlus className="size-4" />}
@@ -132,7 +132,7 @@ export default function LeadFormDialog({ open, onOpenChange, initial, onSave }: 
               <input ref={fileRef} type="file" accept="image/*,application/pdf" capture="environment"
                 className="hidden" onChange={e => setV(s => ({ ...s, billFile: e.target.files?.[0] ?? null }))} />
               {v.billFile ? (
-                <div className="flex items-center gap-2 rounded-[10px] border border-doc-deposit/40 bg-doc-deposit/5 px-3 py-2.5">
+                <div className="flex items-center gap-2 rounded-control border border-doc-deposit/40 bg-doc-deposit/5 px-3 py-2.5">
                   <FileText className="size-4 text-doc-deposit shrink-0" />
                   <span className="text-xs font-medium truncate flex-1">{v.billFile.name}</span>
                   <span className="text-2xs text-doc-deposit font-medium shrink-0">bill captured</span>
@@ -141,7 +141,7 @@ export default function LeadFormDialog({ open, onOpenChange, initial, onSave }: 
                 </div>
               ) : (
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground/50 transition-colors">
+                  className="w-full flex items-center justify-center gap-2 rounded-control border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground/50 transition-colors">
                   <Camera className="size-4" /> Snap or upload the electricity bill
                 </button>
               )}

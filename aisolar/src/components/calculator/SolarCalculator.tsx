@@ -107,7 +107,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
       {/* The split: play left · full-glory estimate right */}
       <div className={`${showHeader ? 'mt-10' : ''} grid lg:grid-cols-2 gap-6 items-start`}>
         {/* ── LEFT · play ─────────────────────────────────────────── */}
-        <div className="rounded-[16px] bg-card shadow-card p-6 space-y-7">
+        <div className="rounded-panel bg-card shadow-card p-6 space-y-7">
           <div>
             <label className="text-sm font-medium mb-2 block">Your roof</label>
             <RoofDesigner panelWatts={cfg.panelWatts} onChange={({ panels, kwp, address }) => { setRoofPanels(panels); setRoofKwp(kwp); setRoofAddress(address); }} />
@@ -143,7 +143,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
             <div className="grid grid-cols-4 gap-2">
               {(['south', 'east', 'west', 'north'] as const).map(dir => (
                 <button key={dir} onClick={() => setOrientation(dir)}
-                  className={`py-2.5 rounded-[10px] border text-xs font-medium capitalize transition-colors ${orientation === dir ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}>
+                  className={`py-2.5 rounded-control border text-xs font-medium capitalize transition-colors ${orientation === dir ? 'border-primary bg-primary/5 text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}>
                   <Sun className={`size-4 mx-auto mb-1 ${orientation === dir ? 'text-doc-proposal' : 'text-muted-foreground'}`} />
                   {dir}
                 </button>
@@ -152,8 +152,8 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
           </div>
 
           <button onClick={() => setBattery(b => !b)}
-            className={`w-full flex items-center gap-3 rounded-[12px] border p-3.5 text-left transition-colors ${battery ? 'border-doc-deposit/50 bg-doc-deposit/5' : 'border-border hover:bg-muted/50'}`}>
-            <span className={`size-9 rounded-[10px] grid place-items-center shrink-0 ${battery ? 'bg-doc-deposit/15 text-doc-deposit' : 'bg-muted text-muted-foreground'}`}>
+            className={`w-full flex items-center gap-3 rounded-panel border p-3.5 text-left transition-colors ${battery ? 'border-doc-deposit/50 bg-doc-deposit/5' : 'border-border hover:bg-muted/50'}`}>
+            <span className={`size-9 rounded-control grid place-items-center shrink-0 ${battery ? 'bg-doc-deposit/15 text-doc-deposit' : 'bg-muted text-muted-foreground'}`}>
               <BatteryCharging className="size-4.5" />
             </span>
             <span className="flex-1 min-w-0">
@@ -165,7 +165,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
             </span>
           </button>
 
-          <div className="rounded-[12px] bg-muted/40 p-3.5 flex items-center gap-3">
+          <div className="rounded-panel bg-muted/40 p-3.5 flex items-center gap-3">
             <Upload className="size-4 text-muted-foreground shrink-0" />
             <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
             <button onClick={goToStart} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
@@ -173,7 +173,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
         </div>
 
         {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
-        <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+        <div className="rounded-panel bg-card shadow-card overflow-hidden">
           <div className="px-6 pt-6 pb-5 border-b border-border">
             <p className="label-micro">Estimated 20-year saving</p>
             <Money value={r.twentyYear} className="block mt-1 text-4xl sm:text-[44px] sm:leading-[48px] font-semibold tracking-tight text-doc-deposit tabular-nums" />
@@ -239,7 +239,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
 
           <div className="p-4 pt-0">
             <button onClick={goToStart}
-              className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+              className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
               Get this on my real numbers <ArrowRight className="size-4" />
             </button>
             <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no signup · we read up to 21 details off your bill</p>

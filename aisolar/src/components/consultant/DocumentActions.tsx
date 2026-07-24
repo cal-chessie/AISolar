@@ -45,11 +45,11 @@ export default function DocumentActions({
     <div className="space-y-2">
       {/* Expanded panel sits ABOVE the buttons so the doc stays in view */}
       {panel === 'notify' && (
-        <div className="rounded-[10px] border border-border bg-muted/30 p-3 space-y-2">
+        <div className="rounded-control border border-border bg-muted/30 p-3 space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold">
             <MessageSquarePlus className="size-3.5 text-primary" /> Snapshot for {first} — {intel.stageLabel}
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed bg-background rounded-[8px] p-2.5 border border-border">
+          <p className="text-xs text-muted-foreground leading-relaxed bg-background rounded-control p-2.5 border border-border">
             {intel.customerUpdate}
           </p>
           <div className="flex justify-end gap-2">
@@ -60,7 +60,7 @@ export default function DocumentActions({
       )}
 
       {panel === 'intel' && (
-        <div className="rounded-[10px] border border-border bg-muted/30 p-3 space-y-2.5">
+        <div className="rounded-control border border-border bg-muted/30 p-3 space-y-2.5">
           <div className="flex items-center gap-1.5 text-xs font-semibold">
             <Brain className="size-3.5 text-primary" /> Consultant Intelligence
           </div>
@@ -93,16 +93,16 @@ export default function DocumentActions({
 
       {/* The three actions */}
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"
+        <Button variant="outline" className="flex-1 h-10 rounded-control"
           onClick={() => setPanel(p => p === 'intel' ? 'none' : 'intel')}>
           <Brain className="h-4 w-4 mr-2" /> Intelligence
         </Button>
-        <Button variant="outline" className="flex-1 h-10 rounded-[10px]"
+        <Button variant="outline" className="flex-1 h-10 rounded-control"
           onClick={() => setPanel(p => p === 'notify' ? 'none' : 'notify')}>
           <Send className="h-4 w-4 mr-2" /> Notify customer
         </Button>
         {onForward && (
-          <Button onClick={onForward} className="flex-1 h-10 rounded-[10px] font-semibold">
+          <Button onClick={onForward} className="flex-1 h-10 rounded-control font-semibold">
             <ForwardIcon className="h-4 w-4 mr-2" /> {forwardLabel}
           </Button>
         )}

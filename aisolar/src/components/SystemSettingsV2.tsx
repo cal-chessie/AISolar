@@ -719,7 +719,7 @@ function ProposalTermsCard() {
   const num = (k: keyof ProposalTerms) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setT(s => ({ ...s, [k]: Number(e.target.value) }));
   return (
-    <div className="rounded-[16px] bg-card shadow-card p-5 max-w-2xl">
+    <div className="rounded-panel bg-card shadow-card p-5 max-w-2xl">
       <h3 className="text-sm font-semibold mb-1">Proposal terms</h3>
       <p className="text-xs text-muted-foreground mb-4">These render on every proposal and its PDF — your words, your terms.</p>
       <div className="grid sm:grid-cols-3 gap-3 mb-4">

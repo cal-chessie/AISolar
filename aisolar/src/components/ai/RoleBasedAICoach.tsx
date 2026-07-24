@@ -220,7 +220,7 @@ export default function RoleBasedAICoach() {
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(input); } }}
                     placeholder="Ask about a lead, what's stuck, who to call…"
-                    className="flex-1 h-9 rounded-[10px] border border-border bg-background px-3 text-sm outline-none focus:border-primary transition-colors"
+                    className="flex-1 h-9 rounded-control border border-border bg-background px-3 text-sm outline-none focus:border-primary transition-colors"
                   />
                   <Button onClick={() => ask(input)} disabled={!input.trim() || thinking} className="h-9 px-3">
                     <Send className="size-4" />

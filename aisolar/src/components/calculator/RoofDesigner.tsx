@@ -123,10 +123,10 @@ export default function RoofDesigner({
           <input value={address} onChange={e => setAddress(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') find(); }}
             placeholder="Your address or Eircode"
-            className="w-full h-10 pl-9 pr-3 rounded-[10px] border border-border bg-background text-sm" />
+            className="w-full h-10 pl-9 pr-3 rounded-control border border-border bg-background text-sm" />
         </div>
         <button onClick={find} disabled={checking}
-          className="h-10 px-3 rounded-[10px] bg-primary text-primary-foreground text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity disabled:opacity-60">
+          className="h-10 px-3 rounded-control bg-primary text-primary-foreground text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity disabled:opacity-60">
           {checking ? <Loader2 className="size-4 animate-spin" /> : 'Find'}
         </button>
       </div>
@@ -136,10 +136,10 @@ export default function RoofDesigner({
         <p className="mt-2 flex items-center gap-1.5 text-2xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> Checking Google Solar for your roof…</p>
       )}
       {auto && !autoUsed && (
-        <div className="mt-2 rounded-[10px] border border-doc-deposit/40 bg-doc-deposit/5 p-3">
+        <div className="mt-2 rounded-control border border-doc-deposit/40 bg-doc-deposit/5 p-3">
           <p className="text-xs font-semibold flex items-center gap-1.5"><Sparkles className="size-3.5 text-doc-deposit" /> Google found your roof</p>
           <p className="text-2xs text-muted-foreground mt-0.5">Fits up to <span className="font-medium text-foreground">{auto.panels} panels</span> ({auto.kwp} kWp) · {auto.sunshineHours.toLocaleString()} sun-hours a year — real geometry, not a guess.</p>
-          <button onClick={useAuto} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-doc-deposit text-white px-3 text-2xs font-semibold hover:opacity-90 transition-opacity">
+          <button onClick={useAuto} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-control bg-doc-deposit text-white px-3 text-2xs font-semibold hover:opacity-90 transition-opacity">
             <Sparkles className="size-3.5" /> Use this roof
           </button>
         </div>
@@ -151,7 +151,7 @@ export default function RoofDesigner({
         <p className="mt-2 text-2xs text-muted-foreground">Google doesn't have this roof yet (common in rural Ireland) — draw it on the map instead, it's just as good.</p>
       )}
 
-      <div ref={boxRef} className="relative mt-2 rounded-[12px] overflow-hidden border border-border bg-muted select-none" style={{ height: 240 }}>
+      <div ref={boxRef} className="relative mt-2 rounded-panel overflow-hidden border border-border bg-muted select-none" style={{ height: 240 }}>
         {/* fallback backdrop if the embed is blocked */}
         <div className="absolute inset-0 grid place-items-center text-2xs text-muted-foreground">Loading satellite…</div>
         <iframe
@@ -184,16 +184,16 @@ export default function RoofDesigner({
         <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2">
           {!drawing && !rect && (
             <button onClick={() => setDrawing(true)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-primary text-primary-foreground px-3 text-2xs font-semibold shadow-card hover:opacity-90 transition-opacity">
+              className="inline-flex h-8 items-center gap-1.5 rounded-control bg-primary text-primary-foreground px-3 text-2xs font-semibold shadow-card hover:opacity-90 transition-opacity">
               <Pencil className="size-3.5" /> Draw your roof
             </button>
           )}
           {drawing && !dragStart.current && (
-            <span className="inline-flex h-8 items-center rounded-[8px] bg-background/90 px-3 text-2xs font-medium shadow-card">Drag a box over your roof</span>
+            <span className="inline-flex h-8 items-center rounded-control bg-background/90 px-3 text-2xs font-medium shadow-card">Drag a box over your roof</span>
           )}
           {rect && (
             <button onClick={() => { setRect(null); setRotation(0); emit(null); setDrawing(true); }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-background/90 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
+              className="inline-flex h-8 items-center gap-1.5 rounded-control bg-background/90 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
               <RotateCcw className="size-3.5" /> Redraw
             </button>
           )}
@@ -214,7 +214,7 @@ export default function RoofDesigner({
             <div className="flex gap-1">
               {([[ArrowLeft, -4, 0], [ArrowUp, 0, -4], [ArrowDown, 0, 4], [ArrowRight, 4, 0]] as const).map(([Ic, dx, dy], i) => (
                 <button key={i} onClick={() => nudge(dx, dy)}
-                  className="size-7 grid place-items-center rounded-[8px] border border-border bg-background hover:bg-muted transition-colors">
+                  className="size-7 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors">
                   <Ic className="size-3.5" />
                 </button>
               ))}

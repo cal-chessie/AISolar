@@ -860,7 +860,7 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
           <p className="text-xs text-muted-foreground mb-3">Both go straight into {lead.name.split(' ')[0]}'s paperwork pack. The Declaration of Works auto-sends to the BER assessor.</p>
           <div className="grid sm:grid-cols-2 gap-2">
             {([['reci', 'Safe Electric (RECI) certificate'], ['dow', 'Signed Declaration of Works']] as const).map(([id, label]) => (
-              <label key={id} className={`flex items-center gap-2.5 p-3 rounded-[10px] border cursor-pointer transition-colors ${certs[id] ? 'border-doc-deposit/40 bg-doc-deposit/5' : 'border-dashed border-border hover:bg-muted/40'}`}>
+              <label key={id} className={`flex items-center gap-2.5 p-3 rounded-control border cursor-pointer transition-colors ${certs[id] ? 'border-doc-deposit/40 bg-doc-deposit/5' : 'border-dashed border-border hover:bg-muted/40'}`}>
                 <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) { setCerts(c => ({ ...c, [id]: e.target.files![0].name })); toast.success(`${label} filed`, { description: id === 'dow' ? 'Sent to the BER assessor + filed in the paperwork pack.' : 'Filed in the paperwork pack.' }); } }} />
                 {certs[id] ? <CheckCircle2 className="h-4 w-4 text-doc-deposit shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}

@@ -44,7 +44,7 @@ export default function PreSurveySnaps({ onAllDone }: { onAllDone?: (photos: Rec
   };
 
   return (
-    <div className="rounded-[16px] bg-card shadow-card p-4 max-w-sm">
+    <div className="rounded-panel bg-card shadow-card p-4 max-w-sm">
       <p className="text-sm font-semibold">Four quick photos before your survey</p>
       <p className="text-xs text-muted-foreground mt-1 leading-snug">
         These are the first four shots our surveyor takes. Snapping them now may
@@ -56,14 +56,14 @@ export default function PreSurveySnaps({ onAllDone }: { onAllDone?: (photos: Rec
           const taken = snaps[shot.id];
           return (
             <button key={shot.id} type="button" onClick={() => inputs.current[shot.id]?.click()}
-              className={`relative flex flex-col items-center justify-center gap-1.5 rounded-[10px] p-3 min-h-[92px] text-center transition-colors ${
+              className={`relative flex flex-col items-center justify-center gap-1.5 rounded-control p-3 min-h-[92px] text-center transition-colors ${
                 taken ? 'bg-doc-deposit/10' : 'bg-muted/40 hover:bg-muted/70 border border-dashed border-border'
               }`}>
               <input ref={el => { inputs.current[shot.id] = el; }} type="file" accept="image/*" capture="environment"
                 className="hidden" onChange={e => takeSnap(shot.id, e.target.files?.[0])} />
               {taken ? (
                 <>
-                  <img src={taken} alt={shot.label} className="absolute inset-0 size-full object-cover rounded-[10px] opacity-40" />
+                  <img src={taken} alt={shot.label} className="absolute inset-0 size-full object-cover rounded-control opacity-40" />
                   <Check className="size-4 text-doc-deposit relative" />
                   <span className="text-[11px] font-medium relative">{shot.label}</span>
                 </>

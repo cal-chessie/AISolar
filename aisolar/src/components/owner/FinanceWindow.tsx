@@ -85,7 +85,7 @@ export default function FinanceWindow() {
           { label: 'Outstanding balances', value: m.outstandingAR, tone: '', icon: Clock },
           { label: 'SEAI grants in flight', value: m.grantsInFlight, tone: 'text-tech', icon: Award },
         ].map(k => (
-          <div key={k.label} className="rounded-[16px] bg-card shadow-card p-4">
+          <div key={k.label} className="rounded-panel bg-card shadow-card p-4">
             <div className="flex items-center justify-between">
               <span className="label-micro">{k.label}</span>
               <k.icon className={`size-3.5 ${k.tone || 'text-muted-foreground'}`} />
@@ -97,7 +97,7 @@ export default function FinanceWindow() {
 
       {/* 2 — Deposits to chase: the list that moves cash this week */}
       {m.depositsDue.length > 0 && (
-        <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+        <div className="rounded-panel bg-card shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <h3 className="text-sm font-semibold">Deposits to chase</h3>
             <span className="text-2xs font-medium rounded-full bg-doc-proposal-subtle text-doc-proposal px-2 py-0.5">{m.depositsDue.length} due · {eur(m.depositsDue.reduce((s, j) => s + j.deposit, 0))}</span>
@@ -119,7 +119,7 @@ export default function FinanceWindow() {
       )}
 
       {/* 3 — The book: every job's money, downloadable */}
-      <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+      <div className="rounded-panel bg-card shadow-card overflow-hidden">
         <div className="px-4 py-3 border-b border-border flex items-center gap-2">
           <h3 className="text-sm font-semibold">The book</h3>
           <span className="text-2xs text-muted-foreground">every figure traceable to a job</span>
@@ -166,7 +166,7 @@ export default function FinanceWindow() {
           <span className="inline-flex items-center gap-1 text-2xs text-muted-foreground"><ShieldCheck className="size-3 text-doc-deposit" /> card data never touches this app — Stripe-hosted checkout; secret keys live in the server vault</span>
         </div>
         <div className="grid lg:grid-cols-2 gap-3">
-          <div className="rounded-[16px] bg-card shadow-card p-4">
+          <div className="rounded-panel bg-card shadow-card p-4">
             <div className="flex items-center gap-2 mb-2">
               <CreditCard className="size-4 text-muted-foreground" />
               <h4 className="text-sm font-semibold">Stripe</h4>
@@ -187,7 +187,7 @@ export default function FinanceWindow() {
             </p>
           </div>
 
-          <div className="rounded-[16px] bg-card shadow-card p-4">
+          <div className="rounded-panel bg-card shadow-card p-4">
             <div className="flex items-center gap-2 mb-2">
               <Landmark className="size-4 text-muted-foreground" />
               <h4 className="text-sm font-semibold">Bank transfer on invoices</h4>
@@ -223,7 +223,7 @@ export default function FinanceWindow() {
             <span className="text-xs text-muted-foreground">VAT</span>
             {([0, 13.5, 23] as const).map(r => (
               <button key={r} onClick={() => setCfg(c => ({ ...c, invoicing: { ...c.invoicing, vatRate: r } }))}
-                className={`h-8 px-2.5 rounded-[8px] text-xs font-medium border transition-colors ${cfg.invoicing.vatRate === r ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+                className={`h-8 px-2.5 rounded-control text-xs font-medium border transition-colors ${cfg.invoicing.vatRate === r ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
                 {r}%
               </button>
             ))}

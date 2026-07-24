@@ -55,9 +55,9 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
 
   return (
     /* The doc-proposal yellow frame — the proposal's colour, everywhere it appears */
-    <div className="space-y-3 rounded-[16px] border-l-4 border-l-doc-proposal pl-3 -ml-3">
+    <div className="space-y-3 rounded-panel border-l-4 border-l-doc-proposal pl-3 -ml-3">
       {/* Masthead — inverted charcoal, the number that matters on the right */}
-      <div className="rounded-[16px] bg-primary text-primary-foreground shadow-card p-4">
+      <div className="rounded-panel bg-primary text-primary-foreground shadow-card p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <span className={`inline-block text-[11px] font-semibold rounded-full px-2 py-0.5 mb-2 ${statusMeta.tone}`}>{statusMeta.label}</span>
@@ -77,26 +77,26 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       <BillReadPanel bill={bill} dense />
 
       {/* System design */}
-      <div className="rounded-[16px] bg-card shadow-card p-4">
+      <div className="rounded-panel bg-card shadow-card p-4">
         <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Sun className="h-4 w-4 text-primary" /> Designed for this roof</h3>
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="p-3 bg-muted/30 rounded-[10px]">
+          <div className="p-3 bg-muted/30 rounded-control">
             <div className="label-micro">Solar panels</div>
             <div className="font-bold text-sm">{proposal.panel_count} × {proposal.panel_model}</div>
             <div className="text-xs text-muted-foreground mt-1">{(proposal.panel_count * 0.435).toFixed(1)} kWp total</div>
           </div>
-          <div className="p-3 bg-muted/30 rounded-[10px]">
+          <div className="p-3 bg-muted/30 rounded-control">
             <div className="label-micro">Inverter</div>
             <div className="font-bold text-sm">{proposal.inverter_model}</div>
           </div>
           {proposal.battery_model && (
-            <div className="p-3 bg-muted/30 rounded-[10px]">
+            <div className="p-3 bg-muted/30 rounded-control">
               <div className="label-micro flex items-center gap-1"><Battery className="h-3 w-3" /> Battery storage</div>
               <div className="font-bold text-sm">{proposal.battery_model}</div>
             </div>
           )}
           {survey && (
-            <div className="p-3 bg-muted/30 rounded-[10px]">
+            <div className="p-3 bg-muted/30 rounded-control">
               <div className="label-micro">Roof (surveyed)</div>
               <div className="font-bold text-sm capitalize">{survey.roof_type} · {survey.roof_orientation} · {survey.roof_pitch}°</div>
               <div className="text-xs text-muted-foreground">Shading: {survey.shading}</div>
@@ -106,7 +106,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       </div>
 
       {/* The money */}
-      <div className="rounded-[16px] bg-card shadow-card p-4">
+      <div className="rounded-panel bg-card shadow-card p-4">
         <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /> Investment & savings</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           {[
@@ -115,14 +115,14 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
             { label: 'Payback', value: `${proposal.payback_years} yrs`, tone: '' },
             { label: '20-yr savings', value: eurFmt(proposal.twenty_year_savings), tone: 'text-doc-deposit' },
           ].map(m => (
-            <div key={m.label} className="p-3 bg-muted/30 rounded-[10px]">
+            <div key={m.label} className="p-3 bg-muted/30 rounded-control">
               <div className="label-micro">{m.label}</div>
               <div className={`text-xl font-bold tabular-nums ${m.tone || 'text-foreground'}`}>{m.value}</div>
               {m.sub && <div className="text-[11px] text-muted-foreground">{m.sub}</div>}
             </div>
           ))}
         </div>
-        <div className="mt-3 p-2.5 bg-muted/30 rounded-[10px] text-xs space-y-1">
+        <div className="mt-3 p-2.5 bg-muted/30 rounded-control text-xs space-y-1">
           <div className="flex justify-between"><span className="text-muted-foreground">Gross cost</span><span className="font-medium tabular-nums">{eurFmt(proposal.gross_cost)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">SEAI grant</span><span className="font-medium text-tech tabular-nums">−{eurFmt(proposal.seai_grant)}</span></div>
           <div className="flex justify-between font-bold border-t border-border pt-1"><span>Net investment</span><span className="tabular-nums">{eurFmt(proposal.net_cost)}</span></div>
@@ -132,7 +132,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
       </div>
 
       {/* Compliance papertrail — SEAI tracked (never "submitted for you") */}
-      <div className="rounded-[16px] bg-card shadow-card p-4">
+      <div className="rounded-panel bg-card shadow-card p-4">
         <h3 className="font-semibold text-sm mb-1 flex items-center gap-2"><Shield className="h-4 w-4 text-primary" /> Compliance papertrail</h3>
         <p className="text-xs text-muted-foreground mb-3">Pre-populated from survey + install data, linked to the customer portal.</p>
         <div className="space-y-2">
@@ -177,9 +177,9 @@ function ComplianceItem({ org, label, icon: Icon, status, details, prePopulated 
   }[status];
 
   return (
-    <div className="p-3 bg-muted/20 rounded-[10px]">
+    <div className="p-3 bg-muted/20 rounded-control">
       <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 rounded-[8px] bg-muted">
+        <div className="p-2 rounded-control bg-muted">
           <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div className="flex-1">

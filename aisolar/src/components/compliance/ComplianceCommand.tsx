@@ -103,22 +103,22 @@ export default function ComplianceCommand() {
     <div className="p-4 lg:p-6 space-y-4">
       {/* Three numbers. That's the business — family cards, no black slab. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <div className="label-micro">Grants in play</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-doc-deposit">{eur(totals.grants)}</div>
           <div className="text-2xs text-muted-foreground">indicative — confirmed at application</div>
         </div>
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <div className="label-micro">In motion</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums">{totals.waiting}</div>
           <div className="text-2xs text-muted-foreground">packs being carried by agents</div>
         </div>
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <div className="label-micro">Ready to release</div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-doc-deposit">{totals.releasable}</div>
           <div className="text-2xs text-muted-foreground">every document in hand</div>
         </div>
-        <div className="rounded-[16px] bg-card shadow-card p-4 flex items-center">
+        <div className="rounded-panel bg-card shadow-card p-4 flex items-center">
           <div className="text-xs text-muted-foreground leading-snug flex items-start gap-1.5">
             <Bot className="size-3.5 shrink-0 mt-0.5 text-tech" /> Agents prepare, track and chase — your registered people sign.
           </div>
@@ -130,18 +130,18 @@ export default function ComplianceCommand() {
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search name, MPRN or address…" className="pl-9 h-9 rounded-[10px]" />
+            placeholder="Search name, MPRN or address…" className="pl-9 h-9 rounded-control" />
         </div>
         {FILTERS.map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)}
-            className={`h-9 px-3 rounded-[10px] text-xs font-medium border transition-colors shrink-0 ${filter === f.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
+            className={`h-9 px-3 rounded-control text-xs font-medium border transition-colors shrink-0 ${filter === f.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>
             {f.label}
           </button>
         ))}
       </div>
 
       {/* One row = one customer's whole story */}
-      <div className="rounded-[16px] bg-card shadow-card overflow-hidden divide-y divide-border">
+      <div className="rounded-panel bg-card shadow-card overflow-hidden divide-y divide-border">
         {/* the legend, once, tiny */}
         <div className="px-4 py-2 flex items-center gap-4 text-2xs text-muted-foreground bg-muted/30">
           <span className="font-medium">A · SEAI grant &nbsp; B · ESB connection &nbsp; C · certs &amp; closeout</span>
@@ -183,7 +183,7 @@ export default function ComplianceCommand() {
       </div>
       {/* FORMS LIBRARY — every official form, one click, regardless of routing
           (Cal: "I want access to the NC7 and the rest of the certs") */}
-      <div className="rounded-[16px] bg-card shadow-card p-4">
+      <div className="rounded-panel bg-card shadow-card p-4">
         <div className="flex items-center gap-2 mb-2">
           <FileText className="size-4 text-muted-foreground" />
           <span className="text-sm font-semibold">Forms library</span>
@@ -200,7 +200,7 @@ export default function ComplianceCommand() {
             ['NC5 — Small-scale (synchronous)', '/forms/esbn-form-nc5.pdf'],
           ].map(([label, href]) => (
             <a key={href} href={href} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[8px] border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
+              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-control border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
               {label} <ExternalLink className="size-3 text-muted-foreground" />
             </a>
           ))}

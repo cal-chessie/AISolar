@@ -162,7 +162,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
       )}
 
       {/* Masthead: whose paperwork, how far along */}
-      <div className="rounded-[16px] bg-primary text-primary-foreground shadow-card p-4 flex flex-wrap items-center gap-4">
+      <div className="rounded-panel bg-primary text-primary-foreground shadow-card p-4 flex flex-wrap items-center gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold">{lead.name} — the paperwork</h2>
           <p className="text-xs text-primary-foreground/70 mt-0.5">
@@ -194,7 +194,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
           ['G10 relay', dec.requiresG10 ? 'Required' : 'Not required'],
         ];
         return (
-          <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-doc-contract px-4 py-3 flex flex-wrap gap-x-5 gap-y-2">
+          <div className="rounded-panel bg-card shadow-card border-l-4 border-l-doc-contract px-4 py-3 flex flex-wrap gap-x-5 gap-y-2">
             {cells.map(([k, v, hint]) => (
               <div key={k} title={hint}>
                 <div className="text-2xs text-muted-foreground uppercase tracking-wide">{k}</div>
@@ -207,7 +207,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
 
       {/* NC6 clock — the rule made visible */}
       {nc6.status !== 'sent' && (
-        <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-tech p-3 flex items-center gap-3 text-sm">
+        <div className="rounded-panel bg-card shadow-card border-l-4 border-l-tech p-3 flex items-center gap-3 text-sm">
           <CalendarClock className="size-4 text-tech shrink-0" />
           <span>If the NC6 goes to ESB <strong>today</strong>, the earliest legal install day is{' '}
             <strong className="text-tech">{earliestInstall.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</strong> — the booking calendar enforces this.</span>
@@ -216,7 +216,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
 
       {/* The three gates */}
       {gates.map(g => (
-        <div key={g.id} className={`rounded-[16px] bg-card shadow-card overflow-hidden border-l-4 ${g.id === 'A' ? 'border-l-doc-contract' : g.id === 'B' ? 'border-l-tech' : 'border-l-doc-deposit'}`}>
+        <div key={g.id} className={`rounded-panel bg-card shadow-card overflow-hidden border-l-4 ${g.id === 'A' ? 'border-l-doc-contract' : g.id === 'B' ? 'border-l-tech' : 'border-l-doc-deposit'}`}>
           <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             <g.icon className={`size-4 ${g.tint}`} />
             <span className="text-sm font-semibold">Gate {g.id} — {g.title}</span>
@@ -237,7 +237,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                   <label className="shrink-0 cursor-pointer">
                     <input type="file" accept="image/*,application/pdf" className="hidden"
                       onChange={e => { const f = e.target.files?.[0]; if (f) { setUploads(u => ({ ...u, [doc.id]: f.name })); toast.success(`${doc.name} filed`, { description: `${f.name} — into ${lead.name.split(' ')[0]}'s pack.` }); } }} />
-                    <span className="inline-flex items-center h-7 px-2 rounded-[8px] border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
+                    <span className="inline-flex items-center h-7 px-2 rounded-control border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
                       <Upload className="size-3 mr-1" /> Upload
                     </span>
                   </label>
@@ -254,7 +254,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
       ))}
 
       {/* THE FINAL GATE — review everything, then release */}
-      <div className={`rounded-[16px] shadow-card p-4 ${allReady ? 'bg-doc-deposit/10' : 'bg-card'}`}>
+      <div className={`rounded-panel shadow-card p-4 ${allReady ? 'bg-doc-deposit/10' : 'bg-card'}`}>
         <div className="flex flex-wrap items-center gap-3">
           {allReady ? <CheckCircle2 className="size-5 text-doc-deposit shrink-0" /> : <Lock className="size-5 text-muted-foreground shrink-0" />}
           <div className="min-w-0 flex-1">
@@ -280,7 +280,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
       {/* Document viewer */}
       {viewing && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
-          <div className="bg-background w-full max-w-lg rounded-[16px] p-5 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-background w-full max-w-lg rounded-panel p-5 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h3 className="font-bold">{viewing.name}</h3>
@@ -300,19 +300,19 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                   onClick={() => downloadEsbForm(lead, esbForm).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
                   Download {esbForm === 'NC7' ? 'the full NC7 bundle (4 forms + data)' : 'pre-filled NC6'} <ArrowRight className="size-4 ml-1" />
                 </Button>
-                <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="w-full h-[45vh] rounded-[10px] border border-border" />
+                <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="w-full h-[45vh] rounded-control border border-border" />
                 <p className="text-2xs text-muted-foreground">The official ESB Networks form, pre-fill data ready from the record — the Safe Electric installer completes and submits it{esbForm === 'NC7' ? ' with the letter of authority and single line diagram' : ''}.</p>
               </div>
             ) : ['nc7_01', 'nc7_02', 'nc7_03'].includes(viewing.id) ? (
-              <iframe title="Official ESB form" src={viewing.id === 'nc7_01' ? '/forms/esbn-nc7-01-installation-confirmation.pdf' : viewing.id === 'nc7_02' ? '/forms/esbn-nc7-02-els-test.pdf' : '/forms/esbn-nc7-03-els-declaration.pdf'} className="w-full h-[55vh] rounded-[10px] border border-border" />
+              <iframe title="Official ESB form" src={viewing.id === 'nc7_01' ? '/forms/esbn-nc7-01-installation-confirmation.pdf' : viewing.id === 'nc7_02' ? '/forms/esbn-nc7-02-els-test.pdf' : '/forms/esbn-nc7-03-els-declaration.pdf'} className="w-full h-[55vh] rounded-control border border-border" />
             ) : viewing.id === 'dow' ? (
-              <div className="rounded-[10px] border border-border p-4"><DowTemplate lead={lead} /></div>
+              <div className="rounded-control border border-border p-4"><DowTemplate lead={lead} /></div>
             ) : viewing.id === 'esb_loa' ? (
-              <div className="rounded-[10px] border border-border p-4"><LoaTemplate lead={lead} esbForm={esbForm} /></div>
+              <div className="rounded-control border border-border p-4"><LoaTemplate lead={lead} esbForm={esbForm} /></div>
             ) : viewing.id === 'datasheet' && lead.proposal && getProduct(lead.proposal.panel_model, 'panel')?.datasheet ? (
-              <iframe title="Product data sheet" src={getProduct(lead.proposal.panel_model, 'panel')!.datasheet} className="w-full h-[55vh] rounded-[10px] border border-border" />
+              <iframe title="Product data sheet" src={getProduct(lead.proposal.panel_model, 'panel')!.datasheet} className="w-full h-[55vh] rounded-control border border-border" />
             ) : (
-            <div className="rounded-[10px] border border-border p-4 text-sm space-y-2 font-mono text-xs">
+            <div className="rounded-control border border-border p-4 text-sm space-y-2 font-mono text-xs">
               <div className="text-center font-bold text-sm pb-2 border-b border-border">{viewing.name.toUpperCase()}</div>
               <div>Applicant: {lead.name}</div>
               <div>Address: {lead.address}</div>

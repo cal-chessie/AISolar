@@ -398,7 +398,7 @@ export default function ProfessionalProducts() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.length === 0 && (
-            <div className="col-span-full rounded-[12px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            <div className="col-span-full rounded-panel border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               No products match — try another search or category.
             </div>
           )}

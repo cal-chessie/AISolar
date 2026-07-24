@@ -27,7 +27,7 @@ function BillEntry({ onGo }: { onGo: (bill: number) => void }) {
   const [bill, setBill] = useState(250);
   return (
     <div className="max-w-md mx-auto w-full">
-      <div className="rounded-[16px] bg-card shadow-card p-6 space-y-5">
+      <div className="rounded-panel bg-card shadow-card p-6 space-y-5">
         <div>
           <label className="label-micro">Your typical electricity bill</label>
           <div className="mt-2 flex items-baseline gap-2">
@@ -51,7 +51,7 @@ function BillEntry({ onGo }: { onGo: (bill: number) => void }) {
         </div>
         <button
           onClick={() => onGo(bill)}
-          className="w-full h-12 rounded-[12px] bg-primary text-primary-foreground font-medium inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+          className="w-full h-12 rounded-panel bg-primary text-primary-foreground font-medium inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
         >
           See my estimate <ArrowRight className="size-4" />
         </button>
@@ -106,9 +106,9 @@ export default function CalculatorWidget() {
               {/* Manual door */}
               <button
                 onClick={() => setMode('manual')}
-                className="text-left rounded-[16px] bg-card shadow-card p-6 hover:shadow-lg transition-shadow group"
+                className="text-left rounded-panel bg-card shadow-card p-6 hover:shadow-lg transition-shadow group"
               >
-                <div className="size-11 rounded-[12px] bg-primary/10 text-primary flex items-center justify-center">
+                <div className="size-11 rounded-panel bg-primary/10 text-primary flex items-center justify-center">
                   <PencilRuler className="size-5" />
                 </div>
                 <div className="mt-4 font-semibold">Draw your roof</div>
@@ -124,9 +124,9 @@ export default function CalculatorWidget() {
               {/* Bill door */}
               <button
                 onClick={() => setMode('bill')}
-                className="text-left rounded-[16px] bg-card shadow-card p-6 hover:shadow-lg transition-shadow group"
+                className="text-left rounded-panel bg-card shadow-card p-6 hover:shadow-lg transition-shadow group"
               >
-                <div className="size-11 rounded-[12px] bg-primary/10 text-primary flex items-center justify-center">
+                <div className="size-11 rounded-panel bg-primary/10 text-primary flex items-center justify-center">
                   <ReceiptText className="size-5" />
                 </div>
                 <div className="mt-4 font-semibold">Use your bill</div>

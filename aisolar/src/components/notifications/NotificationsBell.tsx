@@ -69,7 +69,7 @@ export default function NotificationsBell({ role }: { role: CockpitRole }) {
         )}
       </Button>
       {open && (
-      <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-[12px] border border-border bg-popover text-popover-foreground shadow-md">
+      <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-panel border border-border bg-popover text-popover-foreground shadow-md">
         <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
           <span className="text-sm font-semibold">Notifications</span>
           {unread > 0 && (

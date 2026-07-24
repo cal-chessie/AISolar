@@ -651,7 +651,7 @@ export default function ConsultantCockpitV5() {
                   {/* Rebuilt (Cal, Last List item 16): 13 identical bars said
                       nothing. Six PHASES with money + the family colours, and
                       a where-to-act strip — a consultant reads this in 5s. */}
-                  <div className="rounded-[16px] bg-card shadow-card p-4">
+                  <div className="rounded-panel bg-card shadow-card p-4">
                     <h4 className="label-micro mb-3">Where the pipeline stands</h4>
                     <div className="space-y-2">
                       {STAGE_GROUPS.map(g => {
@@ -673,12 +673,12 @@ export default function ConsultantCockpitV5() {
                     </div>
                   </div>
                   {/* Where to act now */}
-                  <div className="rounded-[16px] bg-card shadow-card p-4">
+                  <div className="rounded-panel bg-card shadow-card p-4">
                     <h4 className="label-micro mb-2">Act on this</h4>
                     <div className="space-y-1.5">
                       {hotLeads.slice(0, 2).map(l => (
                         <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-[8px] hover:bg-muted/50 text-left text-xs">
+                          className="w-full flex items-center gap-2 p-2 rounded-control hover:bg-muted/50 text-left text-xs">
                           <Flame className="size-3.5 text-pop shrink-0" />
                           <span className="font-medium">{l.name}</span>
                           <span className="text-muted-foreground truncate">is hot — {getStage(l.workflow_stage).label.toLowerCase()}</span>
@@ -687,7 +687,7 @@ export default function ConsultantCockpitV5() {
                       ))}
                       {staleLeads.slice(0, 2).map(l => (
                         <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-[8px] hover:bg-muted/50 text-left text-xs">
+                          className="w-full flex items-center gap-2 p-2 rounded-control hover:bg-muted/50 text-left text-xs">
                           <Clock className="size-3.5 text-doc-proposal shrink-0" />
                           <span className="font-medium">{l.name}</span>
                           <span className="text-muted-foreground truncate">has gone quiet — 5+ days</span>

@@ -59,7 +59,7 @@ export default function DocsPage() {
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           {SECTIONS.map(s => (
-            <section key={s.head} className="rounded-[16px] bg-card shadow-card p-5">
+            <section key={s.head} className="rounded-panel bg-card shadow-card p-5">
               <h2 className="flex items-center gap-2 text-sm font-semibold"><s.icon className="size-4 text-primary" /> {s.head}</h2>
               <div className="mt-3 divide-y divide-border">
                 {s.items.map(i => (

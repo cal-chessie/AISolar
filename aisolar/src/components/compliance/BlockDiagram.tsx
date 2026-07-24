@@ -38,7 +38,7 @@ export default function BlockDiagram({ lead }: { lead: DummyLead }) {
   const T = { fontFamily: 'Arial, sans-serif', fill: 'black' } as const;
 
   return (
-    <svg viewBox="0 0 760 460" className="w-full h-auto bg-white rounded-[8px] border border-border" aria-label="Single line diagram">
+    <svg viewBox="0 0 760 460" className="w-full h-auto bg-white rounded-control border border-border" aria-label="Single line diagram">
       {/* frame */}
       <rect x="8" y="8" width="744" height="404" {...B} />
       {/* address block */}

@@ -49,7 +49,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
   return (
     <div className="space-y-3">
       {/* who — one slim strip */}
-      <div className="rounded-[16px] bg-card shadow-card p-4 flex items-center gap-3">
+      <div className="rounded-panel bg-card shadow-card p-4 flex items-center gap-3">
         <Avatar className="h-11 w-11"><AvatarFallback>{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-base truncate">{lead.name}</h2>
@@ -69,7 +69,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
 
       {/* the roof, from the eircode */}
       {eircode && (
-        <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+        <div className="rounded-panel bg-card shadow-card overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
             <MapPin className="size-4 text-tech" />
             <span className="text-sm font-semibold">The roof, from above</span>
@@ -86,7 +86,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       )}
 
       {/* the money */}
-      <div className="rounded-[16px] bg-card shadow-card border-l-4 border-l-primary p-4">
+      <div className="rounded-panel bg-card shadow-card border-l-4 border-l-primary p-4">
         <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Calculator className="h-4 w-4 text-primary" /> The estimate, off their numbers</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -102,7 +102,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
             </div>
           ))}
         </div>
-        <div className="mt-3 p-2.5 bg-muted/40 rounded-[10px] text-xs grid grid-cols-2 gap-2">
+        <div className="mt-3 p-2.5 bg-muted/40 rounded-control text-xs grid grid-cols-2 gap-2">
           <div><span className="text-muted-foreground">Net cost:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.netCost)}</span></div>
           <div><span className="text-muted-foreground">20-year savings:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.twentyYearSavings)}</span></div>
           <div><span className="text-muted-foreground">Solar offset:</span> <span className="font-semibold tabular-nums">{estimate.solarOffsetPct}%</span></div>

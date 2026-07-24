@@ -217,7 +217,7 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-3">
         {/* Calendar grid */}
-        <div className="rounded-[16px] bg-card shadow-card p-3">
+        <div className="rounded-panel bg-card shadow-card p-3">
             {viewMode === 'month' && (
               <>
                 {/* Day headers */}
@@ -236,7 +236,7 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
                       <button
                         key={i}
                         onClick={() => { setSelectedDate(day); setCurrentDate(day); setViewMode('day'); }}
-                        className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-[10px] text-left transition-colors ${
+                        className={`min-h-[60px] sm:min-h-[80px] p-1 rounded-control text-left transition-colors ${
                           isToday(day) ? 'ring-1 ring-primary/40 bg-muted/40' :
                           isCurrentMonth ? 'hover:bg-muted/50' : 'opacity-40 hover:bg-muted/30'
                         }`}
@@ -268,7 +268,7 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
                 {weekDays.map((day, i) => {
                   const dayEvents = eventsByDay.get(day.toDateString()) || [];
                   return (
-                    <div key={i} className={`min-h-[300px] p-1.5 rounded-[10px] bg-muted/20 ${isToday(day) ? 'ring-1 ring-primary/30' : ''}`}>
+                    <div key={i} className={`min-h-[300px] p-1.5 rounded-control bg-muted/20 ${isToday(day) ? 'ring-1 ring-primary/30' : ''}`}>
                       <button onClick={() => { setSelectedDate(day); setCurrentDate(day); setViewMode('day'); }}
                         className={`text-xs font-bold mb-1 hover:underline ${isToday(day) ? 'text-primary' : ''}`}>
                         {day.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })}
@@ -319,7 +319,7 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
                             const allDay = e.endTime && (parseInt(e.endTime, 10) - parseInt(e.time, 10)) >= 6;
                             return (
                               <button key={e.id} onClick={() => setSelectedEvent(e)}
-                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-left ${meta.bg} hover:opacity-90 transition-opacity`}>
+                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-control text-left ${meta.bg} hover:opacity-90 transition-opacity`}>
                                 <Icon className={`h-3.5 w-3.5 shrink-0 ${meta.text}`} />
                                 <span className={`text-xs font-medium truncate ${meta.text}`}>{e.title}</span>
                                 <span className="ml-auto text-[11px] tabular-nums text-muted-foreground shrink-0">
@@ -342,7 +342,7 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
           </div>
 
         {/* Selected day panel */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
             {selectedDate ? (
               <>
                 <h3 className="text-sm font-bold mb-2">

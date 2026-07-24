@@ -105,7 +105,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         <div className="flex gap-1">
           {(['savings', 'bill', 'payback', 'score'] as const).map(s => (
             <button key={s} onClick={() => setSortBy(s)}
-              className={`px-2 py-1 rounded-[8px] text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              className={`px-2 py-1 rounded-control text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
               {s}
             </button>
           ))}
@@ -116,7 +116,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
       {/* Estimate cards */}
       <div className="space-y-2">
         {estimates.length === 0 && (
-          <div className="rounded-[12px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-panel border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             No estimates match your search — clear it to see them all.
           </div>
         )}

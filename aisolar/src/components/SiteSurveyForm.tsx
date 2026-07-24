@@ -531,12 +531,12 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
               {/* FIRST question (Cal): domestic or commercial — the agents
                   pick the ESB form + SEAI scheme off this. Pre-set from the
                   bill read when captured; confirmed here on site. */}
-              <div className="p-3 rounded-[10px] bg-tech-subtle/60 border border-tech/20">
+              <div className="p-3 rounded-control bg-tech-subtle/60 border border-tech/20">
                 <Label className="font-semibold">What kind of building is this?</Label>
                 <div className="flex gap-2 mt-2">
                   {[['residential', 'Domestic home'], ['commercial', 'Commercial / farm']].map(([v, label]) => (
                     <button key={v} type="button" onClick={() => setValue('property_type', v)}
-                      className={`flex-1 h-11 rounded-[10px] text-sm font-medium border transition-colors ${watch('property_type') === v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:text-foreground'}`}>
+                      className={`flex-1 h-11 rounded-control text-sm font-medium border transition-colors ${watch('property_type') === v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:text-foreground'}`}>
                       {label}
                     </button>
                   ))}

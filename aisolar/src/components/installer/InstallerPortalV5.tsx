@@ -188,7 +188,7 @@ export default function InstallerPortalV5() {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setThreadLead(null); }}
-                className={`flex items-center gap-1.5 px-3 h-9 rounded-[10px] text-xs font-medium shrink-0 transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+                className={`flex items-center gap-1.5 px-3 h-9 rounded-control text-xs font-medium shrink-0 transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
                 <Icon className="h-3.5 w-3.5" /> {t.label}
                 {!!t.count && <span className={`text-[11px] px-1.5 rounded-full tabular-nums ${active ? 'bg-white/20' : t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
               </button>
@@ -222,7 +222,7 @@ export default function InstallerPortalV5() {
                   const started = startedJobs.has(l.id);
                   const isSurvey = l.workflow_stage.includes('survey');
                   return (
-                    <div key={l.id} className={`rounded-[16px] bg-card shadow-card border-l-4 ${isToday ? 'border-l-pop' : 'border-l-tech'} p-4`}>
+                    <div key={l.id} className={`rounded-panel bg-card shadow-card border-l-4 ${isToday ? 'border-l-pop' : 'border-l-tech'} p-4`}>
                       <div className="flex items-start gap-3">
                         <div className="text-center shrink-0 w-12">
                           <p className="text-sm font-semibold tabular-nums">{new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</p>
@@ -246,7 +246,7 @@ export default function InstallerPortalV5() {
                               </Button>
                             )}
                             <a href={navUrl(l.address)} target="_blank" rel="noreferrer"
-                              className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-border bg-background px-3 text-xs font-medium hover:bg-muted transition-colors">
+                              className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-background px-3 text-xs font-medium hover:bg-muted transition-colors">
                               <Navigation className="h-3.5 w-3.5 text-tech" /> Navigate
                             </a>
                             <Button variant="outline" size="sm" className="h-9" onClick={() => { setTab('inbox'); setThreadLead(l); }}>
@@ -262,7 +262,7 @@ export default function InstallerPortalV5() {
                   );
                 })}
                 {dayJobs.length === 0 && (
-                  <div className="rounded-[16px] bg-card shadow-card p-8 text-center text-sm text-muted-foreground">
+                  <div className="rounded-panel bg-card shadow-card p-8 text-center text-sm text-muted-foreground">
                     No stops scheduled. The scheduler fills this as installs are booked.
                   </div>
                 )}
@@ -301,7 +301,7 @@ export default function InstallerPortalV5() {
                             if (new Date(from).toDateString() === day.toDateString()) return;
                             setPendingMove({ lead, from, to: day.toISOString() });
                           }}
-                          className={`rounded-[12px] bg-card shadow-card min-h-[9rem] flex flex-col ${isDayToday ? 'ring-1 ring-pop/40' : ''}`}>
+                          className={`rounded-panel bg-card shadow-card min-h-[9rem] flex flex-col ${isDayToday ? 'ring-1 ring-pop/40' : ''}`}>
                           <div className="px-2.5 py-1.5 border-b border-border flex items-baseline gap-1">
                             <span className={`text-xs font-semibold ${isDayToday ? 'text-pop' : ''}`}>{day.toLocaleDateString('en-IE', { weekday: 'short' })}</span>
                             <span className="text-2xs text-muted-foreground tabular-nums">{day.getDate()}</span>
@@ -315,7 +315,7 @@ export default function InstallerPortalV5() {
                                   draggable
                                   onDragStart={() => setDragId(l.id)}
                                   onDragEnd={() => setDragId(null)}
-                                  className={`rounded-[10px] border-l-4 ${isSurvey ? 'border-l-tech' : 'border-l-primary'} bg-background shadow-card p-2 cursor-grab active:cursor-grabbing ${dragId === l.id ? 'opacity-40' : ''}`}>
+                                  className={`rounded-control border-l-4 ${isSurvey ? 'border-l-tech' : 'border-l-primary'} bg-background shadow-card p-2 cursor-grab active:cursor-grabbing ${dragId === l.id ? 'opacity-40' : ''}`}>
                                   <p className="text-xs font-medium truncate">{l.name}</p>
                                   <p className="text-2xs text-muted-foreground tabular-nums">{new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })} · {isSurvey ? 'Survey' : 'Install'}</p>
                                 </div>
@@ -337,11 +337,11 @@ export default function InstallerPortalV5() {
               <div className="space-y-3">
                 <div className="flex gap-1">
                   <button onClick={() => setJobSubTab('active')}
-                    className={`px-3 h-9 rounded-[10px] text-xs font-medium ${jobSubTab === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 h-9 rounded-control text-xs font-medium ${jobSubTab === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Active ({displayActive.length})
                   </button>
                   <button onClick={() => setJobSubTab('completed')}
-                    className={`px-3 h-9 rounded-[10px] text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    className={`px-3 h-9 rounded-control text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     Completed ({completedJobs.length})
                   </button>
                 </div>
@@ -375,7 +375,7 @@ export default function InstallerPortalV5() {
                     const last = th[th.length - 1];
                     return (
                       <button key={l.id} onClick={() => setThreadLead(l)}
-                        className={`w-full rounded-[12px] p-3 text-left transition-colors ${threadLead?.id === l.id ? 'bg-primary/5 shadow-card' : 'bg-card shadow-card hover:bg-muted/50'}`}>
+                        className={`w-full rounded-panel p-3 text-left transition-colors ${threadLead?.id === l.id ? 'bg-primary/5 shadow-card' : 'bg-card shadow-card hover:bg-muted/50'}`}>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{l.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                           <span className="text-sm font-medium truncate flex-1">{l.name}</span>
@@ -389,7 +389,7 @@ export default function InstallerPortalV5() {
 
                 {/* thread */}
                 {threadLead ? (
-                  <div className="rounded-[16px] bg-card shadow-card flex flex-col min-h-[24rem] max-h-[calc(100dvh-16rem)]">
+                  <div className="rounded-panel bg-card shadow-card flex flex-col min-h-[24rem] max-h-[calc(100dvh-16rem)]">
                     <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border shrink-0">
                       <button className="lg:hidden text-muted-foreground" onClick={() => setThreadLead(null)} aria-label="Back">←</button>
                       <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{threadLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
@@ -398,13 +398,13 @@ export default function InstallerPortalV5() {
                         <p className="text-2xs text-muted-foreground truncate">{threadLead.address}</p>
                       </div>
                       <div className="ml-auto flex items-center gap-1">
-                        <a href={`tel:${threadLead.phone ?? ''}`} className="inline-grid place-items-center size-8 rounded-[10px] hover:bg-muted" aria-label="Call"><Phone className="size-4" /></a>
+                        <a href={`tel:${threadLead.phone ?? ''}`} className="inline-grid place-items-center size-8 rounded-control hover:bg-muted" aria-label="Call"><Phone className="size-4" /></a>
                         <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate(`/job/${threadLead.id}`)}>Open job</Button>
                       </div>
                     </div>
                     <div className="flex-1 overflow-y-auto scroll-slim p-4 space-y-2.5">
                       {threadFor(threadLead).map((m, i) => (
-                        <div key={i} className={`max-w-[85%] rounded-[12px] px-3 py-2 text-sm leading-body ${m.from === 'customer' ? 'bg-muted mr-auto' : m.from === 'installer' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-tech/10 text-foreground ml-auto'}`}>
+                        <div key={i} className={`max-w-[85%] rounded-panel px-3 py-2 text-sm leading-body ${m.from === 'customer' ? 'bg-muted mr-auto' : m.from === 'installer' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-tech/10 text-foreground ml-auto'}`}>
                           {m.from === 'system' && <p className="label-micro mb-0.5 text-tech">auto · {tb.name}</p>}
                           {m.text}
                         </div>
@@ -417,7 +417,7 @@ export default function InstallerPortalV5() {
                         onChange={e => setReply(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && sendReply(threadLead)}
                         placeholder={`Message ${threadLead.name.split(' ')[0]}…`}
-                        className="flex-1 h-10 rounded-[10px] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+                        className="flex-1 h-10 rounded-control border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
                       />
                       <Button size="sm" className="h-10" onClick={() => sendReply(threadLead)} disabled={!reply.trim()}>
                         <Send className="h-4 w-4" />
@@ -425,7 +425,7 @@ export default function InstallerPortalV5() {
                     </div>
                   </div>
                 ) : (
-                  <div className="hidden lg:grid rounded-[16px] bg-card shadow-card min-h-[24rem] place-items-center text-sm text-muted-foreground">
+                  <div className="hidden lg:grid rounded-panel bg-card shadow-card min-h-[24rem] place-items-center text-sm text-muted-foreground">
                     Pick a customer to open the thread
                   </div>
                 )}
@@ -436,8 +436,8 @@ export default function InstallerPortalV5() {
             {tab === 'materials' && (
               <div className="space-y-3">
                 <div className="flex gap-1">
-                  <button onClick={() => setMatSubTab('per_customer')} className={`px-3 h-9 rounded-[10px] text-xs font-medium ${matSubTab === 'per_customer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Per Customer</button>
-                  <button onClick={() => setMatSubTab('stock')} className={`px-3 h-9 rounded-[10px] text-xs font-medium ${matSubTab === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Depot Stock</button>
+                  <button onClick={() => setMatSubTab('per_customer')} className={`px-3 h-9 rounded-control text-xs font-medium ${matSubTab === 'per_customer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Per Customer</button>
+                  <button onClick={() => setMatSubTab('stock')} className={`px-3 h-9 rounded-control text-xs font-medium ${matSubTab === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Depot Stock</button>
                 </div>
                 {matSubTab === 'per_customer' && (
                   <div className="space-y-2">
@@ -456,7 +456,7 @@ export default function InstallerPortalV5() {
                         { category: 'Safety', item: 'Harness + edge protection', qty: 2, critical: true },
                       ] : [];
                       return (
-                        <div key={lead.id} className="rounded-[16px] bg-card shadow-card overflow-hidden">
+                        <div key={lead.id} className="rounded-panel bg-card shadow-card overflow-hidden">
                           <button onClick={() => setExpandedJob(isExpanded ? null : lead.id)} className="w-full p-3 flex items-center gap-3 text-left transition-colors hover:bg-muted/30">
                             <div className="p-2 bg-primary/10 rounded-lg"><Package className="h-4 w-4 text-primary" /></div>
                             <div className="flex-1 min-w-0">
@@ -468,7 +468,7 @@ export default function InstallerPortalV5() {
                           {isExpanded && (
                             <div className="border-t border-border p-3 space-y-1">
                               {bomItems.map((item, i) => (
-                                <label key={i} className="flex items-center gap-2 p-2 border border-border rounded-[10px] text-xs cursor-pointer">
+                                <label key={i} className="flex items-center gap-2 p-2 border border-border rounded-control text-xs cursor-pointer">
                                   <input type="checkbox" className="h-4 w-4 rounded" />
                                   <Badge variant="outline" className="text-[11px] shrink-0">{item.category}</Badge>
                                   <span className="flex-1 truncate">{item.qty} × {item.item}</span>
@@ -497,7 +497,7 @@ export default function InstallerPortalV5() {
                       const available = row.stock - row.alloc;
                       const low = available < 5;
                       return (
-                        <div key={row.item} className="rounded-[16px] bg-card shadow-card p-3">
+                        <div key={row.item} className="rounded-panel bg-card shadow-card p-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="font-semibold text-sm">{row.item}</div>
@@ -534,12 +534,12 @@ export default function InstallerPortalV5() {
                     <a
                       href={`https://www.google.com/maps/dir/${dayJobs.map(({ l }) => encodeURIComponent(l.address)).join('/')}`}
                       target="_blank" rel="noreferrer"
-                      className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+                      className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
                       <Navigation className="h-3.5 w-3.5" /> Open full route
                     </a>
                   )}
                 </div>
-                <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+                <div className="rounded-panel bg-card shadow-card overflow-hidden">
                   <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted">
                     <iframe
                       title="Route map"
@@ -553,16 +553,16 @@ export default function InstallerPortalV5() {
                 </div>
                 <div className="space-y-1.5">
                   {dayJobs.map(({ l, d }, i) => (
-                    <div key={l.id} className="rounded-[12px] bg-card shadow-card p-3 flex items-center gap-3">
+                    <div key={l.id} className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3">
                       <span className={`size-6 rounded-full grid place-items-center text-xs font-bold text-white shrink-0 ${i === 0 ? 'bg-pop' : 'bg-tech'}`}>{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{l.name} <span className="text-muted-foreground font-normal">· {new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span></div>
                         <div className="text-xs text-muted-foreground truncate">{l.address}</div>
                       </div>
-                      <a href={navUrl(l.address)} target="_blank" rel="noreferrer" className="inline-grid place-items-center size-9 rounded-[10px] border border-border hover:bg-muted transition-colors" aria-label={`Navigate to ${l.name}`}>
+                      <a href={navUrl(l.address)} target="_blank" rel="noreferrer" className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" aria-label={`Navigate to ${l.name}`}>
                         <Navigation className="h-4 w-4 text-tech" />
                       </a>
-                      <button className="inline-grid place-items-center size-9 rounded-[10px] border border-border hover:bg-muted transition-colors" onClick={() => navigate(`/job/${l.id}`)} aria-label={`Open ${l.name}`}>
+                      <button className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" onClick={() => navigate(`/job/${l.id}`)} aria-label={`Open ${l.name}`}>
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -579,7 +579,7 @@ export default function InstallerPortalV5() {
       {pendingMove && (
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Reschedule reason">
           <div className="absolute inset-0 bg-black/50" onClick={() => { setPendingMove(null); setMoveReason(null); }} />
-          <div className="absolute inset-x-3 bottom-3 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[26rem] rounded-[16px] bg-background shadow-card p-5">
+          <div className="absolute inset-x-3 bottom-3 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[26rem] rounded-panel bg-background shadow-card p-5">
             <h3 className="text-md font-semibold">Moving {pendingMove.lead.name.split(' ')[0]}'s job</h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {new Date(pendingMove.from).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })} → {new Date(pendingMove.to).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })}. Pick the reason they'll be given:
@@ -587,7 +587,7 @@ export default function InstallerPortalV5() {
             <div className="mt-3 space-y-1.5">
               {MOVE_REASONS.map(r => (
                 <button key={r} type="button" onClick={() => setMoveReason(r)}
-                  className={`w-full text-left rounded-[10px] border px-3 py-2 text-sm transition-colors ${moveReason === r ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}>
+                  className={`w-full text-left rounded-control border px-3 py-2 text-sm transition-colors ${moveReason === r ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}>
                   {r}
                 </button>
               ))}
@@ -596,7 +596,7 @@ export default function InstallerPortalV5() {
               value={moveNote}
               onChange={e => setMoveNote(e.target.value)}
               placeholder="Optional personal note…"
-              className="mt-3 w-full h-10 rounded-[10px] border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
+              className="mt-3 w-full h-10 rounded-control border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
             />
             <div className="mt-4 flex items-center gap-2">
               <Button className="flex-1 h-10" onClick={confirmMove} disabled={!moveReason}>
@@ -624,7 +624,7 @@ function JobCard({ lead, variant, onClick }: { lead: DummyLead; variant: 'survey
   const edge = isToday ? 'border-l-pop' : (variant === 'survey' || variant === 'install') ? 'border-l-tech' : 'border-l-primary/40';
 
   return (
-    <div className={`rounded-[16px] bg-card shadow-card cursor-pointer hover:shadow-md transition-shadow border-l-4 ${edge}`} onClick={onClick}>
+    <div className={`rounded-panel bg-card shadow-card cursor-pointer hover:shadow-md transition-shadow border-l-4 ${edge}`} onClick={onClick}>
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 flex-1 min-w-0">

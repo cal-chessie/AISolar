@@ -24,7 +24,7 @@ export function GoogleAuthButton({ label = 'Continue with Google', className = '
       type="button"
       onClick={go}
       disabled={loading}
-      className={`inline-flex h-11 items-center justify-center gap-2.5 rounded-[12px] bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 ${className}`}
+      className={`inline-flex h-11 items-center justify-center gap-2.5 rounded-panel bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 ${className}`}
     >
       <span className="bg-white rounded-full p-0.5">
         <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">

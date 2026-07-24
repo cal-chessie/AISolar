@@ -372,7 +372,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
 
       {/* Vital signs — family cards, one accent each, nothing fake */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <button onClick={() => setActiveView('financials')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+        <button onClick={() => setActiveView('financials')} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <span className="label-micro">Revenue</span>
             <TrendingUp className="size-3.5 text-doc-deposit" />
@@ -381,7 +381,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           <div className="text-xs text-muted-foreground mt-0.5">{eur(data.revenuePending)} pending</div>
         </button>
 
-        <button onClick={() => setExpandedStage(null)} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+        <button onClick={() => setExpandedStage(null)} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <span className="label-micro">Pipeline</span>
             <Activity className="size-3.5 text-muted-foreground" />
@@ -396,7 +396,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           </div>
         </button>
 
-        <button onClick={() => navigate('/installer')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+        <button onClick={() => navigate('/installer')} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <span className="label-micro">Jobs on site</span>
             <Wrench className="size-3.5 text-tech" />
@@ -407,7 +407,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           </div>
         </button>
 
-        <button onClick={() => setActiveView('agents')} className="text-left rounded-[16px] bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+        <button onClick={() => setActiveView('agents')} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <span className="label-micro">Agents</span>
             <Bot className={`size-3.5 ${data.agentFailures > 0 ? 'text-pop' : 'text-doc-deposit'}`} />
@@ -423,7 +423,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
       </div>
 
       {/* Pipeline — the 6-phase bar in a family card */}
-      <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+      <div className="rounded-panel bg-card shadow-card overflow-hidden">
         <PipelineBar
           counts={Object.fromEntries(data.stageCounts.map((s: any) => [s.id, s.count]))}
           onStageClick={(id) => setExpandedStage(expandedStage === id ? null : id)}
@@ -443,7 +443,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               {label} — {leads.filter(inScope).length} leads</div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {leads.filter(inScope).map((lead: DummyLead) => (
-                <button key={lead.id} className="text-left p-3 rounded-[12px] bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                <button key={lead.id} className="text-left p-3 rounded-panel bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                     <div className="flex-1 min-w-0">
@@ -469,7 +469,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
 
       {/* Today beside what needs you */}
       <div className="grid lg:grid-cols-2 gap-3">
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <h3 className="label-micro mb-3 flex items-center gap-1.5"><Calendar className="size-3.5" /> Today's schedule</h3>
           <div className="space-y-1">
             {data.todayEvents.map((event: any, i: number) => {
@@ -477,9 +477,9 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 ? (event.type === 'install' ? `/job/${event.leadId}` : `/lead-flow/${event.leadId}`)
                 : (event.type === 'install' ? '/job' : '/lead-flow');
               return (
-                <button key={i} className="w-full flex items-center gap-2.5 p-2 rounded-[10px] hover:bg-muted/50 transition-colors text-left" onClick={() => navigate(target)}>
+                <button key={i} className="w-full flex items-center gap-2.5 p-2 rounded-control hover:bg-muted/50 transition-colors text-left" onClick={() => navigate(target)}>
                   <span className="text-xs font-mono tabular-nums text-muted-foreground w-11 shrink-0">{event.time}</span>
-                  <span className={`p-1.5 rounded-[8px] shrink-0 ${event.type === 'install' ? 'bg-tech-subtle' : 'bg-muted'}`}>
+                  <span className={`p-1.5 rounded-control shrink-0 ${event.type === 'install' ? 'bg-tech-subtle' : 'bg-muted'}`}>
                     {event.type === 'install' ? <Wrench className="size-3 text-tech" /> : <Phone className="size-3 text-foreground" />}
                   </span>
                   <span className="text-sm flex-1 truncate">{event.title}</span>
@@ -492,7 +492,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           </div>
         </div>
 
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <h3 className="label-micro mb-3 flex items-center gap-1.5"><AlertTriangle className="size-3.5" /> Needs you</h3>
           <div className="space-y-2">
             {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="pending" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
@@ -503,7 +503,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
       </div>
 
       {/* Live activity */}
-      <div className="rounded-[16px] bg-card shadow-card p-4">
+      <div className="rounded-panel bg-card shadow-card p-4">
         <h3 className="label-micro mb-3 flex items-center gap-1.5"><Activity className="size-3.5" /> Live activity</h3>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {data.activity.map((item: any, i: number) => {
@@ -539,7 +539,7 @@ function AddPersonDialog({ open, onOpenChange, role, onAdd }: {
   const valid = p.name.trim().length > 1 && p.email.includes('@');
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-[16px]">
+      <DialogContent className="sm:max-w-md rounded-panel">
         <DialogHeader>
           <DialogTitle>Add {role === 'consultant' ? 'a consultant' : 'an installer'}</DialogTitle>
           <DialogDescription>They get a sign-in invite by email — {role === 'consultant' ? 'consultant' : 'installer'} access only, nothing else.</DialogDescription>
@@ -742,7 +742,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         <Button variant="ghost" size="sm" onClick={() => setSelectedClient(null)}><ChevronLeft className="h-4 w-4 mr-1" /> Back to clients</Button>
 
         {/* Client header */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
             <div className="flex items-start gap-4">
               <Avatar className="h-16 w-16"><AvatarFallback className="text-lg">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
@@ -788,7 +788,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         {/* SEAI & Compliance — per customer (Cal: "wheres the SEAI & Compliance
             window for every customer?"). Status derives from the stage; the
             grants clerk TRACKS, never submits. */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
           <h3 className="label-micro mb-3 flex items-center gap-1.5"><Award className="size-3.5 text-doc-contract" /> SEAI & Compliance</h3>
           <div className="grid sm:grid-cols-3 gap-2">
             {[
@@ -796,7 +796,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
               { org: 'ESB', what: 'NC6 microgen export', done: ['installed','final_paid','completed'].includes(lead.workflow_stage), busy: ['install_scheduled','installing'].includes(lead.workflow_stage), detail: 'export tariff €0.14/kWh' },
               { org: 'RECI', what: 'Electrical sign-off', done: ['installed','final_paid','completed'].includes(lead.workflow_stage), busy: lead.workflow_stage === 'installing', detail: 'required for commissioning' },
             ].map(c => (
-              <div key={c.org} className="p-3 rounded-[10px] bg-muted/30">
+              <div key={c.org} className="p-3 rounded-control bg-muted/30">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-sm">{c.org}</span>
                   <span className={`ml-auto text-2xs rounded-full px-2 py-0.5 font-medium ${c.done ? 'bg-doc-deposit/10 text-doc-deposit' : c.busy ? 'bg-tech-subtle text-tech' : 'bg-muted text-muted-foreground'}`}>
@@ -811,7 +811,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
         </div>
 
         {/* Touchpoint timeline */}
-        <div className="rounded-[16px] bg-card shadow-card p-4">
+        <div className="rounded-panel bg-card shadow-card p-4">
             <h3 className="label-micro mb-2">Communication history</h3>
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
               {agentsInvolved(lead.touchpoints).map(name => (
@@ -832,7 +832,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
             </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto">
               {lead.touchpoints.map((tp, i) => (
-                <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
+                <div key={i} className="flex items-center gap-2 p-2 rounded-control bg-muted/30 text-xs">
                   <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                   <span className="text-muted-foreground flex-shrink-0 w-16 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                   <span className="flex-1 truncate">{tp.summary}</span>
@@ -884,13 +884,13 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
                   <span className="text-xs font-semibold">{group.label}</span>
                   <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{colLeads.length}</span>
                 </div>
-                <div className="flex-1 space-y-2 rounded-[12px] bg-muted/30 p-2 min-h-[140px]">
+                <div className="flex-1 space-y-2 rounded-panel bg-muted/30 p-2 min-h-[140px]">
                   {colLeads.length === 0 ? (
                     <p className="text-2xs text-muted-foreground text-center py-8">Nobody here</p>
                   ) : (
                     colLeads.map(lead => (
                       <button key={lead.id} onClick={() => setSelectedClient(lead)}
-                        className="w-full text-left rounded-[10px] bg-card shadow-card p-3 hover:shadow-md transition-shadow">
+                        className="w-full text-left rounded-control bg-card shadow-card p-3 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7 shrink-0"><AvatarFallback className="text-2xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                           <span className="font-medium text-xs truncate flex-1">{lead.name}</span>
@@ -976,7 +976,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
         {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
         {tab === 'proposal' && <ProposalView lead={lead} />}
         {tab === 'timeline' && (
-          <div className="rounded-[16px] bg-card shadow-card p-4">
+          <div className="rounded-panel bg-card shadow-card p-4">
               {/* Cal: ALL agents involved + ALL touchpoints — the complete log */}
               {/* The full crew on this client — agents AND the humans (Cal) */}
               <div className="flex flex-wrap items-center gap-1.5 pb-3 mb-3 border-b border-border">
@@ -1000,7 +1000,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
               </div>
               <div className="space-y-1.5 max-h-96 overflow-y-auto">
                 {lead.touchpoints.map((tp, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 rounded-[8px] bg-muted/30 text-xs">
+                  <div key={i} className="flex items-center gap-2 p-2 rounded-control bg-muted/30 text-xs">
                     <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
                     <span className="text-muted-foreground flex-shrink-0 w-20 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
                     <span className="flex-1 truncate">{tp.summary}</span>

@@ -91,16 +91,16 @@ export function MarketingCta({ product, title, sub, ctaLabel, ctaTo }: {
   const p = PRODUCT[product];
   return (
     <section className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
-      <div className="rounded-[16px] bg-card shadow-card px-6 py-12 lg:py-16 text-center">
+      <div className="rounded-panel bg-card shadow-card px-6 py-12 lg:py-16 text-center">
         <h2 className="text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">{title}</h2>
         {sub && <p className="mt-3 max-w-xl mx-auto text-base text-muted-foreground leading-body">{sub}</p>}
         <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link to={ctaTo ?? p.cta.to}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-6 text-sm font-semibold transition-opacity duration-instant ${PAGE_ACCENT[product]}`}>
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-panel px-6 text-sm font-semibold transition-opacity duration-instant ${PAGE_ACCENT[product]}`}>
             {ctaLabel ?? p.cta.label} <ArrowRight className="size-4" />
           </Link>
           <Link to="/pricing"
-            className="inline-flex h-11 items-center justify-center rounded-[12px] bg-background px-6 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
+            className="inline-flex h-11 items-center justify-center rounded-panel bg-background px-6 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
             See pricing
           </Link>
         </div>
@@ -162,7 +162,7 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
           <div className="mt-4 flex items-center gap-1">
             {SOCIALS.map(({ label, href, Icon }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                className="inline-grid place-items-center size-8 rounded-[8px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-instant">
+                className="inline-grid place-items-center size-8 rounded-control text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-instant">
                 <Icon className="size-4" />
               </a>
             ))}

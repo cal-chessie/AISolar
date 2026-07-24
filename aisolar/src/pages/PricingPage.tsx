@@ -158,11 +158,11 @@ export default function PricingPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a href={CAL_LINK} target="_blank" rel="noreferrer"
-            className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+            className="inline-flex h-10 items-center gap-2 rounded-panel bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
             Talk to us <ArrowRight className="size-4" />
           </a>
           <a href="#features"
-            className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-card px-4 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+            className="inline-flex h-10 items-center gap-2 rounded-panel bg-card px-4 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
             See feature breakdown <ArrowRight className="size-4" />
           </a>
         </div>
@@ -172,7 +172,7 @@ export default function PricingPage() {
           {tiers.map(tier => (
             <div
               key={tier.name}
-              className={`rounded-[16px] p-4 flex flex-col h-full ${
+              className={`rounded-panel p-4 flex flex-col h-full ${
                 tier.dark
                   ? 'bg-primary text-primary-foreground shadow-card'
                   : 'bg-card shadow-card'
@@ -220,14 +220,14 @@ export default function PricingPage() {
               {/* CTA + microcopy */}
               {tier.cta.external ? (
                 <a href={tier.cta.to} target="_blank" rel="noreferrer"
-                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-[12px] text-sm font-semibold transition-opacity hover:opacity-90 ${
+                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-panel text-sm font-semibold transition-opacity hover:opacity-90 ${
                     tier.dark ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'
                   }`}>
                   {tier.cta.label} <ArrowRight className="size-4" />
                 </a>
               ) : (
                 <Link to={tier.cta.to}
-                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-[12px] text-sm font-semibold transition-opacity hover:opacity-90 ${
+                  className={`mt-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-panel text-sm font-semibold transition-opacity hover:opacity-90 ${
                     tier.dark ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'
                   }`}>
                   {tier.cta.label} <ArrowRight className="size-4" />
@@ -259,7 +259,7 @@ export default function PricingPage() {
             below it.
           </p>
 
-          <div className="mt-8 overflow-x-auto rounded-[16px] bg-card shadow-card">
+          <div className="mt-8 overflow-x-auto rounded-panel bg-card shadow-card">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-border">

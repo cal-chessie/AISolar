@@ -35,7 +35,7 @@ function HeroVisual() {
     ['Annual usage', '10,200 kWh'], ['MPRN', '100•••••595'],
   ];
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden">
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
         <FileText className="size-4 text-primary" />
         <span className="text-sm font-semibold">What your bill told us</span>
@@ -67,7 +67,7 @@ function HeroVisual() {
           <p className="label-micro">You pay after SEAI grant</p>
           <p className="text-lg font-semibold tabular-nums">€9,340</p>
         </div>
-        <span className="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-primary px-3.5 text-sm font-semibold text-primary-foreground">
+        <span className="inline-flex h-9 items-center gap-1.5 rounded-panel bg-primary px-3.5 text-sm font-semibold text-primary-foreground">
           Book the survey <ArrowRight className="size-4" />
         </span>
       </div>
@@ -78,7 +78,7 @@ function HeroVisual() {
 /* ── Benefits visual: the estimate's bottom half + the roof from above ───── */
 function EstimateMapVisual() {
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden">
       <div className="grid grid-cols-3 gap-px bg-border">
         {[
           ['Recommended', '11 kWp'],
@@ -131,10 +131,10 @@ function Hero() {
             crews install. The platform runs the rest.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 sm:max-w-md">
-            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
+            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
               Get started <ArrowRight className="size-4" />
             </Link>
-            <Link to="/start" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
+            <Link to="/start" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
               Try the bill analysis
             </Link>
           </div>
@@ -211,7 +211,7 @@ function HowItWorks() {
 
       <div className="mt-10 grid md:grid-cols-3 gap-5">
         {steps.map(s => (
-          <div key={s.n} className="rounded-[16px] bg-card shadow-card p-6">
+          <div key={s.n} className="rounded-panel bg-card shadow-card p-6">
             <div className="flex items-center gap-3">
               <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary">
                 <s.icon className="size-4.5" />
@@ -279,7 +279,7 @@ function Benefits() {
             'One-tap corrections from the people in the field',
           ]}
         >
-          <div className="rounded-[16px] bg-card shadow-card p-4 space-y-3">
+          <div className="rounded-panel bg-card shadow-card p-4 space-y-3">
             {[
               ['ProposalDrafter', 'drafted a 6.2kW + battery proposal', 'just now'],
               ['SurveyScheduler', 'booked the survey for Tue 10am', '2m ago'],
@@ -322,7 +322,7 @@ function Benefits() {
             'One record of truth, no double entry',
           ]}
         >
-          <div className="rounded-[16px] bg-card shadow-card p-5 grid grid-cols-2 gap-4">
+          <div className="rounded-panel bg-card shadow-card p-5 grid grid-cols-2 gap-4">
             {[
               ['Hours saved', '21 hrs'], ['Avg job', '€16,560'],
               ['Agent actions', '148'], ['Biggest stall', 'Closeout'],
@@ -347,7 +347,7 @@ function AIFieldShowcase() {
       <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           {/* the wow shot: the field day — start job + customer notified */}
-          <div className="order-2 lg:order-1 rounded-[16px] bg-card shadow-card overflow-hidden">
+          <div className="order-2 lg:order-1 rounded-panel bg-card shadow-card overflow-hidden">
             <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
               <AifieldWordmark className="size-8" />
               <div className="leading-tight">
@@ -357,18 +357,18 @@ function AIFieldShowcase() {
               <span className="ml-auto text-2xs font-medium rounded-full bg-pop/10 text-pop px-2 py-0.5">today</span>
             </div>
             <div className="p-4 space-y-3">
-              <div className="rounded-[12px] border-l-4 border-l-pop bg-background shadow-card p-3">
+              <div className="rounded-panel border-l-4 border-l-pop bg-background shadow-card p-3">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-semibold tabular-nums">08:00</span>
                   <span className="font-medium">Anna Kowalski</span>
                   <span className="text-xs text-muted-foreground">7 kWp · 14 panels + battery</span>
                 </div>
                 <div className="mt-2.5 flex gap-2">
-                  <span className="inline-flex h-8 items-center rounded-[10px] bg-pop px-3 text-xs font-semibold text-pop-foreground">▶ Start job</span>
-                  <span className="inline-flex h-8 items-center gap-1 rounded-[10px] border border-border px-3 text-xs font-medium"><span className="text-tech">➤</span> Navigate</span>
+                  <span className="inline-flex h-8 items-center rounded-control bg-pop px-3 text-xs font-semibold text-pop-foreground">▶ Start job</span>
+                  <span className="inline-flex h-8 items-center gap-1 rounded-control border border-border px-3 text-xs font-medium"><span className="text-tech">➤</span> Navigate</span>
                 </div>
               </div>
-              <div className="rounded-[12px] bg-tech/10 px-3.5 py-2.5 text-sm leading-body">
+              <div className="rounded-panel bg-tech/10 px-3.5 py-2.5 text-sm leading-body">
                 <p className="label-micro text-tech mb-0.5">auto · sent on start</p>
                 Hi Anna — your installation team is on the way. Please keep driveway access clear and pets indoors. Looking forward to getting your system live!
               </div>
@@ -399,10 +399,10 @@ function AIFieldShowcase() {
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
+              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
                 Put your crew on AIField <ArrowRight className="size-4" />
               </Link>
-              <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+              <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                 See pricing
               </Link>
             </div>
@@ -417,7 +417,7 @@ function AIFieldShowcase() {
 function FinalCTA() {
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
-      <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+      <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
         <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Ready to run on autopilot?
         </h2>
@@ -427,10 +427,10 @@ function FinalCTA() {
         </p>
         <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
           {/* AISolar's page colour: the pop red */}
-          <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-pop text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
+          <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
             Get started <ArrowRight className="size-4" />
           </Link>
-          <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
+          <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
             Try the bill analysis
           </Link>
         </div>

@@ -36,17 +36,17 @@ export default function AboutUs() {
                 built the system we needed, then made it the product.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link to="/start" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+                <Link to="/start" className="inline-flex h-11 items-center gap-2 rounded-panel bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
                   Try it on your own bill <ArrowRight className="size-4" />
                 </Link>
-                <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-[12px] bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   Talk to us
                 </a>
               </div>
             </div>
 
             {/* THE CHAIN — every job's paperwork, and who carries each link now */}
-            <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
+            <div className="rounded-panel bg-card shadow-card overflow-hidden">
               <div className="px-4 h-11 border-b border-border flex items-center gap-2">
                 <FileCheck className="size-4 text-primary" />
                 <span className="text-sm font-semibold">One job, every link carried</span>
@@ -114,7 +114,7 @@ export default function AboutUs() {
                   </p>
                 </div>
               </div>
-              <div className="rounded-[16px] bg-card shadow-card p-6 space-y-4">
+              <div className="rounded-panel bg-card shadow-card p-6 space-y-4">
                 {[
                   { icon: MapPin, title: 'Made in Ireland', body: 'Built for MPRNs, SEAI grants, RECI certs and Irish weather — because that is where we work.' },
                   { icon: Sun, title: 'Field-first', body: 'Every screen was shaped by consultants and crews using it on real jobs, not by mockups.' },
@@ -147,7 +147,7 @@ export default function AboutUs() {
               { icon: FileCheck, title: 'Never oversell', body: 'The proposal states what we actually read and actually know. If a number is not verified, it does not ship.' },
               { icon: HandHeart, title: 'People approve', body: 'Automation does the running; a named human owns every decision a customer sees. That line never moves.' },
             ].map(v => (
-              <div key={v.title} className="rounded-[16px] bg-card shadow-card p-6">
+              <div key={v.title} className="rounded-panel bg-card shadow-card p-6">
                 <span className="size-9 rounded-lg bg-primary/10 grid place-items-center text-primary"><v.icon className="size-4.5" /></span>
                 <h3 className="mt-4 text-md font-semibold">{v.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-body">{v.body}</p>
@@ -172,7 +172,7 @@ export default function AboutUs() {
                 attached. Until then, judge us the honest way: put your own
                 bill through the machine.
               </p>
-              <Link to="/start" className="mt-6 inline-flex h-11 items-center gap-2 rounded-[12px] bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+              <Link to="/start" className="mt-6 inline-flex h-11 items-center gap-2 rounded-panel bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
                 Judge us on your bill <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -203,17 +203,17 @@ export default function AboutUs() {
 
         {/* CTA */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
-          <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
+          <div className="rounded-panel bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Come see how it runs</h2>
             <p className="mt-3 text-primary-foreground/70 leading-body max-w-lg mx-auto">
               Try the bill analysis with your own electricity bill, or book a
               call and we'll walk you through the whole engine.
             </p>
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-tech text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-tech text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Try the bill analysis <ArrowRight className="size-4" />
               </Link>
-              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[12px] border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
+              <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-5 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">
                 Talk to us
               </a>
             </div>

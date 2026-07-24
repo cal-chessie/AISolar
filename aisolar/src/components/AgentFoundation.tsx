@@ -340,7 +340,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                 )}
 
                 {run.lastOutputs && !run.lastError && run.status === 'success' && (
-                  <div className="mt-2 p-2 rounded-[8px] bg-tech-subtle text-xs text-tech">
+                  <div className="mt-2 p-2 rounded-control bg-tech-subtle text-xs text-tech">
                     <CheckCircle2 className="h-3 w-3 inline mr-1" />
                     {typeof run.lastOutputs === 'object' ? JSON.stringify(run.lastOutputs).slice(0, 80) + '...' : String(run.lastOutputs)}
                   </div>

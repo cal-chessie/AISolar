@@ -12,7 +12,7 @@ export default function PaperworkVisual() {
   ];
   const dotCls: Record<string, string> = { done: 'bg-doc-deposit', moving: 'bg-tech', waiting: 'bg-doc-proposal', idle: 'bg-muted-foreground/25' };
   return (
-    <div className="rounded-[16px] bg-card shadow-card overflow-hidden text-left">
+    <div className="rounded-panel bg-card shadow-card overflow-hidden text-left">
       <div className="px-4 py-2.5 border-b border-border flex flex-wrap items-center gap-x-6 gap-y-1">
         <div>
           <div className="text-2xs text-muted-foreground uppercase tracking-wide">Grants in play</div>
