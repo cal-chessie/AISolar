@@ -27,6 +27,7 @@
  *     updated_at TIMESTAMPTZ
  *   )
  */
+import { systemCost } from './pricing';
 
 export interface LeadIntake {
   id: string;
@@ -165,7 +166,7 @@ export const IE_ENERGY = {
   EXPORT_RATE: 0.14,           // €/kWh micro-gen export tariff
   YIELD_PER_KWP: 950,          // kWh per kWp per year (IE climate)
   SELF_CONSUMPTION_PCT: 0.70,  // typical home self-consumption
-  SYSTEM_COST_PER_KWP: 1800,   // €/kwp installed
+  SYSTEM_COST_PER_KWP: 1800,   // DEPRECATED — pricing now lives in src/lib/pricing.ts (brand.pricing.perKwp). Kept only so old references resolve; do not add new uses.
   SEAI_GRANT_MAX: 1800,        // €
   SEAI_PER_KWP: 900,           // €
 } as const;
@@ -195,7 +196,7 @@ export function calculateSystemEstimate(input: {
   const annualSavings = (selfConsumedKwh * IE_ENERGY.RETAIL_RATE) + (exportedKwh * IE_ENERGY.EXPORT_RATE);
   const solarOffset = annualKwh > 0 ? Math.min(85, Math.round((annualProduction / annualKwh) * 100)) : 0;
 
-  const grossCost = systemSize * IE_ENERGY.SYSTEM_COST_PER_KWP;
+  const grossCost = systemCost({ systemSizeKw: systemSize });
   const seaiGrant = Math.min(IE_ENERGY.SEAI_GRANT_MAX, systemSize * IE_ENERGY.SEAI_PER_KWP);
   const netCost = grossCost - seaiGrant;
   const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;

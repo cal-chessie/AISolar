@@ -63,6 +63,7 @@ import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { AichatWordmark } from '@/components/brand/AiosMark';
 import PreSurveySnaps from './PreSurveySnaps';
+import SurveyBooking from './SurveyBooking';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
 
@@ -72,10 +73,12 @@ export default function CustomerPortalV2() {
   const navigate = useNavigate();
   const [lead] = useState<DummyLead>(() => {
     const leads = generateDummyLeads();
-    // ?stage=early shows the pre-survey journey (photo snaps); default stays
-    // the approved-stage money moment
+    // ?stage=early shows the pre-survey journey (photo snaps + survey booking);
+    // prefer an intake_complete lead so both cards are in play, not a raw 'new'.
     if (new URLSearchParams(window.location.search).get('stage') === 'early') {
-      return leads.find(l => ['new', 'intake_complete', 'survey_scheduled'].includes(l.workflow_stage)) || leads[0];
+      const order = ['intake_complete', 'survey_scheduled', 'new'];
+      return [...leads].sort((a, b) => order.indexOf(a.workflow_stage) - order.indexOf(b.workflow_stage))
+        .find(l => order.includes(l.workflow_stage)) || leads[0];
     }
     return leads.find(l => l.workflow_stage === 'approved') || leads[6];
   });
@@ -188,6 +191,14 @@ export default function CustomerPortalV2() {
           </div>
         )}
 
+        {/* Cal (Sweep 3): the customer picks or counters the survey window in
+            chat — the other half of LeadFlow's "Let them choose". */}
+        {['intake_complete', 'survey_scheduled'].includes(lead.workflow_stage) && (
+          <div className="flex justify-start">
+            <SurveyBooking surveyorName={lead.survey?.surveyor?.split(' ')[0] || lead.assigned_consultant?.split(' ')[0] || 'your surveyor'} />
+          </div>
+        )}
+
         {/* Thinking indicator */}
         {thinking && (
           <div className="flex justify-start">
@@ -290,7 +301,7 @@ export default function CustomerPortalV2() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: 'Solar Proposal', desc: `${lead.proposal?.system_size_kw}kWp · ${eur(lead.proposal?.net_cost || 0)}`, icon: FileText, available: !!lead.proposal, action: 'View' },
+                    { label: 'Solar Proposal', desc: lead.proposal ? `${lead.proposal.system_size_kw}kWp · ${eur(lead.proposal.net_cost)}` : 'Ready after your survey', icon: FileText, available: !!lead.proposal, action: 'View' },
                     { label: 'Contract', desc: lead.contract ? 'Signed' : 'Not yet', icon: FileText, available: !!lead.contract, action: lead.contract ? 'View' : 'Sign' },
                     { label: 'Deposit Invoice', desc: lead.invoice ? `${eur(lead.invoice.deposit_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.deposit_paid ? 'Paid' : 'Pay' },
                     { label: 'Final Invoice', desc: lead.invoice ? `${eur(lead.invoice.final_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.final_paid ? 'Paid' : 'Pay' },

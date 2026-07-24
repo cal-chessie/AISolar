@@ -9,6 +9,12 @@
  */
 
 import { calculateSystemEstimate, LeadIntake } from './leadIntake';
+import { getPricingConfig } from './pricing';
+
+// One battery premium for the demo, from the tenant pricing model — a 13.5kWh
+// Powerwall priced at the configured €/kWh, so demo numbers match live math.
+const DEMO_BATTERY_KWH = 13.5;
+const DEMO_BATTERY_PREMIUM = Math.round(DEMO_BATTERY_KWH * getPricingConfig().batteryPerKwh);
 
 export interface DummyLead {
   id: string;
@@ -162,7 +168,7 @@ export function generateDummyLeads(): DummyLead[] {
       surveyDate: isoFuture(2),
       touchpoints: [
         { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'SurveySchedulerAgent booked Tue 10am', timestamp: iso(2, 11), actor: 'agent' },
-        { stage: 'survey_scheduled', channel: 'sms', direction: 'outbound', summary: 'Customer SMS: survey Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
+        { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Survey confirmation emailed — Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
       ],
     },
     // 4. Survey complete — proposal not yet drafted
@@ -220,7 +226,7 @@ export function generateDummyLeads(): DummyLead[] {
       surveyDate: isoFuture(7),
       touchpoints: [
         { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'Install confirmed for Jul 24, 8am', timestamp: iso(1, 15), actor: 'agent' },
-        { stage: 'install_scheduled', channel: 'sms', direction: 'outbound', summary: 'T-7 reminder: materials ordered, crew confirmed', timestamp: iso(0, 10), actor: 'agent' },
+        { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'T-7 reminder: materials ordered, crew confirmed', timestamp: iso(0, 10), actor: 'agent' },
       ],
     },
     // 10. Installing — currently on site
@@ -343,9 +349,9 @@ export function generateDummyLeads(): DummyLead[] {
         panel_model: 'Longi Hi-MO 6 435W',
         inverter_model: 'SolarEdge SE5K',
         battery_model: idx % 2 === 0 ? 'Tesla Powerwall 3 (13.5kWh)' : null,
-        gross_cost: estimate.grossCost + (idx % 2 === 0 ? 4500 : 0), // battery premium
+        gross_cost: estimate.grossCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0), // battery premium (tenant €/kWh)
         seai_grant: estimate.seaiGrant,
-        net_cost: estimate.netCost + (idx % 2 === 0 ? 4500 : 0),
+        net_cost: estimate.netCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0),
         annual_savings: estimate.annualSavings,
         payback_years: estimate.paybackYears,
         twenty_year_savings: estimate.twentyYearSavings,
@@ -404,7 +410,7 @@ export function computePipelineStats(leads: DummyLead[]) {
     if (lead.proposal) {
       totalValue += lead.proposal.net_cost;
     } else {
-      totalValue += (lead.intake.estimated_system_size_kw || 0) * 1800;
+      totalValue += (lead.intake.estimated_system_size_kw || 0) * getPricingConfig().perKwp;
     }
     if (!['completed', 'final_paid'].includes(lead.workflow_stage)) {
       activeLeads++;

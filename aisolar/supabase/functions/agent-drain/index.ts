@@ -347,7 +347,10 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
     Math.ceil((systemSize * 1000) / 435);
   const batteryKwh = intake.confirmed_battery_kwh || survey.recommended_battery_kwh || null;
   const inverterType = intake.confirmed_inverter_type || survey.recommended_inverter_type || "SolarEdge SE5K";
-  const grossCost = systemSize * 1800;
+  // Pricing mirror of src/lib/pricing.ts (brand.pricing.perKwp) — edge functions
+  // can't import from src/. Keep this rate in step with brand.pricing.perKwp.
+  const PER_KWP = 1800;
+  const grossCost = systemSize * PER_KWP;
   // Domestic: €900/kWp capped €1,800. Commercial (NDMG): SEAI piecewise
   // €900→2kWp · €300→20 · €200→200 · €150→1000, cap €162,600 — mirrors
   // src/lib/seaiPipeline.ts (edge functions cannot import from src/).

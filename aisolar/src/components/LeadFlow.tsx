@@ -33,6 +33,7 @@ import {
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+import { systemCost } from '@/lib/pricing';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from 'sonner';
@@ -131,7 +132,12 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
     });
   }, [designData, lead, estimate]);
 
-  const grossCost = designData.panelCount * 145 + 1450 + (designData.includeBattery ? designData.batterySize * 1200 : 0) + 800; // panels + inverter + battery + mounting/labour
+  // One pricing model for every screen (src/lib/pricing.ts, tenant-configurable) —
+  // the design step and the estimate now land on the SAME number.
+  const grossCost = systemCost({
+    panelCount: designData.panelCount,
+    batteryKwh: designData.includeBattery ? designData.batterySize : 0,
+  });
   const seaiGrant = seai.solarElectricityGrant;
   const listNet = grossCost - seaiGrant;
   const netCost = Math.round(listNet * (1 - discountPct / 100));

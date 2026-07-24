@@ -94,7 +94,20 @@ export const brand = {
     perKwpDomestic: 900,
     perKwpCommercial: 450,
   },
-  
+
+  // ===== PRICING (per-tenant — set here or itemise on the Products page) =====
+  // The ONE place system cost is shaped. Every screen (estimate → design →
+  // proposal → drafting agent) resolves cost through src/lib/pricing.ts, which
+  // reads these rates. Change them per tenant and every number moves together.
+  //   perKwp        — installed hardware + standard labour, € per kWp
+  //   batteryPerKwh — storage added on top, € per usable kWh
+  //   panelWatts    — panel wattage, converts panel count ↔ kWp
+  pricing: {
+    perKwp: 1800,
+    batteryPerKwh: 650,
+    panelWatts: 435,
+  },
+
   // ===== SEO & META =====
   seo: {
     title: "AISOLAR — The Solar Installer Operating System | Ireland",
