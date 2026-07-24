@@ -38,7 +38,7 @@ import {
   Search, Calculator, Shield, Landmark, UserPlus,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
-import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
 import { PipelineBar } from '@/components/layout/PipelineBar';
 import InsightsView from '@/components/InsightsView';
@@ -862,38 +862,66 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
           <Input placeholder="Search name, email, address…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
         </div>
       </div>
-      <div className="space-y-1">
-        {filtered.length === 0 ? (
-          <EmptyState
-            icon={Search}
-            title="No clients match your search"
-            description="Try a different name, email, or address — or clear the search to see all clients."
-            variant="compact"
-          />
-        ) : (
-          filtered.map(lead => {
-            const stage = getStage(lead.workflow_stage);
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No clients match your search"
+          description="Try a different name, email, or address — or clear the search to see all clients."
+          variant="compact"
+        />
+      ) : (
+        // Kanban: one column per pipeline phase (Cal: "clients need to be in a
+        // kanban"). Columns are STAGE_GROUPS so the board matches the pipeline
+        // bar; a client sits in the column its workflow_stage belongs to.
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          {STAGE_GROUPS.map(group => {
+            const colLeads = filtered.filter(l => getStage(l.workflow_stage).group === group.id);
             return (
-              <div key={lead.id} className="flex items-center gap-3 p-2.5 rounded-[10px] cursor-pointer transition-colors hover:bg-muted/50" onClick={() => setSelectedClient(lead)}>
-                <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{lead.name}</span>
-                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-pop" />}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">{lead.address}</div>
+              <div key={group.id} className="flex-shrink-0 w-[248px] flex flex-col">
+                <div className="flex items-center gap-2 px-1.5 pb-2">
+                  <span className={`size-2 rounded-full ${KANBAN_DOT[group.id]}`} />
+                  <span className="text-xs font-semibold">{group.label}</span>
+                  <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{colLeads.length}</span>
                 </div>
-                <Badge variant="outline" className="text-[11px]">{stage.label}</Badge>
-                {lead.proposal && <span className="text-xs text-muted-foreground hidden sm:inline">{eur(lead.proposal.net_cost)}</span>}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 space-y-2 rounded-[12px] bg-muted/30 p-2 min-h-[140px]">
+                  {colLeads.length === 0 ? (
+                    <p className="text-2xs text-muted-foreground text-center py-8">Nobody here</p>
+                  ) : (
+                    colLeads.map(lead => (
+                      <button key={lead.id} onClick={() => setSelectedClient(lead)}
+                        className="w-full text-left rounded-[10px] bg-card shadow-card p-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7 shrink-0"><AvatarFallback className="text-2xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                          <span className="font-medium text-xs truncate flex-1">{lead.name}</span>
+                          {lead.score > 80 && <Flame className="h-3 w-3 text-pop shrink-0" />}
+                        </div>
+                        <div className="text-2xs text-muted-foreground truncate mt-1.5">{lead.address}</div>
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <span className="text-2xs rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground truncate">{getStage(lead.workflow_stage).label}</span>
+                          {lead.proposal && <span className="text-2xs font-semibold tabular-nums text-doc-deposit shrink-0">{eur(lead.proposal.net_cost)}</span>}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }
+
+/** Kanban column accent per phase — family tokens, subtle. */
+const KANBAN_DOT: Record<string, string> = {
+  intake: 'bg-muted-foreground/40',
+  survey: 'bg-tech',
+  proposal: 'bg-doc-proposal',
+  contract: 'bg-doc-contract',
+  install: 'bg-pop',
+  closeout: 'bg-doc-deposit',
+};
 
 // ============= CRM PLACEHOLDER =============
 
