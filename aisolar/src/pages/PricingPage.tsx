@@ -15,11 +15,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 
-/* ── Cal edits here (2026-07-23, Cal's numbers: base + €97/seat) ─────────── */
+/* ── Cal edits here (2026-07-24, Cal's numbers: base + €97/seat) ─────────── */
 const PRICES = {
   solo:   { monthly: 197, yearly: 148 },  // € base per month
   team:   { monthly: 397, yearly: 298 },
-  aiteam: { monthly: 799, yearly: 599 },
+  aiteam: { monthly: 997, yearly: 748 },  // Cal 24 Jul: €997/mo, annual 25% off
   seat: 97,                               // € per additional seat / month
 };
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';

@@ -16,14 +16,15 @@
  */
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, BadgeCheck, Bot, Check, FileText, Gauge, Menu,
+  ArrowRight, BadgeCheck, Bot, Check, Eye, FileText, Gauge, Menu,
   MoveRight, ShieldCheck, Sun, Zap,
 } from 'lucide-react';
 import { brand } from '@/config/brand';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
-import { AifieldWordmark } from '@/components/brand/AiosMark';
+import { AifieldWordmark, AisalesWordmark } from '@/components/brand/AiosMark';
 import PaperworkVisual from '@/components/marketing/PaperworkVisual';
 import SolarCalculator from '@/components/calculator/SolarCalculator';
+import SEOHead from '@/components/SEOHead';
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 /* ── The product visual beside the hero: the moat, in miniature ──────────── */
@@ -340,6 +341,95 @@ function Benefits() {
 }
 
 
+/* ── AISales — the closer's cockpit, included with AISolar ───────────────── */
+function AISalesShowcase() {
+  return (
+    <section className="border-t border-border bg-card/40">
+      <div className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+        {/* the two faces of AISolar, set up once */}
+        <div className="text-center max-w-2xl mx-auto mb-12 lg:mb-16">
+          <p className="label-micro">A home for every seat</p>
+          <h2 className="mt-2 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+            AISales for your closers. AIField for your crews.
+          </h2>
+          <p className="mt-3 text-muted-foreground leading-body">
+            One platform, two homes — the sales side and the field side, each built
+            for the people who live in it. Both included with AISolar.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="order-1">
+            <div className="flex items-center gap-3">
+              <AisalesWordmark className="size-14" />
+              <span className="text-2xs font-semibold uppercase tracking-wide rounded-full bg-pop/10 text-pop px-2.5 py-1">Included with AISolar</span>
+            </div>
+            <h3 className="mt-5 text-[26px] leading-[32px] sm:text-[32px] sm:leading-[38px] font-semibold tracking-tight">
+              See who's ready to sign
+            </h3>
+            <p className="mt-3 text-muted-foreground leading-body max-w-lg">
+              AISales is where your consultant closes. Every quote runs off the
+              customer's real bill, and you can see who's opened their proposal and
+              how often — so you call the warm ones first, on the day they're deciding.
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {[
+                'Bill-based quotes in minutes — their real numbers, not an average home',
+                'See engagement: "opened 4×" means they\'re weighing it up right now',
+                'The one thing holding each deal up, and the next move, in plain words',
+              ].map(x => (
+                <li key={x} className="flex items-start gap-2.5 text-sm"><Check className="size-4 text-pop mt-0.5 shrink-0" /><span>{x}</span></li>
+              ))}
+            </ul>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
+                Put your closers on AISales <ArrowRight className="size-4" />
+              </Link>
+              <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
+                See pricing
+              </Link>
+            </div>
+          </div>
+
+          {/* the wow shot: the pipeline that tells you who to call */}
+          <div className="order-2 rounded-panel bg-card shadow-card overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border">
+              <AisalesWordmark className="size-8" />
+              <div className="leading-tight">
+                <p className="text-sm font-semibold">Your pipeline</p>
+                <p className="text-2xs text-muted-foreground">3 need you now</p>
+              </div>
+              <span className="ml-auto text-2xs font-medium rounded-full bg-pop/10 text-pop px-2 py-0.5">hot</span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="rounded-panel border-l-4 border-l-pop bg-background shadow-card p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium">James Wilson</span>
+                  <span className="text-xs text-muted-foreground">Proposal sent</span>
+                  <span className="ml-auto inline-flex items-center gap-1 h-5 px-1.5 rounded-full bg-pop/10 text-pop text-2xs font-semibold"><Eye className="size-3" /> 4×</span>
+                </div>
+                <div className="mt-2.5 rounded-control bg-tech/10 px-3 py-2 text-xs leading-body">
+                  <p className="label-micro text-tech mb-0.5">consultant intelligence</p>
+                  Opened 4× and hasn't signed — warm. Call James while he's weighing it up.
+                </div>
+              </div>
+              <div className="rounded-panel border border-border bg-background p-3 text-sm flex items-center gap-2">
+                <span className="font-medium">Siobhán Murphy</span>
+                <span className="text-xs text-muted-foreground">Signed · deposit next</span>
+                <span className="ml-auto inline-flex items-center gap-1 h-5 px-1.5 rounded-full bg-doc-proposal-subtle text-doc-proposal text-2xs font-semibold"><Eye className="size-3" /> 2×</span>
+              </div>
+              <div className="flex items-center justify-between text-2xs text-muted-foreground px-1">
+                <span>Every quote off the real bill</span>
+                <span className="text-doc-deposit font-medium">✓ Draft-first — you approve</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── AIField — the crew app, included with AISolar ───────────────────────── */
 function AIFieldShowcase() {
   return (
@@ -443,6 +533,12 @@ function FinalCTA() {
 export default function AISolarLanding() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <SEOHead
+        title="AISOLAR — Solar installer software for Ireland"
+        description="Run your Irish solar business on autopilot: bill-based quotes, SEAI grant tracking, ESB forms, and ten agents for survey, proposal, install and follow-up. Free trial."
+        canonical="https://aisolar.ie/aisolar"
+        keywords="solar installer software Ireland, solar CRM, SEAI grant software, solar proposal software, solar quoting, ESB microgeneration"
+      />
       <MarketingNav product="aisolar" />
       <main>
         <Hero />
@@ -459,6 +555,7 @@ export default function AISolarLanding() {
           <SolarCalculator showHeader={false} />
         </section>
         <Benefits />
+        <AISalesShowcase />
         <AIFieldShowcase />
         <FinalCTA />
       </main>
