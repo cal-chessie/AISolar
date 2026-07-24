@@ -81,7 +81,7 @@ export default function ROICalculator() {
     return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
       seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
       annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear,
-      grossCost: est.grossCost, gridSpend20: monthlyBill * 12 * 20 };
+      grossCost: est.grossCost };
   }, [monthlyBill, nightPct, orientation, battery, roofKwp, cfg]);
 
   return (
@@ -161,8 +161,8 @@ export default function ROICalculator() {
                 <BatteryCharging className="size-4.5" />
               </span>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-medium">Add a home battery</span>
-                <span className="block text-2xs text-muted-foreground">Store the day's sun for the evening · +{eur(r.batteryCost || Math.round(10.2 * cfg.batteryPerKwh))}</span>
+                <span className="block text-sm font-medium">Add a {r.batteryKwh} kWh battery</span>
+                <span className="block text-2xs text-muted-foreground">Stores the day's sun for the evening · fixed +{eur(r.batteryCost || Math.round(r.batteryKwh * cfg.batteryPerKwh))}</span>
               </span>
               <span className={`size-5 rounded-full border-2 grid place-items-center shrink-0 ${battery ? 'border-doc-deposit bg-doc-deposit' : 'border-muted-foreground/40'}`}>
                 {battery && <span className="size-2 rounded-full bg-white" />}
@@ -179,13 +179,12 @@ export default function ROICalculator() {
 
           {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
           <div className="rounded-[16px] bg-card shadow-card overflow-hidden">
-            {/* hero — the saving, in context of what you'd pay the grid */}
+            {/* hero — the saving, grounded in grant + payback (no scare-number) */}
             <div className="px-6 pt-6 pb-5 border-b border-border">
-              <p className="label-micro">Over 20 years, solar saves you</p>
+              <p className="label-micro">Estimated 20-year saving</p>
               <Money value={r.twentyYear} className="block mt-1 text-4xl sm:text-[44px] sm:leading-[48px] font-semibold tracking-tight text-doc-deposit tabular-nums" />
               <p className="mt-2 text-xs text-muted-foreground leading-body">
-                You'd hand your supplier about <span className="font-semibold text-foreground tabular-nums">{eur(r.gridSpend20)}</span> over that time at today's rates.
-                Solar turns most of it back into your pocket — after paying for itself in <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>.
+                The SEAI grant takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span> — everything after that comes off your bills.
               </p>
             </div>
 
