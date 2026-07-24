@@ -16,7 +16,8 @@
  *   - Admin settings (consent audit log)
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,23 +92,66 @@ export function hasConsent(type: keyof Omit<ConsentRecord, 'email' | 'capturedAt
 // COOKIE CONSENT BANNER
 // ============================================================================
 
+/**
+ * Re-open the cookie preferences from anywhere (footer, privacy page).
+ * GDPR Art. 7(3): withdrawing consent must be as easy as giving it.
+ */
+export const COOKIE_PREFS_EVENT = 'aisolar:open-cookie-prefs';
+export function openCookiePreferences() {
+  window.dispatchEvent(new CustomEvent(COOKIE_PREFS_EVENT));
+}
+
 export function CookieConsentBanner() {
   const [visible, setVisible] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // GDPR: every non-essential purpose defaults OFF. Consent is opt-in —
+  // a pre-ticked box is not consent (this previously defaulted thirdPartyAi on).
   const [consents, setConsents] = useState({
     performance: false,
     marketing: false,
-    thirdPartyAi: true, // default on for bill extraction
+    thirdPartyAi: false,
   });
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const existing = getStoredConsent();
     if (!existing) {
-      // Show banner after 2 seconds (don't block initial render)
-      const t = setTimeout(() => setVisible(true), 2000);
+      // Short beat so it doesn't fight the first paint, but not so long that
+      // it lands after the reader has started (was 2s — felt like a jump).
+      const t = setTimeout(() => setVisible(true), 600);
       return () => clearTimeout(t);
     }
   }, []);
+
+  // Re-openable for withdrawal, from the footer or the privacy page.
+  useEffect(() => {
+    const reopen = () => {
+      const stored = getStoredConsent();
+      if (stored) {
+        setConsents({
+          performance: stored.performance,
+          marketing: stored.marketing,
+          thirdPartyAi: stored.thirdPartyAi,
+        });
+      }
+      setShowSettings(true);
+      setVisible(true);
+    };
+    window.addEventListener(COOKIE_PREFS_EVENT, reopen);
+    return () => window.removeEventListener(COOKIE_PREFS_EVENT, reopen);
+  }, []);
+
+  // Escape closes the preferences panel back to the choice (never silently
+  // consents). Focus moves into the dialog when it appears.
+  useEffect(() => {
+    if (!visible) return;
+    panelRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSettings) setShowSettings(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, showSettings]);
 
   const handleAcceptAll = () => {
     captureConsent({
@@ -143,33 +187,55 @@ export function CookieConsentBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t-2 border-border shadow-2xl">
-      <div className="container mx-auto px-4 py-4 max-w-4xl">
+    /* Sits bottom-left as a compact card on desktop (doesn't wall off the page)
+       and as a bottom sheet on mobile. min-w-0 + no `container` class — the old
+       `container mx-auto max-w-4xl` measured wider than a 375px viewport and was
+       a source of horizontal overflow. */
+    <div
+      ref={panelRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="cookie-consent-title"
+      className="fixed inset-x-0 bottom-0 z-50 p-3 sm:inset-x-auto sm:left-4 sm:bottom-4 sm:p-0 sm:max-w-sm outline-none"
+    >
+      <div className="min-w-0 rounded-panel bg-card border border-border shadow-2xl p-4 sm:p-5">
         {!showSettings ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-start gap-3 flex-1">
-              <Cookie className="h-6 w-6 text-doc-proposal flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-sm">We use cookies to power your solar journey</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Essential cookies are required. Optional cookies help us improve and personalise your experience.
-                  See our <a href="/privacy" className="underline">Privacy Policy</a>.
+          <div className="min-w-0">
+            <div className="flex items-start gap-3">
+              <Cookie className="size-5 text-brand-accent shrink-0 mt-0.5" aria-hidden />
+              <div className="min-w-0">
+                <h3 id="cookie-consent-title" className="font-semibold text-sm">Cookies on AISOLAR</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Essential cookies keep the site working. Optional ones help us
+                  improve it — nothing optional runs until you say yes. See our{' '}
+                  <Link to="/privacy" className="underline underline-offset-2 hover:no-underline">Privacy Policy</Link>.
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="ghost" size="sm" onClick={handleReject}>Reject optional</Button>
-              <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>Preferences</Button>
-              <Button size="sm" onClick={handleAcceptAll} className="bg-primary hover:bg-primary">Accept all</Button>
+            {/* Stacked on mobile at full touch height; inline from sm up. */}
+            {/* NOTE: flex-1 must be sm:-scoped. In the mobile column layout
+                flex-1 sets flex-basis on the VERTICAL axis and collapses the
+                button to content height (22px — under the 44px touch min).
+                Full width on mobile, equal widths from sm up. */}
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleAcceptAll} className="h-control w-full sm:flex-1 text-sm">Accept all</Button>
+              <Button variant="outline" onClick={handleReject} className="h-control w-full sm:flex-1 text-sm">Essential only</Button>
             </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="mt-1 w-full py-2.5 text-center text-2xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Choose what I share
+            </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm flex items-center gap-2">
-                <Cookie className="h-4 w-4" /> Cookie preferences
+          <div className="space-y-3 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <h3 id="cookie-consent-title" className="font-semibold text-sm flex items-center gap-2 min-w-0">
+                <Cookie className="size-4 shrink-0 text-brand-accent" aria-hidden /> <span className="truncate">Cookie preferences</span>
               </h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>Back</Button>
+              <Button variant="ghost" size="sm" className="h-8 text-xs shrink-0" onClick={() => setShowSettings(false)}>Back</Button>
             </div>
             <ConsentRow
               title="Essential"
@@ -190,15 +256,18 @@ export function CookieConsentBanner() {
               onChange={(v) => setConsents(prev => ({ ...prev, marketing: v }))}
             />
             <ConsentRow
-              title="Third-party AI processing"
-              description="Your electricity bill is processed by Google Gemini (via Lovable AI gateway) to extract MPRN, kWh, and address. Required for bill analysis."
+              title="Bill analysis (AI processing)"
+              description="If you upload a bill, it's read by a third-party AI model to extract details like your MPRN, usage and rates. Off means you can still use the site — you just enter your numbers yourself."
               checked={consents.thirdPartyAi}
               onChange={(v) => setConsents(prev => ({ ...prev, thirdPartyAi: v }))}
             />
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button size="sm" onClick={handleAcceptSelected} className="bg-primary hover:bg-primary">
+            <div className="pt-3 border-t border-border">
+              <Button onClick={handleAcceptSelected} className="h-control w-full text-sm">
                 Save preferences
               </Button>
+              <p className="mt-2 text-2xs text-muted-foreground text-center">
+                You can change these any time from the footer.
+              </p>
             </div>
           </div>
         )}

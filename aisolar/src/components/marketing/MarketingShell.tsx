@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Menu, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { AiosWordmark, AisolarWordmark, AiteamWordmark } from '@/components/brand/AiosMark';
 import { brand } from '@/config/brand';
+import { openCookiePreferences } from '@/lib/gdpr';
 
 export type ProductKey = 'aisolar' | 'aios' | 'aiteam';
 
@@ -63,6 +64,7 @@ export function MarketingNav({ product }: { product: ProductKey }) {
             </Link>
           ))}
           <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
+          <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Guides</Link>
           <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Docs</Link>
           <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">About</Link>
         </nav>
@@ -138,6 +140,12 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
       { label: 'Docs', to: '/docs' },
       { label: 'Browse every view', to: '/demo' },
     ] },
+    { head: 'Learn', items: [
+      { label: 'Guides', to: '/blog' },
+      { label: 'SEAI grant explained', to: '/blog/seai-solar-grant-2026' },
+      { label: 'Solar payback', to: '/blog/solar-payback-ireland' },
+      { label: 'FAQ', to: '/faq' },
+    ] },
     { head: 'AIOS family', items: [
       { label: 'AISolar', to: '/aisolar' },
       { label: 'AITeam', to: '/aiteam' },
@@ -184,6 +192,13 @@ export function MarketingFooter({ product }: { product: ProductKey }) {
       <div className="border-t border-border">
         <div className="mx-auto max-w-6xl px-5 py-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} AISolar Ireland Ltd</span>
+          {/* GDPR Art. 7(3): withdrawing consent must be as easy as giving it. */}
+          <button
+            onClick={openCookiePreferences}
+            className="underline underline-offset-2 hover:no-underline hover:text-foreground transition-colors"
+          >
+            Cookie preferences
+          </button>
           <span className="ml-auto">Part of AIOS</span>
         </div>
       </div>
