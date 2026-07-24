@@ -51,7 +51,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
 
   const totals = useMemo(() => {
     const totalSavings = estimates.reduce((s, e) => s + e.estimate.annualSavings, 0);
-    const totalGrant = estimates.length * 1800;
+    const totalGrant = estimates.reduce((s, e) => s + e.estimate.seaiGrant, 0);
     const avgSystem = estimates.length > 0
       ? estimates.reduce((s, e) => s + e.estimate.systemSizeKw, 0) / estimates.length
       : 0;
@@ -60,6 +60,19 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
       : '0';
     return { totalSavings, totalGrant, avgSystem, avgPayback, count: estimates.length };
   }, [estimates]);
+
+  // Real CSV of every estimate on screen (no backend).
+  const exportCsv = () => {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows = ['Customer,System (kWp),Annual savings (EUR),SEAI grant (EUR),Payback (yrs),Net cost (EUR)'];
+    estimates.forEach(({ lead, estimate }) => rows.push([
+      esc(lead.name), estimate.systemSizeKw, estimate.annualSavings, estimate.seaiGrant, estimate.paybackYears, estimate.netCost,
+    ].join(',')));
+    const url = URL.createObjectURL(new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `aisolar-estimates-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="p-4 space-y-3">
@@ -97,11 +110,16 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
             </button>
           ))}
         </div>
-        <Button variant="outline" size="sm" className="ml-auto h-8 text-xs"><Download className="h-3 w-3 mr-1" /> Export CSV</Button>
+        <Button variant="outline" size="sm" className="ml-auto h-8 text-xs" onClick={exportCsv}><Download className="h-3 w-3 mr-1" /> Export CSV</Button>
       </div>
 
       {/* Estimate cards */}
       <div className="space-y-2">
+        {estimates.length === 0 && (
+          <div className="rounded-[12px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            No estimates match your search — clear it to see them all.
+          </div>
+        )}
         {estimates.map(({ lead, estimate }) => {
           const stage = getStage(lead.workflow_stage);
           return (
@@ -139,7 +157,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
                   </div>
                   <div className="text-center p-1.5 bg-muted/30 rounded">
                     <div className="text-[11px] text-muted-foreground">SEAI grant</div>
-                    <div className="text-sm font-bold text-tech">{eur(1800)}</div>
+                    <div className="text-sm font-bold text-tech">{eur(estimate.seaiGrant)}</div>
                   </div>
                   <div className="text-center p-1.5 bg-muted/30 rounded">
                     <div className="text-[11px] text-muted-foreground">Payback</div>
@@ -151,7 +169,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
                   <div className="text-[11px] text-muted-foreground">
                     Net cost: {eur(estimate.netCost)} · 20yr savings: {eur(estimate.twentyYearSavings)} · Offset: {estimate.solarOffsetPct}%
                   </div>
-                  <Button size="sm" variant="ghost" className="h-6 text-xs">
+                  <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => onSelectLead(lead)}>
                     Open <ChevronRight className="h-3 w-3 ml-0.5" />
                   </Button>
                 </div>

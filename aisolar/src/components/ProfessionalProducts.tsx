@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,17 @@ import {
   Package, Search, Plus, Sun, Battery, Zap, Wrench, Box,
   TrendingUp, AlertCircle, CheckCircle2, Star, ArrowRight, DollarSign,
 } from 'lucide-react';
+
+/**
+ * This is the catalog — there's no customer in scope here, so we don't pretend
+ * to add to a live proposal. We confirm the pick and point to where it actually
+ * happens (the customer's proposal editor pulls live pricing from this table).
+ */
+function addToProposalHint(name: string) {
+  toast(`${name} — add it from a customer's proposal`, {
+    description: 'Open any lead → Proposal to drop it in with live pricing.',
+  });
+}
 
 type ProductCategory = 'panels' | 'inverters' | 'batteries' | 'mounting' | 'accessories';
 
@@ -376,7 +388,7 @@ export default function ProfessionalProducts() {
                     <div className="font-semibold">{bundle.includesBattery ? 'Included' : 'No'}</div>
                   </div>
                 </div>
-                <Button size="sm" className="mt-3 bg-tech transition-opacity hover:opacity-90 text-white">
+                <Button size="sm" className="mt-3 bg-tech transition-opacity hover:opacity-90 text-white" onClick={e => { e.stopPropagation(); addToProposalHint(bundle.name); }}>
                   Add to proposal <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </CardContent>
@@ -385,6 +397,11 @@ export default function ProfessionalProducts() {
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-[12px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              No products match — try another search or category.
+            </div>
+          )}
           {filtered.map(product => {
             const cat = CATEGORY_META[product.category];
             const Icon = cat.icon;
@@ -456,7 +473,7 @@ export default function ProfessionalProducts() {
                     </div>
                   </div>
 
-                  <Button size="sm" className="mt-3 w-full bg-tech transition-opacity hover:opacity-90 text-white" disabled={isOutOfStock}>
+                  <Button size="sm" className="mt-3 w-full bg-tech transition-opacity hover:opacity-90 text-white" disabled={isOutOfStock} onClick={e => { e.stopPropagation(); addToProposalHint(product.name); }}>
                     Add to proposal <Plus className="h-3 w-3 ml-1" />
                   </Button>
                 </CardContent>
@@ -546,7 +563,7 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white">
+            <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white" onClick={() => addToProposalHint(product.name)}>
               Add to proposal <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
             <Button variant="outline">Datasheet</Button>
@@ -602,7 +619,7 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
             })}
           </div>
 
-          <Button className="w-full bg-tech transition-opacity hover:opacity-90 text-white h-12">
+          <Button className="w-full bg-tech transition-opacity hover:opacity-90 text-white h-12" onClick={() => addToProposalHint(bundle.name)}>
             Add bundle to proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>

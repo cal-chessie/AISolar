@@ -84,6 +84,30 @@ export default function AnalyticsDashboard() {
     costSaved: 4020, // €
   };
 
+  // Real CSV export of what's on screen — funnel, team, agent impact (no backend).
+  const exportCsv = () => {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows: string[] = [];
+    rows.push(`AISOLAR analytics export,${new Date().toISOString().slice(0, 10)},range ${timeRange}`);
+    rows.push('');
+    rows.push('Funnel stage,Leads at or past');
+    funnel.forEach(f => rows.push(`${esc(f.label)},${f.count}`));
+    rows.push('');
+    rows.push('Consultant,Leads,Proposals,Contracts,Revenue (EUR),Conversion %');
+    consultants.forEach(c => rows.push([esc(c.name), c.leads, c.proposals, c.contracts, c.revenue, c.conversionRate].join(',')));
+    rows.push('');
+    rows.push('Agent impact,Value');
+    Object.entries(agentImpact).forEach(([k, v]) => rows.push(`${esc(k)},${v}`));
+
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aisolar-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -106,7 +130,7 @@ export default function AnalyticsDashboard() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={exportCsv}>
             <Download className="h-3 w-3 mr-1" /> Export CSV
           </Button>
         </div>
