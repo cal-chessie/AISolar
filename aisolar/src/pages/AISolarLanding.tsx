@@ -23,6 +23,7 @@ import { brand } from '@/config/brand';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import { AifieldWordmark } from '@/components/brand/AiosMark';
 import PaperworkVisual from '@/components/marketing/PaperworkVisual';
+import SolarCalculator from '@/components/calculator/SolarCalculator';
 
 /* ── Nav ─────────────────────────────────────────────────────────────────── */
 /* ── The product visual beside the hero: the moat, in miniature ──────────── */
@@ -447,6 +448,16 @@ export default function AISolarLanding() {
         <Hero />
         <Trust />
         <HowItWorks />
+        <section className="border-y border-border bg-card/40">
+          <div className="mx-auto max-w-6xl px-5 pt-16 lg:pt-24 text-center">
+            <p className="label-micro">Try it now</p>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">See it on your own roof</h2>
+            <p className="mt-3 max-w-xl mx-auto text-muted-foreground leading-body">
+              Draw your roof, size the system, watch the savings build — live. No signup, no sales call.
+            </p>
+          </div>
+          <SolarCalculator showHeader={false} />
+        </section>
         <Benefits />
         <AIFieldShowcase />
         <FinalCTA />
