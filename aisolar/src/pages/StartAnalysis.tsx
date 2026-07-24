@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { AisolarWordmark } from '@/components/brand/AiosMark';
 import SEOHead from '@/components/SEOHead';
+import SolarCalculator from '@/components/calculator/SolarCalculator';
 import { Field, InputGroup } from '@/components/ui/field';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
@@ -313,7 +314,8 @@ export default function StartAnalysis() {
 
         {/* ── ESTIMATE ───────────────────────────────────────────────────── */}
         {step === 'estimate' && estimate && (
-          <div className="max-w-2xl mx-auto">
+          /* wider than the other steps — the live calculator is two columns */
+          <div className="max-w-5xl mx-auto">
             <div className="text-center">
               {bill && bill.fieldsRead > 3 && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-doc-deposit/10 text-doc-deposit text-xs font-medium px-3 py-1">
@@ -324,12 +326,19 @@ export default function StartAnalysis() {
               <p className="mt-2 text-muted-foreground">Built on your real numbers. Confirmed on a 30-minute call.</p>
             </div>
 
-            {/* headline figures */}
-            <div className="mt-8 grid sm:grid-cols-2 gap-3">
-              <Metric icon={<Sun className="size-4" />} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} sub={`covers ~${estimate.solarOffsetPct}% of your usage`} hero />
-              <Metric icon={<Euro className="size-4" />} label="You pay after SEAI grant" value={eur(estimate.netCost)} sub={`${eur(estimate.grossCost)} − ${eur(estimate.seaiGrant)} grant`} />
-              <Metric icon={<TrendingDown className="size-4" />} label="Saved every year" value={eur(estimate.annualSavings)} sub={`${estimate.paybackYears} yr payback`} />
-              <Metric icon={<Battery className="size-4" />} label="20-year saving" value={eur(estimate.twentyYearSavings)} sub={`${estimate.co2TonnesPerYear} t CO₂ cut / yr`} />
+            {/* THE ESTIMATE, LIVE — not a static card. Your real bill seeds the
+                full calculator: draw your actual roof, move the sliders, and
+                watch the grant, the saving and the payback year rebuild. This
+                is the difference between "here's a number" and "here's your
+                system, and you can prove it to yourself." */}
+            <div className="mt-8 -mx-5 sm:mx-0">
+              <SolarCalculator
+                showHeader={false}
+                showUploadCta={false}
+                initialBill={bill?.monthlyBill ?? 250}
+                initialNightPct={nightPct ?? undefined}
+                annualKwh={bill?.annualKwh ?? undefined}
+              />
             </div>
 
             {/* day/night split — the moat, if we have it */}

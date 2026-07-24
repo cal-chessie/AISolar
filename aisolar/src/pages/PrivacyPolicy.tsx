@@ -1,160 +1,246 @@
 /**
- * Privacy Policy — GDPR compliant
+ * PrivacyPolicy — /privacy
  *
- * Plain-English, structured per GDPR Articles 13 & 14.
- * Irish DPC template adapted for AISolar.
+ * Written to be read, not to hide behind. Plain English, honest about the
+ * things that actually matter here: what a bill upload does, that a
+ * third-party AI model reads it, that your installer (not us) is usually the
+ * controller of your project data, and how to get your data back or erased.
+ *
+ * Family colours mark the sections (AIOS blue · AISolar red · AITeam green ·
+ * accent yellow) so the legal pages feel part of the product. Nothing claimed
+ * that isn't true — no certifications we don't hold.
  */
-
-import { Shield, Mail, Database, Globe, Clock, User, FileText, Lock } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import { Shield, Database, Share2, Clock, UserCheck, Cookie, Mail, Scale } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import SEOHead from '@/components/SEOHead';
+import { openCookiePreferences } from '@/lib/gdpr';
 import { brand } from '@/config/brand';
+
+const UPDATED = '24 July 2026';
+const EMAIL = brand.contact?.email ?? 'hello@aisolar.ie';
+const ADDRESS = brand.contact?.address ?? 'Dublin, Ireland';
+const ENTITY = brand.legal?.registeredName ?? 'AISolar Ireland Ltd';
+
+type Accent = 'aios' | 'aisolar' | 'aiteam' | 'accent';
+const ACCENT: Record<Accent, { text: string; bg: string; border: string }> = {
+  aios:    { text: 'text-brand-aios',    bg: 'bg-brand-aios-subtle',    border: 'border-l-brand-aios' },
+  aisolar: { text: 'text-brand-aisolar', bg: 'bg-brand-aisolar-subtle', border: 'border-l-brand-aisolar' },
+  aiteam:  { text: 'text-brand-aiteam',  bg: 'bg-brand-aiteam-subtle',  border: 'border-l-brand-aiteam' },
+  accent:  { text: 'text-brand-accent',  bg: 'bg-brand-accent-subtle',  border: 'border-l-brand-accent' },
+};
+
+function Section({ icon: Icon, title, accent, children }: {
+  icon: typeof Shield; title: string; accent: Accent; children: React.ReactNode;
+}) {
+  const a = ACCENT[accent];
+  return (
+    <section className="min-w-0">
+      <h2 className="flex items-center gap-2.5 text-xl font-semibold tracking-tight">
+        <span className={`grid size-8 shrink-0 place-items-center rounded-control ${a.bg} ${a.text}`}>
+          <Icon className="size-4" />
+        </span>
+        <span className="min-w-0">{title}</span>
+      </h2>
+      <div className="mt-3 space-y-3 text-[15px] leading-relaxed text-muted-foreground">{children}</div>
+    </section>
+  );
+}
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <SEOHead title={`Privacy Policy — ${brand.name}`} description="How we collect, use, and protect your personal data. GDPR compliant." />
-      <MarketingNav product="aios" />
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-primary/10 dark:bg-primary/10 rounded-xl">
-              <Shield className="h-6 w-6 text-primary dark:text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Privacy Policy</h1>
-              <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-IE', { day: 'numeric', month: 'long', year: 'numeric' })} · Version 1.0</p>
-            </div>
-          </div>
+      <SEOHead
+        title="Privacy Policy | AISOLAR"
+        description="How AISOLAR handles your data: what we collect, what happens when you upload a bill, who it's shared with, where it's hosted, and how to access or erase it."
+        canonical="https://aisolar.ie/privacy"
+      />
+      <MarketingNav product="aisolar" />
 
-          <Card className="mb-6">
-            <CardContent className="p-4 text-sm">
-              <p className="font-semibold mb-1">In a nutshell:</p>
-              <p className="text-muted-foreground">
-                We collect your name, email, phone, address, and electricity usage data to design and install your solar system.
-                We never sell your data. We share it only with sub-processors required to deliver the service (Stripe, Postmark, Google Gemini, etc.).
-                You can request access, correction, or deletion anytime. Full details below.
-              </p>
-            </CardContent>
-          </Card>
+      <main className="mx-auto max-w-3xl px-5 py-14 lg:py-20">
+        <header className="min-w-0">
+          <p className="label-micro">Legal</p>
+          <h1 className="mt-2 text-[34px] leading-[40px] sm:text-[42px] sm:leading-[48px] font-semibold tracking-tight">
+            Privacy Policy
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground leading-relaxed">
+            Plain English, because you should be able to tell what happens to your
+            data without needing a solicitor. If anything here is unclear, email us
+            and we'll answer it straight.
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">Last updated {UPDATED}</p>
+        </header>
 
-          <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-            <Section icon={User} title="1. Who we are">
-              <p>{brand.name} ("we", "us", "our") is a solar installation company based in {brand.contact.address}. We are the data controller for your personal data.</p>
-              <p className="text-sm"><strong>Contact:</strong> {brand.contact.email} · {brand.contact.phoneDisplay}</p>
-              <p className="text-sm">We are registered with the Irish Data Protection Commission. Our DPO (Data Protection Officer) can be reached at <a href={`mailto:dpo@${brand.domain}`} className="underline">dpo@{brand.domain}</a>.</p>
-            </Section>
-
-            <Section icon={Database} title="2. What data we collect">
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li><strong>Identity:</strong> name, email, phone number</li>
-                <li><strong>Property:</strong> address, Eircode, MPRN (meter point reference number)</li>
-                <li><strong>Energy usage:</strong> electricity bill data (annual kWh, monthly spend, tariff)</li>
-                <li><strong>Property details:</strong> roof type, orientation, pitch, shading, available area (from site survey)</li>
-                <li><strong>Financial:</strong> invoice details, payment history, contract details</li>
-                <li><strong>Communications:</strong> emails, call logs, AI chat history</li>
-                <li><strong>Photos:</strong> roof photos, install photos, meter photos (from site survey + installation)</li>
-                <li><strong>Consent records:</strong> what you've consented to, when, and the policy version</li>
-              </ul>
-            </Section>
-
-            <Section icon={FileText} title="3. Why we collect it (lawful basis)">
-              <p>We process your data under the following lawful bases (GDPR Article 6):</p>
-              <ul className="list-disc pl-5 space-y-1 text-sm mt-2">
-                <li><strong>Contract performance</strong> — to design, quote, and install your solar system</li>
-                <li><strong>Legal obligation</strong> — to retain financial records for 7 years (Irish Revenue), to comply with RECI/Safe Electric Ireland regulations</li>
-                <li><strong>Consent</strong> — for marketing emails, AI bill extraction, third-party processing</li>
-                <li><strong>Legitimate interest</strong> — to prevent fraud, improve our service, and analyse usage patterns</li>
-              </ul>
-            </Section>
-
-            <Section icon={Globe} title="4. Who we share it with (sub-processors)">
-              <p>We share your data with these third parties to deliver the service. All have signed Data Processing Agreements (DPAs) with us:</p>
-              <ul className="list-disc pl-5 space-y-1 text-sm mt-2">
-                <li><strong>Supabase</strong> (Frankfurt, EU) — database, authentication, file storage</li>
-                <li><strong>Stripe</strong> (Ireland, EU) — payment processing</li>
-                <li><strong>Postmark</strong> (US, with EU Standard Contractual Clauses) — transactional email</li>
-                <li><strong>Google Gemini</strong> (US, with EU SCCs) — AI bill extraction + proposal drafting</li>
-                <li><strong>Coinbase Commerce</strong> (US, with EU SCCs) — optional crypto payment</li>
-                <li><strong>Mapbox</strong> (US, with EU SCCs) — installer map view</li>
-              </ul>
-              <p className="text-sm mt-2">We <strong>never</strong> sell your data to third parties. We do not use your data for training AI models.</p>
-            </Section>
-
-            <Section icon={Clock} title="5. How long we keep it (retention)">
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li><strong>Active leads:</strong> 2 years from last contact</li>
-                <li><strong>Customer records (post-install):</strong> 10 years (warranty period)</li>
-                <li><strong>Financial records (invoices, contracts):</strong> 7 years (Irish Revenue requirement)</li>
-                <li><strong>SEAI grant paperwork:</strong> 7 years</li>
-                <li><strong>Activity logs:</strong> 1 year</li>
-                <li><strong>Consent records:</strong> 7 years (to prove consent was captured)</li>
-                <li><strong>Marketing data:</strong> until you withdraw consent</li>
-              </ul>
-              <p className="text-sm mt-2">After the retention period, data is anonymised (not deleted — to preserve audit trail).</p>
-            </Section>
-
-            <Section icon={User} title="6. Your rights (GDPR Articles 15-22)">
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li><strong>Right of access</strong> — see all data we hold about you</li>
-                <li><strong>Right to rectification</strong> — correct inaccurate data</li>
-                <li><strong>Right to erasure</strong> — anonymise your data (subject to legal retention)</li>
-                <li><strong>Right to portability</strong> — export your data as JSON</li>
-                <li><strong>Right to object</strong> — stop processing for marketing</li>
-                <li><strong>Right to restrict processing</strong> — limit how we use your data</li>
-                <li><strong>Right to withdraw consent</strong> — anytime, without affecting prior processing</li>
-              </ul>
-              <p className="text-sm mt-2">To exercise any right, email <a href={`mailto:${brand.contact.email}?subject=GDPR Request`} className="underline">{brand.contact.email}</a> or use the in-app "Data Rights" panel. We respond within 30 days.</p>
-            </Section>
-
-            <Section icon={Lock} title="7. How we protect it (security)">
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                <li>Row-Level Security (RLS) on all database tables — users can only access their own data</li>
-                <li>JWT-based authentication via Supabase Auth</li>
-                <li>HTTPS/TLS 1.3 encryption in transit</li>
-                <li>AES-256 encryption at rest (Supabase)</li>
-                <li>Webhook signatures verified (Stripe, Coinbase)</li>
-                <li>Secrets stored in Supabase Vault (encrypted)</li>
-                <li>PII-safe logging (emails/tokens redacted in logs)</li>
-                <li>Strict Content-Security-Policy headers</li>
-                <li>Regular security audits + penetration testing</li>
-              </ul>
-            </Section>
-
-            <Section icon={Globe} title="8. International transfers">
-              <p>Your data is primarily stored in the EU (Supabase Frankfurt). Some sub-processors (Postmark, Google Gemini, Coinbase, Mapbox) process data in the US under EU Standard Contractual Clauses (SCCs). We have completed Transfer Impact Assessments for each.</p>
-            </Section>
-
-            <Section icon={Mail} title="9. How to contact us">
-              <p className="text-sm">
-                Email: <a href={`mailto:${brand.contact.email}`} className="underline">{brand.contact.email}</a><br />
-                Phone: {brand.contact.phoneDisplay}<br />
-                Post: {brand.contact.address}, Ireland<br />
-                DPO: <a href={`mailto:dpo@${brand.domain}`} className="underline">dpo@{brand.domain}</a>
-              </p>
-              <p className="text-sm mt-2">
-                You can also complain to the Irish Data Protection Commission at <a href="https://www.dataprotection.ie" className="underline">dataprotection.ie</a>.
-              </p>
-            </Section>
-          </div>
+        {/* The short version */}
+        <div className={`mt-8 rounded-panel border-l-4 ${ACCENT.aios.border} bg-card shadow-card p-5 min-w-0`}>
+          <p className={`text-2xs font-semibold uppercase tracking-wide ${ACCENT.aios.text}`}>The short version</p>
+          <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+            <li>We collect what's needed to size a solar system and run your project — most of it comes off your electricity bill.</li>
+            <li>If you upload a bill, a third-party AI model reads it. You can say no and type the numbers in yourself.</li>
+            <li>We don't sell your data. Ever.</li>
+            <li>It's hosted in the EU.</li>
+            <li>You can get a copy, correct it, or have it erased — just ask.</li>
+          </ul>
         </div>
-      </div>
-      <MarketingFooter product="aios" />
-    </div>
-  );
-}
 
-function Section({ icon: Icon, title, children }: { icon: typeof Shield; title: string; children: React.ReactNode }) {
-  return (
-    <Card>
-      <CardContent className="p-5">
-        <h2 className="text-lg font-bold flex items-center gap-2 mb-3">
-          <Icon className="h-4 w-4 text-primary" />
-          {title}
-        </h2>
-        <div className="text-sm text-muted-foreground space-y-2">{children}</div>
-      </CardContent>
-    </Card>
+        <div className="mt-12 space-y-10">
+          <Section icon={Shield} title="Who we are" accent="aios">
+            <p>
+              {ENTITY} (trading as {brand.legal?.tradingName ?? 'AISOLAR'}), based in {ADDRESS}.
+              We build software that Irish solar installers use to run their business.
+            </p>
+            <p>
+              <strong className="text-foreground">One important distinction.</strong> When you use
+              our public calculator or upload a bill on our own site, we are the data
+              controller. When you're dealing with an installer who uses AISOLAR, <em>they</em> are
+              the controller of your project data and we act as their processor — we handle it
+              on their instructions. Either way, the rights below are yours.
+            </p>
+          </Section>
+
+          <Section icon={Database} title="What we collect" accent="aisolar">
+            <p>
+              <strong className="text-foreground">From your electricity bill, if you upload one.</strong> Up
+              to 21 details: your MPRN, annual and billed usage, day/night split, unit and night
+              rates, standing charge, tariff name, billing period, supplier and supply address.
+            </p>
+            <p>
+              <strong className="text-foreground">What you tell us.</strong> Name, email, phone,
+              address or Eircode, and whatever you enter in the calculator — your monthly bill,
+              whether you drive an EV, whether someone's home during the day, and the roof you
+              draw on the map.
+            </p>
+            <p>
+              <strong className="text-foreground">Automatically.</strong> Standard technical data
+              (IP address, browser, pages viewed) needed to serve and secure the site. Optional
+              analytics only run if you agree to them.
+            </p>
+            <p className="text-sm">
+              We don't ask for special category data — no health, biometric or political
+              information. Please don't send it to us.
+            </p>
+          </Section>
+
+          <Section icon={Scale} title="Why we're allowed to use it" accent="aiteam">
+            <p><strong className="text-foreground">To do what you asked (contract).</strong> Producing your estimate, booking a survey, preparing a proposal, running the project.</p>
+            <p>
+              <strong className="text-foreground">Because you said yes (consent).</strong> Optional
+              cookies, marketing email, and letting a third-party AI model read your bill. You can
+              withdraw any of these at any time —{' '}
+              <button onClick={openCookiePreferences} className="underline underline-offset-2 hover:no-underline text-foreground">
+                cookie preferences
+              </button>{' '}
+              is always in the footer.
+            </p>
+            <p><strong className="text-foreground">To run the business sensibly (legitimate interests).</strong> Keeping the service secure, preventing fraud, and improving how it works — balanced against your rights.</p>
+            <p><strong className="text-foreground">Because the law requires it (legal obligation).</strong> Tax and accounting records, and grant or connection paperwork where a scheme requires it.</p>
+          </Section>
+
+          <Section icon={Database} title="What happens when you upload a bill" accent="accent">
+            <p>
+              Your bill is sent to a third-party AI model, which reads it and returns the details
+              listed above. That's how you get an estimate built on your real numbers in seconds
+              instead of typing fifteen fields.
+            </p>
+            <p>
+              <strong className="text-foreground">You can say no.</strong> Turn off bill analysis in
+              cookie preferences and the site still works — you enter the numbers yourself and get
+              the same calculation. Your bill is not used to train any AI model, and it isn't sent
+              anywhere else.
+            </p>
+          </Section>
+
+          <Section icon={Share2} title="Who we share it with" accent="aisolar">
+            <p><strong className="text-foreground">Your installer.</strong> If you ask for a quote or book a survey, your details go to the installer who'd do the work. That's the point of the request.</p>
+            <p><strong className="text-foreground">Providers we rely on</strong>, under contract and only to deliver the service: our EU-hosted database and file storage, our transactional email provider, our payment processors, and the AI provider that reads uploaded bills.</p>
+            <p><strong className="text-foreground">SEAI and ESB Networks</strong>, where a grant application or a microgeneration registration is being made for your installation — as part of the job, with your knowledge.</p>
+            <p><strong className="text-foreground">Nobody else.</strong> We do not sell your data, rent it, or hand it to advertisers.</p>
+          </Section>
+
+          <Section icon={Clock} title="Where it lives, and for how long" accent="aios">
+            <p>
+              Data is hosted in the European Union. Where a provider processes data outside the
+              EEA, that transfer relies on safeguards permitted under GDPR, such as Standard
+              Contractual Clauses.
+            </p>
+            <p>
+              We keep project data while we're working with you, and afterwards only as long as
+              we're required to — grant records, connection records and tax records each carry
+              their own statutory retention period. Marketing consent is kept until you withdraw
+              it. Anything with no remaining purpose is erased or anonymised.
+            </p>
+          </Section>
+
+          <Section icon={UserCheck} title="Your rights" accent="aiteam">
+            <p>Under GDPR you can ask us to:</p>
+            <ul className="space-y-1.5">
+              <li><strong className="text-foreground">Give you a copy</strong> of the data we hold about you.</li>
+              <li><strong className="text-foreground">Correct</strong> anything that's wrong.</li>
+              <li><strong className="text-foreground">Erase it</strong>, where we have no legal reason to keep it.</li>
+              <li><strong className="text-foreground">Port it</strong> — a machine-readable export you can take elsewhere.</li>
+              <li><strong className="text-foreground">Restrict or object</strong> to how we're using it.</li>
+              <li><strong className="text-foreground">Withdraw consent</strong> at any time, as easily as you gave it.</li>
+            </ul>
+            <p>
+              Email <a href={`mailto:${EMAIL}`} className="underline underline-offset-2 hover:no-underline text-foreground">{EMAIL}</a> and
+              we'll respond within one month. If your data sits with an installer who uses AISOLAR,
+              we'll pass the request to them as controller and help them action it.
+            </p>
+            <p>
+              If you're unhappy with how we've handled it, you can complain to the Irish Data
+              Protection Commission at{' '}
+              <a href="https://www.dataprotection.ie" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:no-underline text-foreground">dataprotection.ie</a>.
+            </p>
+          </Section>
+
+          <Section icon={Cookie} title="Cookies" accent="accent">
+            <p>
+              Essential cookies keep the site working — signing in, security, remembering your
+              session. They can't be switched off. Everything else is optional and stays off
+              until you turn it on.
+            </p>
+            <p>
+              <button onClick={openCookiePreferences} className="underline underline-offset-2 hover:no-underline text-foreground font-medium">
+                Open cookie preferences
+              </button>{' '}
+              to change your choices at any time.
+            </p>
+          </Section>
+
+          <Section icon={Shield} title="Security, and being straight with you" accent="aios">
+            <p>
+              We use access controls, encryption in transit, and row-level database policies so
+              one installer can never see another's customers.
+            </p>
+            <p>
+              We're a young company and we don't claim certifications we haven't earned — you
+              won't find invented ISO or SOC badges on this site. If we ever suffer a breach that
+              puts your rights at risk, we'll notify the Data Protection Commission within 72
+              hours and tell you directly where we're required to.
+            </p>
+          </Section>
+
+          <Section icon={Mail} title="Contact" accent="aisolar">
+            <p>
+              Questions, requests or corrections:{' '}
+              <a href={`mailto:${EMAIL}`} className="underline underline-offset-2 hover:no-underline text-foreground">{EMAIL}</a>.
+            </p>
+            <p>{ENTITY}, {ADDRESS}.</p>
+            <p className="text-sm">
+              Changes to this policy get posted here with a new date at the top. If a change
+              materially affects you, we'll tell you rather than hope you notice.
+            </p>
+          </Section>
+        </div>
+
+        <div className="mt-14 flex flex-wrap gap-4 text-sm">
+          <Link to="/terms" className="underline underline-offset-2 hover:no-underline">Terms of Service</Link>
+          <Link to="/faq" className="underline underline-offset-2 hover:no-underline">FAQ</Link>
+          <Link to="/blog" className="underline underline-offset-2 hover:no-underline">Guides</Link>
+        </div>
+      </main>
+
+      <MarketingFooter product="aisolar" />
+    </div>
   );
 }

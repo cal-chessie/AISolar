@@ -42,10 +42,27 @@ function Money({ value, className }: { value: number; className?: string }) {
   return <span className={className}>{eur(Math.round(n))}</span>;
 }
 
-export default function SolarCalculator({ showHeader = true, initialBill = 250 }: { showHeader?: boolean; initialBill?: number }) {
+export default function SolarCalculator({
+  showHeader = true,
+  initialBill = 250,
+  /** Real day/night split read off the bill — seeds the slider instead of the 35% guess. */
+  initialNightPct,
+  /** Real annual usage off the bill. When present the estimate runs on THIS,
+      not on a figure derived from the monthly bill — the whole point of the read. */
+  annualKwh,
+  /** Hide the built-in "upload your bill" CTA when we're already past that
+      (the bill analyser embeds this after the read). */
+  showUploadCta = true,
+}: {
+  showHeader?: boolean;
+  initialBill?: number;
+  initialNightPct?: number;
+  annualKwh?: number;
+  showUploadCta?: boolean;
+}) {
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
-  const [nightPct, setNightPct] = useState(35);
+  const [nightPct, setNightPct] = useState(initialNightPct ?? 35);
   const [orientation, setOrientation] = useState<'south' | 'east' | 'west' | 'north'>('south');
   const [battery, setBattery] = useState(false);
   const [roofPanels, setRoofPanels] = useState(0);
@@ -71,7 +88,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
 
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
-    const est = calculateSystemEstimate({ monthlyBill, roofCapKwp: roofKwp || undefined });
+    const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined });
     const orient = ORIENT[orientation];
     const baseSavings = Math.round(est.annualSavings * orient);
     const batteryKwh = 10.2;
@@ -85,7 +102,7 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
     return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
       seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
       annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear, grossCost: est.grossCost };
-  }, [monthlyBill, nightPct, orientation, battery, roofKwp, cfg]);
+  }, [monthlyBill, nightPct, orientation, battery, roofKwp, annualKwh, cfg]);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 lg:py-14">
@@ -165,11 +182,13 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
             </span>
           </button>
 
-          <div className="rounded-panel bg-muted/40 p-3.5 flex items-center gap-3">
-            <Upload className="size-4 text-muted-foreground shrink-0" />
-            <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
-            <button onClick={goToStart} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
-          </div>
+          {showUploadCta && (
+            <div className="rounded-panel bg-muted/40 p-3.5 flex items-center gap-3">
+              <Upload className="size-4 text-muted-foreground shrink-0" />
+              <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
+              <button onClick={goToStart} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
+            </div>
+          )}
         </div>
 
         {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
@@ -237,13 +256,15 @@ export default function SolarCalculator({ showHeader = true, initialBill = 250 }
             <MiniStat icon={Leaf} tint="text-doc-deposit" value={`${r.co2} t`} label="CO₂ cut a year" />
           </div>
 
-          <div className="p-4 pt-0">
-            <button onClick={goToStart}
-              className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-              Get this on my real numbers <ArrowRight className="size-4" />
-            </button>
-            <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no signup · we read up to 21 details off your bill</p>
-          </div>
+          {showUploadCta && (
+            <div className="p-4 pt-0">
+              <button onClick={goToStart}
+                className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                Get this on my real numbers <ArrowRight className="size-4" />
+              </button>
+              <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no signup · we read up to 21 details off your bill</p>
+            </div>
+          )}
         </div>
       </div>
 
