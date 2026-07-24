@@ -13,7 +13,8 @@
  * layers in where Ireland has coverage. Reused by the design step + proposal.
  */
 import { useRef, useState, useCallback } from 'react';
-import { MapPin, Pencil, RotateCcw } from 'lucide-react';
+import { MapPin, Pencil, RotateCcw, Sparkles, Loader2 } from 'lucide-react';
+import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 
 // Keyless panel footprint in map pixels at the fixed zoom — approximate, tuned
 // so a typical domestic roof box lands ~10–24 panels.
@@ -34,6 +35,11 @@ export default function RoofDesigner({
   const [rect, setRect] = useState<Rect | null>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // Level 2: Google Solar auto-detect
+  const [checking, setChecking] = useState(false);
+  const [auto, setAuto] = useState<RoofInsight | null>(null);
+  const [autoUsed, setAutoUsed] = useState(false);
+  const [noCoverage, setNoCoverage] = useState(false);
 
   const emit = useCallback((r: Rect | null) => {
     if (!r) { onChange?.(0, 0); return; }
@@ -42,6 +48,17 @@ export default function RoofDesigner({
     const panels = Math.min(40, cols * rows);
     onChange?.(panels, Math.round((panels * panelWatts) / 100) / 10);
   }, [onChange, panelWatts]);
+
+  const find = async () => {
+    setQuery(address); setRect(null); emit(null); setDrawing(false);
+    setAuto(null); setAutoUsed(false); setNoCoverage(false);
+    if (!hasMapsKey()) return;   // no key → keyless Level 1 only
+    setChecking(true);
+    const insight = await detectRoof(address);
+    setChecking(false);
+    if (insight) setAuto(insight); else setNoCoverage(true);
+  };
+  const useAuto = () => { if (auto) { onChange?.(auto.panels, auto.kwp); setAutoUsed(true); } };
 
   const rel = (e: React.PointerEvent) => {
     const b = boxRef.current!.getBoundingClientRect();
@@ -79,13 +96,35 @@ export default function RoofDesigner({
         <div className="relative flex-1">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input value={address} onChange={e => setAddress(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { setQuery(address); setRect(null); emit(null); setDrawing(false); } }}
+            onKeyDown={e => { if (e.key === 'Enter') find(); }}
             placeholder="Your address or Eircode"
             className="w-full h-10 pl-9 pr-3 rounded-[10px] border border-border bg-background text-sm" />
         </div>
-        <button onClick={() => { setQuery(address); setRect(null); emit(null); setDrawing(false); }}
-          className="h-10 px-3 rounded-[10px] bg-primary text-primary-foreground text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity">Find</button>
+        <button onClick={find} disabled={checking}
+          className="h-10 px-3 rounded-[10px] bg-primary text-primary-foreground text-xs font-semibold shrink-0 hover:opacity-90 transition-opacity disabled:opacity-60">
+          {checking ? <Loader2 className="size-4 animate-spin" /> : 'Find'}
+        </button>
       </div>
+
+      {/* Level 2 — Google Solar auto-detect result */}
+      {checking && (
+        <p className="mt-2 flex items-center gap-1.5 text-2xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> Checking Google Solar for your roof…</p>
+      )}
+      {auto && !autoUsed && (
+        <div className="mt-2 rounded-[10px] border border-doc-deposit/40 bg-doc-deposit/5 p-3">
+          <p className="text-xs font-semibold flex items-center gap-1.5"><Sparkles className="size-3.5 text-doc-deposit" /> Google found your roof</p>
+          <p className="text-2xs text-muted-foreground mt-0.5">Fits up to <span className="font-medium text-foreground">{auto.panels} panels</span> ({auto.kwp} kWp) · {auto.sunshineHours.toLocaleString()} sun-hours a year — real geometry, not a guess.</p>
+          <button onClick={useAuto} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-doc-deposit text-white px-3 text-2xs font-semibold hover:opacity-90 transition-opacity">
+            <Sparkles className="size-3.5" /> Use this roof
+          </button>
+        </div>
+      )}
+      {autoUsed && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><Sparkles className="size-3.5" /> Auto-detected — {auto?.panels} panels ({auto?.kwp} kWp) feeding your estimate.</p>
+      )}
+      {noCoverage && (
+        <p className="mt-2 text-2xs text-muted-foreground">Google doesn't have this roof yet (common in rural Ireland) — draw it on the map instead, it's just as good.</p>
+      )}
 
       <div ref={boxRef} className="relative mt-2 rounded-[12px] overflow-hidden border border-border bg-muted select-none" style={{ height: 240 }}>
         {/* fallback backdrop if the embed is blocked */}
