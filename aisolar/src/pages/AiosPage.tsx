@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Check, ShieldCheck, GitBranch } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
+import PaperworkVisual from '@/components/marketing/PaperworkVisual';
 import { Wordmark, AisalesWordmark } from '@/components/brand/AiosMark';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
@@ -354,7 +355,32 @@ export default function AiosPage() {
           </div>
         </section>
 
-        {/* ── Final CTA ────────────────────────────────────────────────────── */}
+                {/* ── The best part: regulated paperwork that runs itself ─────────── */}
+        <section className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <div>
+              <span className="label-micro text-tech">Compliance, on the record</span>
+              <h2 className="mt-3 text-[28px] leading-[34px] sm:text-[36px] sm:leading-[42px] font-semibold tracking-tight">
+                Regulated paperwork,<br />running itself
+              </h2>
+              <p className="mt-4 text-muted-foreground leading-body max-w-lg">
+                Grant applications, grid connection forms, engineered diagrams,
+                certificates — prepared from captured data, tracked through
+                three gates, every step an event on the kernel's append-only
+                record. Agents prepare, track and chase. Registered people
+                sign. Nothing files itself pretending to be them.
+              </p>
+              <ul className="mt-5 space-y-2 text-sm">
+                <li className="flex gap-2"><span className="text-doc-deposit">✓</span> The right form picked automatically — never two, never the wrong one</li>
+                <li className="flex gap-2"><span className="text-doc-deposit">✓</span> Diagrams generated, not hand-drawn — regulators reject hand-drawn</li>
+                <li className="flex gap-2"><span className="text-doc-deposit">✓</span> One glance per customer: three dots and the next thing, in words</li>
+              </ul>
+            </div>
+            <PaperworkVisual />
+          </div>
+        </section>
+
+{/* ── Final CTA ────────────────────────────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">
           <div className="rounded-[16px] bg-primary text-primary-foreground px-6 py-12 lg:px-14 lg:py-16 text-center shadow-card">
             <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">See it running</h2>

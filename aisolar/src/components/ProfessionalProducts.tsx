@@ -41,10 +41,23 @@ interface Product {
   specs: Record<string, string>;
   seaiApproved: boolean;
   inBundle?: boolean;
+  /** manufacturer data sheet PDF — rides to the BER assessor with the pack */
+  datasheet?: string;
 }
 
 const SAMPLE_PRODUCTS: Product[] = [
   // Panels
+  {
+    id: 'panel-trina-440',
+    category: 'panels',
+    manufacturer: 'TrinaSolar',
+    model: 'TSM-440 NEG9RC.28',
+    description: 'Vertex S+ dual-glass 440W. Data sheet attached — it rides to the BER assessor with the pack.',
+    cost: 95, rrp: 152, margin: 0, stock: 36, rating: 5,
+    specs: { Wattage: '440W', Type: 'Dual-glass', Warranty: '25yr product' },
+    seaiApproved: true, inBundle: false,
+    datasheet: '/datasheets/trinasolar-tsm-440-neg9rc28.pdf',
+  },
   {
     id: 'panel-longi-435',
     category: 'panels',

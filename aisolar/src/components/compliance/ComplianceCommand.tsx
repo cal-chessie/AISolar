@@ -187,7 +187,7 @@ export default function ComplianceCommand() {
         <div className="flex items-center gap-2 mb-2">
           <FileText className="size-4 text-muted-foreground" />
           <span className="text-sm font-semibold">Forms library</span>
-          <span className="text-2xs text-muted-foreground">the official documents, blank — the packs above fill them per customer</span>
+          <span className="text-2xs text-muted-foreground">ESB's official forms, blank — the packs above fill them per customer · product data sheets live in Products</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {[
@@ -198,7 +198,6 @@ export default function ComplianceCommand() {
             ['NC7-03 — ELS declaration', '/forms/esbn-nc7-03-els-declaration.pdf'],
             ['NC8 — Small-scale (inverter)', '/forms/esbn-form-nc8.pdf'],
             ['NC5 — Small-scale (synchronous)', '/forms/esbn-form-nc5.pdf'],
-            ['Trina TSM-440 datasheet', '/datasheets/trinasolar-tsm-440-neg9rc28.pdf'],
           ].map(([label, href]) => (
             <a key={href} href={href} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[8px] border border-border text-xs font-medium hover:bg-muted/50 transition-colors">
