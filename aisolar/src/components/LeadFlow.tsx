@@ -280,7 +280,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                         </div>
                         <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
                           <span className="text-muted-foreground">SEAI grant</span>
-                          <span className="font-bold text-primary dark:text-primary">{eurFmt(1800)}</span>
+                          <span className="font-bold text-primary dark:text-primary">{eurFmt(seaiGrant)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -420,7 +420,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                       </p>
                       <div className="text-xs space-y-1">
                         <div className="p-2 bg-background rounded border-l-2 border-primary/40">
-                          <strong>Script:</strong> "With your {estimate.systemSizeKw}kWp system, you'll save {eurFmt(estimate.annualSavings)}/year and the SEAI covers {eurFmt(1800)}. Payback in {estimate.paybackYears} years."
+                          <strong>Script:</strong> "With your {estimate.systemSizeKw}kWp system, you'll save {eurFmt(estimate.annualSavings)}/year and the SEAI covers {eurFmt(seaiGrant)}. Payback in {estimate.paybackYears} years."
                         </div>
                       </div>
                     </CardContent>
