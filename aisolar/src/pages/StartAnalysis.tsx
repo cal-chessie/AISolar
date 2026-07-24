@@ -23,19 +23,19 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Upload, Pencil, FileText, Loader2, Check,
-  Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck,
+  Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck, Award,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { AisolarWordmark } from '@/components/brand/AiosMark';
 import SEOHead from '@/components/SEOHead';
-import SolarCalculator from '@/components/calculator/SolarCalculator';
+import { toast } from 'sonner';
 import { Field, InputGroup } from '@/components/ui/field';
 
 const CAL_LINK = 'https://cal.com/renewableireland/solar-consultation';
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type Step = 'choose' | 'upload' | 'manual' | 'estimate' | 'book';
+type Step = 'choose' | 'upload' | 'manual' | 'estimate' | 'book' | 'callback';
 
 /** What the calculator carries forward when the customer clicks through. */
 interface CarriedCalc {
@@ -208,32 +208,86 @@ export default function StartAnalysis() {
       <main className="mx-auto max-w-3xl px-5 py-10 lg:py-14">
         {/* ── CHOOSE ─────────────────────────────────────────────────────── */}
         {step === 'choose' && (
-          <div className="max-w-xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">See what solar saves you</h1>
-            <p className="mt-3 text-muted-foreground leading-body">
-              Your last electricity bill has everything we need. Upload it and
-              we'll read the numbers that decide your system — no forms.
-            </p>
-            <div className="mt-8 grid gap-3">
+          <div className="min-w-0">
+            <div className="max-w-xl mx-auto text-center">
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">See what solar saves you</h1>
+              <p className="mt-3 text-muted-foreground leading-body">
+                Your last electricity bill has everything we need. Upload it and
+                we'll read the numbers that decide your system — no forms.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-3 max-w-xl mx-auto">
               <button onClick={() => { setStep('upload'); }}
                 className="group rounded-panel border border-border bg-card shadow-card p-5 text-left flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <span className="size-11 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0"><Upload className="size-5" /></span>
-                <span className="flex-1">
-                  <span className="font-semibold flex items-center gap-2">Upload your bill <span className="text-2xs font-medium bg-doc-deposit/10 text-doc-deposit rounded-full px-2 py-0.5">most accurate</span></span>
+                <span className="flex-1 min-w-0">
+                  <span className="font-semibold flex items-center gap-2 flex-wrap">Upload your bill <span className="text-2xs font-medium bg-doc-deposit/10 text-doc-deposit rounded-full px-2 py-0.5">most accurate</span></span>
                   <span className="block text-sm text-muted-foreground mt-0.5">A photo or PDF. We read up to 21 details off it.</span>
                 </span>
-                <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+                <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />
               </button>
               <button onClick={() => setStep('manual')}
                 className="group rounded-panel border border-border bg-card shadow-card p-5 text-left flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <span className="size-11 rounded-lg bg-muted grid place-items-center shrink-0"><Pencil className="size-5" /></span>
-                <span className="flex-1">
+                <span className="flex-1 min-w-0">
                   <span className="font-semibold">Enter it manually</span>
                   <span className="block text-sm text-muted-foreground mt-0.5">Three quick numbers if you don't have the bill handy.</span>
                 </span>
-                <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+                <ArrowRight className="size-5 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />
               </button>
             </div>
+
+            {/* ── THE MOAT, MADE VISIBLE ───────────────────────────────────────
+                The whole differentiator is "we read 21 details off your bill".
+                Saying it in one line and leaving the rest of the screen empty
+                sells nothing — so show the actual fields, and what they buy. */}
+            <section className="mt-12 rounded-panel bg-card shadow-card overflow-hidden min-w-0">
+              <div className="px-5 py-3.5 border-b border-border flex items-center gap-2 flex-wrap">
+                <FileText className="size-4 text-brand-aisolar shrink-0" />
+                <span className="text-sm font-semibold">What we read off your bill</span>
+                <span className="ml-auto text-2xs text-muted-foreground">up to 21 details · about 20 seconds</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-border">
+                {[
+                  ['MPRN', 'identifies your connection'],
+                  ['Annual usage', 'sizes the system'],
+                  ['Day / night split', 'decides the battery case'],
+                  ['Unit rate', 'values every saved kWh'],
+                  ['Night rate', 'prices the evening'],
+                  ['Standing charge', 'the part solar never cuts'],
+                ].map(([k, why]) => (
+                  <div key={k} className="p-3.5 min-w-0">
+                    <p className="text-xs font-semibold truncate">{k}</p>
+                    <p className="mt-0.5 text-2xs text-muted-foreground leading-snug">{why}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="px-5 py-2.5 text-2xs text-muted-foreground border-t border-border">
+                …plus tariff, billing period, supplier, meter type, reading type and more.
+                Every figure in your estimate traces back to one of them.
+              </p>
+            </section>
+
+            {/* what you actually walk away with */}
+            <section className="mt-4 grid sm:grid-cols-3 gap-3 min-w-0">
+              {[
+                { icon: Sun, t: 'Your system size', s: 'In kWp and panel count, sized to your usage — not an average home.' },
+                { icon: Award, t: 'Your SEAI grant', s: 'The exact figure you qualify for, and what you actually pay after it.' },
+                { icon: TrendingDown, t: 'Your payback year', s: 'When it stops costing and starts paying, on your numbers.' },
+              ].map(({ icon: I, t, s }) => (
+                <div key={t} className="rounded-panel bg-card shadow-card p-4 min-w-0">
+                  <I className="size-4 text-brand-aisolar" />
+                  <p className="mt-2 text-sm font-semibold">{t}</p>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{s}</p>
+                </div>
+              ))}
+            </section>
+
+            <p className="mt-5 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+              <ShieldCheck className="size-3.5 shrink-0" />
+              Free, no signup, no obligation. Your bill stays in the EU and we only read the energy figures.
+            </p>
           </div>
         )}
 
@@ -331,19 +385,14 @@ export default function StartAnalysis() {
               <p className="mt-2 text-muted-foreground">Built on your real numbers. Confirmed on a 30-minute call.</p>
             </div>
 
-            {/* THE ESTIMATE, LIVE — not a static card. Your real bill seeds the
-                full calculator: draw your actual roof, move the sliders, and
-                watch the grant, the saving and the payback year rebuild. This
-                is the difference between "here's a number" and "here's your
-                system, and you can prove it to yourself." */}
-            <div className="mt-8 -mx-5 sm:mx-0">
-              <SolarCalculator
-                showHeader={false}
-                showUploadCta={false}
-                initialBill={bill?.monthlyBill ?? 250}
-                initialNightPct={nightPct ?? undefined}
-                annualKwh={bill?.annualKwh ?? undefined}
-              />
+            {/* YOUR figures, stated — not sliders. The calculator is for people
+                who DON'T have their bill to hand; here we already read it, so
+                showing a guessing tool would undercut the whole point. */}
+            <div className="mt-8 grid sm:grid-cols-2 gap-3">
+              <Metric icon={<Sun className="size-4" />} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} sub={`covers ~${estimate.solarOffsetPct}% of your usage`} hero />
+              <Metric icon={<Euro className="size-4" />} label="You pay after SEAI grant" value={eur(estimate.netCost)} sub={`${eur(estimate.grossCost)} − ${eur(estimate.seaiGrant)} grant`} />
+              <Metric icon={<TrendingDown className="size-4" />} label="Saved every year" value={eur(estimate.annualSavings)} sub={`${estimate.paybackYears} yr payback`} />
+              <Metric icon={<Battery className="size-4" />} label="20-year saving" value={eur(estimate.twentyYearSavings)} sub={`${estimate.co2TonnesPerYear} t CO₂ cut / yr`} />
             </div>
 
             {/* day/night split — the moat, if we have it */}
@@ -379,11 +428,83 @@ export default function StartAnalysis() {
               </div>
             )}
 
-            <button onClick={() => setStep('book')}
-              className="mt-6 w-full h-12 rounded-control bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-              <CalendarClock className="size-4" /> Book my free consultation
-            </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Ballpark figures. Your exact quote comes after a free survey.</p>
+            {/* ── THE ASK — Problem → Solution → Ask ──────────────────────────
+                An estimate on its own doesn't get anyone a system. This says
+                plainly what the estimate CAN'T tell you, what a proposal adds,
+                and then gives two honest doors: the full thing, or just have
+                someone ring you. */}
+            <section className="mt-8 rounded-panel bg-card shadow-card overflow-hidden">
+              <div className="p-5 sm:p-6 border-b border-border">
+                <p className="label-micro text-brand-aisolar">What this estimate can't tell you</p>
+                <h2 className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight">
+                  It's your numbers. It isn't your roof yet.
+                </h2>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xl">
+                  The figures above run off your real usage, so they're honest — but they
+                  assume a standard roof. What they can't know is your pitch and shading,
+                  exactly how many panels fit, where the inverter goes, or what your
+                  MPRN allows for export. That's what turns an estimate into a firm price.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                {/* Door 1 — the full thing */}
+                <div className="p-5 sm:p-6 min-w-0">
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-brand-aisolar">Recommended</p>
+                  <h3 className="mt-1.5 font-semibold">Turn this into a full proposal</h3>
+                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                    A free 30-minute survey, then a fixed written proposal.
+                  </p>
+                  <ul className="mt-3 space-y-1.5">
+                    {[
+                      'Your exact panel layout, measured on your roof',
+                      'A firm price — not a ballpark',
+                      'Your SEAI grant application prepared for you',
+                      'ESB registration handled as part of the job',
+                    ].map(x => (
+                      <li key={x} className="flex items-start gap-2 text-xs">
+                        <Check className="size-3.5 text-doc-deposit mt-0.5 shrink-0" />
+                        <span>{x}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button onClick={() => setStep('book')}
+                    className="mt-4 w-full h-control rounded-control bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                    <CalendarClock className="size-4" /> Book my free survey
+                  </button>
+                  <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no obligation · 30 minutes</p>
+                </div>
+
+                {/* Door 2 — low friction */}
+                <div className="p-5 sm:p-6 min-w-0">
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">Not ready to book?</p>
+                  <h3 className="mt-1.5 font-semibold">Have a consultant call you</h3>
+                  <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                    Leave your details and we'll come back to you — no calendars, no pressure.
+                  </p>
+                  <ul className="mt-3 space-y-1.5">
+                    {[
+                      'We keep this estimate on file against your name',
+                      'A real person answers your questions',
+                      'You decide if a survey is worth your time',
+                    ].map(x => (
+                      <li key={x} className="flex items-start gap-2 text-xs">
+                        <Check className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                        <span>{x}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button onClick={() => setStep('callback')}
+                    className="mt-4 w-full h-control rounded-control border border-border bg-background text-sm font-semibold flex items-center justify-center gap-2 hover:bg-muted transition-colors">
+                    Ask a consultant to call
+                  </button>
+                  <p className="mt-2 text-2xs text-center text-muted-foreground">Name, email and number — that's it</p>
+                </div>
+              </div>
+            </section>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Figures are indicative and confirmed at your survey and on your SEAI application.
+            </p>
           </div>
         )}
 
@@ -437,6 +558,67 @@ export default function StartAnalysis() {
             </div>
             <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
               <ShieldCheck className="size-3.5" /> Your details stay in the EU and are only used for your consultation.
+            </p>
+          </div>
+        )}
+
+        {/* ── CALLBACK — the low-friction door. Three fields, no calendar. ──── */}
+        {step === 'callback' && (
+          <div className="max-w-md mx-auto">
+            <BackBtn onClick={() => setStep('estimate')} />
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Have a consultant call you</h1>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              We'll keep your estimate on file against your name so you don't have to
+              explain it twice. No calendars, no pressure.
+            </p>
+
+            {/* what they're leaving behind, so it's not a blind form */}
+            {estimate && (
+              <div className="mt-5 rounded-panel bg-muted/40 p-3.5 text-xs">
+                <p className="font-medium text-foreground">We'll bring this to the call:</p>
+                <p className="mt-1 text-muted-foreground">
+                  {estimate.systemSizeKw} kWp · {eur(estimate.netCost)} after grant ·
+                  {' '}{eur(estimate.annualSavings)}/yr saved
+                  {bill?.fieldsRead ? ` · read from ${bill.fieldsRead} details on your bill` : ''}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-5 space-y-3">
+              <Field label="Your name" required>
+                <InputGroup>
+                  <input value={contact.name} onChange={e => setContact(c => ({ ...c, name: e.target.value }))}
+                    placeholder="Your name" className="w-full h-control bg-transparent px-3 text-sm outline-none" />
+                </InputGroup>
+              </Field>
+              <Field label="Email" required>
+                <InputGroup>
+                  <input type="email" value={contact.email} onChange={e => setContact(c => ({ ...c, email: e.target.value }))}
+                    placeholder="you@example.ie" className="w-full h-control bg-transparent px-3 text-sm outline-none" />
+                </InputGroup>
+              </Field>
+              <Field label="Phone" required helper="So a consultant can actually reach you.">
+                <InputGroup>
+                  <input type="tel" value={contact.mobile} onChange={e => setContact(c => ({ ...c, mobile: e.target.value }))}
+                    placeholder="08X XXX XXXX" className="w-full h-control bg-transparent px-3 text-sm outline-none" />
+                </InputGroup>
+              </Field>
+            </div>
+
+            <button
+              disabled={!contact.name.trim() || !contact.email.trim() || !contact.mobile.trim()}
+              onClick={() => toast.success(`Thanks ${contact.name.split(' ')[0] || ''} — a consultant will be in touch`, {
+                description: 'Your estimate is saved against your name. Usually within one working day.',
+              })}
+              className="mt-5 w-full h-12 rounded-control bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+            >
+              Ask a consultant to call me
+            </button>
+            <p className="mt-2 text-center text-2xs text-muted-foreground">
+              Usually within one working day. No sales pressure.
+            </p>
+            <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+              <ShieldCheck className="size-3.5" /> Your details stay in the EU and are only used to contact you about this estimate.
             </p>
           </div>
         )}
