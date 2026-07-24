@@ -50,6 +50,11 @@ interface Tier {
   hasToggle?: boolean;
   savePct?: string;
   yearlyNote?: string;
+  /** Seats included, shown as its own line so it's never buried in features. */
+  seats?: string;
+  /** The ONE marquee thing this tier adds over the tier below — Cal: it has to
+      be easy to see what you're stepping up for. */
+  highlight?: { label: string; body: string };
 }
 
 export default function PricingPage() {
@@ -67,8 +72,9 @@ export default function PricingPage() {
       hasToggle: true,
       savePct: savePct(PRICES.solo),
       yearlyNote: `+ €${PRICES.seat} per extra seat`,
+      seats: '1 seat',
+      highlight: { label: 'The front door', body: 'Bill-based quotes and the draw-your-roof calculator, for one person.' },
       features: [
-        '1 seat included',
         'Bill reader — 21 details off every bill',
         'Day/night split + battery case, from their real usage',
         'Draw-your-roof calculator on satellite, panels and all',
@@ -90,8 +96,9 @@ export default function PricingPage() {
       microcopy: '14 day free trial',
       featuresLead: 'Solo features, plus:',
       savePct: savePct(PRICES.team),
+      seats: '3 seats',
+      highlight: { label: 'The lead engine', body: 'Your own branded calculator, embedded on your website — every lead lands in your pipeline.' },
       features: [
-        `3 seats included, then €${PRICES.seat} per seat`,
         'AISales — the closer\'s cockpit: pipeline, calendar, inbox',
         'See who\'s ready to sign: "opened 4×" on every proposal',
         'Consultant Intelligence — the holdup and the next move',
@@ -112,8 +119,10 @@ export default function PricingPage() {
       blurb: 'Your AI workforce on top: agents that draft, schedule and chase.',
       cta: { label: 'Try for free', to: '/aiteam' },
       microcopy: '14 day free trial',
-      featuresLead: 'AISolar features, plus:',
+      featuresLead: 'Everything in AISolar, plus:',
       savePct: savePct(PRICES.aiteam),
+      seats: '5 seats',
+      highlight: { label: 'The workforce', body: 'Ten agents doing the admin — and an AI Coach that answers off your live pipeline.' },
       features: [
         'All 10 agents — intake to install to invoice',
         'AI Coach you can actually talk to — asks answered off your live pipeline',
@@ -137,7 +146,9 @@ export default function PricingPage() {
       blurb: 'The operating system underneath, for your own vertical or fleet.',
       cta: { label: 'Talk to us', to: CAL_LINK, external: true },
       microcopy: '*Annual pricing',
-      featuresLead: 'AITeam features, plus:',
+      featuresLead: 'Everything in AITeam, plus:',
+      seats: 'Unlimited seats',
+      highlight: { label: 'The kernel', body: 'Your own vertical or franchise fleet on the engine underneath, with custom agents.' },
       features: [
         'Multi-tenant — every brand + region isolated',
         'Immutable, hash-chained record of everything',
@@ -252,6 +263,25 @@ export default function PricingPage() {
               <p className={`mt-2 text-center text-xs ${tier.dark ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
                 {tier.microcopy}
               </p>
+
+              {/* Seats + the one marquee thing this tier adds — so what you're
+                  stepping up for is readable in two seconds, not buried in a
+                  ten-item list (Cal). */}
+              {tier.seats && (
+                <p className={`mt-4 px-1 text-xs font-semibold uppercase tracking-wide ${tier.dark ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                  {tier.seats} included
+                </p>
+              )}
+              {tier.highlight && (
+                <div className={`mt-2 rounded-control p-3 ${tier.dark ? 'bg-primary-foreground/10' : 'bg-muted/50'}`}>
+                  <p className={`text-2xs font-semibold uppercase tracking-wide ${tier.dark ? 'text-primary-foreground/70' : 'text-brand-aisolar'}`}>
+                    {tier.highlight.label}
+                  </p>
+                  <p className={`mt-1 text-sm font-medium leading-snug ${tier.dark ? 'text-primary-foreground' : ''}`}>
+                    {tier.highlight.body}
+                  </p>
+                </div>
+              )}
 
               {/* features */}
               <p className={`mt-4 px-1 text-sm font-medium ${tier.dark ? 'text-primary-foreground/85' : ''}`}>{tier.featuresLead}</p>
