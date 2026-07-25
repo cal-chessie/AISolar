@@ -108,3 +108,12 @@ migrate ALL gear to per-product prices in the catalog and have the cost math
 read them, instead of the flat per-kWp / per-kWh model in pricing.ts. Must stay
 reconciled with the ProposalStep breakdown (line items → grossCost) so the
 studio and proposal agree — do this alongside the numbers-through-spine work.
+
+## Moat + deployment readiness (25 Jul) → docs/READINESS_AND_MOAT.md
+Full senior-dev assessment written up. Headline moat move for tomorrow+: wire the
+LEARNING LOOP (consultant corrections + proposal outcomes + install results →
+train the system, aggregated cross-tenant via the kernel, no PII). Plus:
+compliance autopilot (NC5/6/7 + grant packs + RECI), the traceable-number chain
+surfaced on the proposal, owner-level aggregate intelligence. Readiness P0
+blockers before any real user: GATE 0 key rotation (Maps key now ships in the
+bundle — restrict or proxy), RLS audit, demo-mode guard, Ask-AI guardrail.
