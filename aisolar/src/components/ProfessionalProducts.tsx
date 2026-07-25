@@ -361,39 +361,39 @@ export default function ProfessionalProducts() {
           <p className="text-xs text-muted-foreground">
             Pre-configured system packages. Click a bundle to view components + add to proposal.
           </p>
-          {SAMPLE_BUNDLES.map(bundle => (
-            <Card key={bundle.id} className="border-l-4 border-l-tech cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedBundle(bundle)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-bold text-base">{bundle.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">{bundle.description}</p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {SAMPLE_BUNDLES.map(bundle => (
+              <Card key={bundle.id} className="border-l-4 border-l-tech cursor-pointer hover:shadow-md transition-shadow flex flex-col"
+                onClick={() => setSelectedBundle(bundle)}>
+                <CardContent className="p-4 flex flex-col h-full">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-base leading-tight">{bundle.name}</h3>
+                    <Badge variant="outline" className="bg-tech/10 text-tech border-tech/30 shrink-0">
+                      {bundle.systemSizeKw} kWp
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="bg-tech/10 text-tech border-tech/30">
-                    {bundle.systemSizeKw} kWp
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-sm mt-3">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Bundle price</div>
-                    <div className="font-bold">{eur(bundle.bundlePrice)}</div>
+                  <p className="text-sm text-muted-foreground mt-1">{bundle.description}</p>
+                  <div className="grid grid-cols-3 gap-2 text-sm mt-3">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Bundle price</div>
+                      <div className="font-bold tabular-nums">{eur(bundle.bundlePrice)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">vs RRP</div>
+                      <div className="font-bold text-tech tabular-nums">Save {eur(bundle.savingVsRrp)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Battery</div>
+                      <div className="font-semibold">{bundle.includesBattery ? 'Included' : 'No'}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">vs RRP</div>
-                    <div className="font-bold text-primary">Save {eur(bundle.savingVsRrp)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Battery</div>
-                    <div className="font-semibold">{bundle.includesBattery ? 'Included' : 'No'}</div>
-                  </div>
-                </div>
-                <Button size="sm" className="mt-3 bg-tech transition-opacity hover:opacity-90 text-white" onClick={e => { e.stopPropagation(); addToProposalHint(bundle.name); }}>
-                  Add to proposal <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <Button size="sm" className="mt-4 w-full bg-tech transition-opacity hover:opacity-90 text-white" onClick={e => { e.stopPropagation(); addToProposalHint(bundle.name); }}>
+                    Add to proposal <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">

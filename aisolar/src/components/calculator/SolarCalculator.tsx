@@ -8,7 +8,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea, Tooltip } from 'recharts';
-import { Sun, TrendingUp, Zap, ArrowRight, Calculator, BatteryCharging, Leaf, Upload, Moon } from 'lucide-react';
+import { Sun, TrendingUp, Zap, ArrowRight, Calculator, BatteryCharging, Leaf, Moon } from 'lucide-react';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
 import { getPricingConfig } from '@/lib/pricing';
 import { eur } from '@/lib/seaiPipeline';
@@ -87,6 +87,7 @@ export default function SolarCalculator({
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
   const [nightPct, setNightPct] = useState(initialNightPct ?? 35);
+  const [email, setEmail] = useState('');
   // Multi-select: a roof can face more than one way (east+west dual pitch is
   // extremely common here). Never allow an empty set — fall back to keeping the
   // last face selected.
@@ -148,7 +149,7 @@ export default function SolarCalculator({
             Watch solar pay for itself
           </h1>
           <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-body">
-            Move the sliders and your estimate rebuilds live — grant, savings, payback, the lot.
+            Move the sliders and your estimate rebuilds live: grant, savings, payback, the lot.
             Then upload your bill and we run it on your real numbers.
           </p>
         </div>
@@ -157,12 +158,12 @@ export default function SolarCalculator({
       {/* The split: play left · full-glory estimate right */}
       <div className={`${showHeader ? 'mt-10' : ''} grid lg:grid-cols-2 gap-6 items-start`}>
         {/* ── LEFT · play ─────────────────────────────────────────── */}
-        <div className="rounded-panel bg-card shadow-card p-6 space-y-7">
+        <div className="rounded-panel bg-card shadow-card p-5 space-y-3">
           <div>
             <label className="text-sm font-medium mb-2 block">Your roof</label>
             <RoofDesigner panelWatts={cfg.panelWatts} onChange={({ panels, kwp, address }) => { setRoofPanels(panels); setRoofKwp(kwp); setRoofAddress(address); }} />
             {roofPanels > 0 && (
-              <p className="mt-2 text-xs font-medium text-doc-deposit">Room for about {roofPanels} panels here — a {roofKwp} kWp system, now in your estimate.</p>
+              <p className="mt-2 text-xs font-medium text-doc-deposit">Room for about {roofPanels} panels here, a {roofKwp} kWp system, now in your estimate.</p>
             )}
           </div>
 
@@ -208,9 +209,9 @@ export default function SolarCalculator({
             </div>
             <p className="text-2xs text-muted-foreground mt-1.5">
               {faces.includes('east') && faces.includes('west')
-                ? 'East + west splits the panels across both pitches — generation spreads from morning to evening instead of peaking at noon, so more of it gets used in the house.'
+                ? 'East and west splits the panels across both pitches, so generation spreads from morning to evening instead of peaking at noon, and more of it gets used in the house.'
                 : faces.length > 1
-                  ? `Panels split across ${faces.length} faces — we blend the yield accordingly.`
+                  ? `Panels split across ${faces.length} faces, so we blend the yield accordingly.`
                   : 'Most Irish homes have two pitches. Tap both if yours does.'}
             </p>
           </div>
@@ -229,22 +230,15 @@ export default function SolarCalculator({
             </span>
           </button>
 
-          {showUploadCta && (
-            <div className="rounded-panel bg-muted/40 p-3.5 flex items-center gap-3">
-              <Upload className="size-4 text-muted-foreground shrink-0" />
-              <p className="text-2xs text-muted-foreground flex-1">Sliders are an estimate. Upload your bill and we read up to 21 details for the exact numbers.</p>
-              <button onClick={goToStart} className="text-2xs font-semibold text-foreground underline underline-offset-2 shrink-0 hover:no-underline">Upload bill</button>
-            </div>
-          )}
         </div>
 
         {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
         <div className="rounded-panel bg-card shadow-card overflow-hidden">
-          <div className="px-6 pt-6 pb-5 border-b border-border">
+          <div className="px-6 pt-5 pb-4 border-b border-border">
             <p className="label-micro">Estimated 20-year saving</p>
-            <Money value={r.twentyYear} className="block mt-1 text-4xl sm:text-[44px] sm:leading-[48px] font-semibold tracking-tight text-doc-deposit tabular-nums" />
+            <Money value={r.twentyYear} className="block mt-1 text-3xl sm:text-4xl font-semibold tracking-tight text-doc-deposit tabular-nums" />
             <p className="mt-2 text-xs text-muted-foreground leading-body">
-              The SEAI grant takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span> — everything after that comes off your bills.
+              The SEAI grant takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. Everything after that comes off your bills.
             </p>
           </div>
 
@@ -266,7 +260,7 @@ export default function SolarCalculator({
               <p className="label-micro">Where you stand, year by year</p>
               <span className="text-2xs text-muted-foreground">20-yr view</span>
             </div>
-            <div className="h-40 -mx-4">
+            <div className="h-28 -mx-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={r.curve} margin={{ top: 14, right: 16, left: 16, bottom: 0 }}>
                   <defs>
@@ -304,19 +298,28 @@ export default function SolarCalculator({
           </div>
 
           {showUploadCta && (
-            <div className="p-4 pt-0">
-              <button onClick={goToStart}
-                className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                Get this on my real numbers <ArrowRight className="size-4" />
-              </button>
-              <p className="mt-2 text-2xs text-center text-muted-foreground">Free · no signup · we read up to 21 details off your bill</p>
+            <div className="p-4 pt-0 space-y-2">
+              <form onSubmit={(e) => { e.preventDefault(); goToStart(); }} className="flex gap-2">
+                <input
+                  type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="you@email.com" aria-label="Your email"
+                  className="min-w-0 flex-1 h-11 rounded-panel border border-border bg-background px-3.5 text-sm outline-none transition-colors focus:border-primary"
+                />
+                <button type="submit"
+                  className="shrink-0 inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white px-4 text-sm font-semibold hover:opacity-90 transition-opacity">
+                  Email me this <ArrowRight className="size-4" />
+                </button>
+              </form>
+              <p className="text-2xs text-center text-muted-foreground">
+                In your inbox in seconds. Loved that? <button type="button" onClick={goToStart} className="font-semibold text-doc-deposit underline underline-offset-2 hover:no-underline">Grab your bill</button> and we take it from a great estimate to exact, off 21 real details that carry straight to your installer.
+              </p>
             </div>
           )}
         </div>
       </div>
 
       <p className="text-2xs text-center text-muted-foreground mt-6 max-w-2xl mx-auto">
-        Estimate only — Irish retail rate €0.35/kWh, SEAI grant €700/kWp to 2 kWp then €200/kWp to 4 kWp (max €1,800), 70% self-consumption, 0% VAT.
+        Estimate only. Irish retail rate €0.35/kWh, SEAI grant €700/kWp to 2 kWp then €200/kWp to 4 kWp (max €1,800), 70% self-consumption, 0% VAT.
         Your real figures come off your bill at upload; actual savings vary with roof, shading and usage.
       </p>
     </div>

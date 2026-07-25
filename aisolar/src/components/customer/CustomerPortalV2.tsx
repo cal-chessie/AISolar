@@ -59,13 +59,19 @@ import {
   ChevronDown, ChevronUp, MessageSquare, Star, Shield,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
-import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
+import { getStage, PIPELINE_STAGES, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { AichatWordmark } from '@/components/brand/AiosMark';
 import PreSurveySnaps from './PreSurveySnaps';
 import SurveyBooking from './SurveyBooking';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
+import { isDemoMode, isDemoAvailable } from '@/lib/demoMode';
 import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
+
+// The staging DemoBanner renders a 28px in-flow spacer that pushes full-height
+// (h-dvh) routes down, so 100dvh overflows and the chat input drops below the
+// fold. Subtract that offset when the banner is present (never in production).
+const DEMO_BANNER_OFFSET = 28;
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -83,7 +89,7 @@ export default function CustomerPortalV2() {
     return leads.find(l => l.workflow_stage === 'approved') || leads[6];
   });
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => buildConversation(lead));
+  const [messages, setMessages] = useState<ChatMessage[]>(() => buildConversation(lead, { audience: 'customer' }));
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
@@ -134,6 +140,28 @@ export default function CustomerPortalV2() {
     setThinking(false);
   };
 
+  // Cal: "book call" is a CALL BACK, not a consultation booking — and it happens
+  // IN the chat, like the survey booking does. Drops the request into the thread
+  // and confirms a callback on their number; no detour to an external calendar.
+  const requestCallback = () => {
+    if (thinking) return;
+    const now = new Date().toISOString();
+    setMessages(prev => [...prev, {
+      id: `cb_${Date.now()}`, type: 'customer', body: 'Could someone give me a call back?', timestamp: now,
+    }]);
+    setThinking(true);
+    setTimeout(() => {
+      const who = lead.assigned_consultant?.split(' ')[0] || 'Your consultant';
+      setMessages(prev => [...prev, {
+        id: `cbr_${Date.now()}`, type: 'agent',
+        body: `Of course — ${who} will call you back today on ${lead.phone}. If another number suits you better, just reply here with it.`,
+        timestamp: new Date().toISOString(),
+      }]);
+      setThinking(false);
+    }, 800);
+    toast.success('Callback requested', { description: `We'll ring you on ${lead.phone}.` });
+  };
+
   const suggestedQuestions = [
     'When will my installation happen?',
     'How much will I save?',
@@ -143,44 +171,73 @@ export default function CustomerPortalV2() {
 
   const stage = getStage(lead.workflow_stage);
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
+  // Occupancy-driven savings — the same maths as the customer proposal, so the
+  // header and the proposal never show two different numbers.
+  const savings = useMemo(() => {
+    if (!lead.proposal) return 0;
+    const sc = selfConsumptionFromOccupancy({
+      occupants: lead.survey?.household_occupants,
+      homeDuringDay: lead.survey?.home_during_day,
+      hasBattery: !!lead.proposal.battery_model,
+    });
+    const prod = lead.proposal.system_size_kw * 950;
+    return Math.round(prod * sc * 0.35 + prod * (1 - sc) * 0.14);
+  }, [lead]);
 
   return (
-    <div className="h-dvh flex flex-col bg-background overflow-hidden">
-      {/* Header — project status */}
+    <div
+      className="flex flex-col overflow-hidden bg-background w-full"
+      style={{ height: `calc(100dvh - ${(isDemoAvailable() && isDemoMode()) ? DEMO_BANNER_OFFSET : 0}px)` }}
+    >
+      {/* Header — project status, progress, and the numbers that matter */}
       <header className="bg-background/95 backdrop-blur border-b flex-shrink-0">
-        <div className="px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AichatWordmark className="size-9 shrink-0" />
-            <div>
-              <div className="font-bold text-sm">AIChat <span className="font-normal text-muted-foreground">by AISolar</span></div>
-              <div className="text-[11px] text-muted-foreground">My Solar Project</div>
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <AichatWordmark className="size-9 shrink-0" />
+              <div className="min-w-0">
+                <div className="font-bold text-sm truncate">AIChat <span className="font-normal text-muted-foreground">by {brand.name}</span></div>
+                <div className="text-[11px] text-muted-foreground truncate">Hi {lead.name.split(' ')[0]}, here's your solar project</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="outline" className="text-xs bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30">{stage.label}</Badge>
+              <Button variant="ghost" size="sm" className="p-2" onClick={() => setShowRights(true)} aria-label="Your data rights">
+                <Shield className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs bg-tech/10 text-tech border-tech/30">
-              {stage.label}
-            </Badge>
-            <Button variant="ghost" size="sm" className="p-2" onClick={() => setShowRights(true)}>
-              <Shield className="h-4 w-4" />
-            </Button>
+          {/* Progress to solar */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[11px] mb-1">
+              <span className="text-muted-foreground">Your journey to solar</span>
+              <span className="font-semibold tabular-nums text-doc-deposit">{progressPct}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-doc-deposit transition-all duration-500" style={{ width: `${Math.max(6, progressPct)}%` }} />
+            </div>
           </div>
+          {/* The numbers, family-coloured */}
+          {lead.proposal && (
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {[
+                { label: 'System', value: `${lead.proposal.system_size_kw} kWp`, tone: 'text-tech' },
+                { label: 'You pay', value: eur(lead.proposal.net_cost), tone: 'text-foreground' },
+                { label: 'Payback', value: `${lead.proposal.payback_years} yr`, tone: 'text-foreground' },
+                { label: 'Saves / yr', value: eur(savings), tone: 'text-doc-deposit' },
+              ].map(s => (
+                <div key={s.label} className="rounded-control bg-muted/40 px-2 py-1.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">{s.label}</div>
+                  <div className={`text-sm font-semibold tabular-nums ${s.tone}`}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {/* Project summary strip */}
-        {lead.proposal && (
-          <div className="px-4 py-1.5 flex items-center gap-4 text-xs text-muted-foreground overflow-x-auto">
-            <span className="flex-shrink-0">{lead.proposal.system_size_kw} kWp</span>
-            <span className="flex-shrink-0">·</span>
-            <span className="flex-shrink-0">{eur(lead.proposal.net_cost)}</span>
-            <span className="flex-shrink-0">·</span>
-            <span className="flex-shrink-0">{lead.proposal.payback_years}yr payback</span>
-            <span className="flex-shrink-0">·</span>
-            <span className="flex-shrink-0 text-primary">{eur(lead.proposal.annual_savings)}/yr savings</span>
-          </div>
-        )}
       </header>
 
-      {/* Chat thread */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-card">
+      {/* Chat thread — full-width, fills the screen */}
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 bg-card">
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
         ))}
@@ -255,9 +312,10 @@ export default function CustomerPortalV2() {
           variant="outline"
           size="sm"
           className="flex-1 h-9 transition-colors"
-          onClick={() => window.open('https://cal.com/renewableireland/solar-consultation', '_blank')}
+          onClick={requestCallback}
+          disabled={thinking}
         >
-          <Calendar className="h-4 w-4 mr-1 text-doc-deposit" /> Book call
+          <Phone className="h-4 w-4 mr-1 text-doc-deposit" /> Call me back
         </Button>
       </div>
 
@@ -306,19 +364,19 @@ export default function CustomerPortalV2() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: 'Solar Proposal', desc: lead.proposal ? `${lead.proposal.system_size_kw}kWp · ${eur(lead.proposal.net_cost)}` : 'Ready after your survey', icon: FileText, available: !!lead.proposal, action: 'View' },
-                    { label: 'Contract', desc: lead.contract ? 'Signed' : 'Not yet', icon: FileText, available: !!lead.contract, action: lead.contract ? 'View' : 'Sign' },
-                    { label: 'Deposit Invoice', desc: lead.invoice ? `${eur(lead.invoice.deposit_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.deposit_paid ? 'Paid' : 'Pay' },
-                    { label: 'Final Invoice', desc: lead.invoice ? `${eur(lead.invoice.final_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.final_paid ? 'Paid' : 'Pay' },
-                    { label: 'Warranty', desc: ['installed','final_paid','completed'].includes(lead.workflow_stage) ? '10yr workmanship + 25yr panels' : 'After install', icon: Award, available: ['installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View' },
-                    { label: 'SEAI Application', desc: lead.workflow_stage === 'completed' ? 'Submitted' : 'In progress', icon: Zap, available: ['approved','deposit_paid','install_scheduled','installing','installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View' },
+                    { label: 'Solar Proposal', desc: lead.proposal ? `${lead.proposal.system_size_kw}kWp · ${eur(lead.proposal.net_cost)}` : 'Ready after your survey', icon: FileText, available: !!lead.proposal, action: 'View', edge: 'border-l-doc-proposal', chip: 'bg-doc-proposal/10 text-doc-proposal' },
+                    { label: 'Contract', desc: lead.contract ? 'Signed' : 'Not yet', icon: FileText, available: !!lead.contract, action: lead.contract ? 'View' : 'Sign', edge: 'border-l-doc-contract', chip: 'bg-doc-contract/10 text-doc-contract' },
+                    { label: 'Deposit Invoice', desc: lead.invoice ? `${eur(lead.invoice.deposit_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.deposit_paid ? 'Paid' : 'Pay', edge: 'border-l-doc-deposit', chip: 'bg-doc-deposit/10 text-doc-deposit' },
+                    { label: 'Final Invoice', desc: lead.invoice ? `${eur(lead.invoice.final_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.final_paid ? 'Paid' : 'Pay', edge: 'border-l-doc-invoice', chip: 'bg-doc-invoice/10 text-doc-invoice' },
+                    { label: 'Warranty', desc: ['installed','final_paid','completed'].includes(lead.workflow_stage) ? '10yr workmanship + 25yr panels' : 'After install', icon: Award, available: ['installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View', edge: 'border-l-tech', chip: 'bg-tech-subtle text-tech' },
+                    { label: 'SEAI Application', desc: lead.workflow_stage === 'completed' ? 'Submitted' : 'In progress', icon: Zap, available: ['approved','deposit_paid','install_scheduled','installing','installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View', edge: 'border-l-tech', chip: 'bg-tech-subtle text-tech' },
                   ].map((doc, i) => {
                     const Icon = doc.icon;
                     return (
-                      <Card key={i} className={`shadow-sm ${!doc.available ? 'opacity-50' : ''}`}>
+                      <Card key={i} className={`shadow-sm border-l-4 ${doc.edge} ${!doc.available ? 'opacity-50' : ''}`}>
                         <CardContent className="p-3 flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-muted">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
+                          <div className={`p-2 rounded-lg ${doc.chip}`}>
+                            <Icon className="h-4 w-4" />
                           </div>
                           <div className="flex-1">
                             <div className="font-medium text-sm">{doc.label}</div>

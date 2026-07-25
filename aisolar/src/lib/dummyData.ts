@@ -36,6 +36,8 @@ export interface DummyLead {
     scheduled_date: string;
     completed_date?: string;
     surveyor: string;
+    household_occupants?: string;
+    home_during_day?: string;
     roof_type: string;
     roof_orientation: string;
     roof_pitch: number;
@@ -328,6 +330,8 @@ export function generateDummyLeads(): DummyLead[] {
         scheduled_date: (s as any).surveyDate || isoFuture(idx),
         completed_date: ['survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx + 1) : undefined,
         surveyor: s.installer?.name || 'Unassigned',
+        household_occupants: ['2', '4', '3', '5+'][idx % 4],
+        home_during_day: ['usually', 'out', 'mixed', 'usually'][idx % 4],
         roof_type: idx % 2 === 0 ? 'concrete_tile' : 'slate',
         roof_orientation: idx % 2 === 0 ? 'south' : 'south_west',
         roof_pitch: 30 + (idx % 3) * 5,

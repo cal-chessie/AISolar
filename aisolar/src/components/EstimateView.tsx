@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
-import { calculateSEAI } from '@/lib/seaiPipeline';
+import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
 import DocumentActions from '@/components/consultant/DocumentActions';
 
@@ -29,7 +29,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
   });
   const seai = calculateSEAI({
     systemSizeKw: estimate.systemSizeKw,
-    propertyType: 'domestic',
+    propertyType: seaiPropertyType((lead.intake as Record<string, unknown>)?.property_type as string),
     installType: 'retrofit',
     annualKwhUsage: estimate.annualKwh,
     annualProductionKwh: estimate.annualProductionKwh,

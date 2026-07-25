@@ -151,7 +151,7 @@ export default function RoofDesigner({
         <p className="mt-2 text-2xs text-muted-foreground">Google doesn't have this roof yet (common in rural Ireland) — draw it on the map instead, it's just as good.</p>
       )}
 
-      <div ref={boxRef} className="relative mt-2 rounded-panel overflow-hidden border border-border bg-muted select-none" style={{ height: 240 }}>
+      <div ref={boxRef} className="relative mt-2 h-[280px] sm:h-[300px] lg:h-[240px] rounded-panel overflow-hidden border border-border bg-muted select-none">
         {/* fallback backdrop if the embed is blocked */}
         <div className="absolute inset-0 grid place-items-center text-2xs text-muted-foreground">Loading satellite…</div>
         <iframe
@@ -236,7 +236,7 @@ export default function RoofDesigner({
           <p className="text-2xs font-semibold">Line it up with your roof</p>
           <div className="flex items-center gap-2.5">
             <span className="text-2xs text-muted-foreground shrink-0 w-24">Match the angle</span>
-            <input type="range" min={-45} max={45} step={1} value={rotation}
+            <input type="range" min={-90} max={90} step={1} value={rotation}
               onChange={e => setRotation(Number(e.target.value))}
               aria-label="Rotate the panel layout to match your roof angle"
               className="flex-1 accent-primary cursor-pointer" />

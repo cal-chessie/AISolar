@@ -38,11 +38,13 @@ import {
   Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock, UserPlus, Pencil } from 'lucide-react';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 import LeadFormDialog, { leadFromForm, type LeadFormValues } from '@/components/leads/LeadFormDialog';
-import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
+import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
+import ConsultantInsights from '@/components/consultant/ConsultantInsights';
+import { TONE, PHASE_TONE } from '@/components/consultant/cockpitUi';
 import EngagementBadge from '@/components/consultant/EngagementBadge';
 import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
@@ -131,7 +133,6 @@ export default function ConsultantCockpitV5() {
   const [leadListOpen, setLeadListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const stats = useMemo(() => computePipelineStats(leads), [leads]);
   const messages = useMemo(() => selectedLead ? buildConversation(selectedLead) : [], [selectedLead]);
 
   // Stale + hot lead detection (used by Inbox filters + auto-select)
@@ -389,7 +390,7 @@ export default function ConsultantCockpitV5() {
               )}
             </AnimatePresence>
           ) : (
-            <div className="w-72 lg:w-80 flex-shrink-0 border-r flex flex-col hidden lg:flex">
+            <div className="w-64 lg:w-80 flex-shrink-0 border-r hidden md:flex flex-col">
               <LeadListContent
                 search={search} setSearch={setSearch}
                 inboxFilter={inboxFilter} setInboxFilter={setInboxFilter}
@@ -641,64 +642,10 @@ export default function ConsultantCockpitV5() {
               )}
 
               {activeTab === 'insights' && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <StatBox label="Active leads" value={String(stats.activeLeads)} icon={Users} color="blue" />
-                    <StatBox label="Pipeline" value={eur(stats.totalValue)} icon={DollarSign} color="emerald" />
-                    <StatBox label="Conversion" value={`${Math.round((leads.filter(l => l.contract).length / leads.length) * 100)}%`} icon={TrendingUp} color="violet" />
-                    <StatBox label="Stale" value={String(stats.staleLeads)} icon={Clock} color="pending" />
-                  </div>
-                  {/* Rebuilt (Cal, Last List item 16): 13 identical bars said
-                      nothing. Six PHASES with money + the family colours, and
-                      a where-to-act strip — a consultant reads this in 5s. */}
-                  <div className="rounded-panel bg-card shadow-card p-4">
-                    <h4 className="label-micro mb-3">Where the pipeline stands</h4>
-                    <div className="space-y-2">
-                      {STAGE_GROUPS.map(g => {
-                        const groupLeads = leads.filter(l => PIPELINE_STAGES.find(ps => ps.id === l.workflow_stage)?.group === g.id);
-                        const value = groupLeads.reduce((sum, l) => sum + (l.proposal?.net_cost ?? 0), 0);
-                        const max = Math.max(1, ...STAGE_GROUPS.map(gg => leads.filter(l => PIPELINE_STAGES.find(ps => ps.id === l.workflow_stage)?.group === gg.id).length));
-                        const tone = g.id === 'proposal' ? 'bg-doc-proposal' : g.id === 'contract' ? 'bg-doc-contract' : g.id === 'install' ? 'bg-tech' : g.id === 'closeout' ? 'bg-doc-deposit' : 'bg-foreground/60';
-                        return (
-                          <div key={g.id} className="flex items-center gap-3">
-                            <div className="w-20 text-xs font-medium">{g.label}</div>
-                            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${tone}`} style={{ width: `${(groupLeads.length / max) * 100}%` }} />
-                            </div>
-                            <span className="text-xs font-semibold tabular-nums w-5 text-right">{groupLeads.length}</span>
-                            <span className="text-2xs text-muted-foreground tabular-nums w-16 text-right">{value ? eur(value) : '—'}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Where to act now */}
-                  <div className="rounded-panel bg-card shadow-card p-4">
-                    <h4 className="label-micro mb-2">Act on this</h4>
-                    <div className="space-y-1.5">
-                      {hotLeads.slice(0, 2).map(l => (
-                        <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-control hover:bg-muted/50 text-left text-xs">
-                          <Flame className="size-3.5 text-pop shrink-0" />
-                          <span className="font-medium">{l.name}</span>
-                          <span className="text-muted-foreground truncate">is hot — {getStage(l.workflow_stage).label.toLowerCase()}</span>
-                          {l.proposal && <span className="ml-auto font-semibold tabular-nums">{eur(l.proposal.net_cost)}</span>}
-                        </button>
-                      ))}
-                      {staleLeads.slice(0, 2).map(l => (
-                        <button key={l.id} onClick={() => { setSelectedLead(l); setActiveTab('inbox'); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-control hover:bg-muted/50 text-left text-xs">
-                          <Clock className="size-3.5 text-doc-proposal shrink-0" />
-                          <span className="font-medium">{l.name}</span>
-                          <span className="text-muted-foreground truncate">has gone quiet — 5+ days</span>
-                        </button>
-                      ))}
-                      {hotLeads.length === 0 && staleLeads.length === 0 && (
-                        <p className="text-xs text-muted-foreground p-1">Nothing urgent — the pipeline is moving on its own.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <ConsultantInsights
+                  leads={leads}
+                  onOpenLead={(lead) => { setSelectedLead(lead); setActiveTab('inbox'); }}
+                />
               )}
 
             </div>
@@ -732,7 +679,7 @@ export default function ConsultantCockpitV5() {
             <div className="p-3">
               <Suspense fallback={<CardListSkeleton count={3} />}>
                 {slideOutView === 'estimate' && <EstimateView lead={selectedLead} onOpenProposal={() => setSlideOutView('proposal')} />}
-                {slideOutView === 'proposal' && <ProposalView lead={selectedLead} />}
+                {slideOutView === 'proposal' && <ProposalView key={selectedLead?.id} lead={selectedLead} />}
               </Suspense>
             </div>
           </motion.div>
@@ -804,7 +751,7 @@ function LeadListContent({
                 onClick={() => setInboxFilter(f.id)}
                 className={`text-[11px] px-2 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                   isActive
-                    ? 'bg-primary text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/70'
                 }`}
               >
@@ -845,8 +792,12 @@ function LeadListContent({
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{last?.summary || 'No messages'}</div>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Badge variant="outline" className={`text-[11px] bg-primary/10 text-primary border-primary/40`}>{getStage(lead.workflow_stage).label}</Badge>
-                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-red-500" />}
+                    {(() => {
+                      const group = PIPELINE_STAGES.find(s => s.id === lead.workflow_stage)?.group ?? 'intake';
+                      const t = TONE[PHASE_TONE[group] ?? 'neutral'];
+                      return <Badge variant="outline" className={`text-[11px] ${t.chip} border-transparent`}>{getStage(lead.workflow_stage).label}</Badge>;
+                    })()}
+                    {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-pop" />}
                     <EngagementBadge lead={lead} compact />
                   </div>
                 </div>
@@ -866,7 +817,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
   const isCustomer = message.type === 'customer';
   const isAI = message.type === 'ai';
   const isAgent = message.type === 'agent';
-  const bg = isCustomer ? 'bg-primary text-white rounded-br-sm' : isAI ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : isAgent ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
+  const bg = isCustomer ? 'bg-primary text-primary-foreground rounded-br-sm' : isAI ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : isAgent ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-bl-sm' : 'bg-muted text-foreground rounded-bl-sm';
   const label = isCustomer ? 'Customer' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : 'Consultant';
   const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
   const ActionIcon = message.actionIcon;
@@ -887,7 +838,7 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
           {message.actionLabel && ActionIcon && (
             <button
               onClick={() => onAction?.(message.actionData)}
-              className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-white/90' : 'text-primary dark:text-primary'} hover:underline`}
+              className={`mt-2 flex items-center gap-1 text-xs font-medium ${isCustomer ? 'text-primary-foreground/90' : 'text-primary dark:text-primary'} hover:underline`}
             >
               <ActionIcon className="h-3 w-3" />
               {message.actionLabel}
@@ -930,15 +881,6 @@ function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?:
         )}
       </div>
     </motion.div>
-  );
-}
-
-function StatBox({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Users; color: string }) {
-  return (
-    <Card><CardContent className="p-3">
-      <div className="flex items-center gap-2 mb-1"><div className={`p-1 rounded bg-primary/10 dark:bg-primary/10`}><Icon className={`h-3 w-3 text-primary dark:text-primary`} /></div><span className="text-[11px] text-muted-foreground">{label}</span></div>
-      <div className="text-lg font-bold">{value}</div>
-    </CardContent></Card>
   );
 }
 

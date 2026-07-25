@@ -16,6 +16,7 @@ import {
   Receipt, Award, Wrench, PackageCheck, AlarmClock, Inbox, Mail,
 } from 'lucide-react';
 import { MarketingNav, MarketingFooter } from '@/components/marketing/MarketingShell';
+import { DoesntMiss } from '@/components/marketing/DoesntMiss';
 import SEOHead from '@/components/SEOHead';
 import { AichatWordmark, AiteamWordmark } from '@/components/brand/AiosMark';
 
@@ -336,6 +337,24 @@ export default function AiTeamPageV2() {
             </div>
           </div>
         </section>
+
+        {/* The reel — "AITeam doesn't miss on X" (cal.com, Cal loved it) */}
+        <DoesntMiss
+          subject="AITeam"
+          accentClass="text-doc-deposit"
+          features={[
+            'grant tracking',
+            'follow-ups',
+            'survey booking',
+            'proposal drafts',
+            'payment chasing',
+            'the install',
+            'the weekly digest',
+            'approval gates',
+            'stalled leads',
+            'the audit trail',
+          ]}
+        />
 
         {/* Final CTA */}
         <section className="mx-auto max-w-6xl px-5 pb-16 lg:pb-24">

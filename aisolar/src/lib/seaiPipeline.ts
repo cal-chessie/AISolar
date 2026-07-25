@@ -104,6 +104,17 @@ export const SEAI_RATES = {
  *   €700/kWp for the first 2 kWp, €200/kWp for 2–4 kWp, capped €1,800 (at 4 kWp).
  * (Was wrongly modelled as flat €900/kWp cap €1,800, which overstated small systems.)
  */
+/**
+ * Map a survey/intake building-type string to the SEAI property type, so the
+ * "What kind of building is this?" answer actually drives the grant:
+ *   residential / home  → domestic  (tiered €700/€200, cap €1,800)
+ *   commercial / farm / industrial → commercial (NDMG, cap €162,600)
+ * A 12 kWp domestic install caps at €1,800; the same 12 kWp commercial is ~€4,800.
+ */
+export function seaiPropertyType(raw?: string | null): PropertyType {
+  return /commercial|industrial|farm|non.?domestic|business/i.test(raw ?? '') ? 'commercial' : 'domestic';
+}
+
 export function domesticSolarGrant(kwp: number): number {
   const g = Math.min(kwp, 2) * 700 + Math.max(0, Math.min(kwp, 4) - 2) * 200;
   return Math.min(Math.round(g), 1800);

@@ -313,7 +313,7 @@ function SidebarContent({
               key={item.id}
               onClick={() => onSelectView(item.id)}
               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                isActive ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <Icon className="h-3.5 w-3.5 flex-shrink-0" />
@@ -748,7 +748,7 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold">{lead.name}</h1>
-                  <Badge className={`bg-primary text-white text-[11px]`}>{stage.label}</Badge>
+                  <Badge className={`bg-primary text-primary-foreground text-[11px]`}>{stage.label}</Badge>
                   {lead.score > 80 && <Badge className="bg-pop text-white text-[11px]"><Flame className="h-2 w-2 mr-0.5" /> Hot</Badge>}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
@@ -974,7 +974,7 @@ function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: (
       {/* Tab content */}
       <Suspense fallback={<CardListSkeleton count={4} />}>
         {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
-        {tab === 'proposal' && <ProposalView lead={lead} />}
+        {tab === 'proposal' && <ProposalView key={lead.id} lead={lead} />}
         {tab === 'timeline' && (
           <div className="rounded-panel bg-card shadow-card p-4">
               {/* Cal: ALL agents involved + ALL touchpoints — the complete log */}

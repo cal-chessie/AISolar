@@ -31,7 +31,7 @@ import {
   Send, MessageSquare,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
-import { calculateSEAI } from '@/lib/seaiPipeline';
+import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 import { systemCost, getPricingConfig } from '@/lib/pricing';
 import { brand } from '@/config/brand';
@@ -43,6 +43,10 @@ import { SpinnerSkeleton } from '@/components/ui/SuspenseFallbacks';
 const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
 // The send step embeds the REAL customer artifact as a live preview
 import CustomerProposal from '@/components/customer/CustomerProposal';
+// The design step is the studio — real Google-Solar roof + live sizing + gear
+import DesignStudio from '@/components/leadflow/DesignStudio';
+// Shared family design system (KPI tiles, tones) — one look across every surface
+import { Kpi, eurCompact } from '@/components/consultant/cockpitUi';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -119,18 +123,24 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
     });
   }, [lead, billOverride]);
 
+  // The building type drives the grant (domestic cap €1,800 vs commercial NDMG).
+  // Read from the survey's answer when we have it, else the lead, else domestic.
+  const propertyType = seaiPropertyType(
+    surveyData.property_type ?? (lead.survey as any)?.property_type ?? (lead.intake as any)?.property_type,
+  );
+
   // Calculate SEAI from design data
   const seai = useMemo(() => {
     return calculateSEAI({
       systemSizeKw: designData.panelCount * 0.435, // 435W panels
-      propertyType: 'domestic',
+      propertyType,
       installType: 'retrofit',
       annualKwhUsage: lead.annual_kwh || estimate.annualKwh,
       annualProductionKwh: designData.panelCount * 0.435 * 950,
       selfConsumptionPct: 0.7,
       netCost: estimate.netCost,
     });
-  }, [designData, lead, estimate]);
+  }, [designData, lead, estimate, propertyType]);
 
   // One pricing model for every screen (src/lib/pricing.ts, tenant-configurable) —
   // the design step and the estimate now land on the SAME number.
@@ -196,16 +206,16 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                     // it proves necessary.
                     onClick={() => setStep(s.id)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
-                      isActive ? 'bg-primary text-white' :
-                      isDone ? 'bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary' :
-                      'text-muted-foreground'
+                      isActive ? 'bg-primary text-primary-foreground' :
+                      isDone ? 'bg-doc-deposit/15 text-doc-deposit' :
+                      'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {isDone ? <CheckCircle2 className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
                     <span className="hidden sm:inline">{s.label}</span>
                   </button>
                   {i < STEPS.length - 1 && (
-                    <div className={`h-0.5 flex-1 ${i < stepIndex ? 'bg-primary' : 'bg-muted'}`} />
+                    <div className={`h-0.5 flex-1 transition-colors ${i < stepIndex ? 'bg-doc-deposit' : 'bg-muted'}`} />
                   )}
                 </div>
               );
@@ -214,10 +224,17 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6 pb-20">
+      <main className={`mx-auto px-4 py-4 pb-10 ${['estimate', 'survey', 'design'].includes(step) ? 'max-w-6xl' : 'max-w-5xl'}`}>
           {/* === STEP 1: ESTIMATE === */}
           {step === 'estimate' && (
             <div key="estimate">
+              {/* The estimate in four numbers — on the family palette, so the money sings */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                <Kpi tone="tech" icon={<Sun />} value={`${estimate.systemSizeKw} kWp`} label="Recommended system" />
+                <Kpi tone="deposit" icon={<TrendingUp />} value={eurCompact(estimate.annualSavings)} label="Saved / yr (est.)" />
+                <Kpi tone="proposal" icon={<Award />} value={eurCompact(seaiGrant)} label="SEAI grant" />
+                <Kpi tone="neutral" icon={<Clock />} value={`${estimate.paybackYears} yr`} label="Payback" />
+              </div>
               <div className="grid lg:grid-cols-2 gap-4">
                 {/* Left: Estimate details */}
                 <div className="space-y-4">
@@ -262,13 +279,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           <span className="text-muted-foreground">MPRN</span>
                           <span className="font-mono text-xs">{lead.mprn || 'Not extracted'}</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
+                        <div className="flex justify-between p-2 bg-tech-subtle rounded">
                           <span className="text-muted-foreground">Recommended system</span>
-                          <span className="font-bold text-primary dark:text-primary">{estimate.systemSizeKw} kWp</span>
+                          <span className="font-bold text-tech">{estimate.systemSizeKw} kWp</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
+                        <div className="flex justify-between p-2 bg-doc-deposit/10 rounded">
                           <span className="text-muted-foreground">Annual savings</span>
-                          <span className="font-bold text-primary dark:text-primary">{eurFmt(estimate.annualSavings)}</span>
+                          <span className="font-bold text-doc-deposit">{eurFmt(estimate.annualSavings)}</span>
                         </div>
                         <div className="flex justify-between p-2 bg-muted/30 rounded">
                           <span className="text-muted-foreground">Payback</span>
@@ -278,9 +295,9 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           <span className="text-muted-foreground">20-year savings</span>
                           <span className="font-semibold">{eurFmt(estimate.twentyYearSavings)}</span>
                         </div>
-                        <div className="flex justify-between p-2 bg-primary/10 dark:bg-primary/10 rounded">
+                        <div className="flex justify-between p-2 bg-doc-proposal-subtle rounded">
                           <span className="text-muted-foreground">SEAI grant</span>
-                          <span className="font-bold text-primary dark:text-primary">{eurFmt(seaiGrant)}</span>
+                          <span className="font-bold text-doc-proposal">{eurFmt(seaiGrant)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -319,13 +336,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 
                 {/* Right: Calendar booking */}
                 <div className="space-y-4">
-                  <Card className="border-pop/30 bg-pop/[0.04]">
+                  <Card className="border-l-4 border-l-tech">
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" /> Book site survey
+                        <Calendar className="h-4 w-4 text-tech" /> Book site survey
                       </h3>
                       <p className="text-xs text-muted-foreground mb-3">
-                        The estimate is ready — a survey confirms the roof and locks the design. Surveys book as half-day windows, not clock times.
+                        The estimate is ready. A survey confirms the roof and locks the design. Surveys book as half-day windows, not clock times.
                       </p>
                       {/* three ways in */}
                       <div className="flex gap-1 mb-3">
@@ -347,7 +364,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                                 const label = d.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' });
                                 return (
                                   <button key={label} onClick={() => { setBookDay(label); setSurveyBooked(bookWindow ? { slot: `${label} · ${bookWindow}` } : null); }}
-                                    className={`p-1.5 rounded-control text-xs border transition-colors ${bookDay === label ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                    className={`p-1.5 rounded-control text-xs border transition-colors ${bookDay === label ? 'border-tech bg-tech-subtle font-medium text-tech' : 'border-border hover:bg-muted/50'}`}>
                                     {label}
                                   </button>
                                 );
@@ -356,7 +373,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                             <div className="grid grid-cols-2 gap-1.5">
                               {(['Morning', 'Afternoon'] as const).map(w => (
                                 <button key={w} onClick={() => { setBookWindow(w); setSurveyBooked(bookDay ? { slot: `${bookDay} · ${w}` } : null); }}
-                                  className={`p-1.5 rounded-control text-xs border transition-colors ${bookWindow === w ? 'border-pop bg-pop/10 font-medium' : 'border-border hover:bg-muted/50'}`}>
+                                  className={`p-1.5 rounded-control text-xs border transition-colors ${bookWindow === w ? 'border-tech bg-tech-subtle font-medium text-tech' : 'border-border hover:bg-muted/50'}`}>
                                   {w === 'Morning' ? 'Morning · 8–1' : 'Afternoon · 1–6'}
                                 </button>
                               ))}
@@ -372,18 +389,18 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                               <input type="checkbox" defaultChecked className="h-3.5 w-3.5 rounded" /> {opt}
                             </label>
                           ))}
-                          <p className="text-2xs text-muted-foreground">{lead.name.split(' ')[0]} picks in their chat — or counters with what suits. Nothing books until both sides agree.</p>
+                          <p className="text-2xs text-muted-foreground">{lead.name.split(' ')[0]} picks in their chat, or counters with what suits. Nothing books until both sides agree.</p>
                         </div>
                       )}
 
                       {bookMode === 'first' && (
                         <div className="p-2.5 rounded-control bg-muted/40 text-xs">
-                          Next real gap: <strong>{(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' }); })()} · Morning</strong> — from the surveyor's calendar, never an offered time it can't hold.
+                          Next real gap: <strong>{(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' }); })()} · Morning</strong>, straight from the surveyor's calendar, never an offered time it can't hold.
                         </div>
                       )}
 
                       <Button
-                        className="w-full mt-3 bg-pop text-pop-foreground transition-colors hover:bg-pop/90"
+                        className="w-full mt-3 h-control"
                         disabled={bookMode === 'pick' && !surveyBooked}
                         onClick={() => {
                           const label = bookMode === 'options' ? 'options sent'
@@ -391,11 +408,11 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                             : surveyBooked!.slot;
                           if (bookMode === 'options') {
                             toast.success(`Survey options sent to ${lead.name.split(' ')[0]}`, {
-                              description: 'They pick in their chat — the scheduler confirms and books the calendar.',
+                              description: 'They pick in their chat, then the scheduler confirms and books the calendar.',
                             });
                           } else {
                             setSurveyBooked({ slot: label });
-                            toast.success(`Site survey booked — ${label}`, {
+                            toast.success(`Site survey booked for ${label}`, {
                               description: `Survey Scheduler Agent will confirm with ${lead.name}.`,
                             });
                           }
@@ -449,29 +466,27 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                   }}
                 />
               </Suspense>
-              <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={() => setStep('estimate')} className="h-12">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to estimate
-                </Button>
-              </div>
+              {/* No extra "back" button — the survey's own footer nav and the top
+                  pipeline stepper both move between stages. */}
             </div>
           )}
 
           {/* === STEP 3: DESIGN === */}
           {step === 'design' && (
             <div key="design">
-              <DesignStep
+              <DesignStudio
                 lead={lead}
                 designData={designData}
                 setDesignData={setDesignData}
                 estimate={estimate}
               />
-              <div className="mt-6 flex justify-between">
-                <Button variant="outline" onClick={() => setStep('survey')} className="h-12">
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <Button variant="outline" onClick={() => setStep('survey')} className="h-11">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
-                <Button onClick={() => setStep('proposal')} className="bg-primary transition-colors hover:bg-primary h-12 px-6">
-                  Continue to proposal <ArrowRight className="h-4 w-4 ml-2" />
+                <Button onClick={() => setStep('proposal')} className="h-11 px-6 font-semibold">
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Design done, build the proposal
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
@@ -813,7 +828,7 @@ function DesignStep({ lead, designData, setDesignData, estimate }: {
                   {Array.from({ length: designData.panelCount }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-primary border border-primary/40 rounded-sm flex items-center justify-center text-[7px] text-white font-bold hover:bg-primary cursor-pointer transition-colors"
+                      className="bg-primary border border-primary/40 rounded-sm flex items-center justify-center text-[7px] text-primary-foreground font-bold hover:bg-primary cursor-pointer transition-colors"
                       onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
                       title={`Panel ${i + 1}`}
                     />

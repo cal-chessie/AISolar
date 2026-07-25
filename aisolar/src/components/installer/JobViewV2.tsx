@@ -277,7 +277,7 @@ export default function JobViewV2() {
           </div>
           {/* Completion status badge */}
           {overallComplete ? (
-            <Badge className="bg-primary text-white">
+            <Badge className="bg-primary text-primary-foreground">
               <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
             </Badge>
           ) : (

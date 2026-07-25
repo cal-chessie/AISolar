@@ -7,7 +7,7 @@ export interface SurveyCompletionStatus {
   sections: {
     roof: { complete: boolean; fields: string[] };
     electrical: { complete: boolean; fields: string[] };
-    recommendations: { complete: boolean; fields: string[] };
+    occupancy: { complete: boolean; fields: string[] };
     photos: { complete: boolean; count: number; required: number };
   };
 }
@@ -21,8 +21,10 @@ export interface SurveyData {
   electrical_panel_capacity?: string;
   electrical_panel_condition?: string;
   grid_connection_type?: string;
-  recommended_system_size?: number | string;
-  recommended_panel_count?: number | string;
+  // Occupancy is the hero: it drives self-consumption, so it's required for a
+  // real savings number. Gear (system size / panel count) lives in the Studio.
+  household_occupants?: string;
+  home_during_day?: string;
   shading_analysis?: string;
   installation_notes?: string;
   special_requirements?: string;
@@ -55,24 +57,24 @@ export function validateSurveyCompletion(
   if (!surveyData.electrical_panel_capacity) electricalFields.push('Panel Capacity');
   if (!surveyData.grid_connection_type) electricalFields.push('Grid Connection Type');
   
-  // Recommendations section (required: system size, panel count)
-  const recommendationsFields: string[] = [];
-  if (!surveyData.recommended_system_size) recommendationsFields.push('Recommended System Size');
-  if (!surveyData.recommended_panel_count) recommendationsFields.push('Recommended Panel Count');
-  
+  // Occupancy section (the hero — required: how many, who's home in the day)
+  const occupancyFields: string[] = [];
+  if (!surveyData.household_occupants) occupancyFields.push('Household occupants');
+  if (!surveyData.home_during_day) occupancyFields.push('Daytime occupancy');
+
   // Photo requirements (minimum 2 photos)
   const requiredPhotos = 2;
   const photosComplete = photoCount >= requiredPhotos;
-  
+
   // Combine all missing fields
-  missingFields.push(...roofFields, ...electricalFields, ...recommendationsFields);
+  missingFields.push(...roofFields, ...electricalFields, ...occupancyFields);
   if (!photosComplete) {
     missingFields.push(`At least ${requiredPhotos} photos required (${photoCount} uploaded)`);
   }
-  
+
   // Calculate completion percentage
-  const totalRequiredFields = 9; // 5 roof + 2 electrical + 2 recommendations
-  const completedFields = totalRequiredFields - (roofFields.length + electricalFields.length + recommendationsFields.length);
+  const totalRequiredFields = 9; // 5 roof + 2 electrical + 2 occupancy
+  const completedFields = totalRequiredFields - (roofFields.length + electricalFields.length + occupancyFields.length);
   const fieldPercentage = (completedFields / totalRequiredFields) * 80; // Fields worth 80%
   const photoPercentage = photosComplete ? 20 : (photoCount / requiredPhotos) * 20; // Photos worth 20%
   const completionPercentage = Math.round(fieldPercentage + photoPercentage);
@@ -86,7 +88,7 @@ export function validateSurveyCompletion(
     sections: {
       roof: { complete: roofFields.length === 0, fields: roofFields },
       electrical: { complete: electricalFields.length === 0, fields: electricalFields },
-      recommendations: { complete: recommendationsFields.length === 0, fields: recommendationsFields },
+      occupancy: { complete: occupancyFields.length === 0, fields: occupancyFields },
       photos: { complete: photosComplete, count: photoCount, required: requiredPhotos }
     }
   };

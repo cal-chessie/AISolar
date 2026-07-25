@@ -51,7 +51,7 @@ All colors MUST be HSL.
        Product/catalogue uses the same tech blue as contract. */
     --tech:            212 88% 48%;    /* tech blue — contracts, products */
     --tech-subtle:     212 90% 96%;
-    --doc-proposal:     38 82% 47%;    /* amber-gold */
+    --doc-proposal:     38 82% 47%;    /* gold — readable on white (yellow failed the white test) */
     --doc-proposal-subtle: 40 90% 95%;
     --doc-contract:    212 88% 48%;    /* blue */
     --doc-contract-subtle: 212 90% 96%;
@@ -76,8 +76,8 @@ All colors MUST be HSL.
     --brand-aisolar-subtle: 358 80% 96%;
     --brand-aiteam:    152 52% 40%;    /* green */
     --brand-aiteam-subtle: 152 45% 95%;
-    --brand-accent:     38 82% 47%;    /* yellow/amber-gold */
-    --brand-accent-subtle: 40 90% 95%;
+    --brand-accent:     50 98% 52%;    /* TRUE yellow — was hue-38 amber; Cal: amber is OUT, family is red/yellow/blue/green */
+    --brand-accent-subtle: 50 95% 92%;
 
     --border: 240 5% 89%;              /* barely-there; cards float on shadow */
     --input: 240 5% 89%;
@@ -168,7 +168,7 @@ All colors MUST be HSL.
     /* Semantic doc/status hues — lifted for legibility on charcoal, deep washes */
     --tech:            210 90% 62%;
     --tech-subtle:     212 45% 18%;
-    --doc-proposal:     40 90% 60%;
+    --doc-proposal:     40 90% 60%;    /* gold — readable (yellow failed the white test) */
     --doc-proposal-subtle: 38 45% 17%;
     --doc-contract:    210 90% 62%;
     --doc-contract-subtle: 212 45% 18%;

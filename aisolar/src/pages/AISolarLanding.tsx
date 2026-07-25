@@ -544,15 +544,17 @@ export default function AISolarLanding() {
         <Hero />
         <Trust />
         <HowItWorks />
-        <section className="border-y border-border bg-card/40">
-          <div className="mx-auto max-w-6xl px-5 pt-16 lg:pt-24 text-center">
-            <p className="label-micro">Try it now</p>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">See it on your own roof</h2>
-            <p className="mt-3 max-w-xl mx-auto text-muted-foreground leading-body">
-              Draw your roof, size the system, watch the savings build — live. No signup, no sales call.
-            </p>
+        <section className="border-y border-border bg-card/40 py-12 lg:py-16">
+          <div className="mx-auto max-w-7xl px-5">
+            <div className="text-center">
+              <p className="label-micro">Try it now</p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">See it on your own roof</h2>
+              <p className="mt-3 max-w-xl mx-auto text-muted-foreground leading-body">
+                Draw your roof, size the system, watch the savings build live. No signup, no sales call.
+              </p>
+            </div>
+            <div className="mt-8"><SolarCalculator showHeader={false} /></div>
           </div>
-          <SolarCalculator showHeader={false} />
         </section>
         <Benefits />
         <AISalesShowcase />

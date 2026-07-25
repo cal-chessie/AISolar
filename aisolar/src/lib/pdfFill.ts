@@ -11,10 +11,12 @@
  *     appended typed page carrying every captured field — bill read, survey,
  *     design, tenant — laid out A4-clean. The installer transcribes or
  *     staples; nothing is ever mis-placed on ESB's own pages.
- *  2. COORDINATE OVERLAY (calibration queued): OVERLAY_MAPS below take
- *     {page,x,y} per field and draw straight into the form's boxes. Filling
- *     the maps is a render-verify loop per form revision — precision work,
- *     done once per form, then every job fills itself.
+ *  2. COORDINATE OVERLAY (calibrated + verified, commit ca6f232): OVERLAY_MAPS
+ *     below take {page,x,y} per field and draw straight into the form's boxes.
+ *     Coordinates are MEASURED, not guessed — scripts/pdf-probe.mjs dumps each
+ *     ESB label's baseline, scripts/pdf-verify.mjs draws the values and fails on
+ *     overlap with ESB's own wording. 12/12 NC6 and 9/9 NC7 placements clear.
+ *     Rerun both scripts when ESB revise a form.
  *
  * Signatures: eIDAS "simple electronic signature" — the drawn signature
  * (the pad already in the app) placed as an image + the kernel's append-only

@@ -12,6 +12,12 @@ export interface CatalogProduct {
   /** headline spec the homeowner understands */
   spec: string;
   warrantyYears: number;
+  /** panels only — real dimensions (metres) and wattage. The Design Studio draws
+      the array to widthM × heightM so the footprint is accurate, and uses watts
+      for kWp. Every panel model is a different size, so these live per product. */
+  widthM?: number;
+  heightM?: number;
+  watts?: number;
   /** real product photo — /public path or https URL */
   image?: string;
   /** manufacturer data sheet — /public PDF path or https URL. Renders a
@@ -25,11 +31,13 @@ const CATALOG: CatalogProduct[] = [
   {
     model: 'JA Solar 435W', kind: 'panel', maker: 'JA Solar',
     spec: '435 W · all-black mono', warrantyYears: 25,
+    widthM: 1.134, heightM: 1.762, watts: 435,
     blurb: 'Tier-1 panels with 25-year performance warranty — still ≥84.5% output in year 25.',
   },
   {
     model: 'TrinaSolar TSM-440 NEG9RC.28', kind: 'panel', maker: 'TrinaSolar',
     spec: '440 W · Vertex S+ · dual-glass', warrantyYears: 25,
+    widthM: 1.134, heightM: 1.762, watts: 440,
     datasheet: '/datasheets/trinasolar-tsm-440-neg9rc28.pdf',
     blurb: 'Vertex S+ dual-glass — the datasheet the BER assessor needs ships with your proposal.',
   },
@@ -41,6 +49,7 @@ const CATALOG: CatalogProduct[] = [
   {
     model: 'Longi 430W', kind: 'panel', maker: 'LONGi',
     spec: '430 W · all-black mono', warrantyYears: 25,
+    widthM: 1.134, heightM: 1.722, watts: 430,
     blurb: 'Tier-1 manufacturer, proven Irish-climate performance in low light.',
   },
   {

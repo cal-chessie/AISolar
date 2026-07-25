@@ -8,11 +8,13 @@
  * ONE slim nav row. The content is the star, not the stepper.
  */
 import {
-  CheckCircle, User, Home, TreePine, Zap, Target, Camera, Settings,
+  CheckCircle, User, Home, Zap, Target, Camera, Settings, Users,
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+
+type StepTone = 'tech' | 'deposit' | 'pop';
 
 interface SurveyStep {
   id: string;
@@ -20,17 +22,26 @@ interface SurveyStep {
   shortLabel: string;
   icon: React.ReactNode;
   description: string;
+  tone: StepTone;
 }
 
+// Cal's family-colour map: confirm/roof/electrical = blue, occupancy/goal =
+// green, installation/photos = red. Each step's chip lights up in its own hue.
 const SURVEY_STEPS: SurveyStep[] = [
-  { id: 'customer', label: 'Customer Info', shortLabel: 'Info', icon: <User size={16} />, description: 'Basic lead information' },
-  { id: 'goals', label: 'Customer Goals', shortLabel: 'Goals', icon: <Target size={16} />, description: 'Energy needs & preferences' },
-  { id: 'roof', label: 'Roof Details', shortLabel: 'Roof', icon: <Home size={16} />, description: 'Roof type, condition & orientation' },
-  { id: 'environmental', label: 'Environmental', shortLabel: 'Env', icon: <TreePine size={16} />, description: 'Shading & obstructions' },
-  { id: 'electrical', label: 'Electrical', shortLabel: 'Elec', icon: <Zap size={16} />, description: 'Panel capacity & consumption' },
-  { id: 'installation', label: 'Installation', shortLabel: 'Install', icon: <Settings size={16} />, description: 'Access & logistics' },
-  { id: 'photos', label: 'Site Photos', shortLabel: 'Photos', icon: <Camera size={16} />, description: 'Capture required photos' },
+  { id: 'confirm', label: 'Confirm details', shortLabel: 'Confirm', icon: <CheckCircle size={16} />, description: "Check the bill pulled their details through", tone: 'tech' },
+  { id: 'occupancy', label: "Who's in the home", shortLabel: 'Occupancy', icon: <Users size={16} />, description: 'The answer that drives the savings', tone: 'deposit' },
+  { id: 'goal', label: "What's the goal?", shortLabel: 'Goal', icon: <Target size={16} />, description: 'Battery, EV, hot water, priorities', tone: 'deposit' },
+  { id: 'roof', label: 'Roof & shading', shortLabel: 'Roof', icon: <Home size={16} />, description: 'Type, pitch, orientation, shading', tone: 'tech' },
+  { id: 'electrical', label: 'Electrical', shortLabel: 'Electrical', icon: <Zap size={16} />, description: 'Panel, meter, grid connection', tone: 'tech' },
+  { id: 'installation', label: 'Installation', shortLabel: 'Install', icon: <Settings size={16} />, description: 'Access, scaffolding, logistics', tone: 'pop' },
+  { id: 'photos', label: 'Site photos', shortLabel: 'Photos', icon: <Camera size={16} />, description: 'The evidence pack', tone: 'pop' },
 ];
+
+const STEP_TONE: Record<StepTone, { active: string; done: string; iconBg: string }> = {
+  tech:    { active: 'bg-tech text-white ring-2 ring-tech/30 shadow-md shadow-tech/20',                   done: 'bg-tech/15 text-tech hover:bg-tech/25',                   iconBg: 'bg-tech' },
+  deposit: { active: 'bg-doc-deposit text-white ring-2 ring-doc-deposit/30 shadow-md shadow-doc-deposit/20', done: 'bg-doc-deposit/15 text-doc-deposit hover:bg-doc-deposit/25', iconBg: 'bg-doc-deposit' },
+  pop:     { active: 'bg-pop text-white ring-2 ring-pop/30 shadow-md shadow-pop/20',                      done: 'bg-pop/15 text-pop hover:bg-pop/25',                     iconBg: 'bg-pop' },
+};
 
 interface SurveyStepProgressProps {
   currentStep: number;
@@ -88,30 +99,33 @@ export default function SurveyStepProgress({
   const currentStepData = SURVEY_STEPS[currentStep - 1];
   const pct = Math.round((completedSteps.length / SURVEY_STEPS.length) * 100);
 
+  const currentTone = STEP_TONE[currentStepData?.tone ?? 'tech'];
+
   return (
-    <div className={cn('space-y-2', className)}>
-      {/* One row: current step identity + completion */}
+    <div className={cn('space-y-2.5', className)}>
+      {/* Current step identity — the icon tile lights up in the step's colour */}
       <div className="flex items-center gap-2.5">
-        <span className="size-8 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0">
+        <span className={cn('size-9 rounded-lg grid place-items-center shrink-0 text-white shadow-sm', currentTone.iconBg)}>
           {currentStepData?.icon}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold truncate">{currentStepData?.label || 'Survey'}</h3>
-            <span className="text-2xs tabular-nums text-muted-foreground shrink-0">
-              step {currentStep} of {SURVEY_STEPS.length} · {pct}% complete
+            <span className="ml-auto text-2xs tabular-nums text-muted-foreground shrink-0">
+              step {currentStep}/{SURVEY_STEPS.length} · {pct}%
             </span>
           </div>
           <p className="text-xs text-muted-foreground truncate">{currentStepData?.description}</p>
         </div>
       </div>
 
-      {/* Step dots — clickable, one row, both breakpoints */}
-      <div className="flex items-center gap-1">
+      {/* Step chips — done stays lit in its colour, current glows, ahead is grey */}
+      <div className="flex items-center gap-1.5">
         {SURVEY_STEPS.map((step, index) => {
           const stepNum = index + 1;
           const isCompleted = completedSteps.includes(step.id);
           const isCurrent = stepNum === currentStep;
+          const t = STEP_TONE[step.tone];
           return (
             <button
               key={step.id}
@@ -119,26 +133,20 @@ export default function SurveyStepProgress({
               onClick={() => onStepChange?.(stepNum)}
               aria-label={`${step.label}${isCompleted ? ' (complete)' : ''}`}
               className={cn(
-                'group flex-1 h-7 rounded-md grid place-items-center transition-colors',
+                'flex-1 h-9 rounded-lg grid place-items-center transition-all text-2xs font-semibold',
                 onStepChange && 'cursor-pointer',
-                isCurrent ? 'bg-primary text-primary-foreground'
-                  : isCompleted ? 'bg-doc-deposit/15 text-doc-deposit hover:bg-doc-deposit/25'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/70',
+                isCurrent ? t.active : isCompleted ? t.done : 'bg-muted text-muted-foreground hover:bg-muted/70',
               )}
             >
-              <span className="hidden sm:flex items-center gap-1 text-2xs font-medium">
-                {isCompleted && !isCurrent ? <CheckCircle size={11} /> : null}
+              <span className="hidden sm:flex items-center gap-1">
+                {isCompleted && !isCurrent ? <CheckCircle size={12} /> : null}
                 {step.shortLabel}
               </span>
-              <span className="sm:hidden text-2xs font-medium">{isCompleted && !isCurrent ? <CheckCircle size={11} /> : stepNum}</span>
+              <span className="sm:hidden">{isCompleted && !isCurrent ? <CheckCircle size={12} /> : stepNum}</span>
             </button>
           );
         })}
       </div>
-
-      {showNavigation && onStepChange && (
-        <SurveyStepNavigation currentStep={currentStep} totalSteps={SURVEY_STEPS.length} onStepChange={onStepChange} />
-      )}
     </div>
   );
 }

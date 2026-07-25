@@ -14,6 +14,8 @@
 import { generateDummyLeads, type DummyLead } from './dummyData';
 import { leadIntel } from './consultantIntelligence';
 import { leadEngagement } from './engagement';
+import { selfConsumptionFromOccupancy } from './leadIntake';
+import { getProduct } from '@/config/productCatalog';
 import type { CoachRole } from './aiCoach';
 
 export interface CoachAnswer {
@@ -110,6 +112,15 @@ export function coachAnswer(role: CoachRole, qRaw: string): CoachAnswer {
     return { text: `Your pipeline:\n\n• ${eur(value)} across ${withProposal.length} live proposals\n• ${awaiting} sent, awaiting a decision\n• ${signed} signed\n\nThe fastest lift is the sent-but-unsigned ones — want me to rank them by how engaged they are?` };
   }
 
+  // 5.5) Pitch / how to sell / angle / objection — the higher-level play.
+  // The lead cards and proposal show the WHAT; this is the HOW, one level up.
+  if (/(pitch|sell|angle|approach|objection|talk track|script|how.*win|how.*close)/.test(q)) {
+    const generic = `**The play that's converting right now:**\n\n1. **Open on their roof, from above.** Their own house, so the quote stops being an average home's and starts being theirs.\n2. **Read their bill back.** Day/night split, their unit rate. Ask which other quote opened the bill.\n3. **Walk the gear as products.** Warranty and monitoring first, brand names second.\n4. **Tie the savings to how they live.** Occupancy sets self-consumption, which is why the number is theirs, not a default.\n5. **Price last.** After all that, the net cost reads as fair, not high.`;
+    const hot = leads.map(l => ({ l, e: leadEngagement(l) })).filter(x => x.e.warmth === 'hot').sort((a, b) => b.e.views - a.e.views)[0];
+    if (hot) return { text: `${generic}\n\nRun it on **${first(hot.l)}** first. ${hot.e.views} opens, warmest lead you've got.`, actions: [{ label: `Open ${first(hot.l)}`, route: '/consultant' }] };
+    return { text: generic };
+  }
+
   // 6) Next / focus / priority / what should I do
   if (/(next|focus|priority|prioritise|what.*do|where.*start|first)/.test(q)) {
     const hot = leads.map(l => ({ l, e: leadEngagement(l), i: leadIntel(l) })).filter(x => x.e.warmth === 'hot').sort((a, b) => b.e.views - a.e.views)[0];
@@ -132,8 +143,34 @@ function aboutLead(l: DummyLead): CoachAnswer {
   const engLine = e.views > 0
     ? `They've opened their documents **${e.views}×** (last ${e.lastViewedLabel}) — ${e.warmth === 'hot' ? 'very warm' : 'engaged'}.`
     : e.warmth === 'cold' ? 'They haven\'t opened what you sent yet.' : '';
+  const play = sellStrategy(l);
   return {
-    text: `**${l.name}** — ${i.stageLabel}.\n\n${i.holdup}${engLine ? `\n\n${engLine}` : ''}\n\n**Next:** ${i.nextAction}`,
+    text: `**${l.name}** — ${i.stageLabel}.\n\n${i.holdup}${engLine ? `\n\n${engLine}` : ''}${play ? `\n\n${play}` : ''}\n\n**Next:** ${i.nextAction}`,
     actions: [{ label: `Open ${first(l)}`, route: '/consultant' }],
   };
+}
+
+/**
+ * sellStrategy — the higher-level angle for ONE lead. The proposal shows the
+ * numbers; this tells the consultant how to walk them, read off the occupancy
+ * (same self-consumption maths as the proposal, so they never contradict) and
+ * the gear on file. The play, not the data.
+ */
+function sellStrategy(l: DummyLead): string | null {
+  const p = l.proposal;
+  if (!p) return null;
+  const sc = selfConsumptionFromOccupancy({
+    occupants: l.survey?.household_occupants,
+    homeDuringDay: l.survey?.home_during_day,
+    hasBattery: !!p.battery_model,
+  });
+  const pct = Math.round(sc * 100);
+  const panel = getProduct(p.panel_model, 'panel');
+  const monitoring = /solaredge/i.test(p.inverter_model ?? '') ? ' and per-panel monitoring' : '';
+  const angle = l.survey?.home_during_day === 'out'
+    ? 'they\'re out most of the day, so lead with the battery carrying the day\'s sun to the evening, not raw panel savings'
+    : l.survey?.home_during_day === 'usually'
+      ? 'someone\'s usually home, so lead with the yearly bill saving, because the roof replaces expensive daytime units'
+      : 'day use is balanced, so lead with the yearly saving and offer the battery as evening cover, not the headline';
+  return `**Your angle:** open on their roof from above, then walk the gear as products, leading with the ${panel?.warrantyYears ?? 25}-year panel warranty${monitoring}, brand second. On the money, ${angle} (about **${pct}%** used at home). Price last.`;
 }

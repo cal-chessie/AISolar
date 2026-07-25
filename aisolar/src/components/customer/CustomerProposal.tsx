@@ -28,6 +28,8 @@ import { getProduct, CatalogProduct } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
+import { selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import { moneyStory } from '@/lib/proposalNarrative';
 import type { DummyLead } from '@/lib/dummyData';
 
 const eur = (n: number | null | undefined) =>
@@ -166,6 +168,16 @@ function SplitInsight({ lead }: { lead: DummyLead }) {
         )}
       </p>
 
+      {lead.survey?.home_during_day && (
+        <p className="mt-2 text-xs text-muted-foreground leading-body">
+          The survey sharpens this. With {lead.survey.household_occupants === '5+' ? 'five or more people' : `${lead.survey.household_occupants ?? 'the household'} in the house`} and {
+            lead.survey.home_during_day === 'usually' ? 'someone usually home through the day, more of what the roof makes is used on the spot, so a bigger share of your generation replaces the expensive daytime rate.'
+              : lead.survey.home_during_day === 'mixed' ? 'someone home for part of the day, a good share of the daytime generation is used directly rather than exported.'
+                : 'the house empty most of the day, most daytime generation would otherwise export at the lower rate, which is where a battery earns its place by carrying it to the evening.'
+          }
+        </p>
+      )}
+
       {estimated && (
         <p className="mt-2 text-xs text-muted-foreground leading-body">
           One caveat we would rather state than hide: your last bill was an
@@ -227,6 +239,22 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
   );
   const depositPaid = !!lead.invoice?.deposit_paid;
   const deposit = lead.invoice?.deposit_amount ?? (p ? Math.round(p.net_cost * 0.3) : 0);
+
+  // Occupancy drives self-consumption, which drives the savings AND the argument
+  // below — one honest number from the survey, not a flat 0.70. Falls back to the
+  // default when the survey has not answered, so nothing breaks.
+  const selfConsumption = p
+    ? selfConsumptionFromOccupancy({
+        occupants: lead.survey?.household_occupants,
+        homeDuringDay: lead.survey?.home_during_day,
+        hasBattery: !!p.battery_model,
+      })
+    : 0.7;
+  const production = p ? p.system_size_kw * 950 : 0;
+  const annualSavings = p ? Math.round(production * selfConsumption * 0.35 + production * (1 - selfConsumption) * 0.14) : 0;
+  const paybackYears = (p && annualSavings > 0) ? Math.round((p.net_cost / annualSavings) * 10) / 10 : (p?.payback_years ?? 0);
+  const twentyYearBenefit = p ? annualSavings * 20 - p.net_cost : 0;
+  const story = p ? moneyStory({ annualSavings, netCost: p.net_cost, paybackYears, twentyYearBenefit, monthlyBill: lead.monthly_bill }) : null;
 
   const products = useMemo(() => p ? [
     { product: getProduct(p.panel_model, 'panel')!, qty: p.panel_count },
@@ -308,7 +336,16 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
               className="w-full h-56 border-0"
               loading="lazy"
             />
-            <p className="px-5 py-2 text-2xs text-muted-foreground">Satellite imagery of your property — panel positions are confirmed at the site survey.</p>
+            <p className="px-5 py-2 text-xs text-muted-foreground leading-body">
+              {lead.survey?.roof_orientation
+                ? <>This is your roof from above. Your panels go on the {lead.survey.roof_orientation.toLowerCase()} pitch, {
+                    /south/i.test(lead.survey.roof_orientation) ? 'where the sun sits longest, so it makes the most power at the times your home is using the most'
+                      : /east|west/i.test(lead.survey.roof_orientation) ? 'catching the morning and evening sun across the hours your home is busiest'
+                        : 'the best-lit face our surveyor measured on site'
+                  }. </>
+                : <>Satellite imagery of your property. </>}
+              <span className="text-2xs">Exact panel positions are confirmed at the site survey.</span>
+            </p>
           </section>
         );
       })()}
@@ -387,9 +424,9 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
         </div>
         <dl className="grid grid-cols-3 gap-px bg-border border-t border-border">
           {[
-            { l: 'Saves per year', v: eur(p.annual_savings), h: 'at your unit rates, from your usage pattern' },
-            { l: 'Pays for itself in', v: `${p.payback_years} yrs` },
-            { l: '20-year benefit', v: eur(p.twenty_year_savings) },
+            { l: 'Saves per year', v: eur(annualSavings), h: 'at your unit rates, from your usage pattern' },
+            { l: 'Pays for itself in', v: `${paybackYears} yrs` },
+            { l: '20-year benefit', v: eur(twentyYearBenefit) },
           ].map(x => (
             <div key={x.l} className="bg-card px-4 py-3 text-center" title={x.h}>
               <dt className="label-micro">{x.l}</dt>
@@ -397,6 +434,12 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
             </div>
           ))}
         </dl>
+        {story && (
+          <div className="px-5 py-4 border-t border-border bg-primary/[0.05]">
+            <p className="text-sm font-medium text-foreground leading-body">{story.lead}</p>
+            <p className="text-sm text-muted-foreground leading-body mt-1.5">{story.horizon}</p>
+          </div>
+        )}
       </section>
 
       {/* 4 — Accept + deposit: ONE flow, status-aware */}

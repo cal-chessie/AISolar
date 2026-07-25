@@ -121,7 +121,7 @@ const STEPS: OnboardingStep[] = [
     id: 'agents',
     title: 'Agent Foundation',
     description: 'The 10 autonomous agents. Each has triggers, inputs, outputs, guardrails. You can manually trigger them.',
-    route: '/agents',
+    route: '/agent-console',
     icon: Bot,
     duration: '1 min',
     whatToDo: 'Expand an agent\'s details. Click "Run now" on the Lead Intake Agent.',

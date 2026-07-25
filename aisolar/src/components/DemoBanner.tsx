@@ -34,7 +34,7 @@ export default function DemoBanner() {
       {/* Floating nav button (bottom-right) */}
       <button
         onClick={() => setMenuOpen(true)}
-        className="fixed bottom-4 right-4 z-[9998] bg-primary hover:bg-primary text-white rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
+        className="fixed bottom-4 right-4 z-[9998] bg-primary hover:bg-primary text-primary-foreground rounded-full shadow-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold transition-all hover:scale-105"
         aria-label="Open demo navigation"
       >
         <Compass className="h-5 w-5" />
@@ -42,7 +42,7 @@ export default function DemoBanner() {
       </button>
 
       {/* Top banner */}
-      <div className="fixed top-0 left-0 right-0 z-[9997] bg-primary text-white text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
+      <div className="fixed top-0 left-0 right-0 z-[9997] bg-primary text-primary-foreground text-xs font-medium px-3 py-1.5 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-3.5 w-3.5" />
           <span>

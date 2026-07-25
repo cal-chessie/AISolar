@@ -266,7 +266,7 @@ export default function AgentTraining() {
               key={a.id}
               onClick={() => { setSelectedAgent(a.id); setTestResult(null); }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                isSelected ? 'bg-primary text-white' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
+                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/70 text-muted-foreground'
               }`}
             >
               <Bot className="h-3 w-3" />

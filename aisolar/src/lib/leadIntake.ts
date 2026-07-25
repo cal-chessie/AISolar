@@ -181,6 +181,10 @@ export function calculateSystemEstimate(input: {
   monthlyBill?: number | null;
   annualKwh?: number | null;
   roofCapKwp?: number | null;
+  /** How much generation is used on-site vs exported. Defaults to the flat 0.70;
+   *  callers with occupancy data pass an occupancy-driven % (see
+   *  selfConsumptionFromOccupancy) so the savings reflect the real home. */
+  selfConsumptionPct?: number | null;
 }) {
   const monthlyBill = input.monthlyBill ?? 0;
   const annualKwh = input.annualKwh && input.annualKwh > 0
@@ -192,7 +196,10 @@ export function calculateSystemEstimate(input: {
   const systemSize = input.roofCapKwp ? Math.min(input.roofCapKwp, calcSize) : calcSize;
 
   const annualProduction = systemSize * IE_ENERGY.YIELD_PER_KWP;
-  const selfConsumedKwh = annualProduction * IE_ENERGY.SELF_CONSUMPTION_PCT;
+  const selfConsumption = (input.selfConsumptionPct != null && input.selfConsumptionPct > 0)
+    ? Math.min(0.95, Math.max(0.2, input.selfConsumptionPct))
+    : IE_ENERGY.SELF_CONSUMPTION_PCT;
+  const selfConsumedKwh = annualProduction * selfConsumption;
   const exportedKwh = annualProduction - selfConsumedKwh;
   const annualSavings = (selfConsumedKwh * IE_ENERGY.RETAIL_RATE) + (exportedKwh * IE_ENERGY.EXPORT_RATE);
   const solarOffset = annualKwh > 0 ? Math.min(85, Math.round((annualProduction / annualKwh) * 100)) : 0;
@@ -216,4 +223,65 @@ export function calculateSystemEstimate(input: {
     twentyYearSavings: Math.round(twentyYearSavings),
     co2TonnesPerYear: Math.round((annualProduction * 0.4) / 1000 * 10) / 10,
   };
+}
+
+/**
+ * Self-consumption % from the survey's occupancy answers — the honest lever that
+ * replaces the flat 0.70. More people and someone home during the day means more
+ * of the roof's daytime output is used on the spot; out all day means most of it
+ * exports, which is where a battery earns its keep. Any answer missing falls back
+ * to the flat default, so nothing breaks. The consultant can override the result.
+ *
+ *   home_during_day: usually 0.62 · mixed 0.50 · out 0.35
+ *   + 0.02 per person above two (more baseload), capped 0.75 without a battery
+ *   + a battery adds ~0.20, capped 0.90
+ */
+export function selfConsumptionFromOccupancy(input: {
+  homeDuringDay?: string | null;   // 'usually' | 'mixed' | 'out'
+  occupants?: string | null;       // '1' | '2' | '3' | '4' | '5+'
+  hasBattery?: boolean;
+}): number {
+  const base = input.homeDuringDay === 'usually' ? 0.62
+    : input.homeDuringDay === 'mixed' ? 0.50
+      : input.homeDuringDay === 'out' ? 0.35
+        : IE_ENERGY.SELF_CONSUMPTION_PCT;
+  const people = input.occupants === '5+' ? 5 : Number(input.occupants) || 2;
+  const withPeople = base + Math.max(0, people - 2) * 0.02;
+  const capNoBattery = Math.min(0.75, withPeople);
+  return input.hasBattery ? Math.min(0.90, capNoBattery + 0.20) : capNoBattery;
+}
+
+/**
+ * How much the flat 950 kWh/kWp yield is derated by the REAL roof — orientation,
+ * pitch and shading — so a north-facing, shaded roof never reads like an
+ * unshaded south one. 1.0 = ideal (south, ~35°, no shade). Handles both shading
+ * vocabularies in use (none/light/moderate/heavy and none/minimal/partial/significant).
+ */
+export function annualYieldFactor(input: {
+  orientation?: string | null;
+  pitchDeg?: number | string | null;
+  shading?: string | null;
+}): number {
+  const o = String(input.orientation ?? 'south').toLowerCase().replace(/[_-]/g, ' ');
+  const orientF =
+    o.includes('south') && (o.includes('east') || o.includes('west')) ? 0.96 :
+    o.includes('south') ? 1.0 :
+    o.includes('north') && (o.includes('east') || o.includes('west')) ? 0.70 :
+    o.includes('north') ? 0.62 :
+    (o.includes('east') || o.includes('west')) ? 0.85 :
+    0.90;
+  const pitch = Number(input.pitchDeg) || 35;
+  const pitchF = 1 - Math.min(0.14, Math.abs(pitch - 35) / 100); // gentle penalty off the ~35° optimum
+  const s = String(input.shading ?? 'none').toLowerCase();
+  const shadeF =
+    s.includes('heavy') || s.includes('significant') ? 0.72 :
+    s.includes('moderate') || s.includes('partial') ? 0.85 :
+    s.includes('light') || s.includes('minimal') ? 0.95 :
+    1.0;
+  return Math.round(orientF * pitchF * shadeF * 100) / 100;
+}
+
+/** Believable annual production (kWh) for a system on a specific roof. */
+export function annualProduction(kWp: number, roof: Parameters<typeof annualYieldFactor>[0]): number {
+  return Math.round(kWp * IE_ENERGY.YIELD_PER_KWP * annualYieldFactor(roof));
 }

@@ -30,6 +30,7 @@ import AiosPage from "./pages/AiosPage";
 import AiTeamPage from "./pages/AiTeamPageV2";
 import PricingPage from "./pages/PricingPage";
 import DocsPage from "./pages/DocsPage";
+import AgentsPage from "./pages/AgentsPage";
 import AgentFoundation from "./components/AgentFoundation";
 
 // Components (current versions only — no legacy)
@@ -85,7 +86,7 @@ function AppRoutes() {
     onEscape: () => setIsSearchOpen(false),
   });
 
-  const showAICoach = ['/consultant', '/installer', '/admin', '/owner', '/pipeline', '/agents'].some(path =>
+  const showAICoach = ['/consultant', '/installer', '/admin', '/owner', '/pipeline', '/agent-console'].some(path =>
     location.pathname.startsWith(path)
   );
 
@@ -121,6 +122,7 @@ function AppRoutes() {
           <Route path="/aiteam" element={wrap(<AiTeamPage />)} />
           <Route path="/pricing" element={wrap(<PricingPage />)} />
           <Route path="/docs" element={wrap(<DocsPage />)} />
+          <Route path="/agents" element={wrap(<AgentsPage />)} />{/* public: the ten agents */}
           <Route path="/about" element={wrap(<AboutUs />)} />
           <Route path="/faq" element={wrap(<FAQ />)} />
           <Route path="/blog" element={wrap(<Blog />)} />
@@ -143,7 +145,7 @@ function AppRoutes() {
           <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
           <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
           {/* #6: agent calendar events navigate here — was a 404 stub */}
-          <Route path="/agents" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />
+          <Route path="/agent-console" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />{/* in-app agent console (was /agents) */}
           <Route path="/p/:leadId" element={wrap(<ProposalPage />)} />
 
           {/* Workflow — auth-guarded (staff-only) */}

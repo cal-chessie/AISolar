@@ -31,7 +31,7 @@ export default function DemoIndex() {
           <div className="flex gap-2 justify-center">
             <Link
               to="/auth"
-              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90"
             >
               Sign in
             </Link>
@@ -88,7 +88,7 @@ export default function DemoIndex() {
           {ALL_ROUTES.map((group) => (
             <section key={group.group}>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="bg-primary text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
+                <span className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
                   {ALL_ROUTES.indexOf(group) + 1}
                 </span>
                 {group.group}

@@ -17,6 +17,29 @@ const KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
 
 export const hasMapsKey = () => !!KEY;
 
+/**
+ * A reliable satellite IMAGE (Static Maps API) for a lat/lng — unlike the
+ * maps.google.com `output=embed` iframe, this always renders. The key stays in
+ * this module (never handed to a component). `scale=2` = retina; zoom 20 ≈ a
+ * single rooftop. Returns null with no key so the UI can fall back cleanly.
+ */
+export function staticMapUrl(lat: number, lng: number, opts?: { zoom?: number; w?: number; h?: number }): string | null {
+  if (!KEY) return null;
+  const { zoom = 20, w = 640, h = 384 } = opts ?? {};
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${w}x${h}&scale=2&maptype=satellite&key=${KEY}`;
+}
+
+/**
+ * Static Maps keyed to an ADDRESS / eircode string. Google geocodes the center
+ * server-side, so the satellite image loads without a client-side geocode fetch
+ * (which localhost CORS often blocks). This is what actually paints the roof.
+ */
+export function staticMapUrlForQuery(query: string, opts?: { zoom?: number; w?: number; h?: number }): string | null {
+  if (!KEY || !query.trim()) return null;
+  const { zoom = 20, w = 640, h = 384 } = opts ?? {};
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(query)}&zoom=${zoom}&size=${w}x${h}&scale=2&maptype=satellite&key=${KEY}`;
+}
+
 export async function geocode(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!KEY || !address.trim()) return null;
   try {

@@ -34,24 +34,24 @@ export default function Blog() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <SEOHead
-        title="Solar guides for Irish homeowners | AISOLAR blog"
-        description="Straight answers on Irish solar: what the SEAI grant actually pays, why your day/night split decides your system, real payback, and ESB registration."
+        title="Solar engineering & compliance, for installers | AISOLAR"
+        description="Accurate data and the engineering behind it, for Irish solar installers and regulators: SEAI grant mechanics, sizing from real usage, payback maths and ESB NC6/NC7 registration."
         canonical="https://aisolar.ie/blog"
-        keywords="Irish solar guides, SEAI grant explained, solar payback Ireland, day night meter, ESB microgeneration"
+        keywords="solar installer guides Ireland, SEAI grant mechanics, ESB NC6 NC7, solar system sizing, microgeneration compliance, solar payback calculation"
         structuredData={schema}
       />
       <MarketingNav product="aisolar" />
 
       <main className="mx-auto max-w-5xl px-5 py-14 lg:py-20">
         <header className="max-w-2xl">
-          <p className="label-micro">Guides</p>
+          <p className="label-micro">For installers</p>
           <h1 className="mt-2 text-[34px] leading-[40px] sm:text-[44px] sm:leading-[50px] font-semibold tracking-tight">
-            Irish solar, explained properly
+            Solar, done to the numbers
           </h1>
           <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-body">
-            No hype and no averages. What the grant actually pays, what your bill
-            is telling you, and how to check a quote before you sign it — every
-            figure sourced from SEAI, Revenue or ESB Networks.
+            The engineering and the data an installer works from, and a regulator
+            can check. Grant mechanics, sizing from real usage, payback maths and
+            ESB registration, every figure sourced from SEAI, Revenue and ESB Networks.
           </p>
         </header>
 

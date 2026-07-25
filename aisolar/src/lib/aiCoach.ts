@@ -16,6 +16,8 @@
  */
 
 import { Sun, Calendar, MapPin, AlertTriangle, TrendingUp, Phone, FileText, CheckCircle2, Truck, Clock, Zap, Users, DollarSign, Shield, Target } from 'lucide-react';
+import { selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import type { DummyLead } from '@/lib/dummyData';
 
 export type CoachRole = 'installer' | 'consultant' | 'admin' | 'owner' | 'customer';
 
@@ -288,6 +290,42 @@ export const CUSTOMER_TIPS: CoachTip[] = [
 ];
 
 /** Get the right tips for the role. */
+/**
+ * occupancyCoachTip — the consultant's talk-track for ONE lead, read from the
+ * survey's occupancy answers. It uses the SAME self-consumption maths as the
+ * proposal (selfConsumptionFromOccupancy), so the coach and the proposal can
+ * never contradict each other. Returns null until the survey has answered.
+ *
+ * The goal: less thinking by the consultant, more trust in the system's read.
+ * The consultant keeps full discretion — this is the opening move, not a rule.
+ */
+export function occupancyCoachTip(lead: DummyLead): CoachTip | null {
+  const s = lead.survey;
+  if (!s?.home_during_day) return null;
+  const sc = selfConsumptionFromOccupancy({
+    occupants: s.household_occupants,
+    homeDuringDay: s.home_during_day,
+    hasBattery: !!lead.proposal?.battery_model,
+  });
+  const pct = Math.round(sc * 100);
+  const people = s.household_occupants === '5+' ? 'five or more' : (s.household_occupants ?? 'the');
+  const base = { id: `occ-${lead.id}`, role: 'consultant' as const, priority: 'high' as const, type: 'opportunity' as const, icon: Zap };
+
+  if (s.home_during_day === 'out') {
+    return { ...base,
+      title: `${lead.name}: out-all-day home, lead with the battery`,
+      body: `With ${people} in the house and no one home through the day, only about ${pct}% of generation is used on-site; the rest exports at the low rate. The battery is the real lever here, carrying the day's sun to the evening. Lead with that, not raw panel savings.` };
+  }
+  if (s.home_during_day === 'usually') {
+    return { ...base,
+      title: `${lead.name}: strong direct-use case, lead with the yearly saving`,
+      body: `With ${people} in the house and someone usually home, about ${pct}% of generation is used on-site, replacing expensive daytime units directly. Lead with the yearly bill saving. A battery pays back slower for them, so offer it only if they ask, and be honest about it.` };
+  }
+  return { ...base,
+    title: `${lead.name}: balanced day-use, savings first`,
+    body: `With ${people} in the house and someone home part of the day, about ${pct}% is used on-site. Lead with the yearly saving; a battery is a fair add for evening cover but it is not the headline.` };
+}
+
 export function getTipsForRole(role: CoachRole): CoachTip[] {
   switch (role) {
     case 'installer':  return INSTALLER_TIPS;

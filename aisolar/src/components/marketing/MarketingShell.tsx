@@ -63,6 +63,7 @@ export function MarketingNav({ product }: { product: ProductKey }) {
               {l.label}
             </Link>
           ))}
+          <Link to="/agents" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Agents</Link>
           <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Pricing</Link>
           <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Guides</Link>
           <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-instant">Docs</Link>

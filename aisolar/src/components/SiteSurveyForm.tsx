@@ -7,19 +7,52 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, CheckCircle, FileText, ArrowRight, Info, MapPin } from 'lucide-react';
+import { Loader2, Save, CheckCircle, FileText, ArrowRight, Info, MapPin, Zap, Users, Battery, Droplets, Car, Target, Home, Sun, Settings, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
+
+/**
+ * SurveySection — the clean, family-toned card that every survey step is built
+ * from (matches the step-1 Customer Info template Cal approved). A thin colour
+ * edge + tinted icon give each section its identity; high-contrast content, no
+ * faint disabled boxes.
+ */
+const SECTION_TONE: Record<string, { edge: string; chip: string; text: string }> = {
+  tech:     { edge: 'bg-tech',                 chip: 'bg-tech-subtle',     text: 'text-tech' },
+  deposit:  { edge: 'bg-doc-deposit',          chip: 'bg-doc-deposit/10',  text: 'text-doc-deposit' },
+  proposal: { edge: 'bg-doc-proposal',         chip: 'bg-doc-proposal/10', text: 'text-doc-proposal' },
+  pop:      { edge: 'bg-pop',                  chip: 'bg-pop-subtle',      text: 'text-pop' },
+  neutral:  { edge: 'bg-muted-foreground/40',  chip: 'bg-muted',           text: 'text-muted-foreground' },
+};
+function SurveySection({ tone = 'neutral', icon, title, hint, children }: {
+  tone?: keyof typeof SECTION_TONE; icon: React.ReactNode; title: string; hint?: string; children: React.ReactNode;
+}) {
+  const t = SECTION_TONE[tone];
+  return (
+    <section className="relative overflow-hidden rounded-panel border border-border/70 bg-card shadow-card">
+      <span className={`absolute left-0 top-0 h-full w-1 ${t.edge}`} aria-hidden />
+      <div className="pl-5 pr-4 py-3.5">
+        <div className="flex items-start gap-3">
+          <span className={`shrink-0 size-8 rounded-lg grid place-items-center [&>svg]:size-4 ${t.chip} ${t.text}`}>{icon}</span>
+          <div className="min-w-0 pt-0.5">
+            <h3 className="text-sm font-semibold leading-tight">{title}</h3>
+            {hint && <p className="text-xs text-muted-foreground mt-0.5 leading-body">{hint}</p>}
+          </div>
+        </div>
+        <div className="mt-4">{children}</div>
+      </div>
+    </section>
+  );
+}
 import { validateSurveyCompletion, mapSurveyToProposal, calculateSurveyStatus } from '@/lib/surveyValidation';
-import SurveyStepProgress, { SURVEY_STEPS, SurveyStepNavigation } from '@/components/survey/SurveyStepProgress';
-import GuidedPhotoCapture from '@/components/survey/GuidedPhotoCapture';
+import SurveyStepProgress, { SURVEY_STEPS } from '@/components/survey/SurveyStepProgress';
+import GuidedPhotoCapture, { REQUIRED_PHOTOS } from '@/components/survey/GuidedPhotoCapture';
+import BillReadPanel, { billReadFromIntake, billReadCells } from '@/components/bill/BillReadPanel';
 import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
 import { logActivity } from '@/lib/activityLog';
 import { isDemoMode } from '@/lib/demoMode';
 import { generateDummyLeads } from '@/lib/dummyData';
-import { getProductsByKind } from '@/config/productCatalog';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -27,8 +60,16 @@ import { cn } from '@/lib/utils';
 const surveySchema = z.object({
   // Property & energy info (key fields for proposals)
   property_type: z.string().optional().default('residential'),
+  eircode: z.string().optional(),
   annual_consumption_kwh: z.string().optional(),
   current_tariff: z.string().optional(),
+  // Phone / manual capture — when a lead calls in there is no bill to confirm,
+  // so the consultant keys the bill-equivalents live on the call.
+  contact_name: z.string().optional(),
+  contact_phone: z.string().optional(),
+  contact_email: z.string().optional(),
+  monthly_bill: z.string().optional(),
+  day_night_meter: z.string().optional(),
   // Customer goals (moved to top)
   battery_storage: z.boolean().optional(),
   hot_water_diverter: z.boolean().optional(),
@@ -51,14 +92,8 @@ const surveySchema = z.object({
   electrical_panel_capacity: z.string().optional(),
   meter_location: z.string().optional(),
   grid_connection_type: z.string().optional(),
-  // System recommendations
-  recommended_system_size: z.string().optional(),
-  recommended_panel_count: z.string().optional(),
-  // Cal: the consultant picks the gear ON SITE — these flow straight into
-  // the proposal (no re-keying at the desk)
-  recommended_panel_model: z.string().optional(),
-  recommended_inverter_model: z.string().optional(),
-  recommended_battery_model: z.string().optional(),
+  // Gear (panel / inverter / battery / count / size) is NOT captured here.
+  // The Design Studio owns it, on the real roof. One source of truth.
   // Installation & logistics (merged)
   property_storeys: z.string().optional(),
   scaffolding_required: z.string().optional(),
@@ -86,6 +121,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   const [fetchingData, setFetchingData] = useState(true);
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; type: string; description: string }>>([]);
   const [currentStep, setCurrentStep] = useState(1);
+  // Confirm step stays a clean read-only summary by default; Edit flips the
+  // bill-derived fields to inputs so the consultant can correct any that are off.
+  const [editingConfirm, setEditingConfirm] = useState(false);
   
   // Ref for scrolling to survey top
   const surveyContainerRef = useRef<HTMLDivElement>(null);
@@ -141,14 +179,17 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
 
   const getCompletedSteps = () => {
     const completed: string[] = [];
-    // Customer info is always "complete" since it comes from lead data
-    if (leadData?.name && leadData?.email) completed.push('customer');
-    // Goals complete if property type set and consumption entered
-    if (formValues.property_type && formValues.annual_consumption_kwh) {
-      completed.push('goals');
+    // Confirm: the usage seed is in (bill read or keyed on the call)
+    if (formValues.annual_consumption_kwh || formValues.monthly_bill || leadData?.annual_kwh || leadData?.monthly_bill) {
+      completed.push('confirm');
+    }
+    // Occupancy: the hero — both answers in
+    if (completionStatus.sections.occupancy.complete) completed.push('occupancy');
+    // Goal: any intent captured
+    if (formValues.battery_storage || formValues.hot_water_diverter || formValues.ev_charger || formValues.customer_priorities) {
+      completed.push('goal');
     }
     if (completionStatus.sections.roof.complete) completed.push('roof');
-    if (formValues.shading_analysis) completed.push('environmental');
     if (completionStatus.sections.electrical.complete) completed.push('electrical');
     if (formValues.property_storeys || formValues.scaffolding_required) completed.push('installation');
     if (completionStatus.sections.photos.complete) completed.push('photos');
@@ -300,11 +341,6 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         electrical_panel_capacity: data.electrical_panel_capacity || null,
         meter_location: data.meter_location || null,
         grid_connection_type: data.grid_connection_type || null,
-        recommended_system_size: data.recommended_system_size ? parseFloat(data.recommended_system_size) : null,
-        recommended_panel_count: data.recommended_panel_count ? parseInt(data.recommended_panel_count) : null,
-        recommended_panel_model: data.recommended_panel_model || null,
-        recommended_inverter_model: data.recommended_inverter_model || null,
-        recommended_battery_model: data.recommended_battery_model || null,
         installation_notes: data.installation_notes || null,
         special_requirements: data.special_requirements || null,
         status: finalStatus,
@@ -360,6 +396,18 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         if (photoError) throw photoError;
       }
 
+      // Phone / manual capture writes the bill-equivalents back onto the lead so
+      // every downstream surface (estimate, drafter, proposal) reads the same figures.
+      const leadPatch: Record<string, unknown> = {};
+      if (data.contact_name) leadPatch.name = data.contact_name;
+      if (data.contact_phone) leadPatch.phone = data.contact_phone;
+      if (data.contact_email) leadPatch.email = data.contact_email;
+      if (data.monthly_bill) leadPatch.monthly_bill = parseFloat(data.monthly_bill);
+      if (data.annual_consumption_kwh) leadPatch.annual_kwh = parseInt(data.annual_consumption_kwh);
+      if (Object.keys(leadPatch).length > 0) {
+        await supabase.from('leads').update(leadPatch).eq('id', leadId);
+      }
+
       // Update lead workflow stage
       if (finalStatus === 'completed') {
         await supabase
@@ -382,12 +430,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
           actionType: 'survey_completed',
           description: `Site survey completed for ${leadData?.name || 'lead'}`,
           metadata: {
-            recommended_system_size: data.recommended_system_size,
-            panel_count: data.recommended_panel_count,
-            panel_model: data.recommended_panel_model,
-            inverter_model: data.recommended_inverter_model,
-            battery_model: data.recommended_battery_model,
-            roof_type: data.roof_type
+            roof_type: data.roof_type,
+            occupancy: data.household_occupants,
+            home_during_day: data.home_during_day,
           }
         });
       } else if (!existingSurvey) {
@@ -443,210 +488,263 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
     );
   }
 
+  // Photos are captured per stage (roof shots on the roof step, board shots on
+  // the electrical step, etc.), all writing to the one uploadedPhotos list.
+  const photoList = uploadedPhotos.map((p, i) => ({ id: `photo-${i}`, url: p.url, type: p.type }));
+  const handlePhotos = (photos: Array<{ id: string; url: string; type: string }>) =>
+    setUploadedPhotos(photos.map(p => ({ url: p.url, type: p.type, description: p.type })));
+
   // Step content components
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1: // Customer Info (read-only from lead)
+      case 1: { // The consultation starts here. Bill on file → confirm the read. Lead phoned in → key it live.
+        const bill = billReadFromIntake((leadData?.intake ?? {}) as Record<string, unknown>, {
+          monthlyBill: leadData?.monthly_bill,
+          annualKwh: leadData?.annual_kwh,
+          mprn: leadData?.mprn,
+          accountName: leadData?.name,
+          address: leadData?.address,
+        });
+        const hasBillRead = billReadCells(bill).length >= 4;
+        const initials = (watch('contact_name') || leadData?.name || '?').split(' ').map((n: string) => n[0]).slice(0, 2).join('');
         return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20 mb-4">
-                <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Customer information is automatically populated from the lead record.
-                </p>
+          <div className="space-y-3">
+            {/* Who — read-only when the bill named them; live-editable on a phone-in.
+                Blue (tech) left bar so the Confirm step wears the family colour too. */}
+            <div className="relative overflow-hidden rounded-panel border border-border/70 bg-card shadow-card pl-5 pr-4 py-3">
+              <span className="absolute left-0 top-0 h-full w-1 bg-tech" aria-hidden />
+              <div className="flex items-center gap-3">
+                <span className="size-10 shrink-0 rounded-full bg-tech-subtle text-tech grid place-items-center text-sm font-semibold">
+                  {initials}
+                </span>
+                {hasBillRead ? (
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm truncate">{leadData?.name || 'Customer'}</h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[leadData?.phone, leadData?.email].filter(Boolean).join('  ·  ') || 'No contact on file'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm">New enquiry</h3>
+                    <p className="text-xs text-muted-foreground">Key these as you talk them through it.</p>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Customer Name</Label>
-                  <div className="p-3 bg-muted rounded-lg font-medium">{leadData?.name || 'Not available'}</div>
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <div className="p-3 bg-muted rounded-lg">{leadData?.email || 'Not available'}</div>
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <div className="p-3 bg-muted rounded-lg">{leadData?.phone || 'Not provided'}</div>
-                </div>
-                <div>
-                  <Label>Monthly Bill</Label>
-                  <div className="p-3 bg-muted rounded-lg">
-                    {leadData?.monthly_bill ? `€${leadData.monthly_bill}` : 'Not provided'}
+              {!hasBillRead && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                  <div>
+                    <Label htmlFor="contact_name" className="text-xs">Name</Label>
+                    <Input {...register('contact_name')} defaultValue={leadData?.name || ''} placeholder="Full name" className="w-full mt-1.5 h-control" />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact_phone" className="text-xs">Phone</Label>
+                    <Input {...register('contact_phone')} type="tel" inputMode="tel" defaultValue={leadData?.phone || ''} placeholder="08x xxx xxxx" className="w-full mt-1.5 h-control" />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact_email" className="text-xs">Email</Label>
+                    <Input {...register('contact_email')} type="email" inputMode="email" defaultValue={leadData?.email || ''} placeholder="name@email.ie" className="w-full mt-1.5 h-control" />
                   </div>
                 </div>
-                <div className="sm:col-span-2">
-                  <Label>Address</Label>
-                  <div className="p-3 bg-muted rounded-lg">{leadData?.address || 'Not provided'}</div>
+              )}
+            </div>
+
+            {hasBillRead ? (
+              <>
+                <div className="flex items-center justify-between px-0.5">
+                  <p className="text-xs text-muted-foreground">Confirm what the bill read. Fix anything off.</p>
+                  <button type="button" onClick={() => setEditingConfirm(v => !v)}
+                    className="text-xs font-medium text-tech hover:underline">
+                    {editingConfirm ? 'Done' : 'Edit'}
+                  </button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                {editingConfirm ? (
+                  <SurveySection tone="tech" icon={<FileText />} title="Correct the read"
+                    hint="Only what the bill got wrong. Everything else stays as read.">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="eircode" className="text-xs">Eircode</Label>
+                        <Input {...register('eircode')} placeholder="D04 X2C1" maxLength={8}
+                          onChange={e => setValue('eircode', e.target.value.toUpperCase())}
+                          className="w-full mt-1.5 h-control font-mono uppercase" />
+                      </div>
+                      <div>
+                        <Label htmlFor="annual_consumption_kwh" className="text-xs">Annual usage (kWh)</Label>
+                        <Input {...register('annual_consumption_kwh')} type="number" inputMode="numeric" placeholder="e.g. 4,500" className="w-full mt-1.5 h-control" />
+                      </div>
+                      <div>
+                        <Label htmlFor="current_tariff" className="text-xs">Day rate (€/kWh)</Label>
+                        <Input {...register('current_tariff')} type="number" step="0.01" inputMode="decimal" placeholder="0.35" className="w-full mt-1.5 h-control" />
+                      </div>
+                      <div>
+                        <Label htmlFor="monthly_bill" className="text-xs">Typical monthly bill (€)</Label>
+                        <Input {...register('monthly_bill')} type="number" inputMode="decimal" placeholder="e.g. 180" className="w-full mt-1.5 h-control" />
+                      </div>
+                    </div>
+                  </SurveySection>
+                ) : (
+                  <div className="relative overflow-hidden rounded-panel shadow-card">
+                    <span className="absolute left-0 top-0 h-full w-1 bg-tech z-10" aria-hidden />
+                    <BillReadPanel bill={bill} dense className="shadow-none rounded-none" />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <SurveySection tone="tech" icon={<Zap />} title="Their electricity, from the call"
+                  hint="Ask for a recent bill figure. Either number seeds the estimate; both is better.">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="monthly_bill" className="text-xs">Typical monthly bill (€)</Label>
+                      <Input {...register('monthly_bill')} type="number" inputMode="decimal" placeholder="e.g. 180" className="w-full mt-1.5 h-control" />
+                    </div>
+                    <div>
+                      <Label htmlFor="annual_consumption_kwh" className="text-xs">Annual usage (kWh)</Label>
+                      <Input {...register('annual_consumption_kwh')} type="number" inputMode="numeric" placeholder="e.g. 4,500" className="w-full mt-1.5 h-control" />
+                    </div>
+                    <div>
+                      <Label htmlFor="current_tariff" className="text-xs">Day rate (€/kWh)</Label>
+                      <Input {...register('current_tariff')} type="number" step="0.01" inputMode="decimal" placeholder="0.35" className="w-full mt-1.5 h-control" />
+                    </div>
+                    <div>
+                      <Label htmlFor="day_night_meter" className="text-xs">Meter</Label>
+                      <Select onValueChange={(v) => setValue('day_night_meter', v)} value={watch('day_night_meter')}>
+                        <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Single or day / night" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="single">Single rate</SelectItem>
+                          <SelectItem value="day_night">Day / night</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </SurveySection>
+                <SurveySection tone="tech" icon={<MapPin />} title="Where's the property?"
+                  hint="Eircode fills the address and drops the pin. Grab it on the call.">
+                  <EircodeAddressLookup
+                    value={leadData?.address || ''}
+                    onChange={(address) => {
+                      if (!address || !leadData) return;
+                      if (isDemoMode()) { setLeadData({ ...leadData, address }); return; }
+                      supabase.from('leads').update({ address }).eq('id', leadId)
+                        .then(() => setLeadData({ ...leadData, address }));
+                    }}
+                    showMap={true}
+                  />
+                </SurveySection>
+              </>
+            )}
+          </div>
         );
+      }
 
-      case 2: // Customer Goals & Preferences (moved up)
+      case 2: // Occupancy — THE hero. Asked, not ticked. Drives self-consumption → savings.
         return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              {/* Property Type - Key field for SEAI grant calculations */}
-              <div>
-                <Label htmlFor="property_type" className="font-medium">Property Type *</Label>
-                <Select onValueChange={(value) => setValue('property_type', value)} value={watch('property_type') || 'residential'}>
-                  <SelectTrigger className="w-full mt-1.5 h-12">
-                    <SelectValue placeholder="Select property type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="residential">Residential</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="industrial">Industrial</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">Determines SEAI grant eligibility</p>
+          <div className="space-y-3">
+            <SurveySection tone="deposit" icon={<Users />} title="Who's in the home, and who's around in the day?"
+              hint="The single biggest lever on the savings. It sets how much solar gets used on the spot instead of exported.">
+              {/* Building type sits here (not asked twice): it frames who is around in the day and picks the grant scheme */}
+              <div className="mb-4">
+                <Label className="text-xs">Building</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  {[['residential', 'Home'], ['commercial', 'Commercial / farm']].map(([v, label]) => {
+                    const active = (watch('property_type') || 'residential') === v;
+                    return (
+                      <button key={v} type="button" onClick={() => setValue('property_type', v)}
+                        className={cn('h-control rounded-control text-sm font-medium border transition-colors',
+                          active ? 'bg-doc-deposit/15 border-doc-deposit text-doc-deposit'
+                            : 'bg-background border-border text-muted-foreground hover:text-foreground')}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="annual_consumption_kwh">Annual Consumption (kWh) *</Label>
-                  <Input 
-                    {...register('annual_consumption_kwh')} 
-                    type="number" 
-                    placeholder="e.g., 4500" 
-                    className="w-full mt-1.5 h-12" 
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">From electricity bill</p>
-                </div>
-                <div>
-                  <Label htmlFor="current_tariff">Current Tariff (€/kWh)</Label>
-                  <Input 
-                    {...register('current_tariff')} 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.35" 
-                    className="w-full mt-1.5 h-12" 
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Avg €0.35/kWh in Ireland</p>
-                </div>
-              </div>
-
-              {/* FIRST question (Cal): domestic or commercial — the agents
-                  pick the ESB form + SEAI scheme off this. Pre-set from the
-                  bill read when captured; confirmed here on site. */}
-              <div className="p-3 rounded-control bg-tech-subtle/60 border border-tech/20">
-                <Label className="font-semibold">What kind of building is this?</Label>
-                <div className="flex gap-2 mt-2">
-                  {[['residential', 'Domestic home'], ['commercial', 'Commercial / farm']].map(([v, label]) => (
-                    <button key={v} type="button" onClick={() => setValue('property_type', v)}
-                      className={`flex-1 h-11 rounded-control text-sm font-medium border transition-colors ${watch('property_type') === v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:text-foreground'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5">Sets the grant scheme and which ESB form is prepared — automatically.</p>
-              </div>
-
-              {/* The two questions that decide the battery (Cal): how many
-                  people set the load; whether they're home in daylight sets
-                  whether solar meets it directly or a battery has to carry it
-                  to the evening. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="household_occupants">How many people live in the home?</Label>
+                  <Label htmlFor="household_occupants" className="text-xs">
+                    {(watch('property_type') || 'residential') === 'commercial' ? 'People on site?' : 'How many people live here?'}
+                  </Label>
                   <Select onValueChange={(v) => setValue('household_occupants', v)} value={watch('household_occupants')}>
-                    <SelectTrigger className="w-full mt-1.5 h-12"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {['1', '2', '3', '4', '5+'].map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>{['1', '2', '3', '4', '5+'].map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="home_during_day">Is anyone home during the day?</Label>
+                  <Label htmlFor="home_during_day" className="text-xs">Anyone home during the day?</Label>
                   <Select onValueChange={(v) => setValue('home_during_day', v)} value={watch('home_during_day')}>
-                    <SelectTrigger className="w-full mt-1.5 h-12"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="WFH? Kids? Retired?" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="usually">Yes — usually home</SelectItem>
+                      <SelectItem value="usually">Yes, usually home (WFH / retired)</SelectItem>
                       <SelectItem value="mixed">Some days / part-time</SelectItem>
-                      <SelectItem value="out">No — out at work</SelectItem>
+                      <SelectItem value="out">No, out at work</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1">Out all day = evening usage peak — the strongest battery case</p>
                 </div>
               </div>
-
-              <div className="p-4 bg-muted/50 rounded-lg space-y-4">
-                <Label className="font-semibold text-base">What are you looking to achieve?</Label>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
-                    <Switch
-                      checked={watch('battery_storage') || false}
-                      onCheckedChange={(checked) => setValue('battery_storage', checked)}
-                    />
-                    <div className="flex-1">
-                      <Label className="cursor-pointer font-medium text-base">Battery Storage</Label>
-                      <p className="text-sm text-muted-foreground">Store excess solar energy for nighttime use</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
-                    <Switch
-                      checked={watch('hot_water_diverter') || false}
-                      onCheckedChange={(checked) => setValue('hot_water_diverter', checked)}
-                    />
-                    <div className="flex-1">
-                      <Label className="cursor-pointer font-medium text-base">Hot Water Diverter</Label>
-                      <p className="text-sm text-muted-foreground">Eddi/iBoost to heat water with excess solar</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors">
-                    <Switch
-                      checked={watch('ev_charger') || false}
-                      onCheckedChange={(checked) => setValue('ev_charger', checked)}
-                    />
-                    <div className="flex-1">
-                      <Label className="cursor-pointer font-medium text-base">EV Charger</Label>
-                      <p className="text-sm text-muted-foreground">Charge your electric vehicle with solar power</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="customer_priorities">Customer Priorities & Notes</Label>
-                <Textarea 
-                  {...register('customer_priorities')} 
-                  placeholder="What's most important to the customer? (e.g., maximise savings, energy independence, reduce carbon footprint)" 
-                  rows={3} 
-                  className="w-full mt-1.5" 
-                />
-              </div>
-            </CardContent>
-          </Card>
+              {watch('home_during_day') && (
+                <p className="mt-2.5 text-xs leading-body text-doc-deposit bg-doc-deposit/10 rounded-control px-3 py-2">
+                  {watch('home_during_day') === 'out'
+                    ? 'Out all day, so the evening is the usage peak. A battery carries the day\'s sun to it. Strongest battery case.'
+                    : watch('home_during_day') === 'usually'
+                      ? 'Home through the day, so most of the solar is used on the spot. The panels do the heavy lifting. Lead with the yearly saving.'
+                      : 'Home part of the day, so a good share is used directly. A battery is a fair add for evening cover.'}
+                </p>
+              )}
+            </SurveySection>
+          </div>
         );
 
-      case 3: // Roof Details
+      case 3: // The goal — the "why". Natural follow-on from occupancy.
         return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <SurveySection tone="deposit" icon={<Target />} title="What's the goal here?"
+              hint="Cut the bill, charge an EV, hot water, batteries for backup. What matters to them.">
+              <div className="space-y-2">
+                {[
+                  { key: 'battery_storage', icon: <Battery className="size-4 text-doc-deposit" />, label: 'Battery / backup', desc: "Hold the day's solar for the evening or an outage" },
+                  { key: 'hot_water_diverter', icon: <Droplets className="size-4 text-tech" />, label: 'Hot-water diverter', desc: 'Eddi / iBoost, heats water with excess solar' },
+                  { key: 'ev_charger', icon: <Car className="size-4 text-primary" />, label: 'EV charger', desc: 'Charge the car off the roof' },
+                ].map(w => (
+                  <label key={w.key} className="flex items-center gap-3 p-2.5 rounded-control border border-border hover:border-tech/40 transition-colors cursor-pointer">
+                    {w.icon}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{w.label}</div>
+                      <div className="text-2xs text-muted-foreground">{w.desc}</div>
+                    </div>
+                    <Switch checked={watch(w.key as keyof SurveyFormData) as boolean || false} onCheckedChange={c => setValue(w.key as keyof SurveyFormData, c)} />
+                  </label>
+                ))}
+              </div>
+              <div className="mt-3">
+                <Label htmlFor="customer_priorities" className="text-xs">Anything else that matters to them?</Label>
+                <Textarea {...register('customer_priorities')} rows={2} className="w-full mt-1.5"
+                  placeholder="Savings, energy independence, carbon, backup during outages…" />
+              </div>
+            </SurveySection>
+          </div>
+        );
+
+      case 4: // Roof + shading — "looking at the house". Roof + environmental merged.
+        return (
+          <div className="space-y-3">
+            <SurveySection tone="tech" icon={<Home />} title="The roof">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="roof_type">Roof Type *</Label>
-                  <Select onValueChange={(value) => setValue('roof_type', value)} value={watch('roof_type')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select roof type" />
-                    </SelectTrigger>
+                  <Label htmlFor="roof_type" className="text-xs">Roof type</Label>
+                  <Select onValueChange={(v) => setValue('roof_type', v)} value={watch('roof_type')}>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Pitched / flat / mixed" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pitched">Pitched</SelectItem>
                       <SelectItem value="flat">Flat</SelectItem>
                       <SelectItem value="mixed">Mixed</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.roof_type && <p className="text-sm text-destructive mt-1">{errors.roof_type.message}</p>}
+                  {errors.roof_type && <p className="text-xs text-destructive mt-1">{errors.roof_type.message}</p>}
                 </div>
-
                 <div>
-                  <Label htmlFor="roof_condition">Roof Condition *</Label>
-                  <Select onValueChange={(value) => setValue('roof_condition', value)} value={watch('roof_condition')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select condition" />
-                    </SelectTrigger>
+                  <Label htmlFor="roof_condition" className="text-xs">Condition</Label>
+                  <Select onValueChange={(v) => setValue('roof_condition', v)} value={watch('roof_condition')}>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="excellent">Excellent</SelectItem>
                       <SelectItem value="good">Good</SelectItem>
@@ -654,15 +752,12 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                       <SelectItem value="poor">Poor</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.roof_condition && <p className="text-sm text-destructive mt-1">{errors.roof_condition.message}</p>}
+                  {errors.roof_condition && <p className="text-xs text-destructive mt-1">{errors.roof_condition.message}</p>}
                 </div>
-
                 <div>
-                  <Label htmlFor="roof_orientation">Roof Orientation</Label>
-                  <Select onValueChange={(value) => setValue('roof_orientation', value)} value={watch('roof_orientation')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select orientation" />
-                    </SelectTrigger>
+                  <Label htmlFor="roof_orientation" className="text-xs">Orientation</Label>
+                  <Select onValueChange={(v) => setValue('roof_orientation', v)} value={watch('roof_orientation')}>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Which way it faces" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="South">South</SelectItem>
                       <SelectItem value="South-East">South-East</SelectItem>
@@ -673,76 +768,67 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="roof_pitch">Roof Pitch (degrees)</Label>
-                  <Input {...register('roof_pitch')} type="number" step="1" placeholder="e.g., 30" className="w-full mt-1.5" />
+                  <Label htmlFor="roof_pitch" className="text-xs">Pitch (degrees)</Label>
+                  <Input {...register('roof_pitch')} type="number" step="1" placeholder="e.g. 30" className="w-full mt-1.5 h-control" />
                 </div>
-
                 <div className="sm:col-span-2">
-                  <Label htmlFor="roof_material">Roof Material</Label>
-                  <Select onValueChange={(value) => setValue('roof_material', value)} value={watch('roof_material')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select material" />
-                    </SelectTrigger>
+                  <Label htmlFor="roof_material" className="text-xs">Material</Label>
+                  <Select onValueChange={(v) => setValue('roof_material', v)} value={watch('roof_material')}>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Slate / tile / metal…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Concrete tiles">Concrete tiles</SelectItem>
                       <SelectItem value="Clay tiles">Clay tiles</SelectItem>
                       <SelectItem value="Slate">Slate</SelectItem>
                       <SelectItem value="Metal">Metal</SelectItem>
-                      <SelectItem value="Felt/Membrane">Felt/Membrane (flat)</SelectItem>
+                      <SelectItem value="Felt/Membrane">Felt / membrane (flat)</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        );
+            </SurveySection>
 
-      case 4: // Environmental
-        return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div>
-                <Label htmlFor="shading_analysis">Shading Analysis</Label>
-                <Select onValueChange={(value) => setValue('shading_analysis', value)} value={watch('shading_analysis')}>
-                  <SelectTrigger className="w-full mt-1.5">
-                    <SelectValue placeholder="Select shading level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="None">No shading</SelectItem>
-                    <SelectItem value="Minimal">Minimal (early morning/late evening only)</SelectItem>
-                    <SelectItem value="Partial">Partial (some hours affected)</SelectItem>
-                    <SelectItem value="Significant">Significant (major obstruction)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="nearby_obstructions">Nearby Obstructions</Label>
-                <Textarea 
-                  {...register('nearby_obstructions')} 
-                  placeholder="Trees, chimneys, neighboring buildings, dormer windows..." 
-                  rows={3} 
-                  className="w-full mt-1.5" 
-                />
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 5: // Electrical
-        return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SurveySection tone="tech" icon={<Sun />} title="Shading & obstructions">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="electrical_panel_capacity">Panel Capacity</Label>
+                  <Label htmlFor="shading_analysis" className="text-xs">Shading</Label>
+                  <Select onValueChange={(v) => setValue('shading_analysis', v)} value={watch('shading_analysis')}>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="How much shade hits the roof" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None">No shading</SelectItem>
+                      <SelectItem value="Minimal">Minimal (early / late only)</SelectItem>
+                      <SelectItem value="Partial">Partial (some hours)</SelectItem>
+                      <SelectItem value="Significant">Significant (major obstruction)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="nearby_obstructions" className="text-xs">Obstructions</Label>
+                  <Textarea {...register('nearby_obstructions')} rows={2} className="w-full mt-1.5"
+                    placeholder="Trees, chimneys, dormers, neighbouring buildings…" />
+                </div>
+              </div>
+            </SurveySection>
+
+            <SurveySection tone="tech" icon={<Camera />} title="Snap the roof while you're here"
+              hint="You're looking at it now. Grab the two roof shots so nobody has to come back for them.">
+              <GuidedPhotoCapture leadId={leadId} existingPhotos={photoList} onPhotosChange={handlePhotos}
+                photoIds={['roof_overview', 'roof_closeup']} showExtras={false} />
+            </SurveySection>
+          </div>
+        );
+
+      case 5: // Electrical — kept thin. The gear lives in the Design Studio, not here.
+        return (
+          <div className="space-y-3">
+            <SurveySection tone="tech" icon={<Zap />} title="The electrics"
+              hint="What the inverter has to work with. Three quick reads, no gear picking.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="electrical_panel_capacity" className="text-xs">Main fuse / panel capacity</Label>
                   <Select onValueChange={(value) => setValue('electrical_panel_capacity', value)} value={watch('electrical_panel_capacity')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select capacity" />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select capacity" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="40A">40A (older property)</SelectItem>
                       <SelectItem value="63A">63A (standard)</SelectItem>
@@ -752,139 +838,66 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="grid_connection_type">Grid Connection</Label>
+                  <Label htmlFor="grid_connection_type" className="text-xs">Grid connection</Label>
                   <Select onValueChange={(value) => setValue('grid_connection_type', value)} value={watch('grid_connection_type')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Single phase">Single phase</SelectItem>
                       <SelectItem value="Three phase">Three phase</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="sm:col-span-2">
-                  <Label htmlFor="meter_location">Meter Location</Label>
-                  <Input {...register('meter_location')} placeholder="e.g., Outside front, utility room, garage" className="w-full mt-1.5" />
-                </div>
-
-                <div>
-                  <Label htmlFor="recommended_system_size">Recommended System Size (kW)</Label>
-                  <Input {...register('recommended_system_size')} type="number" step="0.1" placeholder="e.g., 6.5" className="w-full mt-1.5" />
-                </div>
-
-                <div>
-                  <Label htmlFor="recommended_panel_count">Recommended Panel Count</Label>
-                  <Input {...register('recommended_panel_count')} type="number" placeholder="e.g., 16" className="w-full mt-1.5" />
-                </div>
-
-                {/* The gear, picked on the roof — lands on the proposal as-is */}
-                <div>
-                  <Label>Panel</Label>
-                  <Select onValueChange={(v) => setValue('recommended_panel_model', v)} value={watch('recommended_panel_model')}>
-                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="Pick the panel" /></SelectTrigger>
-                    <SelectContent>
-                      {getProductsByKind('panel').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Inverter</Label>
-                  <Select onValueChange={(v) => setValue('recommended_inverter_model', v)} value={watch('recommended_inverter_model')}>
-                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="Pick the inverter" /></SelectTrigger>
-                    <SelectContent>
-                      {getProductsByKind('inverter').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="sm:col-span-2">
-                  <Label>Battery {watch('battery_storage') ? '' : '(customer not interested — optional)'}</Label>
-                  <Select onValueChange={(v) => setValue('recommended_battery_model', v === 'none' ? '' : v)} value={watch('recommended_battery_model') || 'none'}>
-                    <SelectTrigger className="w-full mt-1.5"><SelectValue placeholder="No battery" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No battery</SelectItem>
-                      {getProductsByKind('battery').map(pr => <SelectItem key={pr.model} value={pr.model}>{pr.model} — {pr.spec}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">These picks pre-fill the proposal design step — change them there if the desk disagrees with the roof.</p>
+                  <Label htmlFor="meter_location" className="text-xs">Where's the meter / board?</Label>
+                  <Input {...register('meter_location')} placeholder="e.g. outside front, utility room, garage" className="w-full mt-1.5 h-control" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <p className="mt-3 text-xs text-muted-foreground leading-body">
+                Panels, inverter and battery are chosen in the Design Studio, on the real roof. This step just reads the supply.
+              </p>
+            </SurveySection>
+
+            <SurveySection tone="tech" icon={<Camera />} title="Snap the board and meter"
+              hint="Right in front of you at the fuse board. Two shots the fitter and the ESB form both need.">
+              <GuidedPhotoCapture leadId={leadId} existingPhotos={photoList} onPhotosChange={handlePhotos}
+                photoIds={['electrical_panel', 'meter']} showExtras={false} />
+            </SurveySection>
+          </div>
         );
 
-      case 6: // Installation & Logistics (merged)
+      case 6: // Installation — the fitter's prep pack. Address is captured on step 1, not here.
         return (
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex items-start gap-2 p-3 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded-lg border border-doc-proposal/30 dark:border-doc-proposal/30 mb-4">
-                <Info className="h-4 w-4 text-doc-proposal mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-doc-proposal dark:text-doc-proposal">
-                  These details help installers prepare for the site visit and reduce second visits.
-                </p>
-              </div>
-
-              {/* Address Lookup with Map */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <Label className="font-medium">Property Location</Label>
-                </div>
-                <EircodeAddressLookup 
-                  value={leadData?.address || ''}
-                  onChange={(address) => {
-                    if (address && leadData) {
-                      supabase
-                        .from('leads')
-                        .update({ address })
-                        .eq('id', leadId)
-                        .then(() => {
-                          setLeadData({ ...leadData, address });
-                        });
-                    }
-                  }}
-                  showMap={true}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <SurveySection tone="pop" icon={<Settings />} title="Getting a crew on the roof"
+              hint="What the fitter needs to know before the van leaves. Fewer surprises, fewer second visits.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="property_storeys">Property Storeys</Label>
+                  <Label htmlFor="property_storeys" className="text-xs">Storeys</Label>
                   <Select onValueChange={(value) => setValue('property_storeys', value)} value={watch('property_storeys')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select storeys" />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select storeys" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1-storey (bungalow)</SelectItem>
-                      <SelectItem value="2">2-storey</SelectItem>
+                      <SelectItem value="1">1 storey (bungalow)</SelectItem>
+                      <SelectItem value="2">2 storey</SelectItem>
                       <SelectItem value="3">3+ storey</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="scaffolding_required">Scaffolding Required</Label>
+                  <Label htmlFor="scaffolding_required" className="text-xs">Scaffolding</Label>
                   <Select onValueChange={(value) => setValue('scaffolding_required', value)} value={watch('scaffolding_required')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select option" />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select option" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="yes">Yes - Full scaffolding</SelectItem>
-                      <SelectItem value="partial">Partial - Some walls only</SelectItem>
-                      <SelectItem value="no">No - Ladder access OK</SelectItem>
+                      <SelectItem value="yes">Full scaffolding</SelectItem>
+                      <SelectItem value="partial">Partial, some walls</SelectItem>
+                      <SelectItem value="no">Ladder access is fine</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="attic_access">Attic Access</Label>
+                  <Label htmlFor="attic_access" className="text-xs">Attic access</Label>
                   <Select onValueChange={(value) => setValue('attic_access', value)} value={watch('attic_access')}>
-                    <SelectTrigger className="w-full mt-1.5">
-                      <SelectValue placeholder="Select access type" />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select access type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="easy">Easy hatch access</SelectItem>
                       <SelectItem value="difficult">Difficult access</SelectItem>
@@ -892,68 +905,86 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="parking_situation">Parking Situation</Label>
-                  <Input {...register('parking_situation')} placeholder="e.g., Driveway, street parking" className="w-full mt-1.5" />
-                </div>
-
-                <div className="sm:col-span-2 flex items-center gap-4 p-4 bg-muted rounded-lg">
-                  <Switch
-                    checked={watch('existing_solar') || false}
-                    onCheckedChange={(checked) => setValue('existing_solar', checked)}
-                  />
-                  <Label htmlFor="existing_solar" className="cursor-pointer">
-                    Property has existing solar system
-                  </Label>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Label htmlFor="customer_availability">Customer Availability</Label>
-                  <Textarea {...register('customer_availability')} placeholder="Best days/times for installation, any date restrictions..." rows={2} className="w-full mt-1.5" />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Label htmlFor="access_notes">Access Notes</Label>
-                  <Textarea {...register('access_notes')} placeholder="Gate codes, dog in garden, ring doorbell, etc..." rows={2} className="w-full mt-1.5" />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Label htmlFor="installation_notes">Installation Notes</Label>
-                  <Textarea {...register('installation_notes')} placeholder="Special considerations, cable routing preferences..." rows={2} className="w-full mt-1.5" />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Label htmlFor="special_requirements">Special Requirements</Label>
-                  <Textarea {...register('special_requirements')} placeholder="Permits, planning permission, HOA restrictions..." rows={2} className="w-full mt-1.5" />
+                  <Label htmlFor="parking_situation" className="text-xs">Parking</Label>
+                  <Input {...register('parking_situation')} placeholder="e.g. driveway, street parking" className="w-full mt-1.5 h-control" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <button type="button" onClick={() => setValue('existing_solar', !watch('existing_solar'))}
+                className={cn('mt-3 w-full flex items-center justify-between rounded-control border px-3.5 h-control text-sm transition-colors',
+                  watch('existing_solar') ? 'bg-pop-subtle border-pop text-pop' : 'bg-background border-border text-muted-foreground hover:text-foreground')}>
+                <span className="flex items-center gap-2"><Sun className="size-4" /> Existing solar already on the roof</span>
+                <Switch checked={watch('existing_solar') || false} onCheckedChange={(c) => setValue('existing_solar', c)} className="pointer-events-none" />
+              </button>
+            </SurveySection>
+
+            <SurveySection tone="pop" icon={<Info />} title="Notes for the fitter"
+              hint="Anything the crew should read before they knock. Optional, but it saves a phone call on the day.">
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <Label htmlFor="customer_availability" className="text-xs">When suits the customer?</Label>
+                  <Textarea {...register('customer_availability')} placeholder="Best days and times, any dates to avoid" rows={2} className="w-full mt-1.5" />
+                </div>
+                <div>
+                  <Label htmlFor="access_notes" className="text-xs">Getting in</Label>
+                  <Textarea {...register('access_notes')} placeholder="Gate codes, dog in the garden, ring the doorbell" rows={2} className="w-full mt-1.5" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="installation_notes" className="text-xs">On the job</Label>
+                    <Textarea {...register('installation_notes')} placeholder="Cable routing, panel layout preferences" rows={2} className="w-full mt-1.5" />
+                  </div>
+                  <div>
+                    <Label htmlFor="special_requirements" className="text-xs">Permits / planning</Label>
+                    <Textarea {...register('special_requirements')} placeholder="Planning permission, conservation area, estate rules" rows={2} className="w-full mt-1.5" />
+                  </div>
+                </div>
+              </div>
+            </SurveySection>
+
+            <SurveySection tone="pop" icon={<Camera />} title="Snap the run and the access"
+              hint="While you walk it: the attic, where the inverter goes, and how the crew gets in.">
+              <GuidedPhotoCapture leadId={leadId} existingPhotos={photoList} onPhotosChange={handlePhotos}
+                photoIds={['attic', 'inverter_location', 'access_point']} showExtras={false} />
+            </SurveySection>
+          </div>
         );
 
-      case 7: // Photos
+      case 7: { // The pack — everything snapped on the walk, in one place, plus extras
+        const shotFor = (id: string) => photoList.find(p => p.type === id);
         return (
-          <Card>
-            <CardContent className="pt-6">
-              <GuidedPhotoCapture
-                leadId={leadId}
-                existingPhotos={uploadedPhotos.map((p, i) => ({ 
-                  id: `photo-${i}`, 
-                  url: p.url, 
-                  type: p.type 
-                }))}
-                onPhotosChange={(photos) => {
-                  setUploadedPhotos(photos.map(p => ({
-                    url: p.url,
-                    type: p.type,
-                    description: p.type
-                  })));
-                }}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-3">
+            <SurveySection tone="pop" icon={<Camera />} title="The photo pack"
+              hint="Everything you snapped along the way, in one place. Green means it's in; red still needs a shot.">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {REQUIRED_PHOTOS.map(p => {
+                  const got = shotFor(p.id);
+                  return (
+                    <div key={p.id} className={cn('flex items-center gap-2 rounded-control border px-2.5 py-2',
+                      got ? 'border-doc-deposit/40 bg-doc-deposit/5'
+                        : p.required ? 'border-pop/30 bg-pop-subtle/40' : 'border-border bg-card')}>
+                      {got
+                        ? <img src={got.url} alt={p.label} className="size-9 rounded object-cover shrink-0" />
+                        : <span className={cn('size-9 rounded grid place-items-center shrink-0',
+                            p.required ? 'bg-pop-subtle text-pop' : 'bg-muted text-muted-foreground')}><Camera className="size-4" /></span>}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{p.label}</p>
+                        <p className={cn('text-2xs', got ? 'text-doc-deposit' : p.required ? 'text-pop' : 'text-muted-foreground')}>
+                          {got ? 'Captured' : p.required ? 'Needed' : 'Optional'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 pt-3 border-t border-border">
+                <GuidedPhotoCapture leadId={leadId} existingPhotos={photoList} onPhotosChange={handlePhotos}
+                  photoIds={[]} showHeader={false} />
+              </div>
+            </SurveySection>
+          </div>
         );
+      }
 
       default:
         return null;
@@ -972,14 +1003,15 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         />
       </div>
 
-      {/* Step Content with Animation and Swipe Gestures */}
+      {/* Step content. Calm, quick fade with a small rise — no big sideways
+          slide, no long wait-gap that reads as a dim flash between steps. */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.14, ease: 'easeOut' }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -988,67 +1020,46 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         </motion.div>
       </AnimatePresence>
 
-      {/* Survey Status Indicator */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="mb-1 block">Survey Status</Label>
-              <p className="text-xs text-muted-foreground">Auto-calculated based on completion</p>
-            </div>
-            <div className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium",
-              calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' 
-                ? 'bg-primary/10 text-primary dark:bg-primary/10 dark:text-primary'
-                : calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress'
-                ? 'bg-tech/10 text-tech'
-                : 'bg-muted text-muted-foreground'
-            )}>
-              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'completed' && (
-                <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Completed</span>
-              )}
-              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'in_progress' && 'In Progress'}
-              {calculateSurveyStatus(formValues, uploadedPhotos.length) === 'draft' && 'Draft'}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Footer nav, cal.com style: a clean Back on the left, a subtle Save, and
+          one prominent primary — Next through the steps, Create proposal at the end.
+          The step count and % live in the top stepper, so this bar stays calm. */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)}
+            disabled={currentStep <= 1}
+            className="h-11 px-3 text-muted-foreground"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
 
-      {/* ONE slim action bar (was: step pill + two h-14 buttons + save/complete
-          stack + helper text — half the phone screen of chrome). Left: prev/next.
-          Right: Save + the star action, Complete & Create Proposal. */}
-      <div className="fixed bottom-0 left-0 right-0 px-3 py-2 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
-        <div className="max-w-4xl mx-auto flex items-center gap-2">
-          <SurveyStepNavigation
-            currentStep={currentStep}
-            totalSteps={SURVEY_STEPS.length}
-            onStepChange={setCurrentStep}
-          />
           <div className="ml-auto flex items-center gap-2">
             <Button
+              variant="ghost"
               onClick={handleSubmit((data) => onSubmit(data, false))}
               disabled={loading}
-              variant="outline"
-              size="sm"
-              className="h-9"
+              className="h-11 px-3 text-muted-foreground"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-1.5 h-4 w-4" /> Save</>}
             </Button>
-            {onCreateProposal && (
+            {currentStep < SURVEY_STEPS.length ? (
+              <Button onClick={() => setCurrentStep(currentStep + 1)} className="h-11 px-5 font-semibold">
+                Next: {SURVEY_STEPS[currentStep]?.shortLabel}
+                <ChevronRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            ) : onCreateProposal ? (
               <Button
                 type="button"
                 onClick={handleCompleteAndCreateProposal}
                 disabled={loading || !completionStatus.isComplete}
-                size="sm"
-                className="h-9"
+                className="h-11 px-5 font-semibold"
                 title={!completionStatus.isComplete ? `Complete all required fields (${completionStatus.completionPercentage}%) to create a proposal` : undefined}
               >
-                <FileText className="mr-1.5 h-4 w-4" />
-                <span className="hidden sm:inline">Complete &amp; Create Proposal</span>
-                <span className="sm:hidden">Proposal</span>
+                <FileText className="mr-1.5 h-4 w-4" /> Create proposal
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

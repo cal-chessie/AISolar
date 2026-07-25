@@ -19,6 +19,7 @@ import {
   ChevronDown, ChevronUp, Layout, List,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { Kpi } from './consultant/cockpitUi';
 
 type ViewMode = 'month' | 'week' | 'day';
 type EventType = 'consultation' | 'site_survey' | 'install' | 'follow_up' | 'deadline' | 'agent_run' | 'payment';
@@ -106,11 +107,11 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
     const d = new Date(today); d.setDate(today.getDate() + day);
     [{ time: '09:00', title: 'Follow-Up Agent daily run' },
      { time: '09:30', title: 'Payment Reminder Agent daily run' }].forEach(ae => {
-      events.push({ id: `agent_${day}_${ae.time}`, date: d, time: ae.time, endTime: '09:32', type: 'agent_run', title: ae.title, customer: '—', assignee: 'System', route: '/agents' });
+      events.push({ id: `agent_${day}_${ae.time}`, date: d, time: ae.time, endTime: '09:32', type: 'agent_run', title: ae.title, customer: '—', assignee: 'System', route: '/agent-console' });
     });
     // Weekly Monday digest
     if (d.getDay() === 1) {
-      events.push({ id: `agent_digest_${day}`, date: d, time: '10:00', type: 'agent_run', title: 'Customer Digest weekly run', customer: '—', assignee: 'System', route: '/agents' });
+      events.push({ id: `agent_digest_${day}`, date: d, time: '10:00', type: 'agent_run', title: 'Customer Digest weekly run', customer: '—', assignee: 'System', route: '/agent-console' });
     }
   }
 
@@ -188,8 +189,25 @@ export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId:
   const selectedDayEvents = selectedDate ? (eventsByDay.get(selectedDate.toDateString()) || []) : [];
   const dayViewEvents = eventsByDay.get(currentDate.toDateString()) || [];
 
+  // The week ahead in four numbers — same family strip as Today + Insights.
+  const ahead = useMemo(() => {
+    const from = new Date(today.toDateString());
+    const to = new Date(from); to.setDate(from.getDate() + 7);
+    const inRange = events.filter(e => e.date >= from && e.date <= to);
+    const n = (...types: EventType[]) => inRange.filter(e => types.includes(e.type)).length;
+    return { calls: n('consultation', 'follow_up'), surveys: n('site_survey'), installs: n('install'), deadlines: n('deadline') };
+  }, [events]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="p-3 space-y-3">
+      {/* The week ahead, on the family palette */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Kpi tone="neutral" icon={<Phone />} value={ahead.calls} label="Calls this week" />
+        <Kpi tone="tech" icon={<MapPin />} value={ahead.surveys} label="Site surveys" />
+        <Kpi tone="proposal" icon={<Wrench />} value={ahead.installs} label="Installs" />
+        <Kpi tone="pop" icon={<Clock />} value={ahead.deadlines} label="Deadlines" />
+      </div>
+
       {/* Calendar header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">

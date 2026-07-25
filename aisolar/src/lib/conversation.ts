@@ -61,8 +61,13 @@ export interface ChatMessage {
  * which action buttons are interactive (the customer can pay/sign; the
  * consultant can edit/resend).
  */
-export function buildConversation(lead: DummyLead): ChatMessage[] {
+export function buildConversation(lead: DummyLead, opts: { audience?: 'customer' | 'consultant' } = {}): ChatMessage[] {
   const msgs: ChatMessage[] = [];
+  // The customer must never see engagement tracking ("opened proposal 4×") —
+  // that's an internal buying signal for the consultant, and it reads as
+  // surveillance to the homeowner. Every other stage update is fine for them.
+  const forCustomer = opts.audience === 'customer';
+  const isEngagementPing = (s: string) => /\bopened\b.*\bproposal\b|reopened/i.test(s);
 
   // Welcome
   msgs.push({
@@ -86,6 +91,7 @@ export function buildConversation(lead: DummyLead): ChatMessage[] {
   // Touchpoints as messages
   lead.touchpoints.forEach((tp, i) => {
     if (tp.actor === 'customer' && tp.channel === 'portal') {
+      if (forCustomer && isEngagementPing(tp.summary)) return; // hide "opened proposal 4×" from the homeowner
       msgs.push({
         id: `tp_${i}`,
         type: 'system',

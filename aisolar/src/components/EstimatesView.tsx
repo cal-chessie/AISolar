@@ -105,7 +105,7 @@ export default function EstimatesView({ leads, onSelectLead }: { leads: DummyLea
         <div className="flex gap-1">
           {(['savings', 'bill', 'payback', 'score'] as const).map(s => (
             <button key={s} onClick={() => setSortBy(s)}
-              className={`px-2 py-1 rounded-control text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              className={`px-2 py-1 rounded-control text-[11px] font-medium capitalize ${sortBy === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
               {s}
             </button>
           ))}
