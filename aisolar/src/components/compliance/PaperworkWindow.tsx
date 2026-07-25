@@ -30,7 +30,7 @@ import type { DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { getProposalTerms } from '@/lib/proposalTerms';
 import { decideCompliance } from '@/lib/complianceDecision';
-import { DowTemplate, LoaTemplate } from '@/components/compliance/docTemplates';
+import { DowTemplate, LoaTemplate, Nc6Template, Nc7Template } from '@/components/compliance/docTemplates';
 import BlockDiagram from '@/components/compliance/BlockDiagram';
 import { downloadEsbForm } from '@/lib/pdfFill';
 import { getProduct } from '@/config/productCatalog';
@@ -295,13 +295,27 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                 <p className="text-2xs text-muted-foreground">Generated from the job's design data. An engineer reviews and stamps before it goes to ESB — the drawing draws itself, the sign-off stays human.</p>
               </div>
             ) : viewing.id === 'nc6' ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
+                {/* The PREPARED form comes first — it's the thing that saves the
+                    work. The blank official PDF sits underneath as reference,
+                    where it belongs, rather than being the whole offering. */}
+                <div className="rounded-control border border-border p-4">
+                  {esbForm === 'NC7' ? <Nc7Template lead={lead} /> : <Nc6Template lead={lead} />}
+                </div>
                 <Button size="sm" className="w-full font-semibold"
                   onClick={() => downloadEsbForm(lead, esbForm).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
-                  Download {esbForm === 'NC7' ? 'the full NC7 bundle (4 forms + data)' : 'pre-filled NC6'} <ArrowRight className="size-4 ml-1" />
+                  Download {esbForm === 'NC7' ? 'the full NC7 bundle (4 forms + data)' : 'the NC6 + data sheet'} <ArrowRight className="size-4 ml-1" />
                 </Button>
-                <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="w-full h-[45vh] rounded-control border border-border" />
-                <p className="text-2xs text-muted-foreground">The official ESB Networks form, pre-fill data ready from the record — the Safe Electric installer completes and submits it{esbForm === 'NC7' ? ' with the letter of authority and single line diagram' : ''}.</p>
+                <details className="group">
+                  <summary className="text-2xs text-muted-foreground cursor-pointer hover:text-foreground list-none">
+                    ▸ The blank official ESB form, for reference
+                  </summary>
+                  <iframe title="Official ESB NC form" src={esbForm === 'NC6' ? '/forms/esbn-form-nc6.pdf' : '/forms/esbn-form-nc7.pdf'} className="mt-2 w-full h-[45vh] rounded-control border border-border" />
+                </details>
+                <p className="text-2xs text-muted-foreground">
+                  A registered Safe Electric contractor signs and submits — the platform prepares it,
+                  a person files it.
+                </p>
               </div>
             ) : ['nc7_01', 'nc7_02', 'nc7_03'].includes(viewing.id) ? (
               <iframe title="Official ESB form" src={viewing.id === 'nc7_01' ? '/forms/esbn-nc7-01-installation-confirmation.pdf' : viewing.id === 'nc7_02' ? '/forms/esbn-nc7-02-els-test.pdf' : '/forms/esbn-nc7-03-els-declaration.pdf'} className="w-full h-[55vh] rounded-control border border-border" />
