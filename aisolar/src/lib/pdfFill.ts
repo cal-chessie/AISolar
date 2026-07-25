@@ -29,29 +29,60 @@ import { brand } from '@/config/brand';
 
 type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 
-/** Per-form {page,x,y,size?} maps for true in-box overlay. Empty until the
- *  calibration pass; fill these and mode 2 switches on automatically. */
+/**
+ * Per-form {page,x,y,size?} maps for true in-box overlay.
+ *
+ * CALIBRATION METHOD — reproducible, not eyeballed:
+ *   node scripts/pdf-probe.mjs public/forms/esbn-form-nc6.pdf <page>
+ * dumps every label with its exact baseline {x,y} in PDF user space. pdf.js and
+ * pdf-lib share a bottom-left origin, so a probed y drops straight in here.
+ * Values sit on the SAME baseline as their label, starting just right of where
+ * the label ends (label x + width + a few pt of gap).
+ */
 const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number }>> = {
-  // CALIBRATED 23 Jul 2026 against ESB nc6-form page 1 (595x842pt), two passes.
+  // NC6 — 595x842pt, 6 pages. Page 1 sections 1–3, page 2 section 5 table.
+  // Re-verified 25 Jul 2026 against probed label positions; two coordinates
+  // from the first pass were wrong and are corrected below.
   NC6: [
+    // § 1 Customer's full name and site address (free block, y 460–515)
     { field: 'Customer name', page: 0, x: 110, y: 495 },
     { field: 'Installation address', page: 0, x: 110, y: 472 },
-    { field: 'Phone', page: 0, x: 492, y: 442 },
-    { field: 'Email', page: 0, x: 115, y: 418 },
-    { field: 'MPRN', page: 0, x: 350, y: 336 },
+    // FIX: was x=492,y=442 — nowhere near the label. "Mobile number:" sits at
+    // x=235 w=73 (ends 308) on baseline y=454, so the value goes at x=315.
+    { field: 'Phone', page: 0, x: 315, y: 454 },
+    // "Email:" is x=40 w=28 (ends 68) on baseline y=414.
+    { field: 'Email', page: 0, x: 75, y: 414 },
+    // FIX: was x=350,y=336 — that lands on top of the "Eircode:" label (x=358).
+    // "Please provide 11 digit MPRN no:" is x=40 w=167 (ends 207) at y=332.
+    { field: 'MPRN', page: 0, x: 215, y: 332 },
+    // NEW: "Eircode:" x=358 w=39 (ends 397) at y=332.
+    { field: 'Eircode', page: 0, x: 402, y: 332 },
+    // § 3 Installer/Consultant details — same block offset as § 1 (header y=217)
+    { field: 'Installer company', page: 0, x: 110, y: 194 },
+    { field: 'Installer RECI no.', page: 0, x: 110, y: 171 },
+    // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
+    // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
+    // from x≈390. Row baselines probed off their labels.
+    { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 8 },
+    { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
+    { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
+    { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
   ],
-  // CALIBRATED 23 Jul 2026 against ESBN_Form-NC7_Dec21 page 1 (595x842pt),
-  // browser render-verify loop, three passes. ESB wants BLOCK CAPITALS —
-  // overlay values are uppercased at draw time.
+  // NC7 — 595x842pt. Page 1 is a COMB form: each field is a row of individual
+  // character boxes, so the value must sit ON the row's baseline or it reads
+  // half a box out. Baselines re-probed 25 Jul 2026 and snapped; the first
+  // pass was 2–15pt high on several rows (Site address 2 was 15pt out).
+  // ESB want BLOCK CAPITALS — values are uppercased at draw time.
   NC7: [
-    { field: 'Customer name', page: 0, x: 100, y: 635 },
+    { field: 'Customer name', page: 0, x: 100, y: 633 },      // comb row x=38 w=522
     { field: 'Installation address', page: 0, x: 100, y: 605 },
-    { field: 'Address line 2', page: 0, x: 100, y: 590 },
-    { field: 'Phone', page: 0, x: 132, y: 555 },
-    { field: 'Email', page: 0, x: 140, y: 540 },
-    { field: 'Contact person', page: 0, x: 138, y: 505 },
-    { field: 'Site address 1', page: 0, x: 100, y: 452 },
-    { field: 'Site address 2', page: 0, x: 100, y: 427 },
+    { field: 'Address line 2', page: 0, x: 100, y: 588 },     // was 590
+    { field: 'Eircode', page: 0, x: 468, y: 588 },            // NEW — comb x=464 w=97
+    { field: 'Phone', page: 0, x: 132, y: 554 },              // was 555; comb x=95 w=131
+    { field: 'Email', page: 0, x: 140, y: 536 },              // was 540; comb x=63
+    { field: 'Contact person', page: 0, x: 138, y: 500 },     // was 505; comb x=96
+    { field: 'Site address 1', page: 0, x: 100, y: 459 },     // was 452; comb x=38 w=177
+    { field: 'Site address 2', page: 0, x: 100, y: 442 },     // was 427 — 15pt out
   ],
   NC8: [], NC5: [],
 };
