@@ -84,3 +84,10 @@ Full rebuild of the Survey→Design step into a real cockpit. State:
 ### Known / flagged
 - Google Solar `buildingInsights` (panel-fit "Fill the roof") is a browser fetch → CORS-blocked on localhost; proxy through an edge function for production (googleSolar.ts already flags). The IMAGE is unaffected.
 - Minor: first KPI value ("10.6 kWp") wraps to 2 lines on narrow KPI cards (tablet 4-up / mobile 2-up) — shared Kpi component, left as-is.
+
+## .note (25 Jul) — add a string = panels on ANOTHER roof
+TOMORROW: the multi-array/strings work must let the consultant **add another
+string to put panels on a different roof face**. Framing Cal wants: one string
+per roof (front / back / side), each its own placeable array, and the studio
+does the string math across them. This is the concrete shape of the
+`arrays[]` model already listed for tomorrow — a string IS a roof's array.

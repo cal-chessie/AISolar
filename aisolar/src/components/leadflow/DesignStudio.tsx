@@ -365,20 +365,20 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
         </div>
         <div className={cn('space-y-3 min-w-0', mapSide === 'right' && 'lg:order-1')}>
           {/* The money — up top, prominent. The reason the customer says yes. */}
-          <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/[0.06] p-4">
+          <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/[0.06] p-3.5">
             <div className="flex items-baseline justify-between gap-2">
               <span className="label-micro flex items-center gap-1"><Sparkles className="size-3.5 text-doc-deposit" /> What this design does</span>
               <span className="text-2xs text-muted-foreground tabular-nums shrink-0">{systemSizeKw} kWp · {count} panels</span>
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-doc-deposit tabular-nums leading-none">{eur(annualSavings)}</span>
-              <span className="text-sm text-muted-foreground">saved a year</span>
+            <div className="mt-1.5 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-doc-deposit tabular-nums leading-none">{eur(annualSavings)}</span>
+              <span className="text-xs text-muted-foreground">saved a year</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
               Covers <strong className="text-foreground tabular-nums">{coverage}%</strong> of {lead.name.split(' ')[0]}'s bill · <strong className="text-foreground tabular-nums">{Math.round(selfConsumption * 100)}%</strong> used at home
               {yieldFactor < 0.98 && <> · <span className="text-doc-proposal font-medium">{Math.round(yieldFactor * 100)}% roof yield</span></>}
             </div>
-            <p className="mt-2.5 text-xs text-muted-foreground leading-body">
+            <p className="mt-2 text-xs text-muted-foreground leading-body">
               {designData.includeBattery ? 'The battery lifts self-consumption by holding the day\'s sun for the evening.' : lead.survey?.home_during_day === 'out' ? 'They\'re out most of the day, so a battery would lift this further, worth offering.' : 'A battery is a fair add for evening cover, not the headline here.'}
             </p>
           </div>
