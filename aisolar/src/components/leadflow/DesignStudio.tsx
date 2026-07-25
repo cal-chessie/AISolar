@@ -122,7 +122,10 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const annualUse = lead.annual_kwh || estimate.annualKwh || 1;
   const coverage = Math.min(100, Math.round((production / annualUse) * 100));
   // Cost, live off the sized array (same pricing/grant rates as the proposal).
-  const grossCost = systemCost({ systemSizeKw, batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0 });
+  // Panels/inverter/battery via the per-kWp model; add-ons priced per unit.
+  const diverterPrice = designData.includeDiverter ? ((getProduct(designData.diverterModel, 'diverter') ?? diverters[0])?.price ?? 0) : 0;
+  const chargerPrice = designData.includeCharger ? ((getProduct(designData.chargerModel, 'charger') ?? chargers[0])?.price ?? 0) : 0;
+  const grossCost = systemCost({ systemSizeKw, batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0 }) + diverterPrice + chargerPrice;
   const seaiGrant = domesticSolarGrant(systemSizeKw);
   const netCost = Math.max(0, grossCost - seaiGrant);
   const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;

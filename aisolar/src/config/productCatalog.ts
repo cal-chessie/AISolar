@@ -18,6 +18,9 @@ export interface CatalogProduct {
   widthM?: number;
   heightM?: number;
   watts?: number;
+  /** installed price (EUR). Panels/inverter/battery still price via the per-kWp
+      model in pricing.ts today; add-ons (diverter/charger) price per unit here. */
+  price?: number;
   /** real product photo — /public path or https URL */
   image?: string;
   /** manufacturer data sheet — /public PDF path or https URL. Renders a
@@ -74,22 +77,22 @@ const CATALOG: CatalogProduct[] = [
   },
   {
     model: 'myenergi Eddi', kind: 'diverter', maker: 'myenergi',
-    spec: 'hot-water diverter · 2 loads', warrantyYears: 3,
+    spec: 'hot-water diverter · 2 loads', warrantyYears: 3, price: 395,
     blurb: 'Sends excess solar to the immersion instead of the grid — free hot water.',
   },
   {
     model: 'Marlec iBoost Solar', kind: 'diverter', maker: 'Marlec',
-    spec: 'hot-water diverter', warrantyYears: 5,
+    spec: 'hot-water diverter', warrantyYears: 5, price: 345,
     blurb: 'Diverts surplus solar to the immersion tank so it is not exported for pennies.',
   },
   {
     model: 'myenergi Zappi', kind: 'charger', maker: 'myenergi',
-    spec: '7 kW · solar-aware', warrantyYears: 3,
+    spec: '7 kW · solar-aware', warrantyYears: 3, price: 895,
     blurb: 'Charges the car off the roof — eco mode uses only surplus solar.',
   },
   {
     model: 'Ohme ePod', kind: 'charger', maker: 'Ohme',
-    spec: '7 kW · smart-tariff', warrantyYears: 3,
+    spec: '7 kW · smart-tariff', warrantyYears: 3, price: 795,
     blurb: 'Smart charging that leans on cheap night rates and surplus solar.',
   },
 ];

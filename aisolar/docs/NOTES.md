@@ -100,3 +100,11 @@ TOMORROW: make the grant property-type aware — `seaiPropertyType(...)` off the
 BILL read (not the survey), choose domesticSolarGrant vs calculateNDMG, and run
 it through the spine so estimate + studio + proposal all show the same grant.
 Cross-links the existing "logic is the bill not survey" note.
+
+## .note (25 Jul) — per-product pricing
+Diverter + EV charger now carry a `price` in the catalog and are added to the
+studio gross cost (they previously didn't move the price at all). BROADER TODO:
+migrate ALL gear to per-product prices in the catalog and have the cost math
+read them, instead of the flat per-kWp / per-kWh model in pricing.ts. Must stay
+reconciled with the ProposalStep breakdown (line items → grossCost) so the
+studio and proposal agree — do this alongside the numbers-through-spine work.
