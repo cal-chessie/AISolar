@@ -8,7 +8,7 @@
  *   - WhatsApp channel included
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { brand } from '@/config/brand';
+import { useCompanyCompliance, saveCompanyCompliance, complianceGaps, type CompanyCompliance } from '@/lib/companyCompliance';
 import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
@@ -455,6 +456,13 @@ function BrandConfigFull() {
           })}
         </div>
 
+        {/* ── COMPANY & COMPLIANCE ────────────────────────────────────────────
+            The registration numbers every statutory form needs. These used to
+            live in brand.legal as empty strings with no way to fill them, which
+            meant the RECI number silently blocked EVERY NC6. Set once here and
+            every form, on every job, fills itself. */}
+        <CompanyComplianceCard />
+
         {/* Basic brand */}
         <div className="grid sm:grid-cols-2 gap-3">
           <div><Label className="text-xs">Brand name</Label><Input value={brandData.name} onChange={e => setBrandData({...brandData, name: e.target.value})} className="mt-1 h-8 text-sm" /></div>
@@ -757,6 +765,85 @@ function ProposalTermsCard() {
       <Button size="sm" className="h-9 font-semibold" onClick={() => { saveProposalTerms(t); toast.success('Proposal terms saved', { description: 'Every new proposal renders these.' }); }}>
         Save terms
       </Button>
+    </div>
+  );
+}
+
+/**
+ * CompanyComplianceCard — the registration numbers every statutory form needs.
+ *
+ * Deliberately shows what each field UNBLOCKS, because otherwise these read as
+ * bureaucratic box-filling. A missing RECI number isn't an empty field, it's
+ * every ESB notification on the system stuck.
+ */
+function CompanyComplianceCard() {
+  const saved = useCompanyCompliance();
+  const [form, setForm] = useState<CompanyCompliance>(saved);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => { setForm(saved); setDirty(false); }, [saved]);
+
+  const set = (k: keyof CompanyCompliance) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(f => ({ ...f, [k]: e.target.value })); setDirty(true);
+  };
+
+  const gaps = complianceGaps();
+
+  const FIELDS: Array<{ k: keyof CompanyCompliance; label: string; unblocks: string; placeholder: string }> = [
+    { k: 'reciNumber', label: 'Safe Electric / RECI number', unblocks: 'every ESB NC6/NC7 + the RECI cert', placeholder: 'e.g. 12345' },
+    { k: 'seaiInstallerId', label: 'SEAI registered installer ID', unblocks: 'the SEAI grant application', placeholder: 'e.g. SEAI-00000' },
+    { k: 'croNumber', label: 'CRO company number', unblocks: 'Declaration of Works, invoices', placeholder: 'e.g. 654321' },
+    { k: 'vatNumber', label: 'VAT number', unblocks: 'invoices', placeholder: 'e.g. IE1234567X' },
+    { k: 'companyLandline', label: 'Company phone', unblocks: 'NC6 §3 installer correspondence', placeholder: '01 234 5678' },
+    { k: 'companyEmail', label: 'Company email', unblocks: 'NC6 §3 installer correspondence', placeholder: 'hello@…' },
+    { k: 'registeredAddress', label: 'Registered address', unblocks: 'all statutory forms', placeholder: 'Dublin, Ireland' },
+  ];
+
+  return (
+    <div className="rounded-panel border border-border bg-card p-4">
+      <div className="flex items-start gap-2 flex-wrap">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Shield className="size-4 text-doc-contract shrink-0" /> Company &amp; compliance
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Set once. Every SEAI and ESB form on every job reads these.
+          </p>
+        </div>
+        {gaps.length > 0 && (
+          <span className="ml-auto shrink-0 text-2xs font-semibold rounded-full bg-doc-proposal/10 text-doc-proposal px-2 py-1">
+            {gaps.length} blocking {gaps.length === 1 ? 'form' : 'forms'}
+          </span>
+        )}
+      </div>
+
+      {gaps.length > 0 && (
+        <ul className="mt-3 rounded-control bg-doc-proposal/5 border border-doc-proposal/30 p-2.5 space-y-1">
+          {gaps.map(g => (
+            <li key={g.field} className="text-2xs leading-snug">
+              <strong>{g.field}</strong> — {g.why}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-3 grid sm:grid-cols-2 gap-3">
+        {FIELDS.map(f => (
+          <div key={f.k} className={f.k === 'registeredAddress' ? 'sm:col-span-2' : ''}>
+            <Label className="text-xs">{f.label}</Label>
+            <Input value={form[f.k]} onChange={set(f.k)} placeholder={f.placeholder} className="mt-1 h-8 text-sm" />
+            <p className="mt-0.5 text-2xs text-muted-foreground">Unblocks: {f.unblocks}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <Button size="sm" className="h-8 text-xs" disabled={!dirty}
+          onClick={() => { saveCompanyCompliance(form); setDirty(false); toast.success('Company details saved', { description: 'Every open form just picked these up.' }); }}>
+          Save
+        </Button>
+        {dirty && <span className="text-2xs text-muted-foreground">unsaved changes</span>}
+      </div>
     </div>
   );
 }

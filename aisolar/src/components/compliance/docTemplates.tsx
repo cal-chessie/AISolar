@@ -15,6 +15,7 @@ import { brand } from '@/config/brand';
 import { useTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 import { getProduct } from '@/config/productCatalog';
 import { inverterAcKw, decideCompliance } from '@/lib/complianceDecision';
+import { getCompanyCompliance } from '@/lib/companyCompliance';
 
 const eur = (n: number | null | undefined) =>
   n == null ? '—' : new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -60,7 +61,7 @@ function fields(lead: DummyLead) {
     hwDiverter: (i.hot_water_diverter as boolean | undefined),
     totalCost: lead.proposal?.net_cost,
     company: getTenantBrand().proposalCompanyName || brand.legal.tradingName,
-    seaiCompanyId: brand.legal.companyNumber || undefined, // SEAI register ID — needs Cal's number
+    seaiCompanyId: getCompanyCompliance().seaiInstallerId || undefined,
   };
 }
 
@@ -87,7 +88,7 @@ export function DowTemplate({ lead }: { lead: DummyLead }) {
       <div>
         <div className="font-bold mb-1">Solar PV Registered Company</div>
         <Row label="Company name" value={f.company} />
-        <Row label="Company identification number" value={f.seaiCompanyId} from="Settings — SEAI company ID" />
+        <Row label="Company identification number" value={f.seaiCompanyId} from="Settings → Company & compliance" />
         <Row label="Property year of construction" value={f.yearBuilt} from="intake — year built" />
         <Row label="Total cost incl. parts, labour, VAT" value={eur(f.totalCost)} from="proposal" />
       </div>
@@ -161,7 +162,8 @@ export function esbReadiness(lead: DummyLead): EsbReadiness {
   // Phase is DERIVED by decideCompliance from the survey, not a loose field —
   // it only counts as missing when there's no survey to derive it from.
   if (!lead.survey) missing.push({ field: 'Supply phase confirmation', from: 'site survey' });
-  if (!brand.legal?.reciNumber) missing.push({ field: 'Safe Electric / RECI number', from: 'company settings' });
+  const cc = getCompanyCompliance();
+  if (!cc.reciNumber.trim()) missing.push({ field: 'Safe Electric / RECI number', from: 'Settings → Company & compliance' });
 
   return { ready: missing.length === 0, missing };
 }
@@ -222,8 +224,9 @@ function EsbInstaller({ lead }: { lead: DummyLead }) {
     <div className="pt-1">
       <div className="font-semibold mb-1">3 · Installer</div>
       <Row label="Company" value={f.company} />
-      <Row label="Safe Electric / RECI number" value={brand.legal?.reciNumber || undefined} from="company settings" />
-      <Row label="Registered address" value={brand.legal?.registeredAddress} />
+      <Row label="Safe Electric / RECI number" value={getCompanyCompliance().reciNumber || undefined} from="Settings → Company & compliance" />
+      <Row label="Registered address" value={getCompanyCompliance().registeredAddress || undefined} from="Settings → Company & compliance" />
+      <Row label="Contact" value={getCompanyCompliance().companyLandline || undefined} from="Settings → Company & compliance" />
       <Row label="Installer contact" value={lead.assigned_installer ?? undefined} from="job assignment" />
     </div>
   );
