@@ -7,7 +7,7 @@
  */
 export interface CatalogProduct {
   model: string;
-  kind: 'panel' | 'inverter' | 'battery';
+  kind: 'panel' | 'inverter' | 'battery' | 'diverter' | 'charger';
   maker: string;
   /** headline spec the homeowner understands */
   spec: string;
@@ -72,12 +72,34 @@ const CATALOG: CatalogProduct[] = [
     spec: '10.2 kWh · LFP', warrantyYears: 10,
     blurb: 'LFP chemistry — safe, long-life storage sized for Irish evening usage.',
   },
+  {
+    model: 'myenergi Eddi', kind: 'diverter', maker: 'myenergi',
+    spec: 'hot-water diverter · 2 loads', warrantyYears: 3,
+    blurb: 'Sends excess solar to the immersion instead of the grid — free hot water.',
+  },
+  {
+    model: 'Marlec iBoost Solar', kind: 'diverter', maker: 'Marlec',
+    spec: 'hot-water diverter', warrantyYears: 5,
+    blurb: 'Diverts surplus solar to the immersion tank so it is not exported for pennies.',
+  },
+  {
+    model: 'myenergi Zappi', kind: 'charger', maker: 'myenergi',
+    spec: '7 kW · solar-aware', warrantyYears: 3,
+    blurb: 'Charges the car off the roof — eco mode uses only surplus solar.',
+  },
+  {
+    model: 'Ohme ePod', kind: 'charger', maker: 'Ohme',
+    spec: '7 kW · smart-tariff', warrantyYears: 3,
+    blurb: 'Smart charging that leans on cheap night rates and surplus solar.',
+  },
 ];
 
 const KIND_DEFAULT: Record<CatalogProduct['kind'], Omit<CatalogProduct, 'model'>> = {
   panel:    { kind: 'panel', maker: '', spec: 'Tier-1 mono panel', warrantyYears: 25, blurb: 'Tier-1 solar panel with 25-year performance warranty.' },
   inverter: { kind: 'inverter', maker: '', spec: 'Hybrid inverter', warrantyYears: 10, blurb: 'Converts and manages the power your panels generate.' },
   battery:  { kind: 'battery', maker: '', spec: 'LFP battery storage', warrantyYears: 10, blurb: 'Stores excess solar for when you actually use power.' },
+  diverter: { kind: 'diverter', maker: '', spec: 'Hot-water diverter', warrantyYears: 3, blurb: 'Sends excess solar to the immersion for free hot water.' },
+  charger:  { kind: 'charger', maker: '', spec: 'EV charger', warrantyYears: 3, blurb: 'Charges the car off the roof.' },
 };
 
 export function getProductsByKind(kind: CatalogProduct['kind']): CatalogProduct[] {

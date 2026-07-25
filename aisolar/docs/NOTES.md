@@ -91,3 +91,12 @@ string to put panels on a different roof face**. Framing Cal wants: one string
 per roof (front / back / side), each its own placeable array, and the studio
 does the string math across them. This is the concrete shape of the
 `arrays[]` model already listed for tomorrow — a string IS a roof's array.
+
+## .note (25 Jul) — SEAI grant mix-up (fix tomorrow)
+The studio's new System-cost card uses `domesticSolarGrant(kWp)` unconditionally
+(caps €1,800 for any domestic ≥4kWp). WRONG when the property is commercial
+(NDMG ~€4,800 for 12kWp) or when the grant should be bill/property-type driven.
+TOMORROW: make the grant property-type aware — `seaiPropertyType(...)` off the
+BILL read (not the survey), choose domesticSolarGrant vs calculateNDMG, and run
+it through the spine so estimate + studio + proposal all show the same grant.
+Cross-links the existing "logic is the bill not survey" note.

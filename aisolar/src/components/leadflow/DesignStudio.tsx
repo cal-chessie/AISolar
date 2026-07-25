@@ -15,11 +15,13 @@
  * from the survey — never a blank box, never blocked.
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets } from 'lucide-react';
 import { buildingInsights, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
 import { selfConsumptionFromOccupancy, annualProduction, annualYieldFactor } from '@/lib/leadIntake';
 import { getProductsByKind, getProduct, type CatalogProduct } from '@/config/productCatalog';
+import { systemCost } from '@/lib/pricing';
+import { domesticSolarGrant } from '@/lib/seaiPipeline';
 import { Kpi, eurCompact } from '@/components/consultant/cockpitUi';
 import { cn } from '@/lib/utils';
 import type { DummyLead } from '@/lib/dummyData';
@@ -43,13 +45,11 @@ function defaultCols(count: number) {
   return Math.max(2, Math.min(count, Math.round(Math.sqrt(count * 1.9))));
 }
 
-export default function DesignStudio({ lead, designData, setDesignData, estimate, onDone, onBack }: {
+export default function DesignStudio({ lead, designData, setDesignData, estimate }: {
   lead: DummyLead;
   designData: any;
   setDesignData: (data: any) => void;
   estimate: any;
-  onDone?: () => void;
-  onBack?: () => void;
 }) {
   const eircode = ((lead.intake ?? {}) as Record<string, unknown>).extracted_eircode as string
     ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? '';
@@ -92,6 +92,8 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const panels = useMemo(() => getProductsByKind('panel'), []);
   const inverters = useMemo(() => getProductsByKind('inverter'), []);
   const batteries = useMemo(() => getProductsByKind('battery'), []);
+  const diverters = useMemo(() => getProductsByKind('diverter'), []);
+  const chargers = useMemo(() => getProductsByKind('charger'), []);
   const selPanel = getProduct(designData.panelModel, 'panel');
   const panelWatts = selPanel?.watts ?? (parseFloat(selPanel?.spec?.match(/(\d+)\s*W/i)?.[1] ?? '') || PANEL_WATTS);
   // The SELECTED panel's real dimensions drive the on-roof footprint (every model
@@ -119,6 +121,11 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const annualSavings = Math.round(production * selfConsumption * 0.35 + production * (1 - selfConsumption) * 0.14);
   const annualUse = lead.annual_kwh || estimate.annualKwh || 1;
   const coverage = Math.min(100, Math.round((production / annualUse) * 100));
+  // Cost, live off the sized array (same pricing/grant rates as the proposal).
+  const grossCost = systemCost({ systemSizeKw, batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0 });
+  const seaiGrant = domesticSolarGrant(systemSizeKw);
+  const netCost = Math.max(0, grossCost - seaiGrant);
+  const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
   const setPanelCount = (n: number) => update('panelCount', clamp(n, 4, maxPanels));
 
   // ── Array placement (drag + rotate), persisted on designData ────────────
@@ -320,6 +327,26 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             <GearPicker kind="battery" label="Battery" options={batteries} value={designData.batteryModel} onPick={m => update('batteryModel', m)} />
           )}
         </div>
+        <div>
+          <label className="flex items-center gap-2 mb-1.5 cursor-pointer">
+            <input type="checkbox" checked={!!designData.includeDiverter} onChange={e => update('includeDiverter', e.target.checked)} className="size-4 rounded border-input" />
+            <span className="text-xs font-semibold flex items-center gap-1"><Droplets className="size-3.5 text-tech" /> Add hot-water diverter</span>
+            <span className="text-2xs text-muted-foreground">(free hot water from surplus)</span>
+          </label>
+          {designData.includeDiverter && (
+            <GearPicker kind="diverter" label="Diverter" options={diverters} value={designData.diverterModel} onPick={m => update('diverterModel', m)} />
+          )}
+        </div>
+        <div>
+          <label className="flex items-center gap-2 mb-1.5 cursor-pointer">
+            <input type="checkbox" checked={!!designData.includeCharger} onChange={e => update('includeCharger', e.target.checked)} className="size-4 rounded border-input" />
+            <span className="text-xs font-semibold flex items-center gap-1"><Zap className="size-3.5 text-primary" /> Add EV charger</span>
+            <span className="text-2xs text-muted-foreground">(charge off the roof)</span>
+          </label>
+          {designData.includeCharger && (
+            <GearPicker kind="charger" label="EV charger" options={chargers} value={designData.chargerModel} onPick={m => update('chargerModel', m)} />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -364,42 +391,20 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
           {controlsStrip}
         </div>
         <div className={cn('space-y-3 min-w-0', mapSide === 'right' && 'lg:order-1')}>
-          {/* The money — up top, prominent. The reason the customer says yes. */}
-          <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/[0.06] p-3.5">
+          {/* System cost — the number the KPIs don't show. Net price after the grant. */}
+          <div className="rounded-panel border border-border/70 bg-card shadow-card p-3.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="label-micro flex items-center gap-1"><Sparkles className="size-3.5 text-doc-deposit" /> What this design does</span>
+              <span className="label-micro flex items-center gap-1"><Sparkles className="size-3.5 text-doc-proposal" /> System cost</span>
               <span className="text-2xs text-muted-foreground tabular-nums shrink-0">{systemSizeKw} kWp · {count} panels</span>
             </div>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-doc-deposit tabular-nums leading-none">{eur(annualSavings)}</span>
-              <span className="text-xs text-muted-foreground">saved a year</span>
+              <span className="text-2xl font-bold tabular-nums leading-none">{eur(netCost)}</span>
+              <span className="text-xs text-muted-foreground">after the grant</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
-              Covers <strong className="text-foreground tabular-nums">{coverage}%</strong> of {lead.name.split(' ')[0]}'s bill · <strong className="text-foreground tabular-nums">{Math.round(selfConsumption * 100)}%</strong> used at home
-              {yieldFactor < 0.98 && <> · <span className="text-doc-proposal font-medium">{Math.round(yieldFactor * 100)}% roof yield</span></>}
+              Gross <strong className="text-foreground tabular-nums">{eur(grossCost)}</strong> · SEAI grant <strong className="text-doc-proposal tabular-nums">−{eur(seaiGrant)}</strong> · pays back in <strong className="text-foreground tabular-nums">{paybackYears} yrs</strong>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground leading-body">
-              {designData.includeBattery ? 'The battery lifts self-consumption by holding the day\'s sun for the evening.' : lead.survey?.home_during_day === 'out' ? 'They\'re out most of the day, so a battery would lift this further, worth offering.' : 'A battery is a fair add for evening cover, not the headline here.'}
-            </p>
           </div>
-
-          {/* Done / Back — moved up, right beside the money, not buried at the page bottom */}
-          {(onDone || onBack) && (
-            <div className="flex items-center gap-2">
-              {onBack && (
-                <button onClick={onBack}
-                  className="h-11 px-3.5 rounded-control border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-1.5 transition-colors shrink-0">
-                  <ArrowLeft className="size-4" /> Back
-                </button>
-              )}
-              {onDone && (
-                <button onClick={onDone}
-                  className="h-11 flex-1 rounded-control bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 flex items-center justify-center gap-1.5 transition-colors">
-                  <CheckCircle2 className="size-4" /> Design done, build the proposal <ArrowRight className="size-4" />
-                </button>
-              )}
-            </div>
-          )}
 
           {gearPane}
         </div>
@@ -430,7 +435,7 @@ function RoofBadge({ hasImage, insight }: { hasImage: boolean; insight: RoofInsi
 function GearPicker({ kind, label, options, value, onPick }: {
   kind: CatalogProduct['kind']; label: string; options: CatalogProduct[]; value: string; onPick: (model: string) => void;
 }) {
-  const KindIcon = kind === 'panel' ? Sun : kind === 'inverter' ? Zap : Battery;
+  const KindIcon = kind === 'panel' ? Sun : kind === 'inverter' ? Zap : kind === 'battery' ? Battery : kind === 'diverter' ? Droplets : Zap;
   const isActive = (p: CatalogProduct) => value?.toLowerCase() === p.model.toLowerCase() || value?.toLowerCase().includes(p.maker.toLowerCase());
   // Two per category — a clean single row. The selected one always shows.
   const shown = [...options.filter(isActive), ...options.filter(p => !isActive(p))].slice(0, 2);
