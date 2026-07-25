@@ -1,7 +1,10 @@
 # Comprehensive Platform Audit Report
+
+> ⚠️ SUPERSEDED — DO NOT TRUST. Dated Dec 2025, references a different product ("AISOLAR Solar Automation Hub"), claims "13 security findings RESOLVED" which predate the current build and the GATE 0 leak. The real security state is in [[GATE 0 Unblock Plan]] + `docs/READINESS_AND_MOAT.md`. Kept for history only — marked superseded 2026-07-25 (Cal's standing rule: nothing deleted, only marked).
+
 **Date:** December 17, 2025  
 **Platform:** AISOLAR Solar Automation Hub  
-**Status:** Security Issues RESOLVED ✅
+**Status:** Security Issues RESOLVED ✅ (STALE — see supersede note above)
 
 ---
 
