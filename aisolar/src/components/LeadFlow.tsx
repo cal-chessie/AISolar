@@ -479,16 +479,9 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 designData={designData}
                 setDesignData={setDesignData}
                 estimate={estimate}
+                onBack={() => setStep('survey')}
+                onDone={() => setStep('proposal')}
               />
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <Button variant="outline" onClick={() => setStep('survey')} className="h-11">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
-                </Button>
-                <Button onClick={() => setStep('proposal')} className="h-11 px-6 font-semibold">
-                  <CheckCircle2 className="h-4 w-4 mr-2" /> Design done, build the proposal
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
             </div>
           )}
 

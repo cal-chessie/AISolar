@@ -15,7 +15,7 @@
  * from the survey — never a blank box, never blocked.
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X } from 'lucide-react';
+import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { buildingInsights, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
 import { selfConsumptionFromOccupancy, annualProduction, annualYieldFactor } from '@/lib/leadIntake';
@@ -43,11 +43,13 @@ function defaultCols(count: number) {
   return Math.max(2, Math.min(count, Math.round(Math.sqrt(count * 1.9))));
 }
 
-export default function DesignStudio({ lead, designData, setDesignData, estimate }: {
+export default function DesignStudio({ lead, designData, setDesignData, estimate, onDone, onBack }: {
   lead: DummyLead;
   designData: any;
   setDesignData: (data: any) => void;
   estimate: any;
+  onDone?: () => void;
+  onBack?: () => void;
 }) {
   const eircode = ((lead.intake ?? {}) as Record<string, unknown>).extracted_eircode as string
     ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? '';
@@ -361,19 +363,45 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
           ) : roofPane}
           {controlsStrip}
         </div>
-        <div className={cn('space-y-4 min-w-0', mapSide === 'right' && 'lg:order-1')}>
-          {gearPane}
-          {/* What this design does */}
-          <div className="rounded-panel border border-border/70 bg-doc-deposit/[0.06] p-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-1.5"><Sparkles className="size-4 text-doc-deposit" /> What this design does</h3>
-            <p className="text-xs text-muted-foreground leading-body">
-              {count} panels make about <strong className="text-foreground tabular-nums">{production.toLocaleString()} kWh</strong> a year and cover
-              {' '}<strong className="text-foreground tabular-nums">{coverage}%</strong> of {lead.name.split(' ')[0]}'s use. With about
-              {' '}<strong className="text-foreground tabular-nums">{Math.round(selfConsumption * 100)}%</strong> used at home (from the occupancy answers), that lands
-              {' '}<strong className="text-doc-deposit tabular-nums">{eur(annualSavings)}</strong> a year.
-              {' '}{designData.includeBattery ? 'The battery lifts self-consumption by holding the day\'s sun for the evening.' : lead.survey?.home_during_day === 'out' ? 'They\'re out most of the day, so a battery would lift this further, worth offering.' : 'A battery is a fair add for evening cover, not the headline here.'}
+        <div className={cn('space-y-3 min-w-0', mapSide === 'right' && 'lg:order-1')}>
+          {/* The money — up top, prominent. The reason the customer says yes. */}
+          <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/[0.06] p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="label-micro flex items-center gap-1"><Sparkles className="size-3.5 text-doc-deposit" /> What this design does</span>
+              <span className="text-2xs text-muted-foreground tabular-nums shrink-0">{systemSizeKw} kWp · {count} panels</span>
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-doc-deposit tabular-nums leading-none">{eur(annualSavings)}</span>
+              <span className="text-sm text-muted-foreground">saved a year</span>
+            </div>
+            <div className="mt-1.5 text-xs text-muted-foreground">
+              Covers <strong className="text-foreground tabular-nums">{coverage}%</strong> of {lead.name.split(' ')[0]}'s bill · <strong className="text-foreground tabular-nums">{Math.round(selfConsumption * 100)}%</strong> used at home
+              {yieldFactor < 0.98 && <> · <span className="text-doc-proposal font-medium">{Math.round(yieldFactor * 100)}% roof yield</span></>}
+            </div>
+            <p className="mt-2.5 text-xs text-muted-foreground leading-body">
+              {designData.includeBattery ? 'The battery lifts self-consumption by holding the day\'s sun for the evening.' : lead.survey?.home_during_day === 'out' ? 'They\'re out most of the day, so a battery would lift this further, worth offering.' : 'A battery is a fair add for evening cover, not the headline here.'}
             </p>
           </div>
+
+          {/* Done / Back — moved up, right beside the money, not buried at the page bottom */}
+          {(onDone || onBack) && (
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button onClick={onBack}
+                  className="h-11 px-3.5 rounded-control border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-1.5 transition-colors shrink-0">
+                  <ArrowLeft className="size-4" /> Back
+                </button>
+              )}
+              {onDone && (
+                <button onClick={onDone}
+                  className="h-11 flex-1 rounded-control bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 flex items-center justify-center gap-1.5 transition-colors">
+                  <CheckCircle2 className="size-4" /> Design done, build the proposal <ArrowRight className="size-4" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {gearPane}
         </div>
       </div>
 
@@ -403,13 +431,16 @@ function GearPicker({ kind, label, options, value, onPick }: {
   kind: CatalogProduct['kind']; label: string; options: CatalogProduct[]; value: string; onPick: (model: string) => void;
 }) {
   const KindIcon = kind === 'panel' ? Sun : kind === 'inverter' ? Zap : Battery;
+  const isActive = (p: CatalogProduct) => value?.toLowerCase() === p.model.toLowerCase() || value?.toLowerCase().includes(p.maker.toLowerCase());
+  // Two per category — a clean single row. The selected one always shows.
+  const shown = [...options.filter(isActive), ...options.filter(p => !isActive(p))].slice(0, 2);
   return (
     <div>
       <div className="label-micro mb-1.5">{label}</div>
       {/* Uniform 2-col grid, clean names — no ragged content-width chips, no SKU noise */}
       <div className="grid grid-cols-2 gap-1.5">
-        {options.map(p => {
-          const active = value?.toLowerCase() === p.model.toLowerCase() || value?.toLowerCase().includes(p.maker.toLowerCase());
+        {shown.map(p => {
+          const active = isActive(p);
           const primary = p.watts ? `${p.maker} ${p.watts}W` : p.maker;
           const tokens = p.spec.split('·').map(s => s.trim());
           const secondary = tokens.find(s => !/^\d+\s*W$/i.test(s)) ?? tokens[0];
