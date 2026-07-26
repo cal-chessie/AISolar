@@ -18,10 +18,9 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets } from 'lucide-react';
 import { buildingInsights, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
-import { selfConsumptionFromOccupancy, annualProduction, annualYieldFactor } from '@/lib/leadIntake';
+import { computeQuote, ratesFromIntake, IE_ENERGY } from '@/lib/leadIntake';
 import { getProductsByKind, getProduct, type CatalogProduct } from '@/config/productCatalog';
-import { systemCost } from '@/lib/pricing';
-import { domesticSolarGrant } from '@/lib/seaiPipeline';
+import { seaiPropertyType } from '@/lib/seaiPipeline';
 import { Kpi, eurCompact } from '@/components/consultant/cockpitUi';
 import { cn } from '@/lib/utils';
 import type { DummyLead } from '@/lib/dummyData';
@@ -101,34 +100,28 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const panelWm = selPanel?.widthM ?? PANEL_W_M;
   const panelHm = selPanel?.heightM ?? PANEL_H_M;
 
-  // ── Live sizing, straight off the spine ─────────────────────────────────
+  // ── ONE quote engine (computeQuote) — same numbers as proposal + portal ──
   const count = designData.panelCount;
   const systemSizeKw = Math.round((count * panelWatts) / 100) / 10;
-  // Believable production — derated by the real roof (orientation / pitch / shading),
-  // not a flat 950 kWh/kWp. Runs off the spine so the proposal reads the same.
-  const roofYield = {
-    orientation: designData.roofOrientation ?? lead.survey?.roof_orientation,
-    pitchDeg: designData.roofPitch ?? lead.survey?.roof_pitch,
-    shading: lead.survey?.shading ?? designData.shading,
-  };
-  const yieldFactor = annualYieldFactor(roofYield);
-  const production = annualProduction(systemSizeKw, roofYield);
-  const selfConsumption = selfConsumptionFromOccupancy({
-    occupants: lead.survey?.household_occupants,
-    homeDuringDay: lead.survey?.home_during_day,
-    hasBattery: !!designData.includeBattery,
-  });
-  const annualSavings = Math.round(production * selfConsumption * 0.35 + production * (1 - selfConsumption) * 0.14);
-  const annualUse = lead.annual_kwh || estimate.annualKwh || 1;
-  const coverage = Math.min(100, Math.round((production / annualUse) * 100));
-  // Cost, live off the sized array (same pricing/grant rates as the proposal).
-  // Panels/inverter/battery via the per-kWp model; add-ons priced per unit.
   const diverterPrice = designData.includeDiverter ? ((getProduct(designData.diverterModel, 'diverter') ?? diverters[0])?.price ?? 0) : 0;
   const chargerPrice = designData.includeCharger ? ((getProduct(designData.chargerModel, 'charger') ?? chargers[0])?.price ?? 0) : 0;
-  const grossCost = systemCost({ systemSizeKw, batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0 }) + diverterPrice + chargerPrice;
-  const seaiGrant = domesticSolarGrant(systemSizeKw);
-  const netCost = Math.max(0, grossCost - seaiGrant);
-  const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
+  const intake = (lead.intake ?? {}) as Record<string, unknown>;
+  const quote = computeQuote({
+    systemSizeKw,
+    batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0,
+    addOnsCost: diverterPrice + chargerPrice,
+    roof: {
+      orientation: designData.roofOrientation ?? lead.survey?.roof_orientation,
+      pitchDeg: designData.roofPitch ?? lead.survey?.roof_pitch,
+      shading: lead.survey?.shading ?? designData.shading,
+    },
+    occupancy: { occupants: lead.survey?.household_occupants, homeDuringDay: lead.survey?.home_during_day },
+    rates: ratesFromIntake(intake),
+    annualUseKwh: lead.annual_kwh || estimate.annualKwh,
+    propertyType: seaiPropertyType((lead.survey as Record<string, unknown> | undefined)?.property_type as string ?? intake['property_type'] as string),
+  });
+  const { yieldFactor, productionKwh: production, selfConsumption, annualSavings, grossCost, seaiGrant, netCost, paybackYears } = quote;
+  const coverage = quote.coveragePct ?? 0;
   const setPanelCount = (n: number) => update('panelCount', clamp(n, 4, maxPanels));
 
   // ── Array placement (drag + rotate), persisted on designData ────────────
@@ -288,12 +281,25 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
         {stepper('Cols', cols, () => setCols(cols - 1), () => setCols(cols + 1), <span className="text-2xs text-muted-foreground ml-0.5">{rows}×{cols}</span>)}
         <div className="h-5 w-px bg-border" />
         {stepper('Strings', strings, () => setStrings(strings - 1), () => setStrings(strings + 1), <span className="text-2xs text-muted-foreground ml-0.5">{perString}{stringRemainder ? `+${stringRemainder}` : ''}/str</span>)}
-        {roofInsight && (
-          <button onClick={() => setPanelCount(roofInsight.panels)} title="Fill the roof to Google Solar's max"
-            className="h-7 px-2.5 rounded-control bg-tech text-white text-2xs font-semibold flex items-center gap-1 hover:bg-tech/90 ml-auto shrink-0">
-            <Maximize2 className="size-3" /> Fill
+        {/* Quick actions — one-tap sizing */}
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          <button
+            onClick={() => {
+              const use = lead.annual_kwh || estimate.annualKwh || 0;
+              const perPanelKwh = (panelWatts / 1000) * IE_ENERGY.YIELD_PER_KWP * yieldFactor;
+              if (use > 0 && perPanelKwh > 0) setPanelCount(Math.ceil(use / perPanelKwh));
+            }}
+            title="Size the array to cover their annual usage"
+            className="h-7 px-2.5 rounded-control border border-tech text-tech text-2xs font-semibold flex items-center gap-1 hover:bg-tech-subtle">
+            <TrendingUp className="size-3" /> Size to bill
           </button>
-        )}
+          {roofInsight && (
+            <button onClick={() => setPanelCount(roofInsight.panels)} title="Fill the roof to Google Solar's max"
+              className="h-7 px-2.5 rounded-control bg-tech text-white text-2xs font-semibold flex items-center gap-1 hover:bg-tech/90">
+              <Maximize2 className="size-3" /> Fill
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <RotateCw className="size-3.5 text-muted-foreground shrink-0" />
@@ -405,7 +411,21 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
               <span className="text-xs text-muted-foreground">after the grant</span>
             </div>
             <div className="mt-1.5 text-xs text-muted-foreground">
-              Gross <strong className="text-foreground tabular-nums">{eur(grossCost)}</strong> · SEAI grant <strong className="text-doc-proposal tabular-nums">−{eur(seaiGrant)}</strong> · pays back in <strong className="text-foreground tabular-nums">{paybackYears} yrs</strong>
+              Gross <strong className="text-foreground tabular-nums">{eur(grossCost)}</strong>
+              {quote.vatAmount > 0 && <> (incl. <strong className="text-foreground tabular-nums">{eur(quote.vatAmount)}</strong> VAT)</>}
+              {' '}· SEAI grant <strong className="text-doc-proposal tabular-nums">−{eur(seaiGrant)}</strong>
+            </div>
+            {/* The payback lines — where the money comes from, and both honest paybacks */}
+            <div className="mt-2 pt-2 border-t border-border/60 space-y-1 text-xs text-muted-foreground">
+              <div>
+                <strong className="text-foreground tabular-nums">{eur(quote.selfUseSavings)}</strong>/yr self-use at €{quote.rates.dayRate.toFixed(2)}
+                {' '}+ <strong className="text-foreground tabular-nums">{eur(quote.exportIncome)}</strong>/yr CEG export at €{quote.rates.exportRate.toFixed(2)}
+                {quote.batteryArbitrage > 0 && <> + <strong className="text-foreground tabular-nums">{eur(quote.batteryArbitrage)}</strong>/yr night-rate battery charging</>}
+              </div>
+              <div>
+                Pays back in <strong className="text-doc-deposit tabular-nums">{paybackYears} yrs</strong>
+                {quote.paybackNoExportYears > paybackYears && <> · <span className="tabular-nums">{quote.paybackNoExportYears} yrs</span> on self-use alone</>}
+              </div>
             </div>
           </div>
 

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
-import { selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import { selfConsumptionFromOccupancy, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { moneyStory } from '@/lib/proposalNarrative';
 import { getProduct } from '@/config/productCatalog';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
@@ -52,8 +52,15 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
   // Versioning — append-only, never delete (the kernel's own law applied to the
   // customer's document). If the customer changes plans, the consultant renders
   // a NEW version; every earlier one stays on file exactly as it was sent.
-  const [versions, setVersions] = useState<Array<{ n: number; status: string; created: string }>>(
-    () => [{ n: 1, status: proposal?.status ?? 'draft', created: proposal?.sent_date ?? new Date().toISOString() }],
+  // Each version SNAPSHOTS its numbers at creation — a sent document never
+  // changes retroactively when rates or occupancy edits move the live figures.
+  const [versions, setVersions] = useState<Array<{ n: number; status: string; created: string; snapshot?: { annualSavings: number; netCost: number; paybackYears: number } }>>(
+    () => [{
+      n: 1,
+      status: proposal?.status ?? 'draft',
+      created: proposal?.sent_date ?? new Date().toISOString(),
+      snapshot: proposal ? { annualSavings: proposal.annual_savings, netCost: proposal.net_cost, paybackYears: proposal.payback_years } : undefined,
+    }],
   );
   if (!proposal) {
     return <div className="p-8 text-center text-sm text-muted-foreground">No proposal created yet for this lead.</div>;
@@ -62,24 +69,46 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
   const activeVersion = versions[versions.length - 1];
   const revise = () => {
     const next = activeVersion.n + 1;
-    setVersions(v => [...v, { n: next, status: 'draft', created: new Date().toISOString() }]);
+    setVersions(v => [...v, {
+      n: next, status: 'draft', created: new Date().toISOString(),
+      snapshot: { annualSavings, netCost: proposal.net_cost, paybackYears },
+    }]);
     toast.success(`Version ${next} started`, {
       description: `Version ${next - 1} stays on file. Nothing is deleted. Edit the new render, then gate-check and send it.`,
     });
   };
-  const production = proposal.system_size_kw * 950;
-  const annualSavings = Math.round(production * selfConsumption * 0.35 + production * (1 - selfConsumption) * 0.14);
-  const paybackYears = annualSavings > 0 ? Math.round((proposal.net_cost / annualSavings) * 10) / 10 : proposal.payback_years;
-  const twentyYear = annualSavings * 20 - proposal.net_cost;
+  // ONE quote engine — identical maths to the studio, the customer proposal and
+  // the portal header. The stored proposal net_cost stays authoritative (the
+  // contract number); everything else recomputes from the same inputs.
+  const propertyType = seaiPropertyType((survey as Record<string, unknown>)?.property_type as string ?? (lead.intake as Record<string, unknown>)?.property_type as string);
+  const quote = computeQuote({
+    systemSizeKw: proposal.system_size_kw,
+    batteryKwh: proposal.battery_model ? ((survey as Record<string, unknown>)?.confirmed_battery_kwh as number ?? 5) : 0,
+    roof: {
+      orientation: (survey as Record<string, unknown>)?.roof_orientation as string ?? survey?.confirmed_roof_orientation,
+      pitchDeg: (survey as Record<string, unknown>)?.roof_pitch as number ?? (survey as Record<string, unknown>)?.confirmed_roof_pitch as number,
+      shading: (survey as Record<string, unknown>)?.shading as string ?? (survey as Record<string, unknown>)?.confirmed_shading as string,
+    },
+    occupancy: { occupants: survey?.household_occupants, homeDuringDay: survey?.home_during_day },
+    selfConsumptionOverride: overridden ? selfConsumption : null,
+    rates: ratesFromIntake(lead.intake as Record<string, unknown>),
+    annualUseKwh: lead.annual_kwh,
+    propertyType,
+    netCostOverride: proposal.net_cost,
+  });
+  const production = quote.productionKwh;
+  const annualSavings = quote.annualSavings;
+  const paybackYears = quote.paybackYears || proposal.payback_years;
+  const twentyYear = quote.twentyYearBenefit;
   const story = moneyStory({ annualSavings, netCost: proposal.net_cost, paybackYears, twentyYearBenefit: twentyYear, monthlyBill: lead.monthly_bill });
 
   const seai = calculateSEAI({
     systemSizeKw: proposal.system_size_kw,
-    propertyType: seaiPropertyType((survey as Record<string, unknown>)?.property_type as string ?? (lead.intake as Record<string, unknown>)?.property_type as string),
+    propertyType,
     installType: 'retrofit',
     annualKwhUsage: lead.annual_kwh || 0,
-    annualProductionKwh: proposal.system_size_kw * 950,
-    selfConsumptionPct: 0.7,
+    annualProductionKwh: quote.productionKwh,
+    selfConsumptionPct: quote.selfConsumption,
     netCost: proposal.net_cost,
   });
 

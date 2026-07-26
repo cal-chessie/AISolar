@@ -15,7 +15,7 @@ import {
   Calculator, ArrowRight, Sun, Clock,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
-import { calculateSystemEstimate } from '@/lib/leadIntake';
+import { calculateSystemEstimate, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
 import DocumentActions from '@/components/consultant/DocumentActions';
@@ -33,7 +33,12 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
     installType: 'retrofit',
     annualKwhUsage: estimate.annualKwh,
     annualProductionKwh: estimate.annualProductionKwh,
-    selfConsumptionPct: 0.7,
+    // Occupancy-driven when the survey has answered; its own 0.70 fallback before.
+    selfConsumptionPct: selfConsumptionFromOccupancy({
+      occupants: lead.survey?.household_occupants,
+      homeDuringDay: lead.survey?.home_during_day,
+      hasBattery: !!lead.proposal?.battery_model,
+    }),
     netCost: estimate.netCost,
   });
 

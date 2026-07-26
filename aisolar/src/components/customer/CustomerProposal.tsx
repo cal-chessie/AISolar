@@ -28,7 +28,7 @@ import { getProduct, CatalogProduct } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
-import { selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import { computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { moneyStory } from '@/lib/proposalNarrative';
 import type { DummyLead } from '@/lib/dummyData';
 
@@ -243,17 +243,26 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
   // Occupancy drives self-consumption, which drives the savings AND the argument
   // below — one honest number from the survey, not a flat 0.70. Falls back to the
   // default when the survey has not answered, so nothing breaks.
-  const selfConsumption = p
-    ? selfConsumptionFromOccupancy({
-        occupants: lead.survey?.household_occupants,
-        homeDuringDay: lead.survey?.home_during_day,
-        hasBattery: !!p.battery_model,
-      })
-    : 0.7;
-  const production = p ? p.system_size_kw * 950 : 0;
-  const annualSavings = p ? Math.round(production * selfConsumption * 0.35 + production * (1 - selfConsumption) * 0.14) : 0;
-  const paybackYears = (p && annualSavings > 0) ? Math.round((p.net_cost / annualSavings) * 10) / 10 : (p?.payback_years ?? 0);
-  const twentyYearBenefit = p ? annualSavings * 20 - p.net_cost : 0;
+  // ONE quote engine — the exact numbers the consultant's ProposalView shows,
+  // because both call computeQuote with the same lead. No parallel maths.
+  const quote = p ? computeQuote({
+    systemSizeKw: p.system_size_kw,
+    batteryKwh: p.battery_model ? 5 : 0,
+    roof: {
+      orientation: (lead.survey as Record<string, unknown> | undefined)?.roof_orientation as string,
+      pitchDeg: (lead.survey as Record<string, unknown> | undefined)?.roof_pitch as number,
+      shading: (lead.survey as Record<string, unknown> | undefined)?.shading as string,
+    },
+    occupancy: { occupants: lead.survey?.household_occupants, homeDuringDay: lead.survey?.home_during_day },
+    rates: ratesFromIntake(lead.intake as Record<string, unknown>),
+    annualUseKwh: lead.annual_kwh,
+    netCostOverride: p.net_cost,
+  }) : null;
+  const selfConsumption = quote?.selfConsumption ?? 0.7;
+  const production = quote?.productionKwh ?? 0;
+  const annualSavings = quote?.annualSavings ?? 0;
+  const paybackYears = quote ? (quote.paybackYears || p?.payback_years || 0) : (p?.payback_years ?? 0);
+  const twentyYearBenefit = quote?.twentyYearBenefit ?? 0;
   const story = p ? moneyStory({ annualSavings, netCost: p.net_cost, paybackYears, twentyYearBenefit, monthlyBill: lead.monthly_bill }) : null;
 
   const products = useMemo(() => p ? [

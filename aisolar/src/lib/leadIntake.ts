@@ -28,7 +28,7 @@
  *   )
  */
 import { systemCost } from './pricing';
-import { domesticSolarGrant } from './seaiPipeline';
+import { domesticSolarGrant, calculateNDMG, cegRate, VAT_COMMERCIAL, type PropertyType } from './seaiPipeline';
 
 export interface LeadIntake {
   id: string;
@@ -167,6 +167,7 @@ export const IE_ENERGY = {
   EXPORT_RATE: 0.14,           // €/kWh micro-gen export tariff
   YIELD_PER_KWP: 950,          // kWh per kWp per year (IE climate)
   SELF_CONSUMPTION_PCT: 0.70,  // typical home self-consumption
+  BATTERY_CYCLES_PER_YEAR: 200, // conservative full night-charge cycles/yr for the day/night arbitrage term
   SYSTEM_COST_PER_KWP: 1800,   // DEPRECATED — pricing now lives in src/lib/pricing.ts (brand.pricing.perKwp). Kept only so old references resolve; do not add new uses.
   SEAI_GRANT_MAX: 1800,        // €
   SEAI_PER_KWP: 900,           // €
@@ -284,4 +285,140 @@ export function annualYieldFactor(input: {
 /** Believable annual production (kWh) for a system on a specific roof. */
 export function annualProduction(kWp: number, roof: Parameters<typeof annualYieldFactor>[0]): number {
   return Math.round(kWp * IE_ENERGY.YIELD_PER_KWP * annualYieldFactor(roof));
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   THE QUOTE ENGINE — computeQuote()
+   One function computes every money figure. Studio, ProposalView, customer
+   proposal, portal header and the LeadFlow money step all call THIS, so the
+   same lead shows the same numbers on every surface, from every entry path
+   (bill upload / manual / phone). Fixes the root cause of figure drift: four
+   files each re-implementing `production × sc × 0.35 + export × 0.14`.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/** Tariff picture, bill-first with honest fallbacks. */
+export interface BillRates {
+  dayRate: number;            // €/kWh retail day rate (bill unit rate, else 0.35)
+  nightRate: number | null;   // €/kWh night rate when a day/night meter exists
+  exportRate: number;         // €/kWh CEG feed-in, supplier-specific (else 0.14)
+  standingCharge: number | null; // €/day — baseline cost solar can NEVER remove
+  dayNightMeter: boolean;
+  provider: string | null;
+}
+
+/** Read the tariff off the 21-point bill extract. Every field falls back to the
+ *  flat IE_ENERGY constants, so manual/phone leads without a bill still price. */
+export function ratesFromIntake(intake: Record<string, unknown> | null | undefined): BillRates {
+  const i = intake ?? {};
+  const num = (k: string): number | null => {
+    const v = i[k];
+    return typeof v === 'number' && isFinite(v) ? v : null;
+  };
+  const provider = (i['extracted_provider'] as string) ?? null;
+  return {
+    dayRate: num('extracted_unit_rate') ?? IE_ENERGY.RETAIL_RATE,
+    nightRate: num('extracted_night_rate'),
+    exportRate: cegRate(provider),
+    standingCharge: num('extracted_standing_charge'),
+    dayNightMeter: i['extracted_day_night_meter'] === true,
+    provider,
+  };
+}
+
+export interface QuoteInput {
+  systemSizeKw: number;
+  batteryKwh?: number;               // 0 / undefined = no battery
+  addOnsCost?: number;               // diverter + EV charger installed prices
+  /** Roof facts (survey/design). Omit → no derate (flat 950, pre-survey estimate). */
+  roof?: { orientation?: string | null; pitchDeg?: number | string | null; shading?: string | null } | null;
+  occupancy?: { occupants?: string | null; homeDuringDay?: string | null } | null;
+  /** Consultant's manual override of the occupancy-derived self-consumption %. */
+  selfConsumptionOverride?: number | null;
+  rates?: Partial<BillRates> | null; // from ratesFromIntake(); missing keys fall back
+  annualUseKwh?: number | null;      // for coverage %
+  propertyType?: PropertyType;       // default domestic
+  discountPct?: number;              // consultant discount applied to net
+  /** A STORED proposal net_cost wins over recomputed cost (append-only contract). */
+  netCostOverride?: number | null;
+}
+
+export interface QuoteOutput {
+  systemSizeKw: number;
+  yieldFactor: number;
+  productionKwh: number;
+  selfConsumption: number;
+  selfConsumedKwh: number;
+  exportedKwh: number;
+  rates: BillRates;
+  selfUseSavings: number;      // €/yr — displaced day-rate purchases
+  exportIncome: number;        // €/yr — CEG feed-in on exported kWh
+  batteryArbitrage: number;    // €/yr — night-rate charging displacing day rate
+  annualSavings: number;       // €/yr — the headline (sum of the three)
+  coveragePct: number | null;  // production / annual use
+  grossCost: number;           // system + battery + add-ons (+ VAT if commercial)
+  vatAmount: number;           // 0 domestic; 13% commercial (in the maths, not a string)
+  seaiGrant: number;           // domestic tiered cap €1,800 | commercial NDMG
+  netCost: number;
+  paybackYears: number;        // with CEG export income
+  paybackNoExportYears: number;// the honest second line: self-use only
+  twentyYearBenefit: number;
+}
+
+export function computeQuote(q: QuoteInput): QuoteOutput {
+  const kwp = Math.max(0, q.systemSizeKw);
+  const propertyType: PropertyType = q.propertyType ?? 'domestic';
+  const rates: BillRates = {
+    dayRate: q.rates?.dayRate ?? IE_ENERGY.RETAIL_RATE,
+    nightRate: q.rates?.nightRate ?? null,
+    exportRate: q.rates?.exportRate ?? IE_ENERGY.EXPORT_RATE,
+    standingCharge: q.rates?.standingCharge ?? null,
+    dayNightMeter: q.rates?.dayNightMeter ?? false,
+    provider: q.rates?.provider ?? null,
+  };
+
+  // Production — roof-derated when we know the roof, flat only pre-survey.
+  const yieldFactor = q.roof ? annualYieldFactor(q.roof) : 1.0;
+  const productionKwh = Math.round(kwp * IE_ENERGY.YIELD_PER_KWP * yieldFactor);
+
+  // Self-consumption — occupancy-driven; 0.70 lives ONLY inside this fallback.
+  const hasBattery = (q.batteryKwh ?? 0) > 0;
+  const selfConsumption = (q.selfConsumptionOverride != null && q.selfConsumptionOverride > 0)
+    ? Math.min(0.95, Math.max(0.2, q.selfConsumptionOverride))
+    : selfConsumptionFromOccupancy({
+        occupants: q.occupancy?.occupants,
+        homeDuringDay: q.occupancy?.homeDuringDay,
+        hasBattery,
+      });
+  const selfConsumedKwh = Math.round(productionKwh * selfConsumption);
+  const exportedKwh = Math.max(0, productionKwh - selfConsumedKwh);
+
+  // The money: self-use displaces the DAY rate; exports earn the supplier's CEG;
+  // a battery on a day/night meter also charges cheap and displaces dear.
+  const selfUseSavings = Math.round(selfConsumedKwh * rates.dayRate);
+  const exportIncome = Math.round(exportedKwh * rates.exportRate);
+  const batteryArbitrage = (hasBattery && rates.dayNightMeter && rates.nightRate != null && rates.nightRate < rates.dayRate)
+    ? Math.round((q.batteryKwh ?? 0) * (rates.dayRate - rates.nightRate) * IE_ENERGY.BATTERY_CYCLES_PER_YEAR)
+    : 0;
+  const annualSavings = selfUseSavings + exportIncome + batteryArbitrage;
+
+  // Cost + grant + VAT (commercial VAT applied in the maths; grant is ex-VAT).
+  const exVat = systemCost({ systemSizeKw: kwp, batteryKwh: q.batteryKwh ?? 0 }) + (q.addOnsCost ?? 0);
+  const vatAmount = propertyType === 'commercial' ? Math.round(exVat * VAT_COMMERCIAL) : 0;
+  const grossCost = exVat + vatAmount;
+  const seaiGrant = propertyType === 'commercial' ? calculateNDMG(kwp) : domesticSolarGrant(kwp);
+  const computedNet = Math.round(Math.max(0, grossCost - seaiGrant) * (1 - (q.discountPct ?? 0) / 100));
+  const netCost = q.netCostOverride ?? computedNet;
+
+  const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
+  const noExport = selfUseSavings + batteryArbitrage;
+  const paybackNoExportYears = noExport > 0 ? Math.round((netCost / noExport) * 10) / 10 : 0;
+  const annualUse = q.annualUseKwh && q.annualUseKwh > 0 ? q.annualUseKwh : null;
+  const coveragePct = annualUse ? Math.min(100, Math.round((productionKwh / annualUse) * 100)) : null;
+
+  return {
+    systemSizeKw: kwp, yieldFactor, productionKwh, selfConsumption, selfConsumedKwh, exportedKwh,
+    rates, selfUseSavings, exportIncome, batteryArbitrage, annualSavings, coveragePct,
+    grossCost, vatAmount, seaiGrant, netCost, paybackYears, paybackNoExportYears,
+    twentyYearBenefit: annualSavings * 20 - netCost,
+  };
 }

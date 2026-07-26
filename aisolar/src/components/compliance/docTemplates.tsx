@@ -16,6 +16,7 @@ import { useTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 import { getProduct } from '@/config/productCatalog';
 import { inverterAcKw, decideCompliance } from '@/lib/complianceDecision';
 import { getCompanyCompliance } from '@/lib/companyCompliance';
+import { annualProduction } from '@/lib/leadIntake';
 
 const eur = (n: number | null | undefined) =>
   n == null ? '—' : new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -57,7 +58,11 @@ function fields(lead: DummyLead) {
     panelWp: panel?.spec?.match(/(\d{3,4})\s*W/)?.[1],
     inverter: lead.proposal?.inverter_model,
     battery: lead.proposal?.battery_model,
-    yieldKwh: (i.estimated_annual_production_kwh as number) ?? (lead.proposal ? Math.round(lead.proposal.system_size_kw * 950) : undefined),
+    // Fallback runs the SAME derated production as the quote engine (was flat ×950,
+    // so the ESB form could disagree with the proposal it accompanies).
+    yieldKwh: (i.estimated_annual_production_kwh as number) ?? (lead.proposal ? annualProduction(lead.proposal.system_size_kw, {
+      orientation: lead.survey?.roof_orientation, pitchDeg: lead.survey?.roof_pitch, shading: lead.survey?.shading,
+    }) : undefined),
     hwDiverter: (i.hot_water_diverter as boolean | undefined),
     totalCost: lead.proposal?.net_cost,
     company: getTenantBrand().proposalCompanyName || brand.legal.tradingName,

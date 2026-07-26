@@ -117,3 +117,17 @@ compliance autopilot (NC5/6/7 + grant packs + RECI), the traceable-number chain
 surfaced on the proposal, owner-level aggregate intelligence. Readiness P0
 blockers before any real user: GATE 0 key rotation (Maps key now ships in the
 bundle — restrict or proxy), RLS audit, demo-mode guard, Ask-AI guardrail.
+
+## NUMBERS ACCURACY SWEEP — 26 Jul (computeQuote lands)
+ONE engine now: `computeQuote()` + `ratesFromIntake()` in leadIntake.ts. Studio,
+ProposalView, CustomerProposal, portal header all call it. Bill-aware rates
+(day 0.36 off Sarah's bill, night 0.17), supplier CEG table + `cegRate()` in
+seaiPipeline (Pinergy 0.20; TENANT-CONFIG, verify at onboarding), battery
+night-arbitrage (IE_ENERGY.BATTERY_CYCLES_PER_YEAR=200), commercial VAT 13%
+IN the maths (VAT_COMMERCIAL), NDMG for commercial, add-ons in gross+net,
+dual payback lines (with export / self-use only), versions snapshot numbers,
+EstimateView sc occupancy-driven, dead DesignStep deleted (167 lines, 2 dup
+formulas), docTemplates yield fallback derated, quick actions (Size to bill).
+Verified in-browser: €2,833 self-use + €344 CEG + €192 arbitrage = €3,369 ✓.
+Remaining known delta: stored proposal.system_size_kw vs live design until
+Sweep 8 persists the design. NOT PUSHED — awaiting Cal's yes.

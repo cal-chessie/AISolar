@@ -32,8 +32,9 @@ import {
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
-import { calculateSystemEstimate, PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
+import { calculateSystemEstimate, PIPELINE_STAGES, getStage, annualProduction, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
 import { systemCost, getPricingConfig } from '@/lib/pricing';
+import { getProduct, getProductsByKind } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from 'sonner';
@@ -92,8 +93,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
     batteryModel: lead.proposal?.battery_model || '',
     includeBattery: !!lead.proposal?.battery_model,
     batterySize: lead.survey?.confirmed_battery_kwh || 5,
+    includeDiverter: false,
+    diverterModel: '',
+    includeCharger: false,
+    chargerModel: '',
     roofOrientation: lead.survey?.roof_orientation || 'south',
     roofPitch: lead.survey?.roof_pitch || 30,
+    shading: lead.survey?.shading || 'none',
   });
   const [financeOption, setFinanceOption] = useState<'cash' | 'finance' | 'lease'>('cash');
   const [depositPct, setDepositPct] = useState(30);
@@ -129,25 +135,44 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
     surveyData.property_type ?? (lead.survey as any)?.property_type ?? (lead.intake as any)?.property_type,
   );
 
-  // Calculate SEAI from design data
+  // The SELECTED panel's wattage sizes the system everywhere (was three
+  // different sources: hardcoded 0.435 here, pricing.panelWatts in the
+  // breakdown, the real catalog watts in the studio — now one).
+  const panelWatts = getProduct(designData.panelModel, 'panel')?.watts ?? getPricingConfig().panelWatts;
+  const systemSizeKw = Math.round(designData.panelCount * panelWatts / 10) / 100;
+
+  // Calculate SEAI from design data — derated production + occupancy-driven
+  // self-consumption, the SAME inputs the studio/proposal/portal quote uses.
   const seai = useMemo(() => {
     return calculateSEAI({
-      systemSizeKw: designData.panelCount * 0.435, // 435W panels
+      systemSizeKw,
       propertyType,
       installType: 'retrofit',
       annualKwhUsage: lead.annual_kwh || estimate.annualKwh,
-      annualProductionKwh: designData.panelCount * 0.435 * 950,
-      selfConsumptionPct: 0.7,
+      annualProductionKwh: annualProduction(systemSizeKw, {
+        orientation: designData.roofOrientation ?? lead.survey?.roof_orientation,
+        pitchDeg: designData.roofPitch ?? lead.survey?.roof_pitch,
+        shading: lead.survey?.shading,
+      }),
+      selfConsumptionPct: selfConsumptionFromOccupancy({
+        occupants: lead.survey?.household_occupants,
+        homeDuringDay: lead.survey?.home_during_day,
+        hasBattery: !!designData.includeBattery,
+      }),
       netCost: estimate.netCost,
     });
-  }, [designData, lead, estimate, propertyType]);
+  }, [designData, lead, estimate, propertyType, systemSizeKw]);
 
-  // One pricing model for every screen (src/lib/pricing.ts, tenant-configurable) —
-  // the design step and the estimate now land on the SAME number.
+  // One pricing model for every screen (src/lib/pricing.ts, tenant-configurable),
+  // PLUS the per-unit add-ons — so the proposal's net_cost carries the diverter
+  // and EV charger the studio priced (payback was silently wrong without them).
+  const addOnsCost =
+    ((designData as any).includeDiverter ? (getProduct((designData as any).diverterModel, 'diverter')?.price ?? getProductsByKind('diverter')[0]?.price ?? 0) : 0) +
+    ((designData as any).includeCharger ? (getProduct((designData as any).chargerModel, 'charger')?.price ?? getProductsByKind('charger')[0]?.price ?? 0) : 0);
   const grossCost = systemCost({
     panelCount: designData.panelCount,
     batteryKwh: designData.includeBattery ? designData.batterySize : 0,
-  });
+  }) + addOnsCost;
   const seaiGrant = seai.solarElectricityGrant;
   const listNet = grossCost - seaiGrant;
   const netCost = Math.round(listNet * (1 - discountPct / 100));
@@ -776,173 +801,6 @@ function SurveyStep({ lead, eircode, address, onDataCollected }: {
 }
 
 // ============= DESIGN STEP (OpenSolar-style) =============
-function DesignStep({ lead, designData, setDesignData, estimate }: {
-  lead: DummyLead;
-  designData: any;
-  setDesignData: (data: any) => void;
-  estimate: any;
-}) {
-  // eircode/address were parent state, never passed down — the whole step
-  // crashed with "eircode is not defined". Derive from the lead instead.
-  const eircode = ((lead.intake ?? {}) as Record<string, unknown>).extracted_eircode as string
-    ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? '';
-  const address = lead.address;
-  const update = (field: string, value: any) => {
-    setDesignData({ ...designData, [field]: value });
-  };
-
-  const systemSizeKw = (designData.panelCount * 0.435).toFixed(1);
-  const annualProduction = Math.round(Number(systemSizeKw) * 950);
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Sun className="h-5 w-5 text-muted-foreground" /> System design
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">Lay out panels on the roof, select gear, and size the system.</p>
-      </div>
-
-      {/* Satellite + panel layout (OpenSolar-style) */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" /> Roof layout designer
-          </h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Satellite view of the property. Use + / − to adjust panel count. In production: Mapbox satellite imagery + drag-to-position panels (panel counts come from bill + survey, not an auto roof-scan).
-          </p>
-          <div className="relative aspect-[16/10] rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-700">
-            {/* Google satellite keyed to the property */}
-            <iframe
-              title="Roof satellite view"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(eircode || address || 'Dublin')}&t=k&z=20&output=embed`}
-              className="absolute inset-0 w-full h-full"
-              style={{ filter: 'contrast(1.1) brightness(0.9)' }}
-              loading="lazy"
-            />
-            {/* Panel overlay grid — positioned over the "roof" area */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-primary border-2 border-primary/40 rounded-lg p-2 pointer-events-auto" style={{ width: '60%', height: '50%' }}>
-                <div className="grid h-full gap-0.5" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(designData.panelCount))}, 1fr)` }}>
-                  {Array.from({ length: designData.panelCount }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-primary border border-primary/40 rounded-sm flex items-center justify-center text-[7px] text-primary-foreground font-bold hover:bg-primary cursor-pointer transition-colors"
-                      onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
-                      title={`Panel ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* Controls */}
-            <div className="absolute top-2 right-2 flex gap-1 z-10">
-              <button
-                onClick={() => update('panelCount', designData.panelCount + 1)}
-                className="bg-white/90 transition-colors hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
-                title="Add panel"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => update('panelCount', Math.max(4, designData.panelCount - 1))}
-                className="bg-white/90 transition-colors hover:bg-white text-slate-900 rounded-md p-1.5 shadow-lg text-xs font-bold"
-                title="Remove panel"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-            </div>
-            {/* Orientation indicator */}
-            <div className="absolute top-2 left-2 bg-black/70 text-white text-[11px] px-2 py-1 rounded backdrop-blur z-10">
-              <span className="font-bold">N ↑</span> · Orientation: {designData.roofOrientation}
-            </div>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
-              {designData.panelCount} panels · {systemSizeKw} kWp · {annualProduction.toLocaleString()} kWh/yr
-            </span>
-            <span className="text-primary font-medium">
-              {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage covered
-            </span>
-          </div>
-          <div className="mt-2 p-2 bg-muted/40 rounded text-xs text-muted-foreground">
-            <Info className="h-3 w-3 inline mr-1" />
-            In production: Mapbox satellite imagery + drag-to-position panels. Roof dimensions come from the site survey (more accurate than a satellite scan); auto roof-detection is a post-launch maybe, gated on Google Solar API coverage in Ireland.
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Gear selection */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" /> Gear selection
-          </h3>
-          <div className="space-y-3">
-            {/* Panels */}
-            <div>
-              <Label className="text-xs">Solar panels</Label>
-              <select value={designData.panelModel} onChange={e => update('panelModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
-                <option value="Longi Hi-MO 6 435W">Longi Hi-MO 6 435W — €145/panel</option>
-                <option value="Jinko Tiger Neo 415W">Jinko Tiger Neo 415W — €138/panel</option>
-                <option value="Trina Vertex S+ 420W">Trina Vertex S+ 420W — €142/panel</option>
-              </select>
-            </div>
-            {/* Inverter */}
-            <div>
-              <Label className="text-xs">Inverter</Label>
-              <select value={designData.inverterModel} onChange={e => update('inverterModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm mt-1">
-                <option value="SolarEdge SE5K">SolarEdge SE5K — €1,450</option>
-                <option value="Huawei SUN2000-6KTL-L1">Huawei SUN2000-6KTL — €1,280</option>
-                <option value="Fronius Primo 8.6-1">Fronius Primo 8.6 — €1,850</option>
-              </select>
-            </div>
-            {/* Battery */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs">Battery storage</Label>
-                <input
-                  type="checkbox"
-                  checked={designData.includeBattery}
-                  onChange={e => update('includeBattery', e.target.checked)}
-                  className="h-4 w-4 rounded border-input"
-                />
-              </div>
-              {designData.includeBattery && (
-                <select value={designData.batteryModel} onChange={e => update('batteryModel', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="Tesla Powerwall 3 (13.5kWh)">Tesla Powerwall 3 (13.5kWh) — €7,200</option>
-                  <option value="SolarEdge Home Battery 5kWh">SolarEdge Home Battery 5kWh — €2,800</option>
-                  <option value="Huawei LUNA2000-5-S0 (5kWh)">Huawei LUNA2000 5kWh — €2,600</option>
-                </select>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* AI suggestion */}
-      <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" /> AI design suggestion
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            Based on {lead.annual_kwh?.toLocaleString() || estimate.annualKwh.toLocaleString()} kWh annual usage
-            and {designData.roofOrientation} roof:
-          </p>
-          <div className="mt-2 p-2 bg-background rounded text-xs space-y-1">
-            <div>✓ {designData.panelCount} panels ({systemSizeKw} kWp) covers {Math.round((annualProduction / (lead.annual_kwh || estimate.annualKwh)) * 100)}% of usage</div>
-            <div>✓ {designData.includeBattery ? 'Battery included — good for self-consumption' : 'Consider adding battery for 70%+ self-consumption'}</div>
-            <div>✓ {designData.roofOrientation === 'south' ? 'South-facing — optimal' : 'Consider optimisers for non-south orientation'}</div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ============= PROPOSAL STEP (finance + packages) =============
 function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet, estimate, financeOption, setFinanceOption, depositPct, setDepositPct, discountPct, setDiscountPct, discountReason, setDiscountReason }: {
   lead: DummyLead;
   designData: any;
@@ -966,7 +824,12 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
   // Breakdown lines that reconcile to grossCost, from the tenant pricing model.
   const pricing = getPricingConfig();
   const batteryCost = designData.includeBattery ? Math.round(designData.batterySize * pricing.batteryPerKwh) : 0;
-  const baseCost = grossCost - batteryCost;
+  // Add-ons priced per unit from the catalog — split out of the base line so
+  // every line still reconciles to Gross cost exactly.
+  const dvPrice = designData.includeDiverter ? (getProduct(designData.diverterModel, 'diverter')?.price ?? getProductsByKind('diverter')[0]?.price ?? 0) : 0;
+  const evPrice = designData.includeCharger ? (getProduct(designData.chargerModel, 'charger')?.price ?? getProductsByKind('charger')[0]?.price ?? 0) : 0;
+  const stepPanelWatts = getProduct(designData.panelModel, 'panel')?.watts ?? pricing.panelWatts;
+  const baseCost = grossCost - batteryCost - dvPrice - evPrice;
 
   // Finance calc (3.9% APR over 10 years)
   const financeMonthly = financeOption === 'finance' ? Math.round((netCost * 1.21) / 120) : 0; // ~21% total interest over 10yr
@@ -991,13 +854,25 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
               (panels + inverter + mounting + labour); battery is priced per kWh. */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between p-2 bg-muted/30 rounded">
-              <span>{designData.panelCount} × {designData.panelModel} + {designData.inverterModel} — {(designData.panelCount * pricing.panelWatts / 1000).toFixed(1)} kWp installed</span>
+              <span>{designData.panelCount} × {designData.panelModel} + {designData.inverterModel} — {(designData.panelCount * stepPanelWatts / 1000).toFixed(1)} kWp installed</span>
               <span className="font-semibold">{eurFmt(baseCost)}</span>
             </div>
             {designData.includeBattery && (
               <div className="flex justify-between p-2 bg-muted/30 rounded">
                 <span>{designData.batteryModel} — {designData.batterySize} kWh storage</span>
                 <span className="font-semibold">{eurFmt(batteryCost)}</span>
+              </div>
+            )}
+            {dvPrice > 0 && (
+              <div className="flex justify-between p-2 bg-muted/30 rounded">
+                <span>{designData.diverterModel || 'Hot-water diverter'}</span>
+                <span className="font-semibold">{eurFmt(dvPrice)}</span>
+              </div>
+            )}
+            {evPrice > 0 && (
+              <div className="flex justify-between p-2 bg-muted/30 rounded">
+                <span>{designData.chargerModel || 'EV charger'}</span>
+                <span className="font-semibold">{eurFmt(evPrice)}</span>
               </div>
             )}
             <div className="flex justify-between p-2 border-t-2 font-bold">

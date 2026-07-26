@@ -98,6 +98,39 @@ export const SEAI_RATES = {
   VAT_SOLAR: 0,                // DOMESTIC solar is 0% VAT since 1 May 2023 (gov.ie / revenue.ie). Commercial differs.
 } as const;
 
+/** Commercial solar VAT — applied to the system cost in the maths (not just the
+ *  invoice description string, which already said 13%). Matches that copy so the
+ *  app is internally consistent; TENANT-CONFIG: confirm the exact reduced rate
+ *  with the tenant's accountant at onboarding. Grant amounts are ex-VAT. */
+export const VAT_COMMERCIAL = 0.13;
+
+/**
+ * CEG (Clean Export Guarantee) — the feed-in tariff per exported kWh, which
+ * VARIES BY SUPPLIER. The bill read gives us the supplier (extracted_provider),
+ * so export income uses THEIR rate, not a flat number. TENANT-CONFIG table:
+ * indicative 2026 values, verified against each supplier's published tariff
+ * sheet at onboarding — rates change; the fallback is the conservative ESB
+ * baseline EXPORT_RATE (0.14) already used across the app.
+ */
+export const CEG_RATES: Record<string, number> = {
+  'pinergy': 0.20,
+  'electric ireland': 0.195,
+  'bord gais': 0.185,
+  'bord gáis': 0.185,
+  'sse': 0.20,
+  'sse airtricity': 0.20,
+  'energia': 0.18,
+  'flogas': 0.185,
+};
+
+/** Supplier → CEG €/kWh, falling back to the conservative ESB baseline. */
+export function cegRate(provider?: string | null): number {
+  if (!provider) return SEAI_RATES.EXPORT_RATE;
+  const key = provider.trim().toLowerCase();
+  const hit = Object.keys(CEG_RATES).find(k => key.includes(k));
+  return hit ? CEG_RATES[hit] : SEAI_RATES.EXPORT_RATE;
+}
+
 /**
  * SEAI Solar Electricity Grant — DOMESTIC. THE one function; import it everywhere.
  * Verified Jul 2026 vs seai.ie / citizensinformation.ie:

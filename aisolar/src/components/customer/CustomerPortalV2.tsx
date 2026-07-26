@@ -59,7 +59,7 @@ import {
   ChevronDown, ChevronUp, MessageSquare, Star, Shield,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
-import { getStage, PIPELINE_STAGES, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import { getStage, PIPELINE_STAGES, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { AichatWordmark } from '@/components/brand/AiosMark';
 import PreSurveySnaps from './PreSurveySnaps';
@@ -175,13 +175,21 @@ export default function CustomerPortalV2() {
   // header and the proposal never show two different numbers.
   const savings = useMemo(() => {
     if (!lead.proposal) return 0;
-    const sc = selfConsumptionFromOccupancy({
-      occupants: lead.survey?.household_occupants,
-      homeDuringDay: lead.survey?.home_during_day,
-      hasBattery: !!lead.proposal.battery_model,
-    });
-    const prod = lead.proposal.system_size_kw * 950;
-    return Math.round(prod * sc * 0.35 + prod * (1 - sc) * 0.14);
+    // ONE quote engine — identical inputs to the proposal views, so the header
+    // never shows a different number to the document underneath it.
+    return computeQuote({
+      systemSizeKw: lead.proposal.system_size_kw,
+      batteryKwh: lead.proposal.battery_model ? 5 : 0,
+      roof: {
+        orientation: (lead.survey as Record<string, unknown> | undefined)?.roof_orientation as string,
+        pitchDeg: (lead.survey as Record<string, unknown> | undefined)?.roof_pitch as number,
+        shading: (lead.survey as Record<string, unknown> | undefined)?.shading as string,
+      },
+      occupancy: { occupants: lead.survey?.household_occupants, homeDuringDay: lead.survey?.home_during_day },
+      rates: ratesFromIntake(lead.intake as Record<string, unknown>),
+      annualUseKwh: lead.annual_kwh,
+      netCostOverride: lead.proposal.net_cost,
+    }).annualSavings;
   }, [lead]);
 
   return (
