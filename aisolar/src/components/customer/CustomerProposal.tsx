@@ -29,6 +29,8 @@ import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
 import { computeQuote, ratesFromIntake } from '@/lib/leadIntake';
+import { geoToPct, mppAt, IMG_LOGICAL_W, PANEL_GAP_M, type DesignSnapshot } from '@/lib/roofGeo';
+import { staticMapUrl, staticMapUrlForQuery, hasMapsKey } from '@/lib/googleSolar';
 import { moneyStory } from '@/lib/proposalNarrative';
 import type { DummyLead } from '@/lib/dummyData';
 
@@ -46,7 +48,7 @@ const maskMprn = (m?: string | null) => (m ? `${m.slice(0, 3)}•••••${m
  * a handful. Claiming 21 when we show 5 is the kind of overselling on Cal's
  * own DO-NOT-CLAIM list, and a homeowner can count the boxes.
  */
-function BillEvidence({ lead }: { lead: DummyLead }) {
+function BillEvidence({ lead }: { lead: DummyLead; design?: DesignSnapshot }) {
   const i = (lead.intake ?? {}) as Record<string, unknown>;
   const pick = <T,>(k: string, fallback?: T) => (i[k] ?? fallback) as T | undefined;
 
@@ -223,12 +225,51 @@ function ProductCard({ product, qty }: { product: CatalogProduct; qty?: number }
 /* ── The artifact ──────────────────────────────────────────────────────── */
 interface CustomerProposalProps {
   lead: DummyLead;
+  /** The studio's exact frame + placed strings — when present, the roof section
+   *  shows THE DESIGN (their panels on their actual roof), not a bare aerial. */
+  design?: DesignSnapshot;
   onAccept?: () => void;      // kernel: ProposalAccepted (ref only)
   onPayDeposit?: () => void;  // kernel: DepositPaid (ref only)
   onQuestion?: () => void;
 }
 
-export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuestion }: CustomerProposalProps) {
+/** The design, redrawn read-only with the SAME projection the studio used. */
+function DesignedRoof({ design }: { design: DesignSnapshot }) {
+  const url = staticMapUrl(design.view.lat, design.view.lng, { w: 640, h: 360, zoom: design.view.zoom });
+  if (!url) return null;
+  const groundW = mppAt(design.view.lat, design.view.zoom) * IMG_LOGICAL_W;
+  const cellAspect = design.panelWm / design.panelHm;
+  return (
+    <div className="relative aspect-[16/9] overflow-hidden bg-slate-900 select-none pointer-events-none">
+      <img src={url} alt="Your roof with your panels, as designed" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-black/10" />
+      {design.arrays.map(a => {
+        const pos = a.lat != null && a.lng != null ? geoToPct(design.view, a.lat, a.lng) : { x: a.xPct, y: a.yPct };
+        const widthPct = ((a.cols * design.panelWm + (a.cols - 1) * PANEL_GAP_M) / groundW) * 100;
+        const gapPct = (PANEL_GAP_M / (a.cols * design.panelWm + (a.cols - 1) * PANEL_GAP_M)) * 100;
+        return (
+          <div key={a.id} className="absolute"
+            style={{ left: `${pos.x}%`, top: `${pos.y}%`, width: `${widthPct}%`, transform: `translate(-50%,-50%) rotate(${a.rot}deg)` }}>
+            <div className="rounded-[2px] ring-1 ring-white/60 shadow-[0_3px_12px_rgba(0,0,0,.4)]" style={{ background: 'rgba(15,23,42,.3)' }}>
+              <div className="grid" style={{ gridTemplateColumns: `repeat(${a.cols}, 1fr)`, gap: `${gapPct}%` }}>
+                {Array.from({ length: a.panelCount }).map((_, i) => (
+                  <span key={i} style={{
+                    aspectRatio: cellAspect,
+                    background: 'linear-gradient(150deg, #24365c 0%, #152b4a 40%, #0a1220 100%)',
+                    boxShadow: 'inset 0 0 0 0.5px rgba(150,190,240,.55)',
+                    borderRadius: 1,
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function CustomerProposal({ lead, design, onAccept, onPayDeposit, onQuestion }: CustomerProposalProps) {
   // The letterhead follows the OWNER's brand settings (tenantBrand), not the
   // static config — brand edits reach the customer's legal document too.
   const tb = useTenantBrand();
@@ -247,7 +288,7 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
   // because both call computeQuote with the same lead. No parallel maths.
   const quote = p ? computeQuote({
     systemSizeKw: p.system_size_kw,
-    batteryKwh: p.battery_model ? 5 : 0,
+    batteryKwh: p.battery_model ? (((lead.survey as Record<string, unknown> | undefined)?.confirmed_battery_kwh as number) ?? 5) : 0,
     roof: {
       orientation: (lead.survey as Record<string, unknown> | undefined)?.roof_orientation as string,
       pitchDeg: (lead.survey as Record<string, unknown> | undefined)?.roof_pitch as number,
@@ -339,14 +380,27 @@ export default function CustomerProposal({ lead, onAccept, onPayDeposit, onQuest
               <h2 className="text-md font-semibold">Your roof</h2>
               <span className="ml-auto text-xs text-muted-foreground">{eircode ?? lead.address.split(',').slice(-1)[0]?.trim()}</span>
             </header>
-            <iframe
-              title="Your roof from above"
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=19&output=embed`}
-              className="w-full h-56 border-0"
-              loading="lazy"
-            />
+            {design?.view ? (
+              <DesignedRoof design={design} />
+            ) : hasMapsKey() ? (
+              <img
+                src={staticMapUrlForQuery(String(query), { w: 640, h: 360, zoom: 19 })!}
+                alt="Your roof from above"
+                className="w-full aspect-[16/9] object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <iframe
+                title="Your roof from above"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=k&z=19&output=embed`}
+                className="w-full h-56 border-0"
+                loading="lazy"
+              />
+            )}
             <p className="px-5 py-2 text-xs text-muted-foreground leading-body">
-              {lead.survey?.roof_orientation
+              {design?.view
+                ? <>Your {design.arrays.reduce((n, a) => n + a.panelCount, 0)} panels on your actual roof, exactly as your consultant designed them{design.arrays.length > 1 ? ` across ${design.arrays.length} roof faces` : ''}. </>
+                : lead.survey?.roof_orientation
                 ? <>This is your roof from above. Your panels go on the {lead.survey.roof_orientation.toLowerCase()} pitch, {
                     /south/i.test(lead.survey.roof_orientation) ? 'where the sun sits longest, so it makes the most power at the times your home is using the most'
                       : /east|west/i.test(lead.survey.roof_orientation) ? 'catching the morning and evening sun across the hours your home is busiest'

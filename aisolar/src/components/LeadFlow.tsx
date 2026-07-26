@@ -26,13 +26,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, ArrowRight, MapPin, Calendar, Sun, Zap, FileText,
   CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight,
-  PoundSterling, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
+  Euro, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
   Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
   Send, MessageSquare,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
-import { calculateSystemEstimate, PIPELINE_STAGES, getStage, annualProduction, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
+import { calculateSystemEstimate, PIPELINE_STAGES, getStage, annualProduction, selfConsumptionFromOccupancy, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { systemCost, getPricingConfig } from '@/lib/pricing';
 import { getProduct, getProductsByKind } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
@@ -139,7 +139,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   // different sources: hardcoded 0.435 here, pricing.panelWatts in the
   // breakdown, the real catalog watts in the studio — now one).
   const panelWatts = getProduct(designData.panelModel, 'panel')?.watts ?? getPricingConfig().panelWatts;
-  const systemSizeKw = Math.round(designData.panelCount * panelWatts / 10) / 100;
+  const systemSizeKw = Math.round((designData.panelCount * panelWatts) / 100) / 10;
 
   // Calculate SEAI from design data — derated production + occupancy-driven
   // self-consumption, the SAME inputs the studio/proposal/portal quote uses.
@@ -249,7 +249,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
         </div>
       </header>
 
-      <main className={`mx-auto px-4 py-4 pb-10 ${['estimate', 'survey', 'design'].includes(step) ? 'max-w-6xl' : 'max-w-5xl'}`}>
+      <main className={`mx-auto px-4 py-4 pb-10 ${['estimate', 'survey', 'design', 'proposal', 'send'].includes(step) ? 'max-w-6xl' : 'max-w-5xl'}`}>
           {/* === STEP 1: ESTIMATE === */}
           {step === 'estimate' && (
             <div key="estimate">
@@ -848,18 +848,45 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
   const stepPanelWatts = getProduct(designData.panelModel, 'panel')?.watts ?? pricing.panelWatts;
   const baseCost = grossCost - batteryCost - dvPrice - evPrice;
 
-  // Finance calc (3.9% APR over 10 years)
-  const financeMonthly = financeOption === 'finance' ? Math.round((netCost * 1.21) / 120) : 0; // ~21% total interest over 10yr
-  const annualSavings = estimate.annualSavings;
+  // Finance calc (3.9% APR over 10 years ≈ annuity factor 1.21/120)
+  const financeMonthly = financeOption === 'finance' ? Math.round((netCost * 1.21) / 120) : 0;
+
+  // THE quote engine — the exact numbers the studio just showed. The proposal
+  // step quoting the flat pre-survey estimate was the last place a customer
+  // could watch the savings change between two screens.
+  const quote = computeQuote({
+    systemSizeKw: Math.round((designData.panelCount * stepPanelWatts) / 100) / 10,
+    batteryKwh: designData.includeBattery ? (designData.batterySize || 5) : 0,
+    addOnsCost: dvPrice + evPrice,
+    roof: {
+      orientation: designData.roofOrientation ?? lead.survey?.roof_orientation,
+      pitchDeg: designData.roofPitch ?? lead.survey?.roof_pitch,
+      shading: lead.survey?.shading ?? designData.shading,
+    },
+    occupancy: { occupants: lead.survey?.household_occupants, homeDuringDay: lead.survey?.home_during_day },
+    rates: ratesFromIntake(lead.intake as Record<string, unknown>),
+    annualUseKwh: lead.annual_kwh || estimate.annualKwh,
+    propertyType: seaiPropertyType((lead.survey as Record<string, unknown> | undefined)?.property_type as string ?? (lead.intake as Record<string, unknown>)?.property_type as string),
+    netCostOverride: netCost,
+  });
+  const annualSavings = quote.annualSavings;
   const netMonthlyPosition = financeOption === 'finance' ? annualSavings / 12 - financeMonthly : annualSavings / 12;
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" /> Proposal & financing
+          <FileText className="h-5 w-5 text-doc-proposal" /> Proposal & financing
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Choose payment structure, review costs, and prepare the professional proposal.</p>
+      </div>
+
+      {/* The deal in four numbers — same family strip as every other step */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Kpi tone="proposal" icon={<FileText />} value={eurCompact(netCost)} label={discountPct > 0 ? 'Final price' : 'Net cost'} />
+        <Kpi tone="deposit" icon={<TrendingUp />} value={eurCompact(annualSavings)} label="Saved / yr" />
+        <Kpi tone="tech" icon={<CreditCard />} value={eurCompact(Math.round(netCost * (depositPct / 100)))} label={`${depositPct}% deposit`} />
+        <Kpi tone="neutral" icon={<Clock />} value={`${quote.paybackYears} yr`} label="Payback" />
       </div>
 
       {/* Cost breakdown */}
@@ -954,7 +981,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
           </h3>
           <div className="grid sm:grid-cols-3 gap-2">
             {[
-              { id: 'cash', label: 'Pay cash', desc: 'Full payment on completion', icon: PoundSterling },
+              { id: 'cash', label: 'Pay cash', desc: 'Full payment on completion', icon: Euro },
               { id: 'finance', label: 'Finance (HEUL)', desc: '3.9% APR · 10 years', icon: Percent },
               { id: 'lease', label: 'Solar lease', desc: 'Pay from savings', icon: TrendingUp },
             ].map(opt => {
@@ -1037,17 +1064,20 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="text-xs text-muted-foreground">Annual savings</div>
-              <div className="font-bold text-lg text-primary dark:text-primary">{eurFmt(annualSavings)}</div>
+              <div className="font-bold text-lg text-doc-deposit">{eurFmt(annualSavings)}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Payback</div>
-              <div className="font-bold text-lg">{estimate.paybackYears} yrs</div>
+              <div className="font-bold text-lg">{quote.paybackYears} yrs</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">20-year savings</div>
-              <div className="font-bold text-lg">{eurFmt(estimate.twentyYearSavings)}</div>
+              <div className="text-xs text-muted-foreground">20-year benefit</div>
+              <div className="font-bold text-lg text-doc-proposal">{eurFmt(quote.twentyYearBenefit)}</div>
             </div>
           </div>
+          <p className="mt-2.5 text-2xs text-muted-foreground text-center">
+            {eurFmt(quote.selfUseSavings)}/yr self-use at €{quote.rates.dayRate.toFixed(2)} + {eurFmt(quote.exportIncome)}/yr CEG export at €{quote.rates.exportRate.toFixed(2)}{quote.batteryArbitrage > 0 ? ` + ${eurFmt(quote.batteryArbitrage)}/yr night-rate battery` : ''}
+          </p>
         </CardContent>
       </Card>
 
@@ -1059,7 +1089,7 @@ function ProposalStep({ lead, designData, grossCost, seaiGrant, netCost, listNet
           </h3>
           <div className="text-xs space-y-1">
             <div className="p-2 bg-background rounded border-l-2 border-primary/40">
-              <strong>Margin:</strong> {Math.round(((netCost - grossCost + seaiGrant) / netCost) * 100)}% (healthy — industry avg is 18-22%)
+              <strong>Discount headroom:</strong> {discountPct}% of your 15% used{discountPct > 0 ? ` (${eurFmt(listNet - netCost)} of marketing spend)` : ' — full discretion still in hand'}
             </div>
             <div className="p-2 bg-background rounded border-l-2 border-primary/40">
               <strong>Objection handler:</strong> If customer says "too expensive" → offer the finance option. {eurFmt(annualSavings / 12)}/mo savings vs {eurFmt(financeMonthly)}/mo payment = cashflow positive from month 1.
@@ -1112,14 +1142,29 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
   // built live from the design + pricing the consultant just chose — not a
   // dashed placeholder of a PDF that doesn't exist yet.
   const estimate = calculateSystemEstimate({ monthlyBill: lead.monthly_bill, annualKwh: lead.annual_kwh });
+  // The SELECTED panel's real wattage — the send preview must show the exact
+  // kWp the studio designed, not a hardcoded 435 W assumption.
+  const sendPanelWatts = getProduct(designData.panelModel, 'panel')?.watts ?? getPricingConfig().panelWatts;
+  const sendKwp = +(designData.panelCount * sendPanelWatts / 1000).toFixed(1);
+  // The studio's exact frame + placed strings ride onto the customer's document.
+  const sendPanel = getProduct(designData.panelModel, 'panel');
+  const designSnapshot = designData.mapView && designData.arrays?.length ? {
+    view: designData.mapView,
+    arrays: designData.arrays,
+    panelWm: sendPanel?.widthM ?? 1.134,
+    panelHm: sendPanel?.heightM ?? 1.722,
+  } : undefined;
   const previewLead: DummyLead = {
     ...lead,
     workflow_stage: 'proposal_drafted',
     invoice: undefined,
+    // The DESIGNED battery size rides into the preview, so the customer doc's
+    // quote (night-rate arbitrage included) matches the studio + proposal step.
+    survey: lead.survey ? { ...lead.survey, confirmed_battery_kwh: designData.includeBattery ? designData.batterySize : lead.survey.confirmed_battery_kwh } : lead.survey,
     proposal: {
       id: lead.proposal?.id ?? 'DRAFT',
       status: 'draft',
-      system_size_kw: +(designData.panelCount * 0.435).toFixed(1),
+      system_size_kw: sendKwp,
       panel_count: designData.panelCount,
       panel_model: designData.panelModel,
       inverter_model: designData.inverterModel,
@@ -1146,7 +1191,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
 
       {/* Slim deal strip */}
       <div className="rounded-panel bg-card shadow-card p-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
-        <span><strong>{(designData.panelCount * 0.435).toFixed(1)} kWp</strong> · {designData.panelCount} × {designData.panelModel}</span>
+        <span><strong>{sendKwp} kWp</strong> · {designData.panelCount} × {designData.panelModel}</span>
         {designData.includeBattery && <span>Battery: {designData.batteryModel}</span>}
         <span>Net <strong>{eurFmt(netCost)}</strong> after {eurFmt(seaiGrant)} grant{discountPct > 0 && <span className="text-doc-deposit"> − {discountPct}% {discountReason.toLowerCase()}</span>}</span>
         {/* The LAST GATE (Cal): payment linkage rides the proposal but the
@@ -1171,7 +1216,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
           {/* pointer-events off inside: the consultant reviews here, the
               customer accepts on their own link — no accidental Accept clicks */}
           <div className="pointer-events-none select-none">
-            <CustomerProposal lead={previewLead} />
+            <CustomerProposal lead={previewLead} design={designSnapshot} />
           </div>
         </div>
       </div>

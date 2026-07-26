@@ -171,3 +171,10 @@ READINESS_AND_MOAT.md is the checklist; keep it current.
 - REAL product images are the TENANT'S to upload (manufacturer/distributor
   imagery they're licensed to use) — the per-kind SVG illustrations are the
   default so nothing ever renders empty. We do not scrape manufacturer photos.
+
+## .note (27 Jul) — battery size must come from the battery MODEL
+designData.batterySize (survey confirmed_battery_kwh || 5) can disagree with the
+selected battery product (deal strip says "Tesla Powerwall 3 (13.5kWh)" while
+arbitrage prices 5 kWh). Morning fix: batteries carry their kWh in the catalog
+(parse spec or add kwh field); picking a battery sets batterySize. Keep quote
+identical across studio/proposal/send (kWp rounding standardised to 1dp today).

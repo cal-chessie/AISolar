@@ -179,7 +179,7 @@ export default function CustomerPortalV2() {
     // never shows a different number to the document underneath it.
     return computeQuote({
       systemSizeKw: lead.proposal.system_size_kw,
-      batteryKwh: lead.proposal.battery_model ? 5 : 0,
+      batteryKwh: lead.proposal.battery_model ? (((lead.survey as Record<string, unknown> | undefined)?.confirmed_battery_kwh as number) ?? 5) : 0,
       roof: {
         orientation: (lead.survey as Record<string, unknown> | undefined)?.roof_orientation as string,
         pitchDeg: (lead.survey as Record<string, unknown> | undefined)?.roof_pitch as number,

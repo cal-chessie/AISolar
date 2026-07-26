@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets, Crosshair, AlertTriangle, Info } from 'lucide-react';
 import { buildingInsights, geocode as googleGeocode, staticMapUrl, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
+import { geoToPct, pctToGeo, type MapView, IMG_LOGICAL_W, IMG_LOGICAL_H, PANEL_GAP_M, mppAt, type PlacedArray } from '@/lib/roofGeo';
 import { computeQuote, ratesFromIntake, IE_ENERGY } from '@/lib/leadIntake';
 import { getProductsByKind, getProduct, type CatalogProduct } from '@/config/productCatalog';
 import { seaiPropertyType } from '@/lib/seaiPipeline';
@@ -34,51 +35,12 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 // (portrait). Drawing panels to that real footprint is what stops consultants
 // from sizing a system the roof can't physically hold.
 const STUDIO_ZOOM = 20;
-const IMG_LOGICAL_W = 640;
-const IMG_LOGICAL_H = 360;
 const PANEL_W_M = 1.134;
 const PANEL_H_M = 1.722;
-const PANEL_GAP_M = 0.02;
 
-// ── Geo model: arrays anchored to real coordinates ──────────────────────────
-// One STRING per roof face (Cal): each array block is its own placeable string.
-// Anchoring to lat/lng (not canvas %) is what lets the map pan and zoom while
-// every array stays glued to its roof — and it's the exact model an interactive
-// tile map (MapLibre) needs, so a later swap keeps the data as-is.
-type MapView = { lat: number; lng: number; zoom: number };
-interface ArrayBlock {
-  id: string;
-  name: string;
-  panelCount: number;
-  cols: number;
-  rot: number;
-  /** canvas-% fallback used until the geocode gives us real coordinates */
-  xPct: number;
-  yPct: number;
-  lat: number | null;
-  lng: number | null;
-}
-const EARTH_R = 6378137;
-/** Web-Mercator metres per logical map pixel at a latitude + zoom. */
-const mppAt = (lat: number, zoom: number) => (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
-/** Where a geo point lands on the canvas (in %) for the current view. */
-function geoToPct(view: MapView, lat: number, lng: number): { x: number; y: number } {
-  const mpp = mppAt(view.lat, view.zoom);
-  const dxM = ((lng - view.lng) * Math.PI / 180) * EARTH_R * Math.cos((view.lat * Math.PI) / 180);
-  const dyM = ((view.lat - lat) * Math.PI / 180) * EARTH_R;
-  return { x: 50 + (dxM / (mpp * IMG_LOGICAL_W)) * 100, y: 50 + (dyM / (mpp * IMG_LOGICAL_H)) * 100 };
-}
-/** The geo point under a canvas position (in %) for the current view. */
-function pctToGeo(view: MapView, xPct: number, yPct: number): { lat: number; lng: number } {
-  const mpp = mppAt(view.lat, view.zoom);
-  const dxM = ((xPct - 50) / 100) * mpp * IMG_LOGICAL_W;
-  const dyM = ((yPct - 50) / 100) * mpp * IMG_LOGICAL_H;
-  return {
-    lng: view.lng + (dxM / (EARTH_R * Math.cos((view.lat * Math.PI) / 180))) * 180 / Math.PI,
-    lat: view.lat - (dyM / EARTH_R) * 180 / Math.PI,
-  };
-}
-
+// Geo model: shared with the customer proposal (src/lib/roofGeo.ts) — one
+// projection, so the design snapshot on the proposal is pixel-identical to
+// what the consultant placed here. One string per roof face (Cal).
 /** A pleasing landscape grid for N panels (wider than tall, like a real roof). */
 function defaultCols(count: number) {
   return Math.max(2, Math.min(count, Math.round(Math.sqrt(count * 1.9))));
@@ -141,7 +103,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
       setView(v0);
       // Upgrade any %-anchored arrays to real coordinates so pan/zoom carries them.
       setDesignData((prev: any) => {
-        const list: ArrayBlock[] = prev.arrays ?? [{
+        const list: PlacedArray[] = prev.arrays ?? [{
           id: 's1', name: 'String 1',
           panelCount: prev.panelCount || 14,
           cols: Math.max(1, prev.arrayCols ?? defaultCols(prev.panelCount || 14)),
@@ -204,7 +166,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // its own count/columns/rotation. Arrays are anchored to REAL geo-coordinates
   // once the geocode resolves, so they stay glued to their roof when the map
   // pans or zooms. Legacy single-array designs migrate on first render.
-  const arrays: ArrayBlock[] = designData.arrays ?? [{
+  const arrays: PlacedArray[] = designData.arrays ?? [{
     id: 's1', name: 'String 1',
     panelCount: designData.panelCount || 14,
     cols: clamp(designData.arrayCols ?? defaultCols(designData.panelCount || 14), 1, designData.panelCount || 14),
@@ -215,12 +177,12 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const totalPanels = arrays.reduce((s, a) => s + a.panelCount, 0);
   // Keep the legacy fields in sync so LeadFlow's cost breakdown, SEAI memo and
   // SendStep keep reading the same designData shape untouched.
-  const commitArrays = (next: ArrayBlock[]) => patch({
+  const commitArrays = (next: PlacedArray[]) => patch({
     arrays: next,
     panelCount: next.reduce((s, a) => s + a.panelCount, 0),
     strings: next.length,
   });
-  const updateArray = (id: string, fields: Partial<ArrayBlock>) =>
+  const updateArray = (id: string, fields: Partial<PlacedArray>) =>
     commitArrays(arrays.map(a => (a.id === id ? { ...a, ...fields } : a)));
 
   const [selId, setSelId] = useState('s1');
@@ -242,13 +204,13 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const groundWidthM = metresPerLogicalPx ? metresPerLogicalPx * IMG_LOGICAL_W : null;
   const accurate = groundWidthM != null;
   const cellAspect = panelWm / panelHm;
-  const widthPctFor = (a: ArrayBlock) => {
+  const widthPctFor = (a: PlacedArray) => {
     const m = a.cols * panelWm + (a.cols - 1) * PANEL_GAP_M;
     return accurate ? (m / groundWidthM!) * 100 : Math.min(46, 12 + a.cols * 5);
   };
-  const gapPctFor = (a: ArrayBlock) => (PANEL_GAP_M / (a.cols * panelWm + (a.cols - 1) * PANEL_GAP_M)) * 100;
+  const gapPctFor = (a: PlacedArray) => (PANEL_GAP_M / (a.cols * panelWm + (a.cols - 1) * PANEL_GAP_M)) * 100;
   /** Where an array renders in the CURRENT view: geo-anchored when it can be. */
-  const renderPos = (a: ArrayBlock) =>
+  const renderPos = (a: PlacedArray) =>
     view && a.lat != null && a.lng != null ? geoToPct(view, a.lat, a.lng) : { x: a.xPct, y: a.yPct };
 
   // One drag machine: grabbing an array moves THAT array; grabbing open map pans.
@@ -303,6 +265,9 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
     drag.current = null;
     try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
   };
+  // Persist the view so the SEND step can redraw this exact frame on the
+  // customer's proposal (the design snapshot).
+  useEffect(() => { if (view) setDesignData((prev: any) => ({ ...prev, mapView: view })); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [view?.lat, view?.lng, view?.zoom]);
   const setZoom = (z: number) => view && setView({ ...view, zoom: clamp(z, 17, 20) });
   const recentre = () => center && setView({ lat: center.lat, lng: center.lng, zoom: STUDIO_ZOOM });
   const setSelCount = (n: number) => {
