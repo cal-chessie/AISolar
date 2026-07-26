@@ -97,6 +97,18 @@ const CATALOG: CatalogProduct[] = [
   },
 ];
 
+// Default product imagery — clean per-kind illustrations (/public/products).
+// A real photo set on the product (or uploaded on the Products page) wins;
+// these guarantee no proposal or picker ever shows an empty grey box.
+const KIND_IMAGE: Record<CatalogProduct['kind'], string> = {
+  panel: '/products/panel.svg',
+  inverter: '/products/inverter.svg',
+  battery: '/products/battery.svg',
+  diverter: '/products/diverter.svg',
+  charger: '/products/charger.svg',
+};
+CATALOG.forEach(p => { if (!p.image) p.image = KIND_IMAGE[p.kind]; });
+
 const KIND_DEFAULT: Record<CatalogProduct['kind'], Omit<CatalogProduct, 'model'>> = {
   panel:    { kind: 'panel', maker: '', spec: 'Tier-1 mono panel', warrantyYears: 25, blurb: 'Tier-1 solar panel with 25-year performance warranty.' },
   inverter: { kind: 'inverter', maker: '', spec: 'Hybrid inverter', warrantyYears: 10, blurb: 'Converts and manages the power your panels generate.' },

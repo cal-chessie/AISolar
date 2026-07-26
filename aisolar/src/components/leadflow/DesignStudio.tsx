@@ -15,8 +15,8 @@
  * from the survey — never a blank box, never blocked.
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets } from 'lucide-react';
-import { buildingInsights, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
+import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets, Crosshair, AlertTriangle, Info } from 'lucide-react';
+import { buildingInsights, geocode as googleGeocode, staticMapUrl, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
 import { computeQuote, ratesFromIntake, IE_ENERGY } from '@/lib/leadIntake';
 import { getProductsByKind, getProduct, type CatalogProduct } from '@/config/productCatalog';
@@ -35,9 +35,49 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 // from sizing a system the roof can't physically hold.
 const STUDIO_ZOOM = 20;
 const IMG_LOGICAL_W = 640;
+const IMG_LOGICAL_H = 360;
 const PANEL_W_M = 1.134;
 const PANEL_H_M = 1.722;
 const PANEL_GAP_M = 0.02;
+
+// ── Geo model: arrays anchored to real coordinates ──────────────────────────
+// One STRING per roof face (Cal): each array block is its own placeable string.
+// Anchoring to lat/lng (not canvas %) is what lets the map pan and zoom while
+// every array stays glued to its roof — and it's the exact model an interactive
+// tile map (MapLibre) needs, so a later swap keeps the data as-is.
+type MapView = { lat: number; lng: number; zoom: number };
+interface ArrayBlock {
+  id: string;
+  name: string;
+  panelCount: number;
+  cols: number;
+  rot: number;
+  /** canvas-% fallback used until the geocode gives us real coordinates */
+  xPct: number;
+  yPct: number;
+  lat: number | null;
+  lng: number | null;
+}
+const EARTH_R = 6378137;
+/** Web-Mercator metres per logical map pixel at a latitude + zoom. */
+const mppAt = (lat: number, zoom: number) => (156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
+/** Where a geo point lands on the canvas (in %) for the current view. */
+function geoToPct(view: MapView, lat: number, lng: number): { x: number; y: number } {
+  const mpp = mppAt(view.lat, view.zoom);
+  const dxM = ((lng - view.lng) * Math.PI / 180) * EARTH_R * Math.cos((view.lat * Math.PI) / 180);
+  const dyM = ((view.lat - lat) * Math.PI / 180) * EARTH_R;
+  return { x: 50 + (dxM / (mpp * IMG_LOGICAL_W)) * 100, y: 50 + (dyM / (mpp * IMG_LOGICAL_H)) * 100 };
+}
+/** The geo point under a canvas position (in %) for the current view. */
+function pctToGeo(view: MapView, xPct: number, yPct: number): { lat: number; lng: number } {
+  const mpp = mppAt(view.lat, view.zoom);
+  const dxM = ((xPct - 50) / 100) * mpp * IMG_LOGICAL_W;
+  const dyM = ((yPct - 50) / 100) * mpp * IMG_LOGICAL_H;
+  return {
+    lng: view.lng + (dxM / (EARTH_R * Math.cos((view.lat * Math.PI) / 180))) * 180 / Math.PI,
+    lat: view.lat - (dyM / EARTH_R) * 180 / Math.PI,
+  };
+}
 
 /** A pleasing landscape grid for N panels (wider than tall, like a real roof). */
 function defaultCols(count: number) {
@@ -61,13 +101,22 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // center=<address> geocodes server-side, so the image paints without a client
   // geocode (localhost CORS never touches it). The Solar panel-fit is best-effort
   // on OSM coords and may CORS-fail — the image never depends on it.
-  const satUrl = hasMapsKey() ? staticMapUrlForQuery(roofQuery, { w: 640, h: 360, zoom: STUDIO_ZOOM }) : null;
   const [imgOk, setImgOk] = useState(true);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [roofInsight, setRoofInsight] = useState<RoofInsight | null>(null);
   // The geocoded centre drives the ground scale (metres-per-pixel), so panels
   // are drawn at their REAL footprint on the roof — not an arbitrary size.
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  // The live map view (pan + zoom). Null until the geocode gives us a centre.
+  const [view, setView] = useState<MapView | null>(null);
+  const [panPx, setPanPx] = useState<{ dx: number; dy: number } | null>(null);
+  // The image follows the live view once the geocode lands (pan/zoom re-centre
+  // it); before that, the address-keyed image paints with zero client geocoding.
+  const satUrl = hasMapsKey()
+    ? (view
+        ? staticMapUrl(view.lat, view.lng, { w: 640, h: 360, zoom: view.zoom })
+        : staticMapUrlForQuery(roofQuery, { w: 640, h: 360, zoom: STUDIO_ZOOM }))
+    : null;
   // Layout: map on the left by default; the consultant can flip it to the right.
   const [mapSide, setMapSide] = useState<'left' | 'right'>('left');
   const [fullscreen, setFullscreen] = useState(false);
@@ -76,9 +125,28 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
     if (ranOnce.current) return;
     ranOnce.current = true;
     let live = true;
-    osmGeocode(roofQuery).then(loc => {
+    // Google's geocode pins the exact address (it's what centres the static
+    // image); OSM is the keyless fallback when CORS blocks it (localhost).
+    (async () => (await googleGeocode(roofQuery)) ?? (await osmGeocode(roofQuery)))().then(loc => {
       if (!live || !loc) return;
       setCenter(loc);
+      const v0: MapView = { lat: loc.lat, lng: loc.lng, zoom: STUDIO_ZOOM };
+      setView(v0);
+      // Upgrade any %-anchored arrays to real coordinates so pan/zoom carries them.
+      setDesignData((prev: any) => {
+        const list: ArrayBlock[] = prev.arrays ?? [{
+          id: 's1', name: 'String 1',
+          panelCount: prev.panelCount || 14,
+          cols: Math.max(1, prev.arrayCols ?? defaultCols(prev.panelCount || 14)),
+          rot: prev.arrayRot ?? 0,
+          xPct: prev.arrayX ?? 50, yPct: prev.arrayY ?? 52,
+          lat: null, lng: null,
+        }];
+        return {
+          ...prev,
+          arrays: list.map(a => a.lat != null ? a : { ...a, ...pctToGeo(v0, a.xPct, a.yPct) }),
+        };
+      });
       if (hasMapsKey()) buildingInsights(loc.lat, loc.lng).then(ins => { if (live) setRoofInsight(ins); });
     });
     return () => { live = false; };
@@ -124,54 +192,132 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   const coverage = quote.coveragePct ?? 0;
   const setPanelCount = (n: number) => update('panelCount', clamp(n, 4, maxPanels));
 
-  // ── Array placement (drag + rotate), persisted on designData ────────────
-  const ax = designData.arrayX ?? 50;
-  const ay = designData.arrayY ?? 52;
-  const arot = designData.arrayRot ?? 0;
-  // Consultant controls the shape: columns (rows follow) — no more mystery layout.
-  const cols = clamp(designData.arrayCols ?? defaultCols(count), 1, count);
-  const rows = Math.ceil(count / cols);
-  const setCols = (n: number) => update('arrayCols', clamp(n, 1, count));
-  // Strings: how the panels split across the inverter's MPPT inputs.
-  const strings = clamp(designData.strings ?? 1, 1, 6);
-  const perString = Math.floor(count / strings);
-  const stringRemainder = count - perString * strings;
-  const setStrings = (n: number) => update('strings', clamp(n, 1, 6));
+  // ── MULTI-ARRAY MODEL: one STRING per roof face ─────────────────────────
+  // Each array is its own placeable block (front roof, back roof, side…) with
+  // its own count/columns/rotation. Arrays are anchored to REAL geo-coordinates
+  // once the geocode resolves, so they stay glued to their roof when the map
+  // pans or zooms. Legacy single-array designs migrate on first render.
+  const arrays: ArrayBlock[] = designData.arrays ?? [{
+    id: 's1', name: 'String 1',
+    panelCount: designData.panelCount || 14,
+    cols: clamp(designData.arrayCols ?? defaultCols(designData.panelCount || 14), 1, designData.panelCount || 14),
+    rot: designData.arrayRot ?? 0,
+    xPct: designData.arrayX ?? 50, yPct: designData.arrayY ?? 52,
+    lat: null, lng: null,
+  }];
+  const totalPanels = arrays.reduce((s, a) => s + a.panelCount, 0);
+  // Keep the legacy fields in sync so LeadFlow's cost breakdown, SEAI memo and
+  // SendStep keep reading the same designData shape untouched.
+  const commitArrays = (next: ArrayBlock[]) => patch({
+    arrays: next,
+    panelCount: next.reduce((s, a) => s + a.panelCount, 0),
+    strings: next.length,
+  });
+  const updateArray = (id: string, fields: Partial<ArrayBlock>) =>
+    commitArrays(arrays.map(a => (a.id === id ? { ...a, ...fields } : a)));
 
+  const [selId, setSelId] = useState('s1');
+  const sel = arrays.find(a => a.id === selId) ?? arrays[0];
+
+  // ── THE MAP VIEW: pan + zoom on real geo-coordinates ────────────────────
+  // The Static Maps image re-centres on {lat,lng,zoom}; before the geocode
+  // resolves we fall back to the address-keyed image (no pan — nothing to
+  // anchor to). This geo model is exactly what a tile map (MapLibre) would
+  // need, so a later swap to live tiles keeps the arrays as-is.
   const canvasRef = useRef<HTMLDivElement>(null);
-  // Ground scale, resolution-independent: the array is drawn as a FRACTION of the
-  // map's visible width (real array metres ÷ metres across the whole image). No
-  // pixel guessing, so panels stay accurate at any canvas size, fullscreen, or
-  // flipped side. metres-across-the-image = 640 logical px × metres-per-pixel.
-  const metresPerLogicalPx = center ? (156543.03392 * Math.cos((center.lat * Math.PI) / 180)) / Math.pow(2, STUDIO_ZOOM) : null;
+
+  // Ground scale at the CURRENT view — the array is drawn as a fraction of the
+  // map's real width (metres ÷ metres-across-the-image), so panel footprints
+  // stay accurate at any zoom, any canvas size, fullscreen or flipped.
+  const scaleLat = view?.lat ?? center?.lat ?? null;
+  const scaleZoom = view?.zoom ?? STUDIO_ZOOM;
+  const metresPerLogicalPx = scaleLat != null ? mppAt(scaleLat, scaleZoom) : null;
   const groundWidthM = metresPerLogicalPx ? metresPerLogicalPx * IMG_LOGICAL_W : null;
   const accurate = groundWidthM != null;
-  const arrayMetresW = cols * panelWm + (cols - 1) * PANEL_GAP_M;
-  const arrayWidthPct = accurate ? (arrayMetresW / groundWidthM!) * 100 : 40;
-  const gapPct = (PANEL_GAP_M / arrayMetresW) * 100;
   const cellAspect = panelWm / panelHm;
+  const widthPctFor = (a: ArrayBlock) => {
+    const m = a.cols * panelWm + (a.cols - 1) * PANEL_GAP_M;
+    return accurate ? (m / groundWidthM!) * 100 : Math.min(46, 12 + a.cols * 5);
+  };
+  const gapPctFor = (a: ArrayBlock) => (PANEL_GAP_M / (a.cols * panelWm + (a.cols - 1) * PANEL_GAP_M)) * 100;
+  /** Where an array renders in the CURRENT view: geo-anchored when it can be. */
+  const renderPos = (a: ArrayBlock) =>
+    view && a.lat != null && a.lng != null ? geoToPct(view, a.lat, a.lng) : { x: a.xPct, y: a.yPct };
 
-  const grab = useRef<{ offX: number; offY: number } | null>(null);
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    const r = canvasRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const px = ((e.clientX - r.left) / r.width) * 100;
-    const py = ((e.clientY - r.top) / r.height) * 100;
-    grab.current = { offX: px - (designData.arrayX ?? 50), offY: py - (designData.arrayY ?? 52) };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, [designData.arrayX, designData.arrayY]);
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!grab.current) return;
-    const r = canvasRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const px = ((e.clientX - r.left) / r.width) * 100 - grab.current.offX;
-    const py = ((e.clientY - r.top) / r.height) * 100 - grab.current.offY;
-    patch({ arrayX: clamp(px, 8, 92), arrayY: clamp(py, 8, 92) });
-  }, [designData]);
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    grab.current = null;
-    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
-  }, []);
+  // One drag machine: grabbing an array moves THAT array; grabbing open map pans.
+  const drag = useRef<
+    | { kind: 'array'; id: string; offX: number; offY: number }
+    | { kind: 'pan'; startX: number; startY: number; startView: MapView }
+    | null
+  >(null);
+  const pctOf = (e: React.PointerEvent) => {
+    const r = canvasRef.current!.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100, r };
+  };
+  const startArrayDrag = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
+    const a = arrays.find(x => x.id === id)!;
+    const pos = renderPos(a);
+    const p = pctOf(e);
+    setSelId(id);
+    drag.current = { kind: 'array', id, offX: p.x - pos.x, offY: p.y - pos.y };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onCanvasPointerDown = (e: React.PointerEvent) => {
+    if (!view) return; // nothing to pan before the geocode lands
+    drag.current = { kind: 'pan', startX: e.clientX, startY: e.clientY, startView: view };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || !canvasRef.current) return;
+    if (d.kind === 'array') {
+      const p = pctOf(e);
+      const x = clamp(p.x - d.offX, 4, 96);
+      const y = clamp(p.y - d.offY, 4, 96);
+      const geo = view ? pctToGeo(view, x, y) : null;
+      updateArray(d.id, { xPct: x, yPct: y, ...(geo ? { lat: geo.lat, lng: geo.lng } : {}) });
+      if (!designData.arrayMoved) update('arrayMoved', true);
+    } else {
+      setPanPx({ dx: e.clientX - d.startX, dy: e.clientY - d.startY });
+    }
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (d?.kind === 'pan' && panPx && canvasRef.current) {
+      // Commit the pan: the point that was under the cursor stays under it.
+      const r = canvasRef.current.getBoundingClientRect();
+      const dxPct = (panPx.dx / r.width) * 100;
+      const dyPct = (panPx.dy / r.height) * 100;
+      const c = pctToGeo(d.startView, 50 - dxPct, 50 - dyPct);
+      setView({ ...d.startView, lat: c.lat, lng: c.lng });
+    }
+    setPanPx(null);
+    drag.current = null;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  };
+  const setZoom = (z: number) => view && setView({ ...view, zoom: clamp(z, 17, 20) });
+  const recentre = () => center && setView({ lat: center.lat, lng: center.lng, zoom: STUDIO_ZOOM });
+  const setSelCount = (n: number) => {
+    const c = clamp(n, 1, 60);
+    updateArray(sel.id, { panelCount: c, cols: clamp(sel.cols, 1, c) });
+  };
+  const setSelCols = (n: number) => updateArray(sel.id, { cols: clamp(n, 1, sel.panelCount) });
+  /** Cal: "add a string = panels on ANOTHER roof". New block lands beside the
+   *  selected one, inherits its rotation, and becomes the selection. */
+  const addString = () => {
+    const id = `s${Date.now().toString(36)}`;
+    const base = renderPos(sel);
+    const x = clamp(base.x + 18, 6, 94);
+    const y = clamp(base.y + 6, 6, 94);
+    const geo = view ? pctToGeo(view, x, y) : null;
+    commitArrays([...arrays, {
+      id, name: `String ${arrays.length + 1}`, panelCount: 6, cols: 3, rot: sel.rot,
+      xPct: x, yPct: y, lat: geo?.lat ?? null, lng: geo?.lng ?? null,
+    }]);
+    setSelId(id);
+  };
+  const overMax = roofInsight != null && totalPanels > roofInsight.panels;
 
   const roofPane = (
     <div className="rounded-panel border border-border/70 bg-card shadow-card overflow-hidden">
@@ -188,61 +334,90 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
         </div>
       </header>
 
-      <div ref={canvasRef} className="relative aspect-[16/9] overflow-hidden bg-slate-900 select-none">
-        {satUrl && (
-          <img src={satUrl} alt="Roof from above" onError={() => setImgOk(false)} onLoad={() => setImgLoaded(true)} draggable={false}
-            className={cn('absolute inset-0 w-full h-full object-cover', !hasImage && 'hidden')} />
-        )}
-        {!hasImage && (
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 20%, #1e293b, #0b1220)' }}>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[8deg]"
-              style={{ width: '58%', height: '46%', background: 'linear-gradient(160deg,#334155,#1e293b)', borderRadius: 6, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} aria-hidden />
-          </div>
-        )}
+      <div
+        ref={canvasRef}
+        onPointerDown={onCanvasPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+        className={cn('relative aspect-[16/9] overflow-hidden bg-slate-900 select-none touch-none', view && 'cursor-grab active:cursor-grabbing')}
+      >
+        {/* Pan layer — the image and every array shift together while dragging the map */}
+        <div className="absolute inset-0" style={panPx ? { transform: `translate(${panPx.dx}px, ${panPx.dy}px)` } : undefined}>
+          {satUrl && (
+            <img src={satUrl} alt="Roof from above" onError={() => setImgOk(false)} onLoad={() => setImgLoaded(true)} draggable={false}
+              className={cn('absolute inset-0 w-full h-full object-cover', !hasImage && 'hidden')} />
+          )}
+          {!hasImage && (
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 20%, #1e293b, #0b1220)' }}>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[8deg]"
+                style={{ width: '58%', height: '46%', background: 'linear-gradient(160deg,#334155,#1e293b)', borderRadius: 6, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }} aria-hidden />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+
+          {/* The strings — each its own draggable array on its own roof face */}
+          {arrays.map(a => {
+            const pos = renderPos(a);
+            const isSel = a.id === sel.id;
+            return (
+              <div
+                key={a.id} role="group" aria-label={`${a.name}, drag to place`}
+                onPointerDown={e => startArrayDrag(e, a.id)}
+                className="absolute touch-none cursor-grab active:cursor-grabbing"
+                style={{ left: `${pos.x}%`, top: `${pos.y}%`, width: `${widthPctFor(a)}%`, transform: `translate(-50%,-50%) rotate(${a.rot}deg)`, zIndex: isSel ? 3 : 2 }}
+              >
+                <span className={cn('absolute -top-5 left-1/2 -translate-x-1/2 text-2xs font-semibold px-1.5 py-0.5 rounded-control whitespace-nowrap pointer-events-none',
+                  isSel ? 'bg-tech text-white' : 'bg-background/85 text-muted-foreground')}>
+                  {a.name} · {a.panelCount}
+                </span>
+                <div className={cn('rounded-[2px] shadow-[0_4px_16px_rgba(0,0,0,.45)]', isSel ? 'ring-2 ring-tech/90' : 'ring-1 ring-white/50')}
+                  style={{ background: 'rgba(15,23,42,.35)' }}>
+                  <div className="grid" style={{ gridTemplateColumns: `repeat(${a.cols}, 1fr)`, gap: `${gapPctFor(a)}%` }}>
+                    {Array.from({ length: a.panelCount }).map((_, i) => (
+                      <span key={i} style={{
+                        aspectRatio: cellAspect,
+                        background: 'linear-gradient(150deg, #24365c 0%, #152b4a 40%, #0a1220 100%)',
+                        boxShadow: 'inset 0 0 0 0.5px rgba(150,190,240,.55), inset 0 1px 2px rgba(255,255,255,.12)',
+                        borderRadius: 1.5,
+                      }} />
+                    ))}
+                  </div>
+                </div>
+                {isSel && (
+                  <>
+                    <span className="absolute -left-1 -top-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
+                    <span className="absolute -right-1 -top-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
+                    <span className="absolute -left-1 -bottom-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
+                    <span className="absolute -right-1 -bottom-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         {hasImage && !imgLoaded && (
-          <div className="absolute inset-0 grid place-items-center bg-slate-900">
+          <div className="absolute inset-0 grid place-items-center bg-slate-900 z-10">
             <span className="flex items-center gap-2 text-xs text-slate-300"><Loader2 className="size-4 animate-spin" /> Loading the roof…</span>
           </div>
         )}
 
-        <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-
-        {/* The array — draggable */}
-        <div
-          role="group" aria-label="Solar array, drag to place"
-          onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-          className="absolute touch-none cursor-grab active:cursor-grabbing"
-          style={{ left: `${ax}%`, top: `${ay}%`, width: `${arrayWidthPct}%`, transform: `translate(-50%,-50%) rotate(${arot}deg)` }}
-        >
-          <div className="rounded-[2px] ring-2 ring-tech/90 shadow-[0_4px_16px_rgba(0,0,0,.45)]"
-            style={{ background: 'rgba(15,23,42,.35)' }}>
-            <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: `${gapPct}%` }}>
-              {Array.from({ length: count }).map((_, i) => (
-                <span key={i} style={{
-                  aspectRatio: cellAspect,
-                  background: 'linear-gradient(150deg, #24365c 0%, #152b4a 40%, #0a1220 100%)',
-                  boxShadow: 'inset 0 0 0 0.5px rgba(150,190,240,.55), inset 0 1px 2px rgba(255,255,255,.12)',
-                  borderRadius: 1.5,
-                }} />
-              ))}
-            </div>
-          </div>
-          <span className="absolute -left-1 -top-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
-          <span className="absolute -right-1 -top-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
-          <span className="absolute -left-1 -bottom-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
-          <span className="absolute -right-1 -bottom-1 size-1.5 rounded-full bg-tech ring-1 ring-white/70" />
-        </div>
-
-        {/* Orientation chip */}
-        <div className="absolute top-2 left-2 bg-background/85 backdrop-blur text-2xs px-2 py-1 rounded-control font-medium flex items-center gap-1.5">
+        {/* Fixed overlays — these do NOT pan with the map */}
+        <div className="absolute top-2 left-2 bg-background/85 backdrop-blur text-2xs px-2 py-1 rounded-control font-medium flex items-center gap-1.5 z-10">
           <span className="text-tech font-bold">N↑</span>
           <span className="text-muted-foreground">{designData.roofOrientation || 'S'} · {designData.roofPitch || 30}°</span>
         </div>
-
-        {/* Drag hint */}
-        {ax === 50 && ay === 52 && (
-          <div className="absolute top-2 right-2 bg-tech/90 text-white text-2xs px-2 py-1 rounded-control font-medium flex items-center gap-1 shadow-card">
+        {arrays.length === 1 && !designData.arrayMoved && (
+          <div className="absolute top-2 right-2 bg-tech/90 text-white text-2xs px-2 py-1 rounded-control font-medium flex items-center gap-1 shadow-card z-10">
             <Move className="size-3" /> Drag onto the roof
+          </div>
+        )}
+        {view && (
+          <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-10">
+            <button aria-label="Zoom in" onClick={() => setZoom(view.zoom + 1)} disabled={view.zoom >= 20}
+              className="size-8 grid place-items-center rounded-control bg-background/90 backdrop-blur shadow-card hover:bg-background disabled:opacity-40"><Plus className="size-4" /></button>
+            <button aria-label="Zoom out" onClick={() => setZoom(view.zoom - 1)} disabled={view.zoom <= 17}
+              className="size-8 grid place-items-center rounded-control bg-background/90 backdrop-blur shadow-card hover:bg-background disabled:opacity-40"><Minus className="size-4" /></button>
+            <button aria-label="Recentre on the house" onClick={recentre}
+              className="size-8 grid place-items-center rounded-control bg-background/90 backdrop-blur shadow-card hover:bg-background"><Crosshair className="size-4" /></button>
           </div>
         )}
       </div>
@@ -255,7 +430,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             <span className="text-muted-foreground">fits up to <strong className="text-foreground tabular-nums">{roofInsight.panels}</strong> panels ({roofInsight.kwp} kWp)</span>
           </>
         ) : hasImage ? (
-          <span className="text-muted-foreground">Live satellite view. Drag the array onto the roof; the surveyor's count sizes it.</span>
+          <span className="text-muted-foreground">Live satellite. Drag the map to move around, zoom with the buttons, drag each string onto its roof.</span>
         ) : (
           <span className="text-muted-foreground">No satellite here. Placed on a roof plane, sized from the survey.</span>
         )}
@@ -275,40 +450,87 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   );
   const controlsStrip = (
     <div className="rounded-panel border border-border/70 bg-card shadow-card p-2.5 space-y-2">
+      {/* The strings — one per roof face. Click to select, X to remove, + to add. */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {arrays.map(a => (
+          <button key={a.id} type="button" onClick={() => setSelId(a.id)}
+            className={cn('h-7 pl-2.5 rounded-control text-2xs font-semibold flex items-center gap-1.5 border transition-colors',
+              arrays.length > 1 ? 'pr-1' : 'pr-2.5',
+              a.id === sel.id ? 'bg-tech text-white border-tech' : 'bg-card border-border text-muted-foreground hover:text-foreground')}>
+            {a.name} · {a.panelCount}
+            {arrays.length > 1 && (
+              <span role="button" aria-label={`Remove ${a.name}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  const next = arrays.filter(x => x.id !== a.id);
+                  commitArrays(next);
+                  if (sel.id === a.id) setSelId(next[0].id);
+                }}
+                className={cn('size-4 grid place-items-center rounded-full hover:bg-black/25', a.id === sel.id ? 'text-white/85' : 'text-muted-foreground')}>
+                <X className="size-3" />
+              </span>
+            )}
+          </button>
+        ))}
+        <button type="button" onClick={addString}
+          className="h-7 px-2.5 rounded-control border border-dashed border-tech text-tech text-2xs font-semibold flex items-center gap-1 hover:bg-tech-subtle">
+          <Plus className="size-3" /> String (another roof)
+        </button>
+        {overMax && roofInsight && (
+          <span className="h-7 px-2.5 rounded-control bg-pop-subtle text-pop text-2xs font-semibold flex items-center gap-1 ml-auto">
+            <AlertTriangle className="size-3" /> {totalPanels} panels — over this roof's max fit ({roofInsight.panels})
+          </span>
+        )}
+      </div>
+
+      {/* The SELECTED string's controls */}
       <div className="flex items-center gap-2.5 flex-wrap">
-        {stepper('Panels', count, () => setPanelCount(count - 1), () => setPanelCount(count + 1))}
+        {stepper('Panels', sel.panelCount, () => setSelCount(sel.panelCount - 1), () => setSelCount(sel.panelCount + 1))}
         <div className="h-5 w-px bg-border" />
-        {stepper('Cols', cols, () => setCols(cols - 1), () => setCols(cols + 1), <span className="text-2xs text-muted-foreground ml-0.5">{rows}×{cols}</span>)}
+        {stepper('Cols', sel.cols, () => setSelCols(sel.cols - 1), () => setSelCols(sel.cols + 1),
+          <span className="text-2xs text-muted-foreground ml-0.5">{Math.ceil(sel.panelCount / sel.cols)}×{sel.cols}</span>)}
         <div className="h-5 w-px bg-border" />
-        {stepper('Strings', strings, () => setStrings(strings - 1), () => setStrings(strings + 1), <span className="text-2xs text-muted-foreground ml-0.5">{perString}{stringRemainder ? `+${stringRemainder}` : ''}/str</span>)}
-        {/* Quick actions — one-tap sizing */}
+        <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
+          <RotateCw className="size-3.5 text-muted-foreground shrink-0" />
+          <input type="range" min={-45} max={45} step={1} value={sel.rot}
+            onChange={e => updateArray(sel.id, { rot: Number(e.target.value) })}
+            aria-label={`Rotate ${sel.name}`} className="flex-1 accent-tech min-w-0" />
+          <span className="text-2xs tabular-nums text-muted-foreground w-8 text-right shrink-0">{sel.rot}°</span>
+        </div>
+        {/* Quick actions size the TOTAL by adjusting the selected string */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
           <button
             onClick={() => {
               const use = lead.annual_kwh || estimate.annualKwh || 0;
               const perPanelKwh = (panelWatts / 1000) * IE_ENERGY.YIELD_PER_KWP * yieldFactor;
-              if (use > 0 && perPanelKwh > 0) setPanelCount(Math.ceil(use / perPanelKwh));
+              if (use > 0 && perPanelKwh > 0) {
+                const target = Math.ceil(use / perPanelKwh);
+                setSelCount(target - (totalPanels - sel.panelCount));
+              }
             }}
-            title="Size the array to cover their annual usage"
+            title="Size the system to cover their annual usage"
             className="h-7 px-2.5 rounded-control border border-tech text-tech text-2xs font-semibold flex items-center gap-1 hover:bg-tech-subtle">
             <TrendingUp className="size-3" /> Size to bill
           </button>
           {roofInsight && (
-            <button onClick={() => setPanelCount(roofInsight.panels)} title="Fill the roof to Google Solar's max"
+            <button
+              onClick={() => setSelCount(roofInsight.panels - (totalPanels - sel.panelCount))}
+              title="Fill the roof to Google Solar's max"
               className="h-7 px-2.5 rounded-control bg-tech text-white text-2xs font-semibold flex items-center gap-1 hover:bg-tech/90">
               <Maximize2 className="size-3" /> Fill
             </button>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <RotateCw className="size-3.5 text-muted-foreground shrink-0" />
-        <input type="range" min={-45} max={45} step={1} value={arot}
-          onChange={e => update('arrayRot', Number(e.target.value))}
-          aria-label="Rotate array" className="flex-1 accent-tech min-w-0" />
-        <span className="text-2xs tabular-nums text-muted-foreground w-8 text-right shrink-0">{arot}°</span>
-        <div className="h-5 w-px bg-border" />
-        <span className="text-2xs text-muted-foreground tabular-nums shrink-0">{systemSizeKw} kWp · {coverage}%</span>
+
+      {/* The string math, totalled */}
+      <div className="flex items-center gap-2 text-2xs text-muted-foreground">
+        {arrays.length > 2 && (
+          <span className="flex items-center gap-1"><Info className="size-3 shrink-0" /> Most residential hybrids take 2 strings — check the inverter's MPPT count.</span>
+        )}
+        <span className="ml-auto tabular-nums shrink-0">
+          {arrays.length} {arrays.length === 1 ? 'string' : 'strings'} · {totalPanels} panels · {systemSizeKw} kWp · {coverage}%
+        </span>
       </div>
     </div>
   );

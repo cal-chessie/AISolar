@@ -57,6 +57,16 @@ interface Product {
   datasheet?: string;
 }
 
+// Per-category default imagery (/public/products) — shown until a real photo
+// is uploaded, so the catalogue never reads as a wall of empty dashed boxes.
+const DEFAULT_CATEGORY_IMAGE: Record<ProductCategory, string> = {
+  panels: '/products/panel.svg',
+  inverters: '/products/inverter.svg',
+  batteries: '/products/battery.svg',
+  mounting: '/placeholder.svg',
+  accessories: '/products/diverter.svg',
+};
+
 const SAMPLE_PRODUCTS: Product[] = [
   // Panels
   {
@@ -423,15 +433,17 @@ export default function ProfessionalProducts() {
                       </Badge>
                     )}
                   </div>
-                  {/* product photo — upload once, shows on proposals (Cal #17) */}
-                  <label className="block mb-2 cursor-pointer group/photo" onClick={e => e.stopPropagation()}>
-                    {productImages[product.id] ? (
-                      <img src={productImages[product.id]} alt={product.model} className="w-full h-24 object-cover rounded-md border border-border" />
-                    ) : (
-                      <span className="flex items-center justify-center gap-1.5 w-full h-24 rounded-md border border-dashed border-border text-xs text-muted-foreground group-hover/photo:border-tech group-hover/photo:text-tech transition-colors">
-                        <Plus className="h-3.5 w-3.5" /> Add product photo
-                      </span>
-                    )}
+                  {/* product photo — a clean per-category default until the tenant
+                      uploads the real one (upload once, shows on proposals, Cal #17) */}
+                  <label className="block mb-2 cursor-pointer group/photo relative" onClick={e => e.stopPropagation()}>
+                    <img
+                      src={productImages[product.id] ?? DEFAULT_CATEGORY_IMAGE[product.category] ?? '/placeholder.svg'}
+                      alt={product.model}
+                      className="w-full h-24 object-cover rounded-md border border-border"
+                    />
+                    <span className="absolute bottom-1 right-1 flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-background/85 text-muted-foreground opacity-0 group-hover/photo:opacity-100 transition-opacity">
+                      <Plus className="h-3 w-3" /> {productImages[product.id] ? 'Replace photo' : 'Add real photo'}
+                    </span>
                     <input type="file" accept="image/*" className="sr-only"
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleImageFile(product.id, f); }} />
                   </label>
