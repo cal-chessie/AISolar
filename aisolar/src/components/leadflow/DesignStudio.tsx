@@ -84,16 +84,21 @@ function defaultCols(count: number) {
   return Math.max(2, Math.min(count, Math.round(Math.sqrt(count * 1.9))));
 }
 
-export default function DesignStudio({ lead, designData, setDesignData, estimate }: {
+export default function DesignStudio({ lead, designData, setDesignData, estimate, onSetEircode }: {
   lead: DummyLead;
   designData: any;
   setDesignData: (data: any) => void;
   estimate: any;
+  /** Cal's real bill has NO eircode (rural townland address) — the consultant
+   *  sets it right here on the map header and everything re-anchors. */
+  onSetEircode?: (eircode: string) => void;
 }) {
   const eircode = ((lead.intake ?? {}) as Record<string, unknown>).extracted_eircode as string
     ?? lead.address?.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? '';
   const address = lead.address;
-  const roofQuery = address || eircode || 'Dublin';
+  // Eircode first: an Irish townland address ("Ben, Fore, Co Westmeath") can
+  // geocode to the wrong house or nothing; the eircode pins the exact door.
+  const roofQuery = eircode ? `${eircode}, Ireland` : (address || 'Dublin');
   const update = (field: string, value: any) => setDesignData({ ...designData, [field]: value });
   const patch = (fields: Record<string, any>) => setDesignData({ ...designData, ...fields });
 
@@ -120,10 +125,12 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // Layout: map on the left by default; the consultant can flip it to the right.
   const [mapSide, setMapSide] = useState<'left' | 'right'>('left');
   const [fullscreen, setFullscreen] = useState(false);
-  const ranOnce = useRef(false);
+  const [editingLoc, setEditingLoc] = useState(false);
+  const [locDraft, setLocDraft] = useState('');
+  const lastQuery = useRef('');
   useEffect(() => {
-    if (ranOnce.current) return;
-    ranOnce.current = true;
+    if (lastQuery.current === roofQuery) return;
+    lastQuery.current = roofQuery;
     let live = true;
     // Google's geocode pins the exact address (it's what centres the static
     // image); OSM is the keyless fallback when CORS blocks it (localhost).
@@ -326,7 +333,23 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
         <h3 className="text-sm font-semibold">The roof</h3>
         <RoofBadge hasImage={hasImage} insight={roofInsight} />
         <div className="ml-auto flex items-center gap-2">
-          {eircode && <span className="text-2xs text-muted-foreground font-mono">{eircode}</span>}
+          {editingLoc ? (
+            <form className="flex items-center gap-1" onSubmit={e => { e.preventDefault(); const v = locDraft.trim().toUpperCase(); if (v) onSetEircode?.(v); setEditingLoc(false); }}>
+              <input autoFocus value={locDraft} onChange={e => setLocDraft(e.target.value.toUpperCase())} placeholder="D04 X2C1" maxLength={8}
+                className="h-6 w-24 rounded-control border border-tech bg-background px-1.5 text-2xs font-mono uppercase outline-none" aria-label="Eircode" />
+              <button type="submit" className="h-6 px-1.5 rounded-control bg-tech text-white text-2xs font-semibold">Set</button>
+            </form>
+          ) : eircode ? (
+            <button type="button" onClick={() => { setLocDraft(eircode); setEditingLoc(true); }}
+              title="Change the eircode (re-centres the map)"
+              className="text-2xs text-muted-foreground font-mono hover:text-tech transition-colors">{eircode}</button>
+          ) : (
+            <button type="button" onClick={() => { setLocDraft(''); setEditingLoc(true); }}
+              title="The bill had no eircode — set it to pin the exact roof"
+              className="h-6 px-2 rounded-control border border-dashed border-pop text-pop text-2xs font-semibold hover:bg-pop-subtle">
+              + Eircode
+            </button>
+          )}
           <button onClick={() => setFullscreen(f => !f)} aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
             className="size-7 grid place-items-center rounded-control hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
             {fullscreen ? <X className="size-4" /> : <Expand className="size-4" />}

@@ -30,21 +30,29 @@ serve(async (req) => {
       throw new HttpError(500, "AI service not configured");
     }
 
-    const { imageBase64, fileType, leadId } = await req.json();
+    const { imageBase64, imagesBase64, fileType, leadId } = await req.json();
 
-    if (!imageBase64) {
+    // v4: front AND back of the bill. Irish utilities put the tariff + unit
+    // rates on page 2 (Cal's own Electric Ireland bill: page 1 has no rates,
+    // no eircode), so a single-page read caps what we can extract. Accepts
+    // `imagesBase64: string[]` (max 2); `imageBase64` stays supported.
+    const images: string[] = Array.isArray(imagesBase64) && imagesBase64.length > 0
+      ? imagesBase64.slice(0, 2)
+      : (imageBase64 ? [imageBase64] : []);
+
+    if (images.length === 0) {
       throw new HttpError(400, "No image data provided");
     }
-
-    // v3: Size and type validation
-    if (typeof imageBase64 !== "string" || imageBase64.length > MAX_IMAGE_BYTES) {
-      throw new HttpError(400, `Image too large. Max ${MAX_IMAGE_BYTES} bytes base64.`);
+    for (const img of images) {
+      if (typeof img !== "string" || img.length > MAX_IMAGE_BYTES) {
+        throw new HttpError(400, `Image too large. Max ${MAX_IMAGE_BYTES} bytes base64 per page.`);
+      }
     }
     if (fileType && !ALLOWED_TYPES.has(fileType)) {
       throw new HttpError(400, `Unsupported file type. Allowed: ${[...ALLOWED_TYPES].join(", ")}`);
     }
 
-    log(FN, "info", "Processing bill image", { fileType, sizeBytes: imageBase64.length });
+    log(FN, "info", "Processing bill image(s)", { fileType, pages: images.length, sizeBytes: images.reduce((s, i) => s + i.length, 0) });
 
         // AI provider — OpenAI-compatible endpoint, tenant-configurable.
     // Was hardwired to Lovable's gateway; AISolar is BYO-key per tenant
@@ -104,14 +112,14 @@ Rules:
             content: [
               {
                 type: "text",
-                text: "Please extract the electricity bill data from this image. Focus especially on finding the MPRN number."
+                text: images.length > 1
+                  ? "Please extract the electricity bill data from these images (front and back of the same bill). Rates and tariff detail are usually on the back page. Focus especially on finding the MPRN number."
+                  : "Please extract the electricity bill data from this image. Focus especially on finding the MPRN number."
               },
-              {
+              ...images.map(img => ({
                 type: "image_url",
-                image_url: {
-                  url: `data:${fileType || 'image/jpeg'};base64,${imageBase64}`
-                }
-              }
+                image_url: { url: `data:${fileType || 'image/jpeg'};base64,${img}` }
+              }))
             ]
           }
         ],

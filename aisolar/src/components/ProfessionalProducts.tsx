@@ -20,9 +20,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Package, Search, Plus, Sun, Battery, Zap, Wrench, Box,
+  Package, Search, Plus, Sun, Battery, Zap, Wrench, Box, Pencil,
   TrendingUp, AlertCircle, CheckCircle2, Star, ArrowRight, DollarSign,
 } from 'lucide-react';
 
@@ -309,16 +310,46 @@ export default function ProfessionalProducts() {
     r.readAsDataURL(file);
   };
 
+  // Tenant catalogue edits — Add product / Edit product (Cal). Demo persistence
+  // is localStorage, same pattern as product photos; Sweep 8 moves all three to
+  // the products table.
+  const [customProducts, setCustomProducts] = useState<Product[]>(() => {
+    try { return JSON.parse(localStorage.getItem('aisolar_custom_products') || '[]'); } catch { return []; }
+  });
+  const [overrides, setOverrides] = useState<Record<string, Partial<Product>>>(() => {
+    try { return JSON.parse(localStorage.getItem('aisolar_product_overrides') || '{}'); } catch { return {}; }
+  });
+  const [editing, setEditing] = useState<Product | 'new' | null>(null);
+  const saveProduct = (prod: Product) => {
+    if (SAMPLE_PRODUCTS.some(sp => sp.id === prod.id)) {
+      setOverrides(prev => {
+        const next = { ...prev, [prod.id]: prod };
+        try { localStorage.setItem('aisolar_product_overrides', JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    } else {
+      setCustomProducts(prev => {
+        const next = prev.some(cp => cp.id === prod.id) ? prev.map(cp => (cp.id === prod.id ? prod : cp)) : [...prev, prod];
+        try { localStorage.setItem('aisolar_custom_products', JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    }
+    toast.success(`${prod.manufacturer} ${prod.model} saved`, { description: 'Live in the catalogue — proposals pick it up from here.' });
+  };
+
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all' | 'bundles'>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
 
   // Compute margins
-  const products = useMemo(() => SAMPLE_PRODUCTS.map(p => ({
+  const products = useMemo(() => [
+    ...SAMPLE_PRODUCTS.map(p => ({ ...p, ...overrides[p.id] })),
+    ...customProducts,
+  ].map(p => ({
     ...p,
-    margin: Math.round(((p.rrp - p.cost) / p.rrp) * 100),
-  })), []);
+    margin: p.rrp > 0 ? Math.round(((p.rrp - p.cost) / p.rrp) * 100) : 0,
+  })), [overrides, customProducts]);
 
   const filtered = useMemo(() => {
     return products.filter(p => {
@@ -348,6 +379,9 @@ export default function ProfessionalProducts() {
             className="pl-10"
           />
         </div>
+        <Button onClick={() => setEditing('new')} className="shrink-0 bg-tech text-white transition-opacity hover:opacity-90">
+          <Plus className="h-4 w-4 mr-1.5" /> Add product
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -427,11 +461,19 @@ export default function ProfessionalProducts() {
                       </div>
                       <Badge variant="outline" className="text-[11px]">{cat.label}</Badge>
                     </div>
-                    {product.seaiApproved && (
-                      <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary border-primary/40">
-                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> SEAI
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {product.seaiApproved && (
+                        <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary border-primary/40">
+                          <CheckCircle2 className="h-3 w-3 mr-0.5" /> SEAI
+                        </Badge>
+                      )}
+                      <button
+                        aria-label={`Edit ${product.model}`}
+                        onClick={e => { e.stopPropagation(); setEditing(product); }}
+                        className="size-6 grid place-items-center rounded-control text-muted-foreground hover:text-tech hover:bg-tech-subtle transition-colors">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   {/* product photo — a clean per-category default until the tenant
                       uploads the real one (upload once, shows on proposals, Cal #17) */}
@@ -498,6 +540,15 @@ export default function ProfessionalProducts() {
       {/* Product detail modal */}
       {selectedProduct && (
         <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      )}
+      {editing && (
+        <ProductEditor
+          product={editing === 'new' ? null : editing}
+          image={editing !== 'new' ? productImages[editing.id] : undefined}
+          onImage={handleImageFile}
+          onSave={p => { saveProduct(p); setEditing(null); }}
+          onClose={() => setEditing(null)}
+        />
       )}
       {selectedBundle && (
         <BundleDetailModal bundle={selectedBundle} products={products} onClose={() => setSelectedBundle(null)} />
@@ -635,6 +686,108 @@ function BundleDetailModal({ bundle, products, onClose }: { bundle: Bundle; prod
             Add bundle to proposal <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+/** Add / edit a product — the tenant's own catalogue entry, photo included.
+ *  The uploaded photo is the REAL manufacturer image (the tenant holds the
+ *  distributor licence for it); the SVG defaults only fill the gap until then. */
+function ProductEditor({ product, image, onImage, onSave, onClose }: {
+  product: Product | null;
+  image?: string;
+  onImage: (id: string, file: File) => void;
+  onSave: (p: Product) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<Product>(() => product ?? {
+    id: `custom-${Date.now().toString(36)}`,
+    category: 'panels', manufacturer: '', model: '', description: '',
+    cost: 0, rrp: 0, margin: 0, stock: 0, rating: 5, specs: {}, seaiApproved: true,
+  });
+  const set = (k: keyof Product, v: unknown) => setDraft(d => ({ ...d, [k]: v }));
+  const canSave = draft.manufacturer.trim() && draft.model.trim() && draft.rrp > 0;
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-panel border border-border bg-card shadow-2xl" onClick={e => e.stopPropagation()}>
+        <header className="flex items-center gap-2 px-5 h-12 border-b border-border sticky top-0 bg-card z-10">
+          <Package className="size-4 text-tech" />
+          <h3 className="text-sm font-semibold">{product ? `Edit ${product.model}` : 'Add product'}</h3>
+          <button onClick={onClose} aria-label="Close" className="ml-auto size-7 grid place-items-center rounded-control hover:bg-muted text-muted-foreground">✕</button>
+        </header>
+        <div className="p-5 space-y-4">
+          {/* Photo — upload the real product image */}
+          <label className="block cursor-pointer group/pimg">
+            {image ? (
+              <img src={image} alt={draft.model || 'Product'} className="w-full h-36 object-cover rounded-panel border border-border" />
+            ) : (
+              <span className="flex flex-col items-center justify-center gap-1.5 w-full h-36 rounded-panel border border-dashed border-border text-xs text-muted-foreground group-hover/pimg:border-tech group-hover/pimg:text-tech transition-colors">
+                <Plus className="h-4 w-4" /> Add the real product photo
+                <span className="text-2xs">Manufacturer or distributor image — it rides onto every proposal</span>
+              </span>
+            )}
+            <input type="file" accept="image/*" className="sr-only"
+              onChange={e => { const f = e.target.files?.[0]; if (f) onImage(draft.id, f); }} />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 sm:col-span-1">
+              <Label className="text-xs">Category</Label>
+              <select value={draft.category} onChange={e => set('category', e.target.value as ProductCategory)}
+                className="mt-1.5 flex h-10 w-full rounded-control border border-input bg-background px-3 text-sm">
+                <option value="panels">Solar panels</option>
+                <option value="inverters">Inverters</option>
+                <option value="batteries">Batteries</option>
+                <option value="mounting">Mounting</option>
+                <option value="accessories">Accessories</option>
+              </select>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <Label className="text-xs">Manufacturer</Label>
+              <Input value={draft.manufacturer} onChange={e => set('manufacturer', e.target.value)} placeholder="e.g. TrinaSolar" className="mt-1.5" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Model</Label>
+              <Input value={draft.model} onChange={e => set('model', e.target.value)} placeholder="e.g. Vertex S+ 440W" className="mt-1.5" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Description</Label>
+              <Input value={draft.description} onChange={e => set('description', e.target.value)} placeholder="One line the consultant sells with" className="mt-1.5" />
+            </div>
+            <div>
+              <Label className="text-xs">Cost (€)</Label>
+              <Input type="number" inputMode="decimal" value={draft.cost || ''} onChange={e => set('cost', parseFloat(e.target.value) || 0)} className="mt-1.5" />
+            </div>
+            <div>
+              <Label className="text-xs">RRP (€)</Label>
+              <Input type="number" inputMode="decimal" value={draft.rrp || ''} onChange={e => set('rrp', parseFloat(e.target.value) || 0)} className="mt-1.5" />
+            </div>
+            <div>
+              <Label className="text-xs">Stock</Label>
+              <Input type="number" inputMode="numeric" value={draft.stock || ''} onChange={e => set('stock', parseInt(e.target.value) || 0)} className="mt-1.5" />
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium">
+                <input type="checkbox" checked={draft.seaiApproved} onChange={e => set('seaiApproved', e.target.checked)} className="size-4 rounded border-input" />
+                SEAI-approved
+              </label>
+            </div>
+          </div>
+          {draft.rrp > 0 && draft.cost > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Margin at these prices: <strong className="text-doc-deposit tabular-nums">{Math.round(((draft.rrp - draft.cost) / draft.rrp) * 100)}%</strong>
+            </p>
+          )}
+        </div>
+        <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border sticky bottom-0 bg-card">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button disabled={!canSave} onClick={() => onSave(draft)} className="bg-tech text-white transition-opacity hover:opacity-90">
+            {product ? 'Save changes' : 'Add to catalogue'}
+          </Button>
+        </footer>
       </div>
     </div>
   );

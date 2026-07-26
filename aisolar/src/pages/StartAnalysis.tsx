@@ -135,17 +135,20 @@ export default function StartAnalysis() {
     ? Math.round((bill.nightUsageKwh / (bill.dayUsageKwh + bill.nightUsageKwh)) * 100)
     : null;
 
-  async function handleFile(file: File) {
+  async function handleFiles(files: File[]) {
     setBusy(true);
     try {
-      const b64 = await new Promise<string>((res, rej) => {
+      // Front AND back — Irish bills keep the tariff + unit rates on page 2,
+      // so two pages is the difference between ~10 details and the full read.
+      const toB64 = (file: File) => new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(String(r.result).split(',')[1] ?? '');
         r.onerror = rej;
         r.readAsDataURL(file);
       });
+      const pages = await Promise.all(files.slice(0, 2).map(toB64));
       const { data, error } = await supabase.functions.invoke('extract-bill-data', {
-        body: { imageBase64: b64, fileType: file.type },
+        body: { imagesBase64: pages, imageBase64: pages[0], fileType: files[0].type },
       });
       if (error || !data?.data) throw error ?? new Error('no data');
       const d = data.data;
@@ -325,18 +328,18 @@ export default function StartAnalysis() {
               ) : (
                 <>
                   <span className="size-14 rounded-full bg-brand-aisolar-subtle text-brand-aisolar grid place-items-center"><Upload className="size-7" /></span>
-                  <span className="font-semibold text-base">Tap to add your bill</span>
-                  <span className="text-xs text-muted-foreground">JPG, PNG or PDF · up to 5&nbsp;MB</span>
+                  <span className="font-semibold text-base">Tap to add your bill — front and back</span>
+                  <span className="text-xs text-muted-foreground">Two photos beat one: the unit rates usually live on the back page. JPG, PNG or PDF · up to 5&nbsp;MB each</span>
                 </>
               )}
             </button>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+            <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only"
+              onChange={e => { const fs = Array.from(e.target.files ?? []); if (fs.length) handleFiles(fs); }} />
 
             {/* Kill the three reasons people hesitate here. */}
             <div className="mt-4 grid sm:grid-cols-3 gap-3 min-w-0">
               {[
-                { icon: Check, t: 'A phone photo is fine', s: "It doesn't need to be flat, straight or perfect. Any recent bill works." },
+                { icon: Check, t: 'Snap both sides', s: "A phone photo is fine — front and back. The rates hide on the back page." },
                 { icon: ShieldCheck, t: 'It stays in the EU', s: 'We read the energy figures only — not your bank details.' },
                 { icon: FileText, t: 'Any supplier', s: 'Electric Ireland, Bord Gáis, SSE, Energia, Pinergy — all of them.' },
               ].map(({ icon: I, t, s }) => (

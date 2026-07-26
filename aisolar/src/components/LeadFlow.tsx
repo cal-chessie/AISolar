@@ -74,7 +74,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
     return leads.find(l => l.proposal) || leads[6];
   });
   const [step, setStep] = useState<FlowStep>('estimate');
-  const [eircode, setEircode] = useState('');
+  const [eircode, setEircode] = useState<string>(() => ((lead.intake as Record<string, unknown>)?.extracted_eircode as string) ?? '');
   const [address, setAddress] = useState(lead.address || '');
   const [showMap, setShowMap] = useState(false);
   const [surveyBooked, setSurveyBooked] = useState<{ slot: string } | null>(null);
@@ -343,7 +343,20 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                           className="font-mono uppercase"
                           maxLength={8}
                         />
-                        <Button onClick={() => setShowMap(true)} disabled={!eircode}>
+                        <Button
+                          onClick={() => {
+                            // Cal: "it should do both at the same time" — show the
+                            // map AND save the eircode onto the lead, so the survey,
+                            // studio and proposal all inherit it. Not map-only state.
+                            setShowMap(true);
+                            const code = eircode.trim().toUpperCase();
+                            if (code) setLead(prev => ({
+                              ...prev,
+                              intake: { ...(prev.intake as Record<string, unknown>), extracted_eircode: code } as typeof prev.intake,
+                            }));
+                          }}
+                          disabled={!eircode}
+                        >
                           <MapPin className="h-4 w-4 mr-1" /> View
                         </Button>
                       </div>
@@ -504,6 +517,10 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
                 designData={designData}
                 setDesignData={setDesignData}
                 estimate={estimate}
+                onSetEircode={(code) => setLead(prev => ({
+                  ...prev,
+                  intake: { ...(prev.intake as Record<string, unknown>), extracted_eircode: code } as typeof prev.intake,
+                }))}
               />
               <div className="mt-4 flex items-center justify-between gap-3">
                 <Button variant="outline" onClick={() => setStep('survey')} className="h-11">

@@ -131,3 +131,43 @@ formulas), docTemplates yield fallback derated, quick actions (Size to bill).
 Verified in-browser: €2,833 self-use + €344 CEG + €192 arbitrage = €3,369 ✓.
 Remaining known delta: stored proposal.system_size_kw vs live design until
 Sweep 8 persists the design. NOT PUSHED — awaiting Cal's yes.
+
+## THE REAL BILL TEST (27 Jul) — Cal's own Electric Ireland bill
+Page 1 of a REAL major-utility bill has: account no, MPRN, supplier, billing
+period, usage comparison, VAT, total, reading type. It does NOT have: eircode
+(rural townland address), unit rates, tariff name, day/night split — those live
+on PAGE 2. Consequences shipped today:
+- Bill upload now asks for FRONT AND BACK (multi-file dropzone; extract-bill-data
+  v4 accepts imagesBase64[] max 2, back-compatible with imageBase64). Deploy the
+  edge fn on next supabase functions deploy.
+- Eircode capture in THREE deliberate places: Estimate (View now SAVES it to the
+  lead, not map-only state — "do both at the same time"), Survey Confirm ("The
+  bill didn't show these" gap section: eircode / day rate / annual kWh, in the
+  open, not behind Edit), Design Studio map header (add/edit chip, re-geocodes).
+- Honesty: copy already says "up to 21 details" and every panel counts what was
+  ACTUALLY read. Keep it that way.
+- RULE: customer bills are PII — never commit bill images or their data to the
+  repo. Cal's bill was design input only.
+
+## ROADMAP (Cal, 27 Jul) — the order to the finish line
+1. Design Studio: smart default + good-better-best (remaining two).
+2. STAND-UP: what would make it world class. Then HARDEN.
+3. Proposal + AIField (installer) second to none.
+4. Owner cockpit full walkthrough (or he gets jelly).
+5. Finish Sweep 7 (content/marketing layer), then every sweep fine-tooth comb.
+6. SWEEP 8 VERY LAST. Cal has something IMPORTANT AND DEEP to share when we get
+   there — bring the best self, keep good notes between now and then.
+STANDING ORDERS until then: migrations best-practice (idempotent, add-only),
+watch for old bleed from earlier AI passes, fix bugs on sight, harden as we go,
+tighten to world-class where it's the right call, remove leftover crap. Cal
+lost his senior dev and is trusting us with deployment-readiness standards —
+READINESS_AND_MOAT.md is the checklist; keep it current.
+
+## Products page (27 Jul)
+- Add product + Edit product (pencil on every card) shipped — full form
+  (category/maker/model/desc/cost/RRP/stock/SEAI/photo), localStorage demo
+  persistence (aisolar_custom_products + aisolar_product_overrides), margin
+  computed live. Sweep 8: move to the products table with photos in storage.
+- REAL product images are the TENANT'S to upload (manufacturer/distributor
+  imagery they're licensed to use) — the per-kind SVG illustrations are the
+  default so nothing ever renders empty. We do not scrape manufacturer photos.

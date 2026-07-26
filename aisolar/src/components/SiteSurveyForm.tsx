@@ -588,6 +588,36 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     <BillReadPanel bill={bill} dense className="shadow-none rounded-none" />
                   </div>
                 )}
+                {/* Real bills miss things (Cal's own bill: no eircode, rates on
+                    page 2). Capture the critical gaps HERE, in the open — not
+                    hidden behind the Edit toggle. */}
+                {(!bill.eircode || bill.unitRate == null || !bill.annualKwh) && (
+                  <SurveySection tone="pop" icon={<Info />} title="The bill didn't show these"
+                    hint="Ask on the call or check page 2 of the bill. The map and the money need them.">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {!bill.eircode && (
+                        <div>
+                          <Label htmlFor="eircode" className="text-xs">Eircode (pins the roof)</Label>
+                          <Input {...register('eircode')} placeholder="N91 XxXX" maxLength={8}
+                            onChange={e => setValue('eircode', e.target.value.toUpperCase())}
+                            className="w-full mt-1.5 h-control font-mono uppercase" />
+                        </div>
+                      )}
+                      {bill.unitRate == null && (
+                        <div>
+                          <Label htmlFor="current_tariff" className="text-xs">Day rate (€/kWh)</Label>
+                          <Input {...register('current_tariff')} type="number" step="0.01" inputMode="decimal" placeholder="0.35" className="w-full mt-1.5 h-control" />
+                        </div>
+                      )}
+                      {!bill.annualKwh && (
+                        <div>
+                          <Label htmlFor="annual_consumption_kwh" className="text-xs">Annual usage (kWh)</Label>
+                          <Input {...register('annual_consumption_kwh')} type="number" inputMode="numeric" placeholder="e.g. 4,500" className="w-full mt-1.5 h-control" />
+                        </div>
+                      )}
+                    </div>
+                  </SurveySection>
+                )}
               </>
             ) : (
               <>
