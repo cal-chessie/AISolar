@@ -33,6 +33,7 @@ import { getStage } from '@/lib/leadIntake';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
+import InstallRunner from './InstallRunner';
 
 type TabId = 'today' | 'week' | 'jobs' | 'inbox' | 'materials' | 'map';
 
@@ -51,6 +52,7 @@ export default function InstallerPortalV5() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
   const [startedJobs, setStartedJobs] = useState<Set<string>>(new Set());
   const [threadLead, setThreadLead] = useState<DummyLead | null>(null);
+  const [runnerLead, setRunnerLead] = useState<DummyLead | null>(null);
   const [reply, setReply] = useState('');
   const [localMsgs, setLocalMsgs] = useState<Record<string, Msg[]>>({});
   // Week view: drag-and-drop reschedules live here (assignment table at launch)
@@ -239,7 +241,14 @@ export default function InstallerPortalV5() {
                           <p className="text-sm text-muted-foreground mt-0.5 truncate flex items-center gap-1"><MapPin className="h-3.5 w-3.5 shrink-0" /> {l.address}</p>
                           <div className="mt-3 flex items-center gap-2 flex-wrap">
                             {started ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — customer notified</span>
+                              <>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — customer notified</span>
+                                {!isSurvey && (
+                                  <Button size="sm" className="h-9 bg-tech text-white hover:bg-tech/90" onClick={() => setRunnerLead(l)}>
+                                    <Wrench className="h-3.5 w-3.5 mr-1" /> Run the install
+                                  </Button>
+                                )}
+                              </>
                             ) : (
                               <Button size="sm" className="h-9 bg-primary text-primary-foreground hover:opacity-90 transition-opacity" onClick={() => startJob(l)}>
                                 <Play className="h-3.5 w-3.5 mr-1" /> Start job
@@ -350,7 +359,7 @@ export default function InstallerPortalV5() {
                     {[['Surveys', surveyJobs, Camera, 'survey'], ['Installs', activeJobs, Wrench, 'install'], ['Handovers', handoverJobs, CheckCircle2, 'handover']].map(([label, pool, Icon, variant]: any) => pool.length > 0 && (
                       <div key={label}>
                         <h3 className="label-micro mb-1.5 flex items-center gap-1"><Icon className="h-3 w-3" /> {label} ({pool.length})</h3>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{pool.map((lead: DummyLead) => <JobCard key={lead.id} lead={lead} variant={variant} onClick={() => navigate(`/job/${lead.id}`)} />)}</div>
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{pool.map((lead: DummyLead) => <JobCard key={lead.id} lead={lead} variant={variant} onClick={() => variant === 'install' ? setRunnerLead(lead) : navigate(`/job/${lead.id}`)} />)}</div>
                       </div>
                     ))}
                     {displayActive.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active jobs.</p>}
@@ -609,6 +618,8 @@ export default function InstallerPortalV5() {
           </div>
         </div>
       )}
+      {/* The install runner — staged checklist, serials, triple check, signature */}
+      {runnerLead && <InstallRunner lead={runnerLead} onClose={() => setRunnerLead(null)} />}
       {/* AI Coach mounted once globally in App.tsx — no local copy (double-mount). */}
     </div>
   );

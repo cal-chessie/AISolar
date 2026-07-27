@@ -391,10 +391,10 @@ export default function AnalyticsDashboard() {
         {/* AGENTS */}
         <TabsContent value="agents" className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <KpiCard label="Agent runs (24h)" value={num(agentImpact.runs24h)} icon={Bot} color="violet" delta="+12%" deltaDirection="up" />
-            <KpiCard label="Agent runs (30d)" value={num(agentImpact.runs30d)} icon={Activity} color="violet" delta="+8%" deltaDirection="up" />
-            <KpiCard label="Consultant hours saved" value={`${agentImpact.hoursSaved}h`} icon={Clock} color="emerald" delta="+22h vs last month" deltaDirection="up" />
-            <KpiCard label="Cost saved" value={eur(agentImpact.costSaved)} icon={DollarSign} color="emerald" delta="+€890" deltaDirection="up" />
+            <KpiCard label="Agent runs (24h)" value={num(agentImpact.runs24h)} icon={Bot} tone="tech" delta={`${num(agentImpact.runs30d)} in 30d`} />
+            <KpiCard label="Emails sent (30d)" value={num(agentImpact.emailsSent)} icon={Activity} tone="tech" delta={`${num(agentImpact.followUpsSent)} follow-ups`} />
+            <KpiCard label="Consultant hours saved" value={`${agentImpact.hoursSaved}h`} icon={Clock} tone="deposit" delta="from runs × avg handling time" />
+            <KpiCard label="Cost saved" value={eur(agentImpact.costSaved)} icon={DollarSign} tone="deposit" delta="hours saved × €30/h" />
           </div>
 
           <Card>

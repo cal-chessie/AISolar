@@ -94,3 +94,18 @@ Needs REAL wiring for Sweep 8 (currently local/toast-only):
 - **Agent impact numbers** (`AnalyticsDashboard.agentImpact`) — simulated constants → aggregate from agent run log (runs, emails via Postmark records, drafts, hours-saved formula documented).
 - **Analytics time-range buttons** (7d/30d/90d/all) — state exists but demo dataset ignores range; wire `created_at` filters when real queries land.
 - **CeoWindow "Download report" / KPI exports** — works on demo data; point at the same real queries when wired.
+
+### AIField install runner — `installer/InstallRunner.tsx` (built 27 Jul, screens 3–6)
+Staged gated checklist (pre-install→roof→electrical→commissioning→handover),
+photo-slot evidence pack, serial capture + TRIPLE CHECK (fitted vs proposal,
+NC6→NC7 warning, office flag), field signature canvas. ALL local
+(localStorage `aifield_run_<leadId>`, offline-tolerant by design). Sweep 8:
+- photos → storage bucket + `install_evidence` rows (job, stage, slot, taken_at)
+- checks/stage completion → `install_checklist` rows; stage-complete emits
+  notification + advances workflow (installing→installed on handover)
+- serial + fitted model → `installed_equipment` (feeds NC6 §5 + protection
+  table via product type-test profile + warranty pack); mismatch flag →
+  notification to office BEFORE NC6 generation (hard gate)
+- signature dataURL → storage + hash on the NC6/DoW record (kernel append)
+- "camera assist reads the plate" = OCR at launch (edge fn); manual entry
+  stays as the fallback

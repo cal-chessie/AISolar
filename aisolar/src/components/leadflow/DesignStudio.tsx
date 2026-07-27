@@ -727,7 +727,13 @@ function GearPicker({ kind, label, options, value, onPick }: {
   kind: CatalogProduct['kind']; label: string; options: CatalogProduct[]; value: string; onPick: (model: string) => void;
 }) {
   const KindIcon = kind === 'panel' ? Sun : kind === 'inverter' ? Zap : kind === 'battery' ? Battery : kind === 'diverter' ? Droplets : Zap;
-  const isActive = (p: CatalogProduct) => value?.toLowerCase() === p.model.toLowerCase() || value?.toLowerCase().includes(p.maker.toLowerCase());
+  // ONE active pick, always: exact model wins; a maker-substring fallback only
+  // rescues legacy stored values, and only ever elects a single option (two
+  // SolaX products must never both light up).
+  const exact = options.find(p => p.model.toLowerCase() === value?.toLowerCase());
+  const fallback = exact ? null : options.find(p => p.maker && value?.toLowerCase().includes(p.maker.toLowerCase()));
+  const activeModel = (exact ?? fallback)?.model;
+  const isActive = (p: CatalogProduct) => p.model === activeModel;
   // Two per category — a clean single row. The selected one always shows.
   const shown = [...options.filter(isActive), ...options.filter(p => !isActive(p))].slice(0, 2);
   return (
