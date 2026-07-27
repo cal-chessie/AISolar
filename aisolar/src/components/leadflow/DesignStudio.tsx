@@ -94,10 +94,25 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
     if (lastQuery.current === roofQuery) return;
     lastQuery.current = roofQuery;
     let live = true;
-    // Google's geocode pins the exact address (it's what centres the static
-    // image); OSM is the keyless fallback when CORS blocks it (localhost).
-    (async () => (await googleGeocode(roofQuery)) ?? (await osmGeocode(roofQuery)))().then(loc => {
-      if (!live || !loc) return;
+    // TRUST CHAIN (Cal's "nothing's accurate" bug): Google geocode resolves
+    // eircodes exactly — but needs the Geocoding API enabled. OSM CANNOT
+    // resolve Eircodes (proprietary DB — it returns the city centre), so it
+    // only ever gets the ADDRESS, and only when there's no eircode. If neither
+    // gives a trusted centre we keep the address/eircode-keyed image (Google
+    // geocodes it server-side, so the HOUSE is right) and simply leave pan off.
+    (async () => {
+      const g = await googleGeocode(roofQuery);
+      if (g) return g;
+      if (!eircode && address) return await osmGeocode(address);
+      return null;
+    })().then(loc => {
+      if (!live) return;
+      if (!loc) {
+        // Eircode set but no trusted client geocode: drop the live view so the
+        // image re-keys to the eircode (Google pins the right house server-side).
+        if (eircode) setView(null);
+        return;
+      }
       setCenter(loc);
       const v0: MapView = { lat: loc.lat, lng: loc.lng, zoom: STUDIO_ZOOM };
       setView(v0);
@@ -198,7 +213,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // Ground scale at the CURRENT view — the array is drawn as a fraction of the
   // map's real width (metres ÷ metres-across-the-image), so panel footprints
   // stay accurate at any zoom, any canvas size, fullscreen or flipped.
-  const scaleLat = view?.lat ?? center?.lat ?? null;
+  const scaleLat = view?.lat ?? center?.lat ?? (satUrl ? 53.3 : null); // mid-IE lat ≈ ±4% worst case
   const scaleZoom = view?.zoom ?? STUDIO_ZOOM;
   const metresPerLogicalPx = scaleLat != null ? mppAt(scaleLat, scaleZoom) : null;
   const groundWidthM = metresPerLogicalPx ? metresPerLogicalPx * IMG_LOGICAL_W : null;
@@ -417,8 +432,10 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             <span className="flex items-center gap-1.5 text-tech font-medium"><Satellite className="size-3.5" /> Google Solar read this roof</span>
             <span className="text-muted-foreground">fits up to <strong className="text-foreground tabular-nums">{roofInsight.panels}</strong> panels ({roofInsight.kwp} kWp)</span>
           </>
-        ) : hasImage ? (
+        ) : hasImage && view ? (
           <span className="text-muted-foreground">Live satellite. Drag the map to move around, zoom with the buttons, drag each string onto its roof.</span>
+        ) : hasImage ? (
+          <span className="text-muted-foreground">Pinned to the eircode by Google. Pan and zoom switch on once the Geocoding API is enabled on the Maps key.</span>
         ) : (
           <span className="text-muted-foreground">No satellite here. Placed on a roof plane, sized from the survey.</span>
         )}

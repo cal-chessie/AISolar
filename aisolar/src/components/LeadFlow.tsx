@@ -48,6 +48,7 @@ import CustomerProposal from '@/components/customer/CustomerProposal';
 import DesignStudio from '@/components/leadflow/DesignStudio';
 // Shared family design system (KPI tiles, tones) — one look across every surface
 import { Kpi, eurCompact } from '@/components/consultant/cockpitUi';
+import { AisolarWordmark } from '@/components/brand/AiosMark';
 
 const eurFmt = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -1122,6 +1123,7 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
     return (
       <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
         <CardContent className="p-6 text-center">
+          <div className="flex justify-center mb-4"><AisolarWordmark className="size-14" /></div>
           <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary mb-3 shadow-lg shadow-card">
             <CheckCircle2 className="h-6 w-6 text-white" />
           </div>
