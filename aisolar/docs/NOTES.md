@@ -190,3 +190,46 @@ runs a labelled "[demo dry run]" showing the agent's voice — honest, no fake
 LLM claim). FAMILY: agent console got KPI tiles (runs=tech, queued=gold,
 failed=pop, active=deposit) + status edges + solid tech Run-now; Review & send
 got the four-KPI family strip (kWp/net/deposit/grant).
+
+## OWNER ANALYTICS SERIOUS PASS (27 Jul) — one stats module, honest numbers
+- NEW src/lib/ownerStats.ts = THE owner money definitions (cockpit vitals, CEO
+  window, analytics dashboard all read it — there were THREE conversion
+  formulas before). openPipeline = in-play only (won jobs are BACKLOG not
+  pipeline); contractedBacklog = signed still to collect (drafts excluded);
+  conversion = won ÷ proposals SENT ("proposal → win"); avgJob = won only.
+  Morning line: "€banked · €open pipeline · €signed to collect".
+- FABRICATIONS KILLED across analytics: +12.4%/−2.1%/+3-this-week deltas, the
+  hardcoded "42% drop-off vs industry benchmark 60%", "96% approval Above SEAI
+  avg", canned team-coach text — ALL now computed from live data or gone.
+  Bottleneck card computes worst consecutive gate drop, hides if ≥85%.
+- Overview rework (Cal: "needs work, not family/cal standard"): 13 dead black
+  stage bars → ONE flat family distribution bar (intake tech / proposal gold /
+  signed green-60 / installing&paid green) + phase legend + 2-col stage grid.
+  Emoji activity badges (🔥🤖✓ raw red-50) → family icon chips.
+- Funnel rework: 13 micro-stages → SEVEN owner gates (in → survey → proposal
+  sent → signed → deposit → installed → paid) with "N in · N paid · X% end to
+  end" header, slim tech bars, semantic carry chips. Gates count at-or-past so
+  a bar can never grow down-funnel.
+- Settings family pass verified live: Terms (gold chip, statutory line, tech
+  save), Audit Log (pop/gold/tech severities + summary strip), Kernel (tech
+  Supabase chip, pop Vault lock, "Names only, never values", green RLS/secret
+  badges).
+- VERIFICATION LESSON (keep): Radix tabs ignore synthetic .click() — they
+  activate on mousedown. Any browser probe must fire pointer/mouse event
+  sequences or the tab NEVER switches and text checks pass vacuously. All tab
+  verifications re-run properly with real events + screenshots.
+
+## OWNER BUTTON AUDIT (27 Jul) — every view walked, inventory in Sweep 8 doc
+- Click-tested WORKING: kanban card→intelligence profile→Back, Estimates Open,
+  all CSV exports, Calendar Add (cal.com new tab), Products Add/Edit, agent
+  Run/Save/Test, Settings saves, Help us improve, VAT toggle/Save setup/bank.
+- FIXED: Products Datasheet button was dead → opens PDF when on file, honest
+  toast when not. Truth-pass: "Invite sent to {email}" (nothing sends) →
+  "added to the team — invite queued for launch".
+- Everything still toast-only → SWEEP8_DB_WIRING.md "Owner cockpit trigger
+  inventory" with target wiring per control (deposit link→create-checkout,
+  invites→auth+grant_role, handover→portal docs, feedback/products→tables,
+  activity+agent-impact→run-log queries). No SQL written — Sweep 8 designs the
+  tables together; the doc is the contract.
+- Commits: ceaf9cf (ownerStats + honesty + settings family), a085203
+  (overview/funnel rework + button fixes + inventory). Both ls-remote verified.
