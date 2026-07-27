@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   TrendingUp, TrendingDown, Users, DollarSign, Target, Zap, Award, Bot,
   Clock, CheckCircle2, ArrowUpRight, ArrowDownRight, Download, RefreshCw,
-  BarChart3, PieChart, Activity,
+  BarChart3, PieChart, Activity, Flame,
 } from 'lucide-react';
 import { computeOwnerStats } from '@/lib/ownerStats';
 import { generateDummyLeads, computePipelineStats } from '@/lib/dummyData';
@@ -40,18 +40,20 @@ export default function AnalyticsDashboard() {
   // as the cockpit vitals and the CEO window. No third opinion.
   const owner = useMemo(() => computeOwnerStats(leads), [leads]);
 
-  // Funnel data
+  // Funnel data — the seven gates an owner actually asks about, not 13 micro-stages.
+  // Each count = leads at or past that gate, so a bar can never grow down-funnel.
   const funnel = useMemo(() => {
-    const stages = ['new', 'intake_complete', 'survey_scheduled', 'survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'];
-    return stages.map(stage => ({
-      stage,
-      label: getStage(stage).label,
-      count: leads.filter(l => {
-        const idx = stages.indexOf(l.workflow_stage);
-        const currentIdx = stages.indexOf(stage);
-        return idx >= currentIdx;
-      }).length,
-    }));
+    const order = ['new', 'intake_complete', 'survey_scheduled', 'survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'];
+    const atOrPast = (s: string) => leads.filter(l => order.indexOf(l.workflow_stage) >= order.indexOf(s)).length;
+    return [
+      { stage: 'new', label: 'Leads in', count: leads.length },
+      { stage: 'survey_complete', label: 'Survey completed', count: atOrPast('survey_complete') },
+      { stage: 'proposal_sent', label: 'Proposal sent', count: atOrPast('proposal_sent') },
+      { stage: 'approved', label: 'Signed', count: atOrPast('approved') },
+      { stage: 'deposit_paid', label: 'Deposit paid', count: atOrPast('deposit_paid') },
+      { stage: 'installed', label: 'Installed', count: atOrPast('installed') },
+      { stage: 'final_paid', label: 'Paid in full', count: atOrPast('final_paid') },
+    ];
   }, [leads]);
 
   // Consultant performance
@@ -183,30 +185,56 @@ export default function AnalyticsDashboard() {
             />
           </div>
 
-          {/* Pipeline by stage */}
+          {/* Pipeline by stage — one flat distribution bar in the four phases the
+              business talks in, then the per-stage counts underneath. */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Leads by stage</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Where every lead sits</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {PIPELINE_STAGES.map(stage => {
-                  const count = leads.filter(l => l.workflow_stage === stage.id).length;
-                  const pct = leads.length > 0 ? (count / leads.length) * 100 : 0;
-                  return (
-                    <div key={stage.id} className="flex items-center gap-3">
-                      <div className="w-32 text-xs truncate">{stage.label}</div>
-                      <div className="flex-1 h-6 bg-muted rounded relative overflow-hidden">
-                        <div
-                          className={`h-full bg-primary transition-all`}
-                          style={{ width: `${Math.max(2, pct)}%` }}
-                        />
-                      </div>
-                      <div className="w-8 text-right text-xs font-semibold tabular-nums">{count}</div>
+              {(() => {
+                const PHASES = [
+                  { id: 'intake', label: 'Intake & survey', bar: 'bg-tech', dot: 'bg-tech', stages: ['new', 'intake_complete', 'survey_scheduled', 'survey_complete'] },
+                  { id: 'proposal', label: 'Proposal out', bar: 'bg-doc-proposal', dot: 'bg-doc-proposal', stages: ['proposal_drafted', 'proposal_sent'] },
+                  { id: 'signed', label: 'Signed & deposit', bar: 'bg-doc-deposit/60', dot: 'bg-doc-deposit/60', stages: ['approved', 'deposit_paid'] },
+                  { id: 'done', label: 'Installing & paid', bar: 'bg-doc-deposit', dot: 'bg-doc-deposit', stages: ['install_scheduled', 'installing', 'installed', 'final_paid', 'completed'] },
+                ];
+                const counts = PHASES.map(p => ({ ...p, count: leads.filter(l => p.stages.includes(l.workflow_stage)).length }));
+                const total = Math.max(1, leads.length);
+                return (
+                  <div>
+                    <div className="flex h-2.5 rounded-full overflow-hidden bg-muted">
+                      {counts.map(p => p.count > 0 && (
+                        <div key={p.id} className={p.bar} style={{ width: `${(p.count / total) * 100}%` }} />
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3">
+                      {counts.map(p => (
+                        <div key={p.id} className="flex items-center gap-1.5 text-xs">
+                          <span className={`h-2 w-2 rounded-full ${p.dot}`} />
+                          <span className="text-muted-foreground">{p.label}</span>
+                          <span className="font-semibold tabular-nums">{p.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-x-8 mt-4">
+                      {PIPELINE_STAGES.map(stage => {
+                        const count = leads.filter(l => l.workflow_stage === stage.id).length;
+                        const phase = counts.find(p => p.stages.includes(stage.id));
+                        return (
+                          <div key={stage.id} className="flex items-center justify-between py-1.5 border-b border-border/60 last:border-0 sm:[&:nth-last-child(2)]:border-0">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className={`h-1.5 w-1.5 rounded-full ${count > 0 && phase ? phase.dot : 'bg-muted-foreground/30'}`} />
+                              <span className={count > 0 ? '' : 'text-muted-foreground'}>{stage.label}</span>
+                            </div>
+                            <span className={`text-xs font-semibold tabular-nums ${count > 0 ? '' : 'text-muted-foreground/60'}`}>{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -227,22 +255,18 @@ export default function AnalyticsDashboard() {
                   { time: '11:30', text: 'InstallCoordinator Agent scheduled install for David Walsh', type: 'agent' },
                   { time: '09:00', text: 'Follow-Up Agent sent 8 emails to stale leads', type: 'agent' },
                   { time: '08:00', text: 'Stale Lead Escalator flagged 3 leads to Aoife', type: 'agent' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <span className="text-xs text-muted-foreground tabular-nums">{item.time}</span>
-                    <Badge
-                      variant="outline"
-                      className={`text-[11px] ${
-                        item.type === 'hot' ? 'bg-red-50 text-red-700 border-red-200' :
-                        item.type === 'won' ? 'bg-primary/10 text-primary border-primary/40' :
-                        'bg-primary/10 text-primary border-primary/40'
-                      }`}
-                    >
-                      {item.type === 'hot' ? '🔥' : item.type === 'won' ? '✓' : '🤖'}
-                    </Badge>
-                    <span className="text-sm">{item.text}</span>
-                  </div>
-                ))}
+                ].map((item, i) => {
+                  const Icon = item.type === 'hot' ? Flame : item.type === 'won' ? CheckCircle2 : Bot;
+                  const chip = item.type === 'hot' ? 'bg-pop-subtle text-pop' :
+                    item.type === 'won' ? 'bg-doc-deposit/10 text-doc-deposit' : 'bg-tech/10 text-tech';
+                  return (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <span className="text-xs text-muted-foreground tabular-nums w-10 shrink-0">{item.time}</span>
+                      <span className={`p-1 rounded-md shrink-0 ${chip}`}><Icon className="h-3.5 w-3.5" /></span>
+                      <span className="text-sm">{item.text}</span>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -251,42 +275,41 @@ export default function AnalyticsDashboard() {
         {/* FUNNEL */}
         <TabsContent value="funnel" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Conversion funnel</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {funnel[0].count} in · {funnel[funnel.length - 1].count} paid in full ·{' '}
+                <span className="font-semibold text-foreground">
+                  {funnel[0].count > 0 ? Math.round((funnel[funnel.length - 1].count / funnel[0].count) * 100) : 0}% end to end
+                </span>
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {funnel.map((stage, i) => {
                   const prevCount = i > 0 ? funnel[i - 1].count : stage.count;
                   const conversionRate = i > 0 && prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : 100;
                   const pctOfTotal = funnel[0].count > 0 ? (stage.count / funnel[0].count) * 100 : 0;
+                  const chip = conversionRate < 50 ? 'bg-pop-subtle text-pop' : conversionRate < 80 ? 'bg-doc-proposal/10 text-doc-proposal' : 'bg-doc-deposit/10 text-doc-deposit';
                   return (
-                    <div key={stage.stage}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium">{stage.label}</span>
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className="text-muted-foreground">
-                            {conversionRate < 100 && (
-                              <span className={conversionRate < 50 ? 'text-pop' : conversionRate < 80 ? 'text-doc-proposal' : 'text-doc-deposit'}>
-                                {conversionRate}% from previous
-                              </span>
-                            )}
-                          </span>
-                          <span className="font-semibold tabular-nums">{stage.count} leads</span>
-                        </div>
+                    <div key={stage.stage} className="flex items-center gap-3">
+                      <div className="w-36 shrink-0 text-sm font-medium">{stage.label}</div>
+                      <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-tech transition-all" style={{ width: `${Math.max(1.5, pctOfTotal)}%` }} />
                       </div>
-                      <div className="h-8 bg-muted rounded relative overflow-hidden">
-                        <div
-                          className="h-full bg-tech transition-all flex items-center px-3"
-                          style={{ width: `${Math.max(2, pctOfTotal)}%` }}
-                        >
-                          <span className="text-xs font-semibold text-white">{Math.round(pctOfTotal)}%</span>
-                        </div>
+                      <div className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums">{stage.count}</div>
+                      <div className="w-16 shrink-0 text-right">
+                        {i > 0 ? (
+                          <span className={`inline-block text-2xs font-semibold rounded-full px-2 py-0.5 tabular-nums ${chip}`}>{conversionRate}%</span>
+                        ) : (
+                          <span className="text-2xs text-muted-foreground">100%</span>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
+              <p className="text-2xs text-muted-foreground mt-3">Each gate counts leads at or past it. The chip is carry-through from the gate above.</p>
 
               {(() => {
                 // Computed from the funnel above — never a hardcoded claim.

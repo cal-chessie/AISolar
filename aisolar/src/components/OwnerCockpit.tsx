@@ -624,7 +624,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
   return (
     <div className="p-4 space-y-3">
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="consultant"
-        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, territory: p.extra, activeLeads: 0, hotLeads: 0, pipelineValue: 0, leads: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
+        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, territory: p.extra, activeLeads: 0, hotLeads: 0, pipelineValue: 0, leads: [], invited: true }]); toast.success(`${p.name} added to the team`, { description: 'Invite email queued — goes out when their login is provisioned at launch.' }); }} />
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">Click a consultant to see their customers</span>
         <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/consultant')}>
@@ -698,7 +698,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
   return (
     <div className="p-4 space-y-3">
       <AddPersonDialog open={addOpen} onOpenChange={setAddOpen} role="installer"
-        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, skills: p.extra.split(',').map(s => s.trim()).filter(Boolean), activeJobs: 0, completedJobs: 0, jobs: [], invited: true }]); toast.success(`Invite sent to ${p.email}`); }} />
+        onAdd={p => { setAdded(a => [...a, { name: p.name, email: p.email, phone: p.phone, skills: p.extra.split(',').map(s => s.trim()).filter(Boolean), activeJobs: 0, completedJobs: 0, jobs: [], invited: true }]); toast.success(`${p.name} added to the team`, { description: 'Invite email queued — goes out when their login is provisioned at launch.' }); }} />
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">Click an installer to see their jobs</span>
         <Button variant="ghost" size="sm" className="ml-auto h-8 text-xs" onClick={() => navigate('/installer')}>

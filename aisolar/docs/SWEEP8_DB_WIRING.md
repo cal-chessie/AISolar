@@ -70,7 +70,7 @@
 ## To append as we build
 - [ ] Installer (AIField) trigger inventory — start-job notify, photo checklist → storage, serials capture, fitted-vs-proposal check, offline-tolerant sign-off, RECI/NC6 submission fields.
 - [ ] Growth loops — AIChat referral link (money-off + tracked fee), testimonial→GBP link on completion, social share of installer's completion photo.
-- [ ] Owner cockpit trigger inventory.
+- [x] Owner cockpit trigger inventory → section below (audited 27 Jul, every view click-tested in browser).
 - [ ] The design studio (survey→design→proposal→send) — Google Solar buildingInsights persistence, drawn-array geometry carry-through.
 
 ### Design Studio — `DesignStudio.tsx` (Survey→Design step) [25 Jul]
@@ -80,3 +80,17 @@ Frontend holds `designData` in LeadFlow state only. Sweep 8 must persist + carry
 - **Roof imagery**: production ships Google Static Maps (needs Maps Static API + a referrer-locked key, or proxy via edge fn so the key never ships). `buildingInsights` (Google Solar panel-fit) must move server-side (edge function) — browser CORS blocks it. `src/lib/roofImagery.ts` (OSM Nominatim geocode) is the keyless fallback for coordinates.
 - **Tomorrow's multi-array/strings** turns `designData` into `arrays[]` — the persistence shape above should anticipate an array-of-arrays, each with geometry + a string, feeding per-string MPPT/inverter validation.
 - **Catalog**: panels now carry `widthM / heightM / watts` (real footprint + kWp). When the product table lands (Sweep 8, `ProfessionalProducts` warranty note), include physical dimensions + wattage as first-class columns so the studio's accurate sizing reads from the DB, not a hard-coded catalog.
+
+### Owner cockpit — trigger inventory (audited 27 Jul, click-tested in browser)
+Verified WORKING now (demo-honest, no backend lie): client kanban card → CustomerIntelligenceProfile (+ Back), Estimates list → Open → estimate detail, Estimates/Financials/Analytics CSV exports (real file downloads), Calendar Add → cal.com new tab, Products Add/Edit product (localStorage), Products Datasheet (opens PDF when on file, honest toast when not — wired 27 Jul), Agent Run now / Save prompt / Test (demo-labelled dry runs), Settings Terms/Brand saves (localStorage), Help us improve (localStorage), VAT toggle + Save setup + bank Edit (FinanceWindow).
+
+Needs REAL wiring for Sweep 8 (currently local/toast-only):
+- **FinanceWindow "Send deposit link"** (`owner/FinanceWindow.tsx:112`) — toast-only. → `create-checkout` deposit link + Postmark email + touchpoint record. Same wiring as the consultant chat trigger (ConsultantCockpitV5:556); build once, call from both.
+- **Consultant/Installer "Add … invite"** (`OwnerCockpit.tsx` onAdd) — local list + honest "queued" toast (27 Jul: was claiming "Invite sent"). → auth invite (Supabase auth admin invite or magic link), `grant_role` RPC on accept, pending-invite record.
+- **PaperworkWindow "Release handover pack"** (`compliance/PaperworkWindow.tsx:269`) — toast-only. → mark docs released in DB, appear in customer portal documents, notify both ends.
+- **Help us improve** — localStorage → `feedback` table (tenant, user, text, created_at) + optional owner digest.
+- **Products catalogue** — localStorage edits → product table + storage for images/datasheets (warranty + dimensions + wattage first-class; unify with `@/config/productCatalog`, already listed above).
+- **Recent activity (Analytics overview)** — hardcoded 6-row demo feed → real touchpoints/agent-runs query, same audience filter as `buildConversation`.
+- **Agent impact numbers** (`AnalyticsDashboard.agentImpact`) — simulated constants → aggregate from agent run log (runs, emails via Postmark records, drafts, hours-saved formula documented).
+- **Analytics time-range buttons** (7d/30d/90d/all) — state exists but demo dataset ignores range; wire `created_at` filters when real queries land.
+- **CeoWindow "Download report" / KPI exports** — works on demo data; point at the same real queries when wired.

@@ -629,7 +629,10 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
             <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white" onClick={() => addToProposalHint(product.name)}>
               Add to proposal <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
-            <Button variant="outline">Datasheet</Button>
+            <Button variant="outline" onClick={() => {
+              if (product.datasheet) window.open(product.datasheet, '_blank', 'noopener');
+              else toast('No datasheet on file for this product', { description: 'Attach the manufacturer PDF on the product and it ships with every proposal.' });
+            }}>Datasheet</Button>
           </div>
         </div>
       </div>
