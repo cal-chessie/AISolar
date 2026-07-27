@@ -1121,22 +1121,36 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
 }) {
   if (proposalSent) {
     return (
-      <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
-        <CardContent className="p-6 text-center">
-          <div className="flex justify-center mb-4"><AisolarWordmark className="size-14" /></div>
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary mb-3 shadow-lg shadow-card">
-            <CheckCircle2 className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="text-xl font-bold">Proposal sent to {lead.name}</h2>
-          <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-            An email with the proposal link has been sent to {lead.email}. The Follow-Up Agent will check in automatically, in 3 days, if they don't respond.
+      <div className="relative overflow-hidden rounded-panel border border-doc-deposit/40 bg-card shadow-card">
+        <span className="absolute inset-x-0 top-0 h-1 bg-doc-deposit" aria-hidden />
+        <div className="p-8 text-center">
+          <div className="flex justify-center mb-5"><AisolarWordmark className="size-14" /></div>
+          <h2 className="text-2xl font-bold">Proposal sent to {lead.name}</h2>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-md mx-auto leading-body">
+            {lead.name.split(' ')[0]} has the link at {lead.email}. Their proposal opens on their own
+            page, with their bill read back to them and their roof as designed.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-xs text-muted-foreground bg-background px-3 py-1.5 rounded-full border">
-            <Bot className="h-3 w-3 text-primary" />
-            Follow-Up Agent scheduled · 3 days
+
+          {/* What happens next — the journey, on the family palette */}
+          <div className="mt-6 grid sm:grid-cols-3 gap-2.5 max-w-2xl mx-auto text-left">
+            <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/[0.06] p-3.5">
+              <span className="size-7 rounded-lg bg-doc-deposit text-white grid place-items-center mb-2"><Mail className="size-3.5" /></span>
+              <p className="text-xs font-semibold">Email away</p>
+              <p className="text-2xs text-muted-foreground mt-0.5 leading-body">Proposal link, data sheets and the roof snapshot, delivered.</p>
+            </div>
+            <div className="rounded-panel border border-tech/30 bg-tech-subtle/50 p-3.5">
+              <span className="size-7 rounded-lg bg-tech text-white grid place-items-center mb-2"><Sparkles className="size-3.5" /></span>
+              <p className="text-xs font-semibold">You'll see the open</p>
+              <p className="text-2xs text-muted-foreground mt-0.5 leading-body">Every open and question lands in your inbox the moment it happens.</p>
+            </div>
+            <div className="rounded-panel border border-pop/30 bg-pop-subtle/50 p-3.5">
+              <span className="size-7 rounded-lg bg-pop text-white grid place-items-center mb-2"><Bot className="size-3.5" /></span>
+              <p className="text-xs font-semibold">Agent takes the follow-up</p>
+              <p className="text-2xs text-muted-foreground mt-0.5 leading-body">Quiet for 3 days and the Follow-Up Agent nudges — you do nothing.</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
