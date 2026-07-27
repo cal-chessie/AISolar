@@ -246,6 +246,10 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   };
   const onCanvasPointerDown = (e: React.PointerEvent) => {
     if (!view) return; // nothing to pan before the geocode lands
+    // Presses on the canvas's own controls (zoom/recentre/fullscreen/eircode)
+    // must stay CLICKS — capturing the pointer here cancels the button's click
+    // entirely (the "zoom buttons do nothing" bug).
+    if ((e.target as HTMLElement).closest('button, form, input, a')) return;
     drag.current = { kind: 'pan', startX: e.clientX, startY: e.clientY, startView: view };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
