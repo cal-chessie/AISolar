@@ -291,6 +291,28 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
     updateArray(sel.id, { panelCount: c, cols: clamp(sel.cols, 1, c) });
   };
   const setSelCols = (n: number) => updateArray(sel.id, { cols: clamp(n, 1, sel.panelCount) });
+  /** Good · Better · Best — panels + battery in ONE patch (two patches in the
+   *  same tick would clobber each other; patch() spreads current designData). */
+  const applyPreset = (tier: 'essential' | 'recommended' | 'max') => {
+    const use = lead.annual_kwh || estimate.annualKwh || 0;
+    const perPanelKwh = (panelWatts / 1000) * IE_ENERGY.YIELD_PER_KWP * yieldFactor;
+    const billTarget = use > 0 && perPanelKwh > 0 ? Math.ceil(use / perPanelKwh) : totalPanels;
+    const goal = tier === 'essential' ? Math.max(6, Math.ceil(billTarget * 0.7))
+      : tier === 'recommended' ? billTarget
+      : (roofInsight?.panels ?? Math.ceil(billTarget * 1.3));
+    // The preset sizes the SELECTED string; other roof faces stay as placed.
+    const others = totalPanels - sel.panelCount;
+    const mine = clamp(goal - others, 2, 60);
+    const next = arrays.map(a => a.id === sel.id ? { ...a, panelCount: mine, cols: clamp(a.cols, 1, mine) } : a);
+    patch({
+      arrays: next,
+      panelCount: next.reduce((s, a) => s + a.panelCount, 0),
+      strings: next.length,
+      includeBattery: tier !== 'essential',
+      ...(tier === 'recommended' ? { batteryModel: 'SolaX Triple Power T-BAT 5.8kWh', batterySize: 5.8 } : {}),
+      ...(tier === 'max' ? { batteryModel: 'SolaX Triple Power 11.6kWh (2×5.8)', batterySize: 11.6 } : {}),
+    });
+  };
   /** Cal: "add a string = panels on ANOTHER roof". New block lands beside the
    *  selected one, inherits its rotation, and becomes the selection. */
   const addString = () => {
@@ -476,6 +498,27 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             <AlertTriangle className="size-3" /> {totalPanels} panels — over this roof's max fit ({roofInsight.panels})
           </span>
         )}
+      </div>
+
+      {/* Good · Better · Best — one tap sets the whole offer (panels + battery);
+          everything below stays editable, so a preset is a start, not a cage. */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-2xs font-semibold text-muted-foreground mr-1">Offer:</span>
+        <button type="button" onClick={() => applyPreset('essential')}
+          title="Panels only, sized under their bill — the price-led door-opener"
+          className="h-7 px-2.5 rounded-control border border-border text-2xs font-semibold flex items-center gap-1 hover:bg-muted">
+          Essential <span className="text-muted-foreground font-normal">panels only</span>
+        </button>
+        <button type="button" onClick={() => applyPreset('recommended')}
+          title="Sized to their bill with evening battery cover — most homes land here"
+          className="h-7 px-2.5 rounded-control border border-tech bg-tech-subtle text-tech text-2xs font-semibold flex items-center gap-1 hover:bg-tech/15">
+          Recommended <span className="font-normal opacity-80">bill + battery</span>
+        </button>
+        <button type="button" onClick={() => applyPreset('max')}
+          title={roofInsight ? `Google Solar max for this roof (${roofInsight.panels} panels) + the big battery` : 'Fill the roof + the big battery'}
+          className="h-7 px-2.5 rounded-control border border-doc-deposit text-doc-deposit text-2xs font-semibold flex items-center gap-1 hover:bg-doc-deposit/10">
+          Max roof <span className="font-normal opacity-80">{roofInsight ? `${roofInsight.panels} panels` : 'fill'} + 11.6kWh</span>
+        </button>
       </div>
 
       {/* The SELECTED string's controls */}

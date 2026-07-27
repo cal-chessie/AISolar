@@ -71,6 +71,11 @@ const CATALOG: CatalogProduct[] = [
     blurb: 'Stores your cheap night-rate or excess solar for the expensive evening peak. Stacks to 23 kWh.',
   },
   {
+    model: 'SolaX Triple Power 11.6kWh (2×5.8)', kind: 'battery', maker: 'SolaX',
+    spec: '11.6 kWh · 2-module LFP stack', warrantyYears: 10,
+    blurb: 'Two-module stack — evening cover for most homes, headroom for the heat pump or EV.',
+  },
+  {
     model: 'Sigenergy 8kWh', kind: 'battery', maker: 'Sigenergy',
     spec: '8 kWh · stackable LFP', warrantyYears: 10,
     blurb: 'Stores your cheap night-rate or excess solar for the expensive evening peak.',
