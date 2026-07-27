@@ -124,6 +124,10 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   // Confirm step stays a clean read-only summary by default; Edit flips the
   // bill-derived fields to inputs so the consultant can correct any that are off.
   const [editingConfirm, setEditingConfirm] = useState(false);
+  // Cal: "you should be able to edit ANYTHING" — Edit on the Confirm step opens
+  // every bill field. Overrides layer on top of the extracted intake, so the
+  // 21-point panel updates live as the consultant corrects the read.
+  const [billEdits, setBillEdits] = useState<Record<string, unknown>>({});
   
   // Ref for scrolling to survey top
   const surveyContainerRef = useRef<HTMLDivElement>(null);
@@ -498,7 +502,8 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
   const renderStepContent = () => {
     switch (currentStep) {
       case 1: { // The consultation starts here. Bill on file → confirm the read. Lead phoned in → key it live.
-        const bill = billReadFromIntake((leadData?.intake ?? {}) as Record<string, unknown>, {
+        const mergedIntake = { ...(leadData?.intake ?? {}), ...billEdits } as Record<string, unknown>;
+        const bill = billReadFromIntake(mergedIntake, {
           monthlyBill: leadData?.monthly_bill,
           annualKwh: leadData?.annual_kwh,
           mprn: leadData?.mprn,
@@ -560,27 +565,73 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                 </div>
                 {editingConfirm ? (
                   <SurveySection tone="tech" icon={<FileText />} title="Correct the read"
-                    hint="Only what the bill got wrong. Everything else stays as read.">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="eircode" className="text-xs">Eircode</Label>
-                        <Input {...register('eircode')} placeholder="D04 X2C1" maxLength={8}
-                          onChange={e => setValue('eircode', e.target.value.toUpperCase())}
-                          className="w-full mt-1.5 h-control font-mono uppercase" />
-                      </div>
-                      <div>
-                        <Label htmlFor="annual_consumption_kwh" className="text-xs">Annual usage (kWh)</Label>
-                        <Input {...register('annual_consumption_kwh')} type="number" inputMode="numeric" placeholder="e.g. 4,500" className="w-full mt-1.5 h-control" />
-                      </div>
-                      <div>
-                        <Label htmlFor="current_tariff" className="text-xs">Day rate (€/kWh)</Label>
-                        <Input {...register('current_tariff')} type="number" step="0.01" inputMode="decimal" placeholder="0.35" className="w-full mt-1.5 h-control" />
-                      </div>
-                      <div>
-                        <Label htmlFor="monthly_bill" className="text-xs">Typical monthly bill (€)</Label>
-                        <Input {...register('monthly_bill')} type="number" inputMode="decimal" placeholder="e.g. 180" className="w-full mt-1.5 h-control" />
-                      </div>
-                    </div>
+                    hint="Every field of the read, editable. Fix anything the AI got wrong — the panel updates as you type.">
+                    {(() => {
+                      const setBill = (k: string, v: unknown) => setBillEdits(prev => ({ ...prev, [k]: v }));
+                      const num = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+                        setBill(k, e.target.value === '' ? null : parseFloat(e.target.value));
+                      const txt = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+                        setBill(k, e.target.value === '' ? null : e.target.value);
+                      const val = (k: string) => (mergedIntake[k] ?? '') as string | number;
+                      return (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div><Label className="text-xs">Supplier</Label>
+                            <Input value={val('extracted_provider')} onChange={txt('extracted_provider')} placeholder="e.g. Electric Ireland" className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Tariff</Label>
+                            <Input value={val('extracted_tariff_name')} onChange={txt('extracted_tariff_name')} placeholder="Tariff name" className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">MPRN</Label>
+                            <Input value={val('extracted_mprn')} onChange={txt('extracted_mprn')} placeholder="10 0xx xxx xxx" className="w-full mt-1.5 h-control font-mono" /></div>
+                          <div><Label className="text-xs">Account name</Label>
+                            <Input value={val('extracted_account_name')} onChange={txt('extracted_account_name')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Monthly bill (€)</Label>
+                            <Input type="number" inputMode="decimal" value={val('extracted_monthly_bill')} onChange={num('extracted_monthly_bill')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Annual usage (kWh)</Label>
+                            <Input type="number" inputMode="numeric" value={val('extracted_annual_kwh')}
+                              onChange={e => { num('extracted_annual_kwh')(e); setValue('annual_consumption_kwh', e.target.value); }} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Billed usage (kWh)</Label>
+                            <Input type="number" inputMode="numeric" value={val('extracted_billing_period_kwh')} onChange={num('extracted_billing_period_kwh')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Day rate (€/kWh)</Label>
+                            <Input type="number" step="0.01" inputMode="decimal" value={val('extracted_unit_rate')}
+                              onChange={e => { num('extracted_unit_rate')(e); setValue('current_tariff', e.target.value); }} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Night rate (€/kWh)</Label>
+                            <Input type="number" step="0.01" inputMode="decimal" value={val('extracted_night_rate')} onChange={num('extracted_night_rate')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Standing charge (€/day)</Label>
+                            <Input type="number" step="0.01" inputMode="decimal" value={val('extracted_standing_charge')} onChange={num('extracted_standing_charge')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">VAT (%)</Label>
+                            <Input type="number" inputMode="numeric" value={val('extracted_vat_rate')} onChange={num('extracted_vat_rate')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Meter</Label>
+                            <Select value={mergedIntake['extracted_day_night_meter'] === true ? 'day_night' : mergedIntake['extracted_day_night_meter'] === false ? 'single' : undefined}
+                              onValueChange={v => setBill('extracted_day_night_meter', v === 'day_night')}>
+                              <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="single">Single rate</SelectItem>
+                                <SelectItem value="day_night">Day / night</SelectItem>
+                              </SelectContent>
+                            </Select></div>
+                          <div><Label className="text-xs">Day usage (kWh)</Label>
+                            <Input type="number" inputMode="numeric" value={val('extracted_day_usage_kwh')} onChange={num('extracted_day_usage_kwh')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Night usage (kWh)</Label>
+                            <Input type="number" inputMode="numeric" value={val('extracted_night_usage_kwh')} onChange={num('extracted_night_usage_kwh')} className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Billing period</Label>
+                            <Input value={val('extracted_billing_period')} onChange={txt('extracted_billing_period')} placeholder="e.g. Bi-monthly" className="w-full mt-1.5 h-control" /></div>
+                          <div><Label className="text-xs">Reading</Label>
+                            <Select value={mergedIntake['extracted_estimated_reading'] === true ? 'estimated' : mergedIntake['extracted_estimated_reading'] === false ? 'actual' : undefined}
+                              onValueChange={v => setBill('extracted_estimated_reading', v === 'estimated')}>
+                              <SelectTrigger className="w-full mt-1.5 h-control"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="actual">Actual read</SelectItem>
+                                <SelectItem value="estimated">Estimated</SelectItem>
+                              </SelectContent>
+                            </Select></div>
+                          <div><Label className="text-xs">Eircode</Label>
+                            <Input value={val('extracted_eircode')} maxLength={8}
+                              onChange={e => { const v = e.target.value.toUpperCase(); setBill('extracted_eircode', v || null); setValue('eircode', v); }}
+                              placeholder="N91 XXXX" className="w-full mt-1.5 h-control font-mono uppercase" /></div>
+                          <div><Label className="text-xs">Supply address</Label>
+                            <Input value={val('extracted_address')} onChange={txt('extracted_address')} className="w-full mt-1.5 h-control" /></div>
+                        </div>
+                      );
+                    })()}
                   </SurveySection>
                 ) : (
                   <div className="relative overflow-hidden rounded-panel shadow-card">
@@ -588,21 +639,13 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                     <BillReadPanel bill={bill} dense className="shadow-none rounded-none" />
                   </div>
                 )}
-                {/* Real bills miss things (Cal's own bill: no eircode, rates on
-                    page 2). Capture the critical gaps HERE, in the open — not
-                    hidden behind the Edit toggle. */}
-                {(!bill.eircode || bill.unitRate == null || !bill.annualKwh) && (
+                {/* Real bills miss the money-critical fields (rates live on page
+                    2). Eircode is NOT asked here — the estimate captures it and
+                    Edit has it (Cal: stop asking twice). */}
+                {!editingConfirm && (bill.unitRate == null || !bill.annualKwh) && (
                   <SurveySection tone="pop" icon={<Info />} title="The bill didn't show these"
-                    hint="Ask on the call or check page 2 of the bill. The map and the money need them.">
+                    hint="Ask on the call or check page 2 of the bill. The money needs them.">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {!bill.eircode && (
-                        <div>
-                          <Label htmlFor="eircode" className="text-xs">Eircode (pins the roof)</Label>
-                          <Input {...register('eircode')} placeholder="N91 XxXX" maxLength={8}
-                            onChange={e => setValue('eircode', e.target.value.toUpperCase())}
-                            className="w-full mt-1.5 h-control font-mono uppercase" />
-                        </div>
-                      )}
                       {bill.unitRate == null && (
                         <div>
                           <Label htmlFor="current_tariff" className="text-xs">Day rate (€/kWh)</Label>
