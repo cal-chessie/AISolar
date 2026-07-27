@@ -68,7 +68,8 @@ export default function InstallerPortalV5() {
   const surveyJobs = useMemo(() => leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage)), [leads]);
   const handoverJobs = useMemo(() => leads.filter(l => l.workflow_stage === 'installed'), [leads]);
   const displayActive = [...surveyJobs, ...activeJobs, ...handoverJobs];
-  const inboxJobs = [...surveyJobs, ...activeJobs, ...handoverJobs, ...completedJobs];
+  // Dedupe: a job can sit in two pools (e.g. installed + completed) — one thread each.
+  const inboxJobs = [...new Map([...surveyJobs, ...activeJobs, ...handoverJobs, ...completedJobs].map(l => [l.id, l])).values()];
 
   /** Scheduled date with any drag-and-drop move applied. */
   const effDate = (l: DummyLead): string | undefined =>
@@ -359,14 +360,14 @@ export default function InstallerPortalV5() {
                     {[['Surveys', surveyJobs, Camera, 'survey'], ['Installs', activeJobs, Wrench, 'install'], ['Handovers', handoverJobs, CheckCircle2, 'handover']].map(([label, pool, Icon, variant]: any) => pool.length > 0 && (
                       <div key={label}>
                         <h3 className="label-micro mb-1.5 flex items-center gap-1"><Icon className="h-3 w-3" /> {label} ({pool.length})</h3>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{pool.map((lead: DummyLead) => <JobCard key={lead.id} lead={lead} variant={variant} onClick={() => variant === 'install' ? setRunnerLead(lead) : navigate(`/job/${lead.id}`)} />)}</div>
+                        <div className="grid gap-2 sm:grid-cols-2">{pool.map((lead: DummyLead) => <JobCard key={lead.id} lead={lead} variant={variant} onClick={() => variant === 'install' ? setRunnerLead(lead) : navigate(`/job/${lead.id}`)} />)}</div>
                       </div>
                     ))}
                     {displayActive.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active jobs.</p>}
                   </div>
                 )}
                 {jobSubTab === 'completed' && (
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {completedJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="completed" onClick={() => navigate(`/job/${lead.id}`)} />)}
                     {completedJobs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No completed jobs yet.</p>}
                   </div>
