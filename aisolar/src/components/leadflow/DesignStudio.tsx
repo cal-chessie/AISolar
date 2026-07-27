@@ -16,7 +16,8 @@
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets, Crosshair, AlertTriangle, Info } from 'lucide-react';
-import { buildingInsights, geocode as googleGeocode, staticMapUrl, staticMapUrlForQuery, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
+import { buildingInsights, geocode as googleGeocode, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
+import SatTiles from '@/components/SatTiles';
 import { osmGeocode } from '@/lib/roofImagery';
 import { geoToPct, pctToGeo, type MapView, IMG_LOGICAL_W, IMG_LOGICAL_H, PANEL_GAP_M, mppAt, type PlacedArray } from '@/lib/roofGeo';
 import { computeQuote, ratesFromIntake, IE_ENERGY } from '@/lib/leadIntake';
@@ -68,8 +69,6 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // center=<address> geocodes server-side, so the image paints without a client
   // geocode (localhost CORS never touches it). The Solar panel-fit is best-effort
   // on OSM coords and may CORS-fail — the image never depends on it.
-  const [imgOk, setImgOk] = useState(true);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const [roofInsight, setRoofInsight] = useState<RoofInsight | null>(null);
   // The geocoded centre drives the ground scale (metres-per-pixel), so panels
   // are drawn at their REAL footprint on the roof — not an arbitrary size.
@@ -77,13 +76,9 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // The live map view (pan + zoom). Null until the geocode gives us a centre.
   const [view, setView] = useState<MapView | null>(null);
   const [panPx, setPanPx] = useState<{ dx: number; dy: number } | null>(null);
-  // The image follows the live view once the geocode lands (pan/zoom re-centre
-  // it); before that, the address-keyed image paints with zero client geocoding.
-  const satUrl = hasMapsKey()
-    ? (view
-        ? staticMapUrl(view.lat, view.lng, { w: 640, h: 360, zoom: view.zoom })
-        : staticMapUrlForQuery(roofQuery, { w: 640, h: 360, zoom: STUDIO_ZOOM }))
-    : null;
+  // Imagery renders from Esri World Imagery tiles keyed to the live view —
+  // Google Static Maps stopped serving satellite in the EEA (27 Jul), so the
+  // tiles ARE the roof now (SatTiles shares roofGeo's exact projection).
   // Layout: map on the left by default; the consultant can flip it to the right.
   const [mapSide, setMapSide] = useState<'left' | 'right'>('left');
   const [fullscreen, setFullscreen] = useState(false);
@@ -136,7 +131,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
     return () => { live = false; };
   }, [roofQuery]);
 
-  const hasImage = !!satUrl && imgOk;
+  const hasImage = !!view;
   const maxPanels = roofInsight?.panels ?? 40;
 
   // ── Gear (real products) ────────────────────────────────────────────────
@@ -213,7 +208,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
   // Ground scale at the CURRENT view — the array is drawn as a fraction of the
   // map's real width (metres ÷ metres-across-the-image), so panel footprints
   // stay accurate at any zoom, any canvas size, fullscreen or flipped.
-  const scaleLat = view?.lat ?? center?.lat ?? (satUrl ? 53.3 : null); // mid-IE lat ≈ ±4% worst case
+  const scaleLat = view?.lat ?? center?.lat ?? null;
   const scaleZoom = view?.zoom ?? STUDIO_ZOOM;
   const metresPerLogicalPx = scaleLat != null ? mppAt(scaleLat, scaleZoom) : null;
   const groundWidthM = metresPerLogicalPx ? metresPerLogicalPx * IMG_LOGICAL_W : null;
@@ -344,10 +339,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
       >
         {/* Pan layer — the image and every array shift together while dragging the map */}
         <div className="absolute inset-0" style={panPx ? { transform: `translate(${panPx.dx}px, ${panPx.dy}px)` } : undefined}>
-          {satUrl && (
-            <img src={satUrl} alt="Roof from above" onError={() => setImgOk(false)} onLoad={() => setImgLoaded(true)} draggable={false}
-              className={cn('absolute inset-0 w-full h-full object-cover', !hasImage && 'hidden')} />
-          )}
+          {view && <SatTiles view={view} />}
           {!hasImage && (
             <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 20%, #1e293b, #0b1220)' }}>
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[8deg]"
@@ -397,12 +389,6 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
           })}
         </div>
 
-        {hasImage && !imgLoaded && (
-          <div className="absolute inset-0 grid place-items-center bg-slate-900 z-10">
-            <span className="flex items-center gap-2 text-xs text-slate-300"><Loader2 className="size-4 animate-spin" /> Loading the roof…</span>
-          </div>
-        )}
-
         {/* Fixed overlays — these do NOT pan with the map */}
         <div className="absolute top-2 left-2 bg-background/85 backdrop-blur text-2xs px-2 py-1 rounded-control font-medium flex items-center gap-1.5 z-10">
           <span className="text-tech font-bold">N↑</span>
@@ -432,10 +418,8 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             <span className="flex items-center gap-1.5 text-tech font-medium"><Satellite className="size-3.5" /> Google Solar read this roof</span>
             <span className="text-muted-foreground">fits up to <strong className="text-foreground tabular-nums">{roofInsight.panels}</strong> panels ({roofInsight.kwp} kWp)</span>
           </>
-        ) : hasImage && view ? (
-          <span className="text-muted-foreground">Live satellite. Drag the map to move around, zoom with the buttons, drag each string onto its roof.</span>
         ) : hasImage ? (
-          <span className="text-muted-foreground">Pinned to the eircode by Google. Pan and zoom switch on once the Geocoding API is enabled on the Maps key.</span>
+          <span className="text-muted-foreground">Live satellite. Drag the map to move around, zoom with the buttons, drag each string onto its roof.</span>
         ) : (
           <span className="text-muted-foreground">No satellite here. Placed on a roof plane, sized from the survey.</span>
         )}

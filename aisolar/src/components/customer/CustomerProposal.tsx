@@ -30,7 +30,7 @@ import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
 import { computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { geoToPct, mppAt, IMG_LOGICAL_W, PANEL_GAP_M, type DesignSnapshot } from '@/lib/roofGeo';
-import { staticMapUrl, staticMapUrlForQuery, hasMapsKey } from '@/lib/googleSolar';
+import SatTiles from '@/components/SatTiles';
 import { moneyStory } from '@/lib/proposalNarrative';
 import type { DummyLead } from '@/lib/dummyData';
 
@@ -235,13 +235,11 @@ interface CustomerProposalProps {
 
 /** The design, redrawn read-only with the SAME projection the studio used. */
 function DesignedRoof({ design }: { design: DesignSnapshot }) {
-  const url = staticMapUrl(design.view.lat, design.view.lng, { w: 640, h: 360, zoom: design.view.zoom });
-  if (!url) return null;
   const groundW = mppAt(design.view.lat, design.view.zoom) * IMG_LOGICAL_W;
   const cellAspect = design.panelWm / design.panelHm;
   return (
     <div className="relative aspect-[16/9] overflow-hidden bg-slate-900 select-none pointer-events-none">
-      <img src={url} alt="Your roof with your panels, as designed" className="absolute inset-0 w-full h-full object-cover" />
+      <SatTiles view={design.view} />
       <div className="absolute inset-0 bg-black/10" />
       {design.arrays.map(a => {
         const pos = a.lat != null && a.lng != null ? geoToPct(design.view, a.lat, a.lng) : { x: a.xPct, y: a.yPct };
@@ -382,13 +380,6 @@ export default function CustomerProposal({ lead, design, onAccept, onPayDeposit,
             </header>
             {design?.view ? (
               <DesignedRoof design={design} />
-            ) : hasMapsKey() ? (
-              <img
-                src={staticMapUrlForQuery(String(query), { w: 640, h: 360, zoom: 19 })!}
-                alt="Your roof from above"
-                className="w-full aspect-[16/9] object-cover"
-                loading="lazy"
-              />
             ) : (
               <iframe
                 title="Your roof from above"
