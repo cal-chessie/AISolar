@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { getProduct, CatalogProduct } from '@/config/productCatalog';
+import { getProduct, resolveProductImage, CatalogProduct } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
@@ -199,8 +199,8 @@ function ProductCard({ product, qty }: { product: CatalogProduct; qty?: number }
   return (
     <article className="flex gap-4 rounded-lg border border-border bg-card p-4">
       <div className="size-20 shrink-0 rounded-md border border-border bg-muted/50 grid place-items-center overflow-hidden">
-        {product.image ? (
-          <img src={product.image} alt={product.model} className="size-full object-contain" loading="lazy" />
+        {resolveProductImage(product) ? (
+          <img src={resolveProductImage(product)} alt={product.model} className="size-full object-contain" loading="lazy" />
         ) : (
           <Icon className="size-8 text-muted-foreground/60" aria-label={product.kind} />
         )}

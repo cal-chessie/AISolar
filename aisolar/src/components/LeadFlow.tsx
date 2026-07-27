@@ -90,7 +90,7 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
   const [designData, setDesignData] = useState({
     panelCount: lead.proposal?.panel_count || 14,
     panelModel: lead.proposal?.panel_model || 'Longi Hi-MO 6 435W',
-    inverterModel: lead.proposal?.inverter_model || 'SolaX X1-Hybrid-5.0T',
+    inverterModel: lead.proposal?.inverter_model || 'SolaX X1-Hybrid-5.0 G4',
     batteryModel: lead.proposal?.battery_model || '',
     includeBattery: !!lead.proposal?.battery_model,
     batterySize: lead.survey?.confirmed_battery_kwh || 5,

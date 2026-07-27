@@ -45,7 +45,7 @@ const CATALOG: CatalogProduct[] = [
     blurb: 'Vertex S+ dual-glass — the datasheet the BER assessor needs ships with your proposal.',
   },
   {
-    model: 'SolaX X1-HYBRID-5.0T', kind: 'inverter', maker: 'SolaX',
+    model: 'SolaX X1-Hybrid-5.0 G4', kind: 'inverter', maker: 'SolaX',
     spec: '5 kW hybrid · battery-ready', warrantyYears: 10,
     blurb: 'Hybrid inverter proven on Irish domestic installs — panels, battery and export in one unit.',
   },
@@ -66,7 +66,7 @@ const CATALOG: CatalogProduct[] = [
     blurb: 'Bigger hybrid for larger roofs — panels, Triple Power battery and export in one unit.',
   },
   {
-    model: 'SolaX Triple Power 5.8kWh', kind: 'battery', maker: 'SolaX',
+    model: 'SolaX Triple Power T-BAT 5.8kWh', kind: 'battery', maker: 'SolaX',
     spec: '5.8 kWh · stackable LFP', warrantyYears: 10,
     blurb: 'Stores your cheap night-rate or excess solar for the expensive evening peak. Stacks to 23 kWh.',
   },
@@ -131,4 +131,23 @@ export function getProduct(model: string | null | undefined, kind: CatalogProduc
   const hit = CATALOG.find(p => p.model.toLowerCase() === model.toLowerCase())
     ?? CATALOG.find(p => p.kind === kind && model.toLowerCase().includes(p.maker.toLowerCase()));
   return hit ?? { model, ...KIND_DEFAULT[kind] };
+}
+
+// ── Image bridge (owner uploads → customer proposal) ────────────────────────
+// The owner uploads real photos on the Products page (localStorage, keyed by
+// that page's product ids). Proposals render from THIS catalog, so uploads
+// are ALSO written under a normalised maker+model key which we resolve here.
+// Sweep 8 replaces both maps with the product table + storage.
+export const normModel = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+export function resolveProductImage(p: CatalogProduct): string {
+  try {
+    const byModel = JSON.parse(localStorage.getItem('aisolar_product_images_by_model') || '{}') as Record<string, string>;
+    const want = normModel(`${p.maker} ${p.model}`);
+    const alt = normModel(p.model);
+    for (const [k, v] of Object.entries(byModel)) {
+      if (k === want || k === alt) return v;
+      if (k.length >= 8 && (want.includes(k) || k.includes(want))) return v;
+    }
+  } catch { /* ignore */ }
+  return p.image ?? '/placeholder.svg';
 }

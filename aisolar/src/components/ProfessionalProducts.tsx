@@ -301,11 +301,23 @@ export default function ProfessionalProducts() {
     const r = new FileReader();
     r.onload = () => {
       if (typeof r.result !== 'string') return;
+      const dataUrl = r.result as string;
       setProductImages(prev => {
-        const next = { ...prev, [id]: r.result as string };
+        const next = { ...prev, [id]: dataUrl };
         try { localStorage.setItem('aisolar_product_images', JSON.stringify(next)); } catch { /* ignore */ }
         return next;
       });
+      // Bridge: ALSO store by normalised maker+model so customer proposals
+      // (which render from @/config/productCatalog) pick the real photo up.
+      try {
+        const prod = allProducts.find(x => x.id === id);
+        if (prod) {
+          const key = normModel(`${prod.manufacturer} ${prod.model}`);
+          const map = JSON.parse(localStorage.getItem('aisolar_product_images_by_model') || '{}');
+          map[key] = dataUrl;
+          localStorage.setItem('aisolar_product_images_by_model', JSON.stringify(map));
+        }
+      } catch { /* ignore */ }
     };
     r.readAsDataURL(file);
   };
