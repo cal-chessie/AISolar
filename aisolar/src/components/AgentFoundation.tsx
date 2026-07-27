@@ -411,10 +411,15 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
               accounts, and price-list changes flowing straight into the catalogue every proposal
               specs from.
             </p>
-            <p className="text-xs leading-body">
-              <span className="font-semibold text-tech">The line: </span>
+            <p className="text-xs leading-body mb-2">
+              <span className="font-semibold text-tech">Phase two: </span>
               <span className="italic text-muted-foreground">&ldquo;The agents that chase my installers&rsquo; paperwork can chase
-              your quotes and dormant accounts — that&rsquo;s phase two, and you&rsquo;d be the first wholesaler on it.&rdquo;</span>
+              your quotes and your dormant accounts — and you&rsquo;d be the first wholesaler on it.&rdquo;</span>
+            </p>
+            <p className="text-xs leading-body">
+              <span className="font-semibold text-doc-deposit">Phase three: </span>
+              <span className="italic text-muted-foreground">&ldquo;One predictable order book for the whole region — volume
+              certainty, fewer small orders, and you&rsquo;re the house wholesaler for the group.&rdquo;</span>
             </p>
           </CardContent>
         </Card>
