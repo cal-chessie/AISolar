@@ -24,6 +24,7 @@ import {
   Clock, CheckCircle2, ArrowUpRight, ArrowDownRight, Download, RefreshCw,
   BarChart3, PieChart, Activity,
 } from 'lucide-react';
+import { computeOwnerStats } from '@/lib/ownerStats';
 import { generateDummyLeads, computePipelineStats } from '@/lib/dummyData';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 
@@ -35,6 +36,9 @@ export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   const stats = useMemo(() => computePipelineStats(leads), [leads]);
+  // ONE set of owner money definitions (src/lib/ownerStats.ts) — same numbers
+  // as the cockpit vitals and the CEO window. No third opinion.
+  const owner = useMemo(() => computeOwnerStats(leads), [leads]);
 
   // Funnel data
   const funnel = useMemo(() => {
@@ -149,36 +153,33 @@ export default function AnalyticsDashboard() {
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <KpiCard
-              label="Pipeline value"
-              value={eur(stats.totalValue)}
-              delta="+12.4%"
-              deltaDirection="up"
+              label="Open pipeline"
+              value={eur(owner.openPipeline)}
+              delta={`${owner.openDeals} deals in play`}
               icon={DollarSign}
-              color="emerald"
+              tone="tech"
             />
             <KpiCard
-              label="Active leads"
-              value={num(stats.activeLeads)}
-              delta="+3 this week"
-              deltaDirection="up"
+              label="Revenue banked"
+              value={eur(owner.revenueBanked)}
+              delta={`${eur(owner.depositsHeld)} deposits held`}
               icon={Users}
-              color="blue"
+              tone="deposit"
             />
             <KpiCard
-              label="Avg deal size"
-              value={eur(stats.totalValue / Math.max(1, stats.activeLeads))}
-              delta="-2.1%"
-              deltaDirection="down"
+              label="Avg job (won)"
+              value={owner.avgJob ? eur(owner.avgJob) : '—'}
+              delta={`${owner.conversion}% proposal → win`}
               icon={Target}
-              color="violet"
+              tone="proposal"
             />
             <KpiCard
               label="Stale leads"
               value={num(stats.staleLeads)}
-              delta="Needs attention"
+              delta="No touch in 5+ days"
               deltaDirection="warn"
               icon={Clock}
-              color="pending"
+              tone="pop"
             />
           </div>
 
@@ -266,7 +267,7 @@ export default function AnalyticsDashboard() {
                         <div className="flex items-center gap-3 text-xs">
                           <span className="text-muted-foreground">
                             {conversionRate < 100 && (
-                              <span className={conversionRate < 50 ? 'text-red-600' : conversionRate < 80 ? 'text-doc-proposal' : 'text-primary'}>
+                              <span className={conversionRate < 50 ? 'text-pop' : conversionRate < 80 ? 'text-doc-proposal' : 'text-doc-deposit'}>
                                 {conversionRate}% from previous
                               </span>
                             )}
@@ -276,7 +277,7 @@ export default function AnalyticsDashboard() {
                       </div>
                       <div className="h-8 bg-muted rounded relative overflow-hidden">
                         <div
-                          className="h-full bg-primary transition-all flex items-center px-3"
+                          className="h-full bg-tech transition-all flex items-center px-3"
                           style={{ width: `${Math.max(2, pctOfTotal)}%` }}
                         >
                           <span className="text-xs font-semibold text-white">{Math.round(pctOfTotal)}%</span>
@@ -287,13 +288,26 @@ export default function AnalyticsDashboard() {
                 })}
               </div>
 
-              <div className="mt-6 p-3 bg-doc-proposal-subtle dark:bg-doc-proposal-subtle rounded-lg text-sm">
-                <div className="font-semibold text-doc-proposal dark:text-doc-proposal mb-1">🔍 Bottleneck detected</div>
-                <p className="text-doc-proposal dark:text-doc-proposal text-xs">
-                  Biggest drop-off: <strong>proposal_sent → approved</strong> (42% conversion).
-                  Industry benchmark is 60%. Recommend: AI coach scripts for payback objection handling.
-                </p>
-              </div>
+              {(() => {
+                // Computed from the funnel above — never a hardcoded claim.
+                let worst: { from: string; to: string; rate: number } | null = null;
+                for (let i = 1; i < funnel.length; i++) {
+                  const prev = funnel[i - 1];
+                  if (prev.count < 2) continue;
+                  const rate = Math.round((funnel[i].count / prev.count) * 100);
+                  if (!worst || rate < worst.rate) worst = { from: prev.label, to: funnel[i].label, rate };
+                }
+                if (!worst || worst.rate >= 85) return null;
+                return (
+                  <div className="mt-6 p-3 rounded-panel border border-pop/30 bg-pop-subtle/50 text-sm">
+                    <div className="font-semibold text-pop mb-1">Bottleneck</div>
+                    <p className="text-xs text-muted-foreground leading-body">
+                      Biggest drop-off: <strong className="text-foreground">{worst.from} → {worst.to}</strong> ({worst.rate}% carry through).
+                      Fix this stage before spending on more leads.
+                    </p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -324,7 +338,7 @@ export default function AnalyticsDashboard() {
                       <td className="text-right tabular-nums">{c.proposals}</td>
                       <td className="text-right tabular-nums">{c.contracts}</td>
                       <td className="text-right tabular-nums">
-                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-primary' : c.conversionRate >= 25 ? 'text-doc-proposal' : 'text-red-600'}`}>
+                        <span className={`font-semibold ${c.conversionRate >= 40 ? 'text-doc-deposit' : c.conversionRate >= 25 ? 'text-doc-proposal' : 'text-pop'}`}>
                           {c.conversionRate}%
                         </span>
                       </td>
@@ -339,8 +353,12 @@ export default function AnalyticsDashboard() {
                   <Bot className="h-3 w-3" /> AI Coach insight
                 </div>
                 <p className="text-primary dark:text-primary text-xs">
-                  Aoife converts 42% (above benchmark). Cian converts 24%. Pattern: Aoife leads with
-                  SEAI grant, Cian leads with savings. Recommend 30-min coaching session for Cian.
+                  {(() => {
+                    const ranked = [...consultants].sort((a, b) => b.conversionRate - a.conversionRate);
+                    const top = ranked[0]; const low = ranked[ranked.length - 1];
+                    if (!top || !low || top.name === low.name) return 'Not enough team data yet — insights build as proposals go out.';
+                    return `${top.name.split(' ')[0]} converts ${top.conversionRate}%, ${low.name.split(' ')[0]} converts ${low.conversionRate}%. Pair them on the next two calls and close the gap.`;
+                  })()}
                 </p>
               </div>
             </CardContent>
@@ -432,13 +450,13 @@ export default function AnalyticsDashboard() {
               const totalGrant = leads.filter(l => l.proposal).reduce((sum, l) => sum + (l.proposal?.seai_grant || 0), 0);
               const submitted = leads.filter(l => ['final_paid', 'completed'].includes(l.workflow_stage)).length;
               const pending = leads.filter(l => l.proposal && !['final_paid', 'completed'].includes(l.workflow_stage)).length;
-              const approvalRate = 96;
+              const avgGrant = (submitted + pending) > 0 ? Math.round(totalGrant / (submitted + pending)) : 0;
               return (
                 <>
-                  <KpiCard label="Grant pipeline" value={eur(totalGrant)} icon={Award} color="emerald" delta="+€2,700 this week" deltaDirection="up" />
-                  <KpiCard label="Submitted" value={num(submitted)} icon={CheckCircle2} color="emerald" delta="Awaiting payment" deltaDirection="up" />
-                  <KpiCard label="Pending submission" value={num(pending)} icon={Clock} color="pending" delta="Will auto-submit" deltaDirection="up" />
-                  <KpiCard label="Approval rate" value={`${approvalRate}%`} icon={Target} color="emerald" delta="Above SEAI avg" deltaDirection="up" />
+                  <KpiCard label="Grant pipeline" value={eur(totalGrant)} icon={Award} tone="proposal" delta={`${submitted + pending} grants tracked`} />
+                  <KpiCard label="Submitted" value={num(submitted)} icon={CheckCircle2} tone="deposit" delta="Awaiting SEAI payment" />
+                  <KpiCard label="Pending submission" value={num(pending)} icon={Clock} tone="tech" delta="Agent compiles the pack" />
+                  <KpiCard label="Avg grant" value={avgGrant ? eur(avgGrant) : '—'} icon={Target} tone="proposal" delta="Per tracked job" />
                 </>
               );
             })()}
@@ -479,29 +497,32 @@ export default function AnalyticsDashboard() {
   );
 }
 
-function KpiCard({ label, value, delta, deltaDirection, icon: Icon, color }: {
+const KPI_TONES: Record<string, { chip: string; icon: string }> = {
+  tech:     { chip: 'bg-tech-subtle',      icon: 'text-tech' },
+  deposit:  { chip: 'bg-doc-deposit/10',   icon: 'text-doc-deposit' },
+  proposal: { chip: 'bg-doc-proposal/10',  icon: 'text-doc-proposal' },
+  pop:      { chip: 'bg-pop-subtle',       icon: 'text-pop' },
+};
+function KpiCard({ label, value, delta, deltaDirection, icon: Icon, tone }: {
   label: string;
   value: string;
   delta?: string;
   deltaDirection?: 'up' | 'down' | 'warn';
   icon: typeof Sun;
-  color: string;
+  tone?: string;
 }) {
+  const t = KPI_TONES[tone ?? ''] ?? { chip: 'bg-muted', icon: 'text-muted-foreground' };
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <div className={`p-2 rounded-lg bg-primary/10 dark:bg-primary/10`}>
-            <Icon className={`h-4 w-4 text-primary dark:text-primary`} />
+          <div className={`p-2 rounded-lg ${t.chip}`}>
+            <Icon className={`h-4 w-4 ${t.icon}`} />
           </div>
           {delta && (
             <div className={`text-xs flex items-center gap-0.5 ${
-              deltaDirection === 'up' ? 'text-primary' :
-              deltaDirection === 'down' ? 'text-red-600' :
-              'text-doc-proposal'
+              deltaDirection === 'warn' ? 'text-pop' : 'text-muted-foreground'
             }`}>
-              {deltaDirection === 'up' && <ArrowUpRight className="h-3 w-3" />}
-              {deltaDirection === 'down' && <ArrowDownRight className="h-3 w-3" />}
               {delta}
             </div>
           )}

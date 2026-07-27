@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
+import { computeOwnerStats, WON_STAGES } from '@/lib/ownerStats';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor } from '@/lib/agentAttribution';
@@ -57,12 +58,11 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
 
   const d = useMemo(() => {
-    const revenueClosed = leads.filter(l => l.invoice?.final_paid).reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0);
-    const depositsHeld = leads.filter(l => l.invoice?.deposit_paid && !l.invoice?.final_paid).reduce((s, l) => s + (l.invoice?.deposit_amount ?? 0), 0);
-    const pipelineValue = leads.filter(l => l.proposal && !l.invoice?.final_paid).reduce((s, l) => s + (l.proposal!.net_cost ?? 0), 0);
-    const won = leads.filter(l => ['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(l.workflow_stage));
-    const conversion = leads.length ? Math.round((won.length / leads.length) * 100) : 0;
-    const avgJob = won.length ? Math.round(won.reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0) / won.length) : 0;
+    // ONE set of owner money definitions (src/lib/ownerStats.ts): pipeline is
+    // deals still IN PLAY (won jobs are backlog, not pipeline) and conversion
+    // is won ÷ proposals sent — not won ÷ every lead that walked in yesterday.
+    const owner = computeOwnerStats(leads);
+    const { revenueBanked: revenueClosed, depositsHeld, openPipeline: pipelineValue, conversion, avgJob } = owner;
 
     // The autolog — every agent action across the book, newest first.
     const autolog = leads.flatMap(l =>
@@ -109,7 +109,7 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
     for (const l of leads) {
       const cur = bySource.get(l.source) ?? { total: 0, won: 0 };
       cur.total += 1;
-      if (won.includes(l)) cur.won += 1;
+      if ((WON_STAGES as readonly string[]).includes(l.workflow_stage)) cur.won += 1;
       bySource.set(l.source, cur);
     }
     const sources = [...bySource.entries()].map(([source, v]) => ({ source, ...v, rate: v.total ? Math.round((v.won / v.total) * 100) : 0 })).sort((a, b) => b.rate - a.rate);
@@ -125,10 +125,10 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
       finalPaid: !!l.invoice?.final_paid,
       outstanding: l.invoice?.final_paid ? 0 : (l.invoice?.deposit_paid ? (l.proposal!.net_cost ?? 0) - (l.invoice?.deposit_amount ?? Math.round((l.proposal!.net_cost ?? 0) * 0.3)) : (l.proposal!.net_cost ?? 0)),
     })).sort((a, b) => b.net - a.net);
-    const outstandingAR = jobs.filter(j => j.deposit > 0 && !j.finalPaid).reduce((s, j) => s + j.outstanding, 0);
-    const grantsInFlight = leads.filter(l => ['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed'].includes(l.workflow_stage)).reduce((s, l) => s + (l.proposal?.seai_grant ?? 0), 0);
+    const outstandingAR = owner.outstandingAR;
+    const grantsInFlight = owner.grantsInFlight;
 
-    return { revenueClosed, depositsHeld, pipelineValue, conversion, avgJob, autolog, minutesSaved, agents, stall, sources, jobs, outstandingAR, grantsInFlight };
+    return { owner, revenueClosed, depositsHeld, pipelineValue, conversion, avgJob, autolog, minutesSaved, agents, stall, sources, jobs, outstandingAR, grantsInFlight };
   }, [leads]);
 
   const exportAutolog = () => downloadCsv(
@@ -173,7 +173,7 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
       <div className="flex gap-1 border-b border-border">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 h-9 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            className={`flex items-center gap-1.5 px-3 h-9 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.id ? 'border-tech text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             <t.icon className="size-3.5" /> {t.label}
           </button>
         ))}
@@ -183,11 +183,11 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
-              <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} hero />
+              <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} tone="deposit" hero />
             </button>
-            <Kpi icon={<TrendingDown />} label="Pipeline value" value={eur(d.pipelineValue)} sub={`${d.conversion}% conversion`} />
-            <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" />
-            <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} />
+            <Kpi icon={<TrendingDown />} label="Open pipeline" value={eur(d.pipelineValue)} sub={`${d.owner.openDeals} deals in play · ${d.conversion}% proposal → win`} tone="tech" />
+            <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" tone="proposal" />
+            <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} tone="pop" />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-2">
@@ -200,9 +200,14 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
               <h3 className="text-sm font-semibold">Win rate by source</h3>
               <div className="mt-2 space-y-1.5">
                 {d.sources.map(s => (
-                  <div key={s.source} className="flex items-center justify-between text-sm">
-                    <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
-                    <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
+                  <div key={s.source}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
+                      <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-tech" style={{ width: `${Math.max(3, s.rate)}%` }} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -317,11 +322,15 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
   );
 }
 
-function Kpi({ icon, label, value, sub, hero }: { icon: React.ReactNode; label: string; value: string; sub?: string; hero?: boolean }) {
+const KPI_TONE: Record<string, string> = {
+  deposit: 'text-doc-deposit', tech: 'text-tech', proposal: 'text-doc-proposal', pop: 'text-pop',
+};
+function Kpi({ icon, label, value, sub, hero, tone }: { icon: React.ReactNode; label: string; value: string; sub?: string; hero?: boolean; tone?: string }) {
+  const tint = KPI_TONE[tone ?? ''] ?? 'text-muted-foreground';
   return (
-    <div className={`rounded-panel border bg-card p-4 ${hero ? 'border-primary/30 bg-primary/[0.03]' : 'border-border'}`}>
-      <div className="flex items-center gap-1.5 text-muted-foreground [&>svg]:size-3.5">{icon}<span className="label-micro">{label}</span></div>
-      <p className={`mt-1.5 font-semibold tabular-nums ${hero ? 'text-2xl text-primary' : 'text-2xl'}`}>{value}</p>
+    <div className={`rounded-panel border bg-card p-4 ${hero ? 'border-doc-deposit/30' : 'border-border'}`}>
+      <div className={`flex items-center gap-1.5 [&>svg]:size-3.5 ${tint}`}>{icon}<span className="label-micro text-muted-foreground">{label}</span></div>
+      <p className={`mt-1.5 font-semibold tabular-nums text-2xl ${hero ? 'text-doc-deposit' : ''}`}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );

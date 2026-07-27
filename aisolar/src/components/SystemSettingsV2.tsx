@@ -322,9 +322,9 @@ export default function SystemSettingsV2() {
                 {filteredAudit.map((event, i) => (
                   <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs transition-colors hover:bg-muted/30">
                     <Badge variant="outline" className={`text-[11px] flex-shrink-0 ${
-                      event.severity === 'error' ? 'bg-red-50 text-red-700 border-red-200' :
+                      event.severity === 'error' ? 'bg-pop-subtle text-pop border-pop/30' :
                       event.severity === 'warn' ? 'bg-doc-proposal-subtle text-doc-proposal border-doc-proposal/30' :
-                      'bg-primary/10 text-primary border-primary/40'
+                      'bg-tech-subtle text-tech border-tech/30'
                     }`}>
                       {event.severity}
                     </Badge>
@@ -342,10 +342,10 @@ export default function SystemSettingsV2() {
 
               {/* Summary stats */}
               <div className="mt-3 pt-3 border-t grid grid-cols-4 gap-2 text-center text-xs">
-                <div><div className="font-bold text-primary">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
+                <div><div className="font-bold text-tech">{filteredAudit.filter(e => e.severity === 'info').length}</div><div className="text-[11px] text-muted-foreground">info</div></div>
                 <div><div className="font-bold text-doc-proposal">{filteredAudit.filter(e => e.severity === 'warn').length}</div><div className="text-[11px] text-muted-foreground">warnings</div></div>
-                <div><div className="font-bold text-red-600">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[11px] text-muted-foreground">errors</div></div>
-                <div><div className="font-bold">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[11px] text-muted-foreground">agent actions</div></div>
+                <div><div className="font-bold text-pop">{filteredAudit.filter(e => e.severity === 'error').length}</div><div className="text-[11px] text-muted-foreground">errors</div></div>
+                <div><div className="font-bold text-doc-deposit">{filteredAudit.filter(e => e.actor === 'system').length}</div><div className="text-[11px] text-muted-foreground">agent actions</div></div>
               </div>
             </CardContent>
           </Card>
@@ -355,12 +355,12 @@ export default function SystemSettingsV2() {
         <TabsContent value="kernel" className="space-y-3">
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Server className="h-4 w-4 text-primary" /> Supabase Configuration</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-tech-subtle"><Server className="h-4 w-4 text-tech" /></span> Supabase Configuration</h3>
               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                 <div><span className="text-muted-foreground">Project URL:</span> <code className="font-mono">https://coxmtpnqjybwlrfwkols.supabase.co</code></div>
                 <div><span className="text-muted-foreground">Region:</span> Frankfurt (eu-west-1)</div>
                 <div><span className="text-muted-foreground">Postgres:</span> 15.6</div>
-                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[11px] bg-primary/10 text-primary">Enabled</Badge></div>
+                <div><span className="text-muted-foreground">RLS:</span> <Badge variant="outline" className="text-[11px] bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30">Enabled</Badge></div>
                 <div><span className="text-muted-foreground">Migrations:</span> 28 applied</div>
                 <div><span className="text-muted-foreground">pg_cron jobs:</span> 7 scheduled</div>
               </div>
@@ -368,7 +368,8 @@ export default function SystemSettingsV2() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Lock className="h-4 w-4 text-primary" /> Vault Secrets</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-pop-subtle"><Lock className="h-4 w-4 text-pop" /></span> Vault Secrets</h3>
+              <p className="text-xs text-muted-foreground -mt-1 mb-3">Names only, never values. Rotation is the habit that kept GATE 0 closed.</p>
               <table className="w-full text-xs">
                 <thead><tr className="text-muted-foreground border-b"><th className="text-left py-2">Secret</th><th className="text-left">Last rotated</th><th className="text-right">Status</th></tr></thead>
                 <tbody>
@@ -376,7 +377,7 @@ export default function SystemSettingsV2() {
                     <tr key={s} className="border-b last:border-0">
                       <td className="py-2 font-mono">{s}</td>
                       <td>2026-07-17</td>
-                      <td className="text-right"><Badge variant="outline" className="text-[11px] bg-primary/10 text-primary"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
+                      <td className="text-right"><Badge variant="outline" className="text-[11px] bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> OK</Badge></td>
                     </tr>
                   ))}
                 </tbody>
@@ -728,7 +729,7 @@ function ProposalTermsCard() {
     setT(s => ({ ...s, [k]: Number(e.target.value) }));
   return (
     <div className="rounded-panel bg-card shadow-card p-5 max-w-2xl">
-      <h3 className="text-sm font-semibold mb-1">Proposal terms</h3>
+      <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-doc-proposal/10"><FileText className="h-4 w-4 text-doc-proposal" /></span> Proposal terms</h3>
       <p className="text-xs text-muted-foreground mb-4">These render on every proposal and its PDF — your words, your terms.</p>
       <div className="grid sm:grid-cols-3 gap-3 mb-4">
         <div>
@@ -762,7 +763,7 @@ function ProposalTermsCard() {
         <Input value={t.termsUrl} onChange={e => setT(s => ({ ...s, termsUrl: e.target.value }))}
           placeholder="https://yourcompany.ie/terms" className="mt-1.5 h-9 text-xs" />
       </div>
-      <Button size="sm" className="h-9 font-semibold" onClick={() => { saveProposalTerms(t); toast.success('Proposal terms saved', { description: 'Every new proposal renders these.' }); }}>
+      <Button size="sm" className="h-9 font-semibold bg-tech text-white hover:bg-tech/90" onClick={() => { saveProposalTerms(t); toast.success('Proposal terms saved', { description: 'Every new proposal renders these.' }); }}>
         Save terms
       </Button>
     </div>

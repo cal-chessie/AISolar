@@ -38,6 +38,7 @@ import {
   Search, Calculator, Shield, Landmark, UserPlus,
 } from 'lucide-react';
 import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
+import { computeOwnerStats } from '@/lib/ownerStats';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
 import { PipelineBar } from '@/components/layout/PipelineBar';
@@ -128,8 +129,11 @@ export default function OwnerCockpit() {
   // Compute everything from real lead data
   const data = useMemo(() => {
     const stats = computePipelineStats(leads);
-    const revenueClosed = leads.filter(l => l.invoice?.final_paid).reduce((s, l) => s + (l.proposal?.net_cost || 0), 0);
-    const revenuePending = leads.filter(l => l.proposal && !l.invoice?.final_paid).reduce((s, l) => s + (l.proposal.net_cost || 0), 0);
+    // ONE set of money definitions (src/lib/ownerStats.ts) — shared with the
+    // analytics window so the cockpit and the CEO view can never disagree.
+    const owner = computeOwnerStats(leads);
+    const revenueClosed = owner.revenueBanked;
+    const revenuePending = owner.contractedBacklog; // signed work still to collect — NOT drafts
 
     const stageCounts = PIPELINE_STAGES.map(s => ({
       ...s,
@@ -181,7 +185,7 @@ export default function OwnerCockpit() {
         })),
     ].slice(0, 6);
 
-    const conversionRate = leads.length > 0 ? Math.round((leads.filter(l => l.contract).length / leads.length) * 100) : 0;
+    const conversionRate = owner.conversion; // won ÷ proposals sent — one definition everywhere
     const totalAgentRuns = 47;
     const agentFailures = 1;
     const agentHealth = 90;
@@ -218,7 +222,7 @@ export default function OwnerCockpit() {
     }));
 
     return {
-      stats, revenueClosed, revenuePending, stageCounts, bottleneck,
+      stats, owner, revenueClosed, revenuePending, stageCounts, bottleneck,
       activity, staleLeads, todayEvents, conversionRate,
       totalAgentRuns, agentFailures, agentHealth,
       consultants, installers,
@@ -364,8 +368,9 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           <span className="text-muted-foreground font-normal"> · {new Date().toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          <span className="font-semibold text-doc-deposit tabular-nums">{eur(data.revenueClosed)}</span> collected ·{' '}
-          <span className="font-medium text-foreground tabular-nums">{eur(data.stats.totalValue)}</span> in the pipeline
+          <span className="font-semibold text-doc-deposit tabular-nums">{eur(data.revenueClosed)}</span> banked ·{' '}
+          <span className="font-medium text-foreground tabular-nums">{eur(data.owner.openPipeline)}</span> open pipeline ·{' '}
+          <span className="font-medium text-foreground tabular-nums">{eur(data.owner.contractedBacklog)}</span> signed to collect
           {needsYou > 0 && <> · <span className="font-medium text-pop">{needsYou} {needsYou === 1 ? 'thing needs' : 'things need'} you</span></>}
         </p>
       </div>
@@ -378,7 +383,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             <TrendingUp className="size-3.5 text-doc-deposit" />
           </div>
           <div className="mt-1.5 text-2xl font-semibold tabular-nums text-doc-deposit">{eur(data.revenueClosed)}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{eur(data.revenuePending)} pending</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{eur(data.owner.depositsHeld)} deposits held · {eur(data.owner.contractedBacklog)} signed to collect</div>
         </button>
 
         <button onClick={() => setExpandedStage(null)} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
@@ -386,8 +391,8 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
             <span className="label-micro">Pipeline</span>
             <Activity className="size-3.5 text-muted-foreground" />
           </div>
-          <div className="mt-1.5 text-2xl font-semibold tabular-nums">{eur(data.stats.totalValue)}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{data.stats.activeLeads} active · {hotCount} hot</div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums">{eur(data.owner.openPipeline)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{data.owner.openDeals} open deals · {hotCount} hot · {data.owner.conversion}% proposal → win</div>
           {/* real stage distribution, widths from real counts */}
           <div className="flex gap-0.5 mt-2 h-1.5">
             {data.stageCounts.slice(0, 8).map((s: any) => (
