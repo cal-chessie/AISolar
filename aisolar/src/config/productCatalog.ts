@@ -61,9 +61,14 @@ const CATALOG: CatalogProduct[] = [
     blurb: 'Hybrid inverter that manages panels, battery and grid export in one unit.',
   },
   {
-    model: 'SolarEdge Home Hub', kind: 'inverter', maker: 'SolarEdge',
-    spec: 'hybrid · per-panel optimisation', warrantyYears: 12,
-    blurb: 'Per-panel optimisation — shading on one panel no longer drags down the rest.',
+    model: 'SolaX X1-Hybrid-6.0 G4', kind: 'inverter', maker: 'SolaX',
+    spec: '6 kW hybrid · battery-ready', warrantyYears: 10,
+    blurb: 'Bigger hybrid for larger roofs — panels, Triple Power battery and export in one unit.',
+  },
+  {
+    model: 'SolaX Triple Power 5.8kWh', kind: 'battery', maker: 'SolaX',
+    spec: '5.8 kWh · stackable LFP', warrantyYears: 10,
+    blurb: 'Stores your cheap night-rate or excess solar for the expensive evening peak. Stacks to 23 kWh.',
   },
   {
     model: 'Sigenergy 8kWh', kind: 'battery', maker: 'Sigenergy',

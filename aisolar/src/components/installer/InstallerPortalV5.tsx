@@ -488,7 +488,7 @@ export default function InstallerPortalV5() {
                     <p className="text-xs text-muted-foreground">Dublin depot inventory. Auto-reorder triggers when available &lt; 5.</p>
                     {[
                       { item: 'Longi Hi-MO 6 435W', stock: 48, alloc: 32 },
-                      { item: 'SolarEdge SE5K inverter', stock: 6, alloc: 4 },
+                      { item: 'SolaX X1-Hybrid-5.0 inverter', stock: 6, alloc: 4 },
                       { item: 'Tesla Powerwall 3 (13.5kWh)', stock: 4, alloc: 3 },
                       { item: 'Mounting rails (1.6m)', stock: 120, alloc: 84 },
                       { item: 'DC cable (6mm²)', stock: 800, alloc: 400 },

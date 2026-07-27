@@ -353,7 +353,7 @@ export function generateDummyLeads(): DummyLead[] {
         system_size_kw: estimate.systemSizeKw,
         panel_count: estimate.systemSizeKw * 2,
         panel_model: 'TrinaSolar TSM-440 NEG9RC.28',
-        inverter_model: 'SolarEdge SE5K',
+        inverter_model: 'SolaX X1-Hybrid-5.0T',
         battery_model: idx % 2 === 0 ? 'Tesla Powerwall 3 (13.5kWh)' : null,
         gross_cost: estimate.grossCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0), // battery premium (tenant €/kWh)
         seai_grant: estimate.seaiGrant,
