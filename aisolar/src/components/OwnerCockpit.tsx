@@ -18,6 +18,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -54,19 +55,19 @@ import { staggerContainer, listItem } from '@/lib/motionPresets';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Lazy-load heavy components only when their sidebar item is clicked
-const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
-const SystemSettings = lazy(() => import('./SystemSettingsV2'));
-const AgentFoundation = lazy(() => import('./AgentFoundation'));
-const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
-const CustomerIntelligenceProfile = lazy(() => import('./CustomerIntelligenceProfile'));
-const RealCalendar = lazy(() => import('./RealCalendar'));
-const EstimateView = lazy(() => import('./EstimateView'));
-const ProposalView = lazy(() => import('./ProposalView'));
-const AgentTraining = lazy(() => import('./AgentTraining'));
-const ComplianceCommand = lazy(() => import('./compliance/ComplianceCommand'));
-const EstimatesView = lazy(() => import('./EstimatesView'));
-const CeoWindow = lazy(() => import('./CeoWindow'));
-const FinanceWindow = lazy(() => import('./owner/FinanceWindow'));
+const ProfessionalProducts = lazyWithRetry(() => import('./ProfessionalProducts'));
+const SystemSettings = lazyWithRetry(() => import('./SystemSettingsV2'));
+const AgentFoundation = lazyWithRetry(() => import('./AgentFoundation'));
+const AnalyticsDashboard = lazyWithRetry(() => import('./AnalyticsDashboard'));
+const CustomerIntelligenceProfile = lazyWithRetry(() => import('./CustomerIntelligenceProfile'));
+const RealCalendar = lazyWithRetry(() => import('./RealCalendar'));
+const EstimateView = lazyWithRetry(() => import('./EstimateView'));
+const ProposalView = lazyWithRetry(() => import('./ProposalView'));
+const AgentTraining = lazyWithRetry(() => import('./AgentTraining'));
+const ComplianceCommand = lazyWithRetry(() => import('./compliance/ComplianceCommand'));
+const EstimatesView = lazyWithRetry(() => import('./EstimatesView'));
+const CeoWindow = lazyWithRetry(() => import('./CeoWindow'));
+const FinanceWindow = lazyWithRetry(() => import('./owner/FinanceWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
@@ -296,6 +297,7 @@ function SidebarContent({
   staleLeadsCount: number;
   onNavigate: (path: string) => void;
 }) {
+  const tb = useTenantBrand();
   return (
     <div className="w-56 h-full flex flex-col">
       {/* Logo */}

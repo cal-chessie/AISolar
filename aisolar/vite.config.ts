@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Pre-bundle the heavy deps that lazy-loaded routes pull in, so Vite never
+  // stops to re-optimise mid-session and 404 an in-flight dynamic import
+  // ("Failed to fetch dynamically imported module"). See src/lib/lazyWithRetry.
+  optimizeDeps: {
+    include: ['framer-motion', 'recharts', 'lucide-react', '@supabase/supabase-js'],
+  },
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {

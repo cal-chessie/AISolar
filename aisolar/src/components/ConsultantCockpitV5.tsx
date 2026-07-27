@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { AisalesWordmark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,12 +51,12 @@ import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';
 
-const EstimateView = lazy(() => import('./EstimateView'));
-const ProposalView = lazy(() => import('./ProposalView'));
+const EstimateView = lazyWithRetry(() => import('./EstimateView'));
+const ProposalView = lazyWithRetry(() => import('./ProposalView'));
 // #3: the consultant calendar must be the SAME as the owner's — the owner uses
 // RealCalendar, so the consultant does too (one calendar, no divergence).
-const RealCalendar = lazy(() => import('./RealCalendar'));
-const ProfessionalProducts = lazy(() => import('./ProfessionalProducts'));
+const RealCalendar = lazyWithRetry(() => import('./RealCalendar'));
+const ProfessionalProducts = lazyWithRetry(() => import('./ProfessionalProducts'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 

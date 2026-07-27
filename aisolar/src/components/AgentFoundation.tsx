@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,8 +26,8 @@ import {
 } from 'lucide-react';
 
 import { Kpi } from '@/components/consultant/cockpitUi';
-const AgentTraining = lazy(() => import('./AgentTraining'));
-const AIConfig = lazy(() => import('./AIConfig'));
+const AgentTraining = lazyWithRetry(() => import('./AgentTraining'));
+const AIConfig = lazyWithRetry(() => import('./AIConfig'));
 
 interface AgentStatus {
   agentId: string;

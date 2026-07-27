@@ -13,6 +13,7 @@
  * All exports are client-side CSV blobs — they work in demo and in prod.
  */
 import { useMemo, useState, lazy, Suspense } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import {
   BarChart3, Bot, Download, Euro, TrendingDown, Users, Clock, Database,
   LineChart, CheckCircle2, XCircle,
@@ -24,7 +25,7 @@ import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor } from '@/lib/agentAttribution';
 
-const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
+const AnalyticsDashboard = lazyWithRetry(() => import('./AnalyticsDashboard'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 

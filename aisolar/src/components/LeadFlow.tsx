@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +42,7 @@ import { toast } from 'sonner';
 import { SpinnerSkeleton } from '@/components/ui/SuspenseFallbacks';
 
 // Use the REAL SiteSurveyForm — not a stripped-down version
-const SiteSurveyForm = lazy(() => import('@/components/SiteSurveyForm'));
+const SiteSurveyForm = lazyWithRetry(() => import('@/components/SiteSurveyForm'));
 // The send step embeds the REAL customer artifact as a live preview
 import CustomerProposal from '@/components/customer/CustomerProposal';
 // The design step is the studio — real Google-Solar roof + live sizing + gear
