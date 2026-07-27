@@ -560,7 +560,15 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
             </span>
           </label>
           {designData.includeBattery && (
-            <GearPicker kind="battery" label="Battery" options={batteries} value={designData.batteryModel} onPick={m => update('batteryModel', m)} />
+            <GearPicker kind="battery" label="Battery" options={batteries} value={designData.batteryModel} onPick={m => {
+              // The battery MODEL owns its kWh (Cal: deal strip said "13.5kWh"
+              // while arbitrage priced 5). Parse capacity from the product and
+              // keep batterySize in lockstep so every money line prices the
+              // battery the consultant actually picked.
+              const prod = batteries.find(b => b.model === m);
+              const kwh = parseFloat(/([\d.]+)\s*kwh/i.exec(`${prod?.spec ?? ''} ${m}`)?.[1] ?? '');
+              patch({ batteryModel: m, ...(Number.isFinite(kwh) && kwh > 0 ? { batterySize: kwh } : {}) });
+            }} />
           )}
         </div>
         <div>

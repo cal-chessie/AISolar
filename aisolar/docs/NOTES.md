@@ -233,3 +233,31 @@ got the four-KPI family strip (kWp/net/deposit/grant).
   tables together; the doc is the contract.
 - Commits: ceaf9cf (ownerStats + honesty + settings family), a085203
   (overview/funnel rework + button fixes + inventory). Both ls-remote verified.
+
+## SWEEP 7.1 — THE OWNER WALK-AROUND + FULL DOCUMENTATION (Cal, 27 Jul)
+Roadmap step: after Proposal/AIField polish, BEFORE fine-tooth combs. Cal + AI
+walk the ENTIRE app together, screen by screen, in all its glory ("fit right in
+the best way we can"). As we walk, we WRITE THE FULL DOCUMENTATION — every
+feature, its benefit, all bells and whistles — so the walk produces:
+  1) Cal demo-fluent on every screen (the "cold owner walk-around"),
+  2) the features-and-benefits book (sales collateral, white-label collateral,
+     onboarding docs, help pages — one source, many uses),
+  3) a defect/polish list: ANYTHING found on the way gets logged HERE and
+     rides to Sweep 8 (step 11) — nothing fixed ad-hoc mid-walk unless demo-
+     critical.
+Format per screen when we get there: What it is · What it does for you ·
+The numbers it shows and where they come from · Buttons and what each does ·
+Agent(s) behind it. Write in Cal's voice, truth-pass applies (no SMS/WhatsApp,
+grant agent TRACKS).
+
+## Battery kWh from the MODEL — DONE (27 Jul)
+DesignStudio battery pick now parses kWh from the product (spec/model regex)
+and sets designData.batterySize in the same patch — deal strip and arbitrage
+maths can no longer disagree (13.5kWh label vs 5kWh pricing). Compile-verified;
+studio click-through pending next studio session.
+
+## DEV SERVER NOTE (27 Jul) — "half the app errored"
+Root cause: Vite dev server died; already-loaded views kept rendering, every
+lazy() view (Training/Config/Settings/...) failed chunk fetch → error boundary.
+NOT a code bug. Fix: restart dev server + HARD REFRESH the tab. launch.json
+name: "aisolar" (port 8788).
