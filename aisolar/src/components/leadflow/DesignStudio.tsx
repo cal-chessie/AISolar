@@ -35,7 +35,9 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 // width, so its ground scale is known. A residential panel is ~1.134 × 1.722 m
 // (portrait). Drawing panels to that real footprint is what stops consultants
 // from sizing a system the roof can't physically hold.
-const STUDIO_ZOOM = 20;
+// z19 is Esri World Imagery's native depth over Ireland — the studio OPENS at
+// the sharpest real imagery. Zooming to 20 is allowed but upsamples (soft).
+const STUDIO_ZOOM = 19;
 const PANEL_W_M = 1.134;
 const PANEL_H_M = 1.722;
 

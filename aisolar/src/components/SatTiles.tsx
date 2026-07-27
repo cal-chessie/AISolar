@@ -52,7 +52,7 @@ export default function SatTiles({ view, className }: { view: MapView; className
       {tiles.map(t => (
         <img
           key={`${tileZ}/${t.ty}/${t.kx}`} src={t.url} alt="" draggable={false}
-          className="absolute select-none max-w-none"
+          className="absolute select-none max-w-none [filter:saturate(1.08)_contrast(1.05)]"
           style={{
             left: `${(((t.kx * TILE - ox) * factor) / IMG_LOGICAL_W) * 100}%`,
             top: `${(((t.ty * TILE - oy) * factor) / IMG_LOGICAL_H) * 100}%`,
