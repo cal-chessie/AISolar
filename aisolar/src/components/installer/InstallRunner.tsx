@@ -137,7 +137,7 @@ export default function InstallRunner({ lead, onClose }: { lead: DummyLead; onCl
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* header */}
-      <header className="w-full max-w-2xl mx-auto flex items-center gap-3 px-4 h-14 shrink-0">
+      <header className="w-full max-w-3xl mx-auto flex items-center gap-3 px-4 h-14 shrink-0">
         <div className="min-w-0">
           <h2 className="text-sm font-bold truncate">{lead.name} — the install</h2>
           <p className="text-2xs text-muted-foreground truncate">{lead.address}</p>
@@ -151,7 +151,7 @@ export default function InstallRunner({ lead, onClose }: { lead: DummyLead; onCl
         <div className="h-full bg-tech transition-all" style={{ width: `${(doneCount / STAGES.length) * 100}%` }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-24 w-full"><div className="max-w-2xl mx-auto p-3 space-y-2.5">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-24 w-full"><div className="max-w-3xl mx-auto p-3 space-y-2.5">
         {allDone && (
           <div className="rounded-panel border border-doc-deposit/40 bg-doc-deposit/10 p-4 text-sm">
             <p className="font-semibold text-doc-deposit flex items-center gap-1.5"><CheckCircle2 className="size-4" /> Job complete — evidence pack ready</p>
