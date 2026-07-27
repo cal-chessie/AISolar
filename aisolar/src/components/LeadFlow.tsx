@@ -1198,11 +1198,19 @@ function SendStep({ lead, designData, netCost, listNet, discountPct, discountRea
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Send className="h-5 w-5 text-primary" /> Review & send
+          <Send className="h-5 w-5 text-pop" /> Review & send
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           This is exactly what {lead.name.split(' ')[0]} opens — their bill read back to them, the gear, the money at their rates. Scroll it the way they will.
         </p>
+      </div>
+
+      {/* The deal in four numbers — the same family strip as every other step */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Kpi tone="tech" icon={<Sun />} value={`${sendKwp} kWp`} label={`${designData.panelCount} panels`} />
+        <Kpi tone="proposal" icon={<FileText />} value={eurCompact(netCost)} label={discountPct > 0 ? 'Final price' : 'Net cost'} />
+        <Kpi tone="deposit" icon={<CreditCard />} value={eurCompact(Math.round(netCost * (depositPct / 100)))} label={`${depositPct}% deposit`} />
+        <Kpi tone="neutral" icon={<Award />} value={eurCompact(seaiGrant)} label="SEAI grant" />
       </div>
 
       {/* Slim deal strip */}

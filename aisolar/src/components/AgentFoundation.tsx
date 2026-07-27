@@ -24,6 +24,7 @@ import {
   ArrowRight, Shield, FileText, Loader2, Brain, Cpu,
 } from 'lucide-react';
 
+import { Kpi } from '@/components/consultant/cockpitUi';
 const AgentTraining = lazy(() => import('./AgentTraining'));
 const AIConfig = lazy(() => import('./AIConfig'));
 
@@ -240,23 +241,11 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
               </p>
             </div>
             {!compact && (
-              <div className="grid grid-cols-4 gap-3 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-primary">{totalRuns}</div>
-                  <div className="text-xs text-muted-foreground">runs (24h)</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-tech">{queuedItems}</div>
-                  <div className="text-xs text-muted-foreground">queued</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-red-600">{failedRuns}</div>
-                  <div className="text-xs text-muted-foreground">failed</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary">{activeAgents}/{AGENTS.length}</div>
-                  <div className="text-xs text-muted-foreground">active</div>
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <Kpi tone="tech" icon={<Zap />} value={String(totalRuns)} label="runs (24h)" />
+                <Kpi tone="proposal" icon={<Clock />} value={String(queuedItems)} label="queued" />
+                <Kpi tone="pop" icon={<AlertCircle />} value={String(failedRuns)} label="failed" />
+                <Kpi tone="deposit" icon={<CheckCircle2 />} value={`${activeAgents}/${AGENTS.length}`} label="active" />
               </div>
             )}
           </div>
@@ -276,9 +265,14 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
             run.status === 'running' ? 'text-tech bg-tech-subtle' :
                                        'text-muted-foreground bg-muted';
 
+          const edge =
+            run.status === 'failed' ? 'bg-pop' :
+            run.status === 'running' ? 'bg-tech' :
+            run.status === 'success' ? 'bg-doc-deposit' : 'bg-muted-foreground/40';
           return (
-            <Card key={agent.id} className={!isOn ? "opacity-60" : ""}>
-              <CardContent className="p-4">
+            <Card key={agent.id} className={`relative overflow-hidden ${!isOn ? 'opacity-60' : ''}`}>
+              <span className={`absolute left-0 top-0 h-full w-1 ${edge}`} aria-hidden />
+              <CardContent className="p-4 pl-5">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -318,10 +312,9 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
                       onClick={() => handleTrigger(agent.id)}
                       disabled={!isOn || triggering === agent.id}
-                      className="h-7 text-xs"
+                      className="h-7 text-xs bg-tech text-white hover:bg-tech/90"
                     >
                       {triggering === agent.id ? (
                         <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running…</>

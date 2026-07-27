@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { isDemoMode } from '@/lib/demoMode';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -130,6 +131,20 @@ export default function AgentTraining() {
   /** Phase 4: save a new version of the prompt to agent_prompts table. */
   const handleSavePrompt = async () => {
     setSaving(true);
+    // Demo: no live DB — version locally so the flow demonstrates cleanly
+    // instead of flashing a Supabase error in front of a prospect.
+    if (isDemoMode()) {
+      const v = agentLearning.version + 1;
+      setLearning(prev => ({
+        ...prev,
+        [selectedAgent]: { ...prev[selectedAgent], version: v, lastAdjusted: `v${v} (just now)` },
+      }));
+      setSaving(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      toast.success(`Prompt saved as v${v}`, { description: `${agent.name} will use this prompt on its next run. (Demo: stored locally.)` });
+      return;
+    }
     try {
       const newVersion = agentLearning.version + 1;
 
@@ -191,6 +206,16 @@ export default function AgentTraining() {
     if (!testPrompt.trim()) return;
     setTesting(true);
     setTestResult(null);
+
+    // Demo: simulate the dry run (clearly labelled) rather than erroring on a
+    // missing DB/key. Shows the agent's voice against the typed input.
+    if (isDemoMode()) {
+      await new Promise(res => setTimeout(res, 900));
+      const model = agentLearning.model || 'google/gemini-2.5-flash';
+      setTestResult(`[demo dry run · ${model}]\n\n${agent.name} would process:\n"${testPrompt.trim().slice(0, 140)}"\n\nApplying ${agentLearning.behaviouralRules.length} behavioural rule${agentLearning.behaviouralRules.length === 1 ? '' : 's'} from v${agentLearning.version || 1} of the prompt, then writing the result to the run log for your approval. Live responses switch on with the OpenRouter key in AI Config.`);
+      setTesting(false);
+      return;
+    }
 
     try {
       // Read the API key + default model from ai_config

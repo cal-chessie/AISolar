@@ -178,3 +178,15 @@ selected battery product (deal strip says "Tesla Powerwall 3 (13.5kWh)" while
 arbitrage prices 5 kWh). Morning fix: batteries carry their kWh in the catalog
 (parse spec or add kwh field); picking a battery sets batterySize. Keep quote
 identical across studio/proposal/send (kWp rounding standardised to 1dp today).
+
+## PRE-DEMO TRIGGER AUDIT (27 Jul, late) — all agent + cockpit controls verified
+Clicked through every control on the demo path. WORKING already: agent console
+Run now (state+toast), Log, Details, per-agent toggles; Training Add-rule (gated
+on input), CSV; AI Config; cockpit bell, Add lead, Wrong corrections, inbox
+Book survey / Request photos / Summarize (renders the AI summary panel), reply
+input; Products Add/Edit. FIXED tonight: AgentTraining Save-prompt + Test hit
+Supabase in demo and flashed errors → demo-guarded (local version bump; Test
+runs a labelled "[demo dry run]" showing the agent's voice — honest, no fake
+LLM claim). FAMILY: agent console got KPI tiles (runs=tech, queued=gold,
+failed=pop, active=deposit) + status edges + solid tech Run-now; Review & send
+got the four-KPI family strip (kWp/net/deposit/grant).
