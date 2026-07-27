@@ -261,3 +261,35 @@ Root cause: Vite dev server died; already-loaded views kept rendering, every
 lazy() view (Training/Config/Settings/...) failed chunk fetch → error boundary.
 NOT a code bug. Fix: restart dev server + HARD REFRESH the tab. launch.json
 name: "aisolar" (port 8788).
+
+## WHOLESALER MEETING — THE FIVE-OFFER LADDER (27 Jul, Cal + AI)
+Core insight to open: every proposal is a shopping list — the Design Studio
+gear pickers ARE the shelf. "Spec-in beats sell-in." Trust-opener: his
+installers are my users getting more jobs done — I grow his buyers, he stocks
+my platform. We are NOT competitors.
+1. THE SHELF (built — demo): his catalogue regional-exclusive in the pickers;
+   SolaX line already loaded across owner page + customer catalog + bundles;
+   datasheets ride with proposals (Trina PDF is the proof).
+2. DEMAND VISIBILITY (built — demo): owner analytics = his forward stock
+   signal — kWp/battery/inverter demand visible at DESIGN time, weeks before
+   the PO. No wholesaler sees demand before the order. Unique, don't undersell.
+3. REFERRAL COMMISSION (the deal): his installer list is distribution;
+   recurring % per installer he brings who subscribes. Keep mechanics vague in
+   the room; agree structure later.
+4. AGENTS FOR HIS BUSINESS (phase two — one sentence, no product name): same
+   agent runtime runs his counter — quotes drafted from installer BOMs, stock
+   alerts in-app, reorder nudges off the design pipeline, dormant-account
+   chasing, price updates straight into the catalogue. First wholesaler on it.
+5. GROUP ORDER BOOK (phase three — PARTNER framing ONLY): aggregate the
+   region's installers into one predictable order book brought to HIM — volume
+   certainty + lower cost-to-serve, group gets a volume tier, he becomes the
+   house wholesaler. NEVER pitch as a buying group vs his margin. The app is
+   the aggregation mechanism — offer 2 matured six months.
+Run order: two concrete (demo), one deal, two futures (one sentence each —
+let him spot the future himself; if he asks "could you do that for my team /
+bundle their orders" he's closed himself).
+ASK: pilot — top 10 SKUs + trade prices loaded, intros to 5 installers,
+exclusivity contingent on referrals. Small, concrete, reversible.
+DON'T SAY: SMS/WhatsApp, roof-detection, blanket "fully autonomous" (say:
+agents run follow-up/paperwork-tracking/scheduling; installers approve every
+send). White-label = a door ("could run under your brand"), not a promise.
