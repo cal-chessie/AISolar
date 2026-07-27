@@ -30,7 +30,7 @@ import { useTenantBrand } from '@/lib/tenantBrand';
 import { getProposalTerms } from '@/lib/proposalTerms';
 import { computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { geoToPct, mppAt, IMG_LOGICAL_W, PANEL_GAP_M, type DesignSnapshot } from '@/lib/roofGeo';
-import SatTiles from '@/components/SatTiles';
+import { RoofImagery } from '@/components/SatTiles';
 import { moneyStory } from '@/lib/proposalNarrative';
 import type { DummyLead } from '@/lib/dummyData';
 
@@ -239,7 +239,7 @@ function DesignedRoof({ design }: { design: DesignSnapshot }) {
   const cellAspect = design.panelWm / design.panelHm;
   return (
     <div className="relative aspect-[16/9] overflow-hidden bg-slate-900 select-none pointer-events-none">
-      <SatTiles view={design.view} />
+      <RoofImagery view={design.view} />
       <div className="absolute inset-0 bg-black/10" />
       {design.arrays.map(a => {
         const pos = a.lat != null && a.lng != null ? geoToPct(design.view, a.lat, a.lng) : { x: a.xPct, y: a.yPct };

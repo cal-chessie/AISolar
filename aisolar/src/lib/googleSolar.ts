@@ -83,3 +83,28 @@ export async function detectRoof(address: string): Promise<RoofInsight | null> {
   const loc = await geocode(address);
   return loc ? buildingInsights(loc.lat, loc.lng) : null;
 }
+
+// ── Maps JavaScript API loader ──────────────────────────────────────────────
+// Google's EEA change killed satellite on the STATIC Maps API only — the
+// interactive JS API still serves full-quality Google satellite. One shared
+// loader; consumers fall back to Esri tiles if the script or auth fails.
+let gmapsPromise: Promise<any> | null = null;
+export function loadGoogleMaps(): Promise<any> {
+  const w = window as any;
+  if (w.google?.maps?.Map) return Promise.resolve(w.google);
+  if (!KEY) return Promise.reject(new Error('no maps key'));
+  if (!gmapsPromise) {
+    gmapsPromise = new Promise((resolve, reject) => {
+      // Auth failures (key invalid / JS API not enabled) surface via this
+      // global — treat as a hard fail so the UI falls back to Esri tiles.
+      w.gm_authFailure = () => { w.__gmAuthFailed = true; reject(new Error('gm_authFailure')); };
+      w.__gmapsReady = () => resolve(w.google);
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${KEY}&v=weekly&loading=async&callback=__gmapsReady`;
+      s.onerror = () => reject(new Error('gmaps script failed'));
+      document.head.appendChild(s);
+    });
+  }
+  return gmapsPromise;
+}
+export const gmapsAuthFailed = () => !!(window as any).__gmAuthFailed;

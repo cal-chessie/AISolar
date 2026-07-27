@@ -67,3 +67,64 @@ export default function SatTiles({ view, className }: { view: MapView; className
     </div>
   );
 }
+
+// ── RoofImagery — Google JS API satellite when available, Esri tiles if not ──
+// The JS API map renders at exactly IMG_LOGICAL 640×360 CSS px and is scaled
+// to fill the canvas, so its world-span matches roofGeo's projection and every
+// placed array lands on the same pixels as the tile fallback. The map is inert
+// (no gestures/UI) — the studio's own pan/zoom drives it via moveCamera.
+import { useEffect, useRef, useState } from 'react';
+import { loadGoogleMaps, gmapsAuthFailed } from '@/lib/googleSolar';
+
+export function RoofImagery({ view, className }: { view: MapView; className?: string }) {
+  const holder = useRef<HTMLDivElement>(null);
+  const mapDiv = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const [googleOk, setGoogleOk] = useState(false);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = holder.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setScale(el.clientWidth / IMG_LOGICAL_W));
+    ro.observe(el);
+    setScale(el.clientWidth / IMG_LOGICAL_W);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    const timeout = setTimeout(() => { if (live && !mapRef.current) setGoogleOk(false); }, 6000);
+    loadGoogleMaps().then(g => {
+      if (!live || !mapDiv.current || gmapsAuthFailed()) return;
+      const m = new g.maps.Map(mapDiv.current, {
+        center: { lat: view.lat, lng: view.lng }, zoom: view.zoom,
+        mapTypeId: 'satellite', disableDefaultUI: true, gestureHandling: 'none',
+        keyboardShortcuts: false, clickableIcons: false, tilt: 0,
+      });
+      m.addListener('tilesloaded', () => { if (live && !gmapsAuthFailed()) setGoogleOk(true); });
+      mapRef.current = m;
+    }).catch(() => { if (live) setGoogleOk(false); });
+    return () => { live = false; clearTimeout(timeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m) return;
+    m.setCenter({ lat: view.lat, lng: view.lng });
+    m.setZoom(view.zoom);
+    m.setTilt(0);
+  }, [view.lat, view.lng, view.zoom]);
+
+  return (
+    <div ref={holder} className={cn('absolute inset-0 overflow-hidden', className)} aria-hidden>
+      {!googleOk && <SatTiles view={view} />}
+      <div
+        ref={mapDiv}
+        className={cn('absolute top-0 left-0 origin-top-left', !googleOk && 'opacity-0 pointer-events-none')}
+        style={{ width: IMG_LOGICAL_W, height: IMG_LOGICAL_H, transform: `scale(${scale})` }}
+      />
+    </div>
+  );
+}

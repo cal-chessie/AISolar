@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Sun, Zap, Battery, TrendingUp, Plus, Minus, Sparkles, Loader2, CheckCircle2, Satellite, RotateCw, Move, Maximize2, ArrowLeftRight, Expand, X, Droplets, Crosshair, AlertTriangle, Info } from 'lucide-react';
 import { buildingInsights, geocode as googleGeocode, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
-import SatTiles from '@/components/SatTiles';
+import { RoofImagery } from '@/components/SatTiles';
 import { osmGeocode } from '@/lib/roofImagery';
 import { geoToPct, pctToGeo, type MapView, IMG_LOGICAL_W, IMG_LOGICAL_H, PANEL_GAP_M, mppAt, type PlacedArray } from '@/lib/roofGeo';
 import { computeQuote, ratesFromIntake, IE_ENERGY } from '@/lib/leadIntake';
@@ -341,7 +341,7 @@ export default function DesignStudio({ lead, designData, setDesignData, estimate
       >
         {/* Pan layer — the image and every array shift together while dragging the map */}
         <div className="absolute inset-0" style={panPx ? { transform: `translate(${panPx.dx}px, ${panPx.dy}px)` } : undefined}>
-          {view && <SatTiles view={view} />}
+          {view && <RoofImagery view={view} />}
           {!hasImage && (
             <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 20%, #1e293b, #0b1220)' }}>
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-[8deg]"
