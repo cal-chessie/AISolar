@@ -494,15 +494,37 @@ export default function InstallerPortalV5() {
                 )}
                 {matSubTab === 'stock' && (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Dublin depot inventory. Auto-reorder triggers when available &lt; 5.</p>
-                    {[
-                      { item: 'Longi Hi-MO 6 435W', stock: 48, alloc: 32 },
-                      { item: 'SolaX X1-Hybrid-5.0 inverter', stock: 6, alloc: 4 },
-                      { item: 'Tesla Powerwall 3 (13.5kWh)', stock: 4, alloc: 3 },
-                      { item: 'Mounting rails (1.6m)', stock: 120, alloc: 84 },
-                      { item: 'DC cable (6mm²)', stock: 800, alloc: 400 },
-                      { item: 'Surge protector (Type 2)', stock: 8, alloc: 7 },
-                    ].map(row => {
+                    {/* The wholesaler story: every van load is a picked order off
+                        the shelf; every green tick is sell-through with a paper
+                        trail. Reorders DRAFT — the owner approves every PO. */}
+                    <p className="text-xs text-muted-foreground">Depot inventory — every van load is a picked order from your wholesaler's shelf. Reorder lines draft when available runs low; the owner approves every PO.</p>
+                    {(() => {
+                      const rows = [
+                        { item: 'TrinaSolar TSM-440 NEG9RC.28', stock: 48, alloc: 32 },
+                        { item: 'SolaX X1-Hybrid-5.0 G4', stock: 6, alloc: 4 },
+                        { item: 'SolaX X1-Hybrid-6.0 G4', stock: 4, alloc: 1 },
+                        { item: 'SolaX Triple Power T-BAT 5.8kWh', stock: 8, alloc: 5 },
+                        { item: 'SolaX Triple Power 11.6kWh (2×5.8)', stock: 5, alloc: 4 },
+                        { item: 'myenergi Eddi diverter', stock: 9, alloc: 3 },
+                        { item: 'myenergi Zappi 7kW', stock: 6, alloc: 2 },
+                        { item: 'Mounting rails (1.6m)', stock: 120, alloc: 84 },
+                        { item: 'DC cable (6mm²)', stock: 800, alloc: 400 },
+                      ];
+                      const drawn = rows.reduce((s, r) => s + r.alloc, 0);
+                      const lowLines = rows.filter(r => r.stock - r.alloc < 5).length;
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-panel bg-card shadow-card p-3">
+                              <div className="text-lg font-bold tabular-nums">{drawn}</div>
+                              <div className="text-2xs text-muted-foreground">units allocated this week — sell-through with a paper trail</div>
+                            </div>
+                            <div className="rounded-panel bg-card shadow-card p-3">
+                              <div className={`text-lg font-bold tabular-nums ${lowLines ? 'text-pop' : 'text-doc-deposit'}`}>{lowLines}</div>
+                              <div className="text-2xs text-muted-foreground">lines below reorder point — PO drafts waiting on approval</div>
+                            </div>
+                          </div>
+                          {rows.map(row => {
                       const available = row.stock - row.alloc;
                       const low = available < 5;
                       return (
@@ -519,15 +541,18 @@ export default function InstallerPortalV5() {
                           </div>
                           {low && (
                             <div className="mt-2 flex items-center gap-2 text-xs text-pop">
-                              <AlertTriangle className="h-3 w-3" /> Auto-reorder triggered · PO sent to Setanta Solar
+                              <AlertTriangle className="h-3 w-3" /> Below reorder point — PO line drafted for your wholesaler, goes with the owner's approval
                             </div>
                           )}
                           <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className={`h-full ${low ? 'bg-pop' : available < 15 ? 'bg-doc-proposal-subtle0' : 'bg-primary'}`} style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
+                            <div className={`h-full ${low ? 'bg-pop' : available < 15 ? 'bg-doc-proposal' : 'bg-doc-deposit'}`} style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
                           </div>
                         </div>
                       );
                     })}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
