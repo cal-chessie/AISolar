@@ -14,7 +14,8 @@
  *   - "Add to proposal" button → opens ProposalQuestionnaire with pre-filled products
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { normModel } from '@/config/productCatalog';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -297,6 +298,24 @@ export default function ProfessionalProducts() {
   const [productImages, setProductImages] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('aisolar_product_images') || '{}'); } catch { return {}; }
   });
+  // Backfill: uploads from before the by-model bridge existed (id-keyed only)
+  // get copied across on mount so the customer proposal sees them too.
+  useEffect(() => {
+    try {
+      const byId = JSON.parse(localStorage.getItem('aisolar_product_images') || '{}') as Record<string, string>;
+      const byModel = JSON.parse(localStorage.getItem('aisolar_product_images_by_model') || '{}') as Record<string, string>;
+      let changed = false;
+      for (const [id, dataUrl] of Object.entries(byId)) {
+        const prod = products.find(x => x.id === id);
+        if (!prod) continue;
+        const key = normModel(`${prod.manufacturer} ${prod.model}`);
+        if (!byModel[key]) { byModel[key] = dataUrl; changed = true; }
+      }
+      if (changed) localStorage.setItem('aisolar_product_images_by_model', JSON.stringify(byModel));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleImageFile = (id: string, file: File) => {
     const r = new FileReader();
     r.onload = () => {
@@ -310,7 +329,7 @@ export default function ProfessionalProducts() {
       // Bridge: ALSO store by normalised maker+model so customer proposals
       // (which render from @/config/productCatalog) pick the real photo up.
       try {
-        const prod = allProducts.find(x => x.id === id);
+        const prod = products.find(x => x.id === id);
         if (prod) {
           const key = normModel(`${prod.manufacturer} ${prod.model}`);
           const map = JSON.parse(localStorage.getItem('aisolar_product_images_by_model') || '{}');

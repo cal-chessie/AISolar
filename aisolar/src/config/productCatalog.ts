@@ -135,7 +135,8 @@ export function getProduct(model: string | null | undefined, kind: CatalogProduc
   if (!model) return null;
   const hit = CATALOG.find(p => p.model.toLowerCase() === model.toLowerCase())
     ?? CATALOG.find(p => p.kind === kind && model.toLowerCase().includes(p.maker.toLowerCase()));
-  return hit ?? { model, ...KIND_DEFAULT[kind] };
+  // Unknown models still get the kind illustration — never an empty grey box.
+  return hit ?? { model, ...KIND_DEFAULT[kind], image: KIND_IMAGE[kind] };
 }
 
 // ── Image bridge (owner uploads → customer proposal) ────────────────────────
