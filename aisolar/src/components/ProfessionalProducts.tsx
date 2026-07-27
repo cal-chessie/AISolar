@@ -539,7 +539,7 @@ export default function ProfessionalProducts() {
 
       {/* Product detail modal */}
       {selectedProduct && (
-        <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductDetailModal product={selectedProduct} image={productImages[selectedProduct.id] ?? DEFAULT_CATEGORY_IMAGE[selectedProduct.category] ?? '/placeholder.svg'} onClose={() => setSelectedProduct(null)} />
       )}
       {editing && (
         <ProductEditor
@@ -574,24 +574,23 @@ function CategoryChip({ label, active, onClick, count, icon: Icon }: {
   );
 }
 
-function ProductDetailModal({ product, onClose }: { product: Product; onClose: () => void }) {
-  const cat = CATEGORY_META[product.category];
-  const Icon = cat.icon;
+function ProductDetailModal({ product, image, onClose }: { product: Product; image: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-background w-full max-w-lg rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Hero photo — the consultant shows THIS to the customer, so it gets
+            real size (object-contain: never crop a panel or battery). */}
+        <div className="relative bg-muted/40 rounded-t-2xl">
+          <img src={image} alt={product.model} className="w-full h-56 object-contain p-4" />
+          {product.seaiApproved && (
+            <span className="absolute top-3 left-3 text-2xs font-semibold rounded-full bg-doc-deposit/10 text-doc-deposit border border-doc-deposit/30 px-2 py-0.5">SEAI approved</span>
+          )}
+          <Button variant="ghost" size="sm" className="absolute top-2 right-2 bg-background/80 hover:bg-background" onClick={onClose}>Close</Button>
+        </div>
         <div className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-primary/10 dark:bg-primary/10`}>
-                <Icon className={`h-6 w-6 text-primary dark:text-primary`} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">{product.manufacturer}</div>
-                <h2 className="text-xl font-bold">{product.model}</h2>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+          <div className="mb-3">
+            <div className="text-xs text-muted-foreground">{product.manufacturer}</div>
+            <h2 className="text-xl font-bold">{product.model}</h2>
           </div>
 
           <p className="text-sm text-muted-foreground mb-4">{product.description}</p>
@@ -626,7 +625,7 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
           </div>
 
           <div className="flex gap-2">
-            <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white" onClick={() => addToProposalHint(product.name)}>
+            <Button className="flex-1 bg-tech transition-opacity hover:opacity-90 text-white" onClick={() => addToProposalHint(product.model)}>
               Add to proposal <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
             <Button variant="outline" onClick={() => {
