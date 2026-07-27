@@ -293,3 +293,23 @@ exclusivity contingent on referrals. Small, concrete, reversible.
 DON'T SAY: SMS/WhatsApp, roof-detection, blanket "fully autonomous" (say:
 agents run follow-up/paperwork-tracking/scheduling; installers approve every
 send). White-label = a door ("could run under your brand"), not a promise.
+
+## THE MAPS SAGA — RESOLVED (27 Jul, demo eve)
+Google killed satellite/hybrid on the STATIC Maps API for EEA accounts
+overnight (DMA change; API 403s "not available for your account and region")
+— studio + proposal roofs blanked. Fix shipped in three layers:
+1. SatTiles: Esri World Imagery fallback on roofGeo's exact projection
+   (arrays pixel-identical). Native depth over Ireland = z19; studio opens
+   there. Esri attribution required + rendered.
+2. RoofImagery: Google Maps **JavaScript** API layer (EEA cut did NOT touch
+   it) — inert 640×360 map scaled to canvas, revealed only after tilesloaded,
+   Esri under it as automatic fallback. Cal enabled "Maps JavaScript API" on
+   project 865989075618 (like Geocoding) → GOOGLE QUALITY BACK, confirmed in
+   Cal's browser. (Claude's preview pane lacks WebGL → shows fallback; his
+   browser is truth.)
+3. Zoom buttons were ALSO genuinely broken — canvas pan handler captured the
+   pointer and cancelled button clicks. Fixed (ignore presses on controls).
+   LESSON: verify buttons down the REAL event path (bubbling pointer events),
+   synthetic .click() bypasses capture and false-passes.
+Launch notes: keep Esri fallback forever (resilience); Maps JS key must be
+referrer-locked before prod; Sweep 8 may move imagery behind an edge proxy.
