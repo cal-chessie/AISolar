@@ -392,6 +392,33 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
           </CardContent>
         </Card>
       )}
+
+      {/* Phase two — the same runtime pointed at the SUPPLY side. This card is
+          the room-note for wholesaler conversations: honest scope, no product
+          name (it's a phase, not an offer with a name yet). */}
+      {!compact && (
+        <Card className="border-tech/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="p-1.5 rounded-lg bg-tech/10"><Bot className="h-4 w-4 text-tech" /></span>
+              <h3 className="text-sm font-semibold">Phase two — agents for your wholesaler</h3>
+              <span className="ml-auto text-2xs font-semibold rounded-full bg-doc-proposal/10 text-doc-proposal px-2 py-0.5">roadmap</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-body mb-2">
+              The same agent runtime that runs this floor can run the supply side: quote requests
+              auto-drafted from installer BOMs, stock alerts pushed to installers in-app, reorder
+              nudges when the design pipeline shows demand coming, rep follow-up on dormant installer
+              accounts, and price-list changes flowing straight into the catalogue every proposal
+              specs from.
+            </p>
+            <p className="text-xs leading-body">
+              <span className="font-semibold text-tech">The line: </span>
+              <span className="italic text-muted-foreground">&ldquo;The agents that chase my installers&rsquo; paperwork can chase
+              your quotes and dormant accounts — that&rsquo;s phase two, and you&rsquo;d be the first wholesaler on it.&rdquo;</span>
+            </p>
+          </CardContent>
+        </Card>
+      )}
       </>
       )}
 
