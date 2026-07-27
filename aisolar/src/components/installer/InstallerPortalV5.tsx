@@ -163,7 +163,7 @@ export default function InstallerPortalV5() {
     <div className="min-h-dvh bg-background" data-density="comfortable">
       {/* ── header: slim, cal.com ─────────────────────────────────────────── */}
       <header className="bg-background/90 backdrop-blur border-b border-border/60 sticky top-0 z-30">
-        <div className="px-4 h-14 flex items-center gap-3">
+        <div className="mx-auto max-w-4xl px-4 h-14 flex items-center gap-3">
           <AifieldWordmark className="size-9" />
           <div className="leading-tight">
             <span className="font-semibold text-sm">{tb.name}</span>
@@ -177,14 +177,14 @@ export default function InstallerPortalV5() {
           </div>
         </div>
         {/* weather strip — real signal for roof work */}
-        <div className="px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
+        <div className="mx-auto max-w-4xl px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
           <span className="flex items-center gap-1 shrink-0"><Cloud className="h-3 w-3" /> 18°C Dublin</span>
           <span className="flex items-center gap-1 shrink-0 text-doc-proposal"><CloudRain className="h-3 w-3 text-doc-proposal" /> Yellow rain warning tomorrow</span>
           <span className="flex items-center gap-1 shrink-0"><Wind className="h-3 w-3" /> 12 km/h SW</span>
           <span className="flex items-center gap-1 shrink-0"><Sun className="h-3 w-3" /> Sunset 21:47</span>
         </div>
         {/* tabs */}
-        <div className="px-2 pb-1.5 flex gap-0.5 overflow-x-auto scrollbar-hide">
+        <div className="mx-auto max-w-4xl px-2 pb-1.5 flex gap-0.5 overflow-x-auto scrollbar-hide">
           {TABS.map(t => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -199,7 +199,7 @@ export default function InstallerPortalV5() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 py-4 pb-24 sm:px-4">
+      <main className="max-w-4xl mx-auto px-3 py-4 pb-24 sm:px-4">
         {/* No AnimatePresence here: its exit got stuck and froze tab content.
             An operator tool switches instantly; the fade earned nothing. */}
         <div key={tab} className="animate-in fade-in duration-150">

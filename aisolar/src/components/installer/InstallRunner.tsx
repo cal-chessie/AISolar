@@ -137,7 +137,7 @@ export default function InstallRunner({ lead, onClose }: { lead: DummyLead; onCl
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* header */}
-      <header className="flex items-center gap-3 px-4 h-14 border-b border-border shrink-0">
+      <header className="w-full max-w-2xl mx-auto flex items-center gap-3 px-4 h-14 shrink-0">
         <div className="min-w-0">
           <h2 className="text-sm font-bold truncate">{lead.name} — the install</h2>
           <p className="text-2xs text-muted-foreground truncate">{lead.address}</p>
@@ -145,12 +145,13 @@ export default function InstallRunner({ lead, onClose }: { lead: DummyLead; onCl
         <span className="ml-auto text-2xs font-semibold tabular-nums rounded-full bg-tech/10 text-tech px-2 py-1 shrink-0">{doneCount}/{STAGES.length} stages</span>
         <button onClick={onClose} aria-label="Close" className="size-9 grid place-items-center rounded-control hover:bg-muted shrink-0"><X className="size-4" /></button>
       </header>
+      <div className="border-b border-border shrink-0" />
       {/* progress */}
       <div className="h-1.5 bg-muted shrink-0">
         <div className="h-full bg-tech transition-all" style={{ width: `${(doneCount / STAGES.length) * 100}%` }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2.5 pb-24">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-24 w-full"><div className="max-w-2xl mx-auto p-3 space-y-2.5">
         {allDone && (
           <div className="rounded-panel border border-doc-deposit/40 bg-doc-deposit/10 p-4 text-sm">
             <p className="font-semibold text-doc-deposit flex items-center gap-1.5"><CheckCircle2 className="size-4" /> Job complete — evidence pack ready</p>
@@ -285,7 +286,7 @@ export default function InstallRunner({ lead, onClose }: { lead: DummyLead; onCl
             </section>
           );
         })}
-      </div>
+      </div></div>
     </div>
   );
 }
