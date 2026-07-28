@@ -12,6 +12,16 @@
  * together AND adjacent days sit together. Pure + testable; the agent (Sweep 8)
  * runs it on a schedule and proposes the plan for a human to approve
  * (draft-never-send holds — a proposed schedule is a draft).
+ *
+ * BUSINESS OWNER FIRST, CUSTOMER ACCOMMODATED (Cal, 28 Jul). Start RIGID: this
+ * function returns the plan that is best for the OWNER (least driving, tightest
+ * days) — get that logic right first. The customer layer sits ON TOP and is
+ * NOT in this rigid core: the messaging agent OFFERS the owner-optimal days to
+ * the customer ("we can come Tue or Thu"), the customer picks, and only a
+ * customer who can't take any offered day bends the plan — re-run with that
+ * job's date locked (extension point: PlannableJob.lockedDate, honoured before
+ * the solve; everything else optimises around it). The agent proposes, never
+ * imposes; the owner approves. See docs/SWEEP_7.1.md.
  */
 import { solveOrder, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
 

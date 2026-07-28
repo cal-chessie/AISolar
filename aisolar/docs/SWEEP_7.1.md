@@ -13,6 +13,13 @@ Agents plan the best route/schedule ahead of time, for BOTH sides:
 - **Installer — a FORTNIGHT ahead:** sequence the month's installs (1/day) from
   the installer's HOME base so consecutive days sit next to each other — never
   crisscross the county.
+- **Business owner FIRST, customer accommodated (start rigid):** the scheduler
+  returns the OWNER-optimal plan (least driving). The customer layer is ON TOP,
+  NOT in the rigid core — the messaging agent OFFERS owner-optimal days ("Tue or
+  Thu?"), the customer picks, and only a customer who can take none bends it
+  (re-run with that job's date locked; the rest optimise around it). The agent
+  PROPOSES, never imposes; the owner APPROVES (draft-never-send). Extension
+  point wired in `scheduling.ts` (PlannableJob.lockedDate, TODO in Sweep 8).
 - Both = one engine, two configs. **Pure logic BUILT: `src/lib/scheduling.ts`
   `planSchedule(jobs, { home, perDayCapacity })`** (reuses routeOptimize:
   order from home → slice into working days by capacity; surfaces unplaceable

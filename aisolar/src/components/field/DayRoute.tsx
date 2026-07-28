@@ -83,8 +83,8 @@ export default function DayRoute({ stops, title, subtitle, onOpen }: {
         </p>
       )}
 
-      {/* Desktop: map + list side by side, map ~70% viewport tall. Mobile: stacked. */}
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_28rem]">
+      {/* Desktop: list 30% · map 70% (wide AND ~70vh tall). Mobile: stacked. */}
+      <div className="grid gap-3 lg:grid-cols-[3fr_7fr]">
         <MapPanel embedSrc={embedSrc} fullRouteUrl={fullRouteUrl} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" className="lg:order-2 lg:sticky lg:top-4 lg:self-start" />
         <div className="space-y-1.5 lg:order-1">
           {ordered.map((s, i) => (
