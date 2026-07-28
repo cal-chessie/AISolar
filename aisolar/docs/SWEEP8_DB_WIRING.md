@@ -199,3 +199,45 @@ _Marked out NOW so wiring day is execution, not archaeology._
 8. `products` table (warranty, dims, watts, kwh, AC kW, type-test cert) — unify catalogs.
 9. `feedback`, referral tracking (code, referrer, commission), tier entitlements (the lock-off).
 10. Installer vault (their serials/certs across jobs — Cal's note).
+11. `touchpoints` gains a **`sender`** column (`consultant | installer | system | agent | customer`) — the one thread now carries the field team's voice; `buildConversation` reads it, `MessageBubble` labels it. Realtime on this table = cross-device centralisation.
+12. `staff_profiles.home_address` (+ geocoded lat/lng) and a `depots` table (warehouse / wholesaler addresses, tenant-config) — the inputs `planSchedule()` / `optimiseRoute()` need to run for real.
+13. `agent_route_runs` — per scheduler/route run, store the chosen order + **savings (km / min / €)** + inputs, so the OWNER can click an agent and see how it's programmed and what it saves (the agent-transparency note).
+14. `inventory` / depot shelf (product, depot, on-hand, reorder point) — the Owner's shelf; `computeBOM()` aggregates the week's load-out against it and flags reorders.
+
+## 29 Jul additions — centralised conversation + scheduling/routing (Claude)
+_Emerged building the shared inbox, the installer coach, and the Schedule roster._
+
+### The conversation is now ONE record (needs real persistence)
+- `buildConversation(lead)` is the single thread for customer + consultant +
+  **installer** (shared `ConversationInbox` + `MessageBubble`). Installer replies
+  and the reschedule-reason now write a **touchpoint** on the lead (actor
+  `installer` / `system`), same shape the consultant writes — but IN-MEMORY only.
+- **Wire:** `touchpoints` insert on every reply (+ the new `sender` column, migration
+  #11) → **Supabase Realtime** subscription so a reply on one device/role appears on
+  the others (true cross-device centralisation — today it's per-session) → **Postmark**
+  send for outbound (no "delivered" is claimed anywhere yet — truth-pass held).
+- **RLS:** staff of the tenant read/write their leads' touchpoints; customer is
+  token-scoped to their own lead. `sender` never exposes internal-only ops to the
+  customer (the `installer` + `inbound` = field-ops filter is already in
+  `buildConversation`).
+
+### Scheduling + routing — the LOGIC is built (pure), the RUNTIME is Sweep 8
+The time/money/never-revisit logic is CAPTURED in code, not just notes:
+- `routeOptimize.ts` — nearest-neighbour **+ 2-opt**, OPEN path, each stop visited
+  **once** (never doubling back), haversine ×1.35 detour, ~28 km/h urban; returns
+  `savedKm/savedMin` vs booking order. The installer coach + Routing tab both read it.
+- `scheduling.ts` — `planSchedule()`: order from HOME via the solver, slice into
+  working days by capacity (consultant surveys ≈3/day, installs =1/day); geographic
+  coherence means each day AND adjacent days sit together; unplaceable jobs are
+  surfaced, never dropped. Owner-optimal first, customer accommodated on top;
+  restock woven ~every 2 days (van holds ~2 days' gear); `lockedDate` extension point
+  for a customer who can take no offered day.
+- **Wire (Sweep 8):** (a) the inputs — staff home + depot addresses (migration #12);
+  (b) the **agent runtime** — run `planSchedule` weekly (surveys) / fortnightly
+  (installs), propose the plan as a **DRAFT** for the owner to approve
+  (draft-never-send), then write `assignment.scheduled_date`; (c) swap the
+  gazetteer/haversine estimate for **Google Distance Matrix** (real drive time);
+  (d) record each run's savings for owner transparency (migration #13).
+- **What "less chance of forgetting" rests on:** `computeBOM()` (now `lib/bom.ts`) is
+  the single load-out list with **critical** flags — the van checklist in the hub, the
+  coach's "what do I load", and (Sweep 8) the depot aggregate + reorder all read it.

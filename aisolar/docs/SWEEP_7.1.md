@@ -6,6 +6,41 @@
 > Sweep 8. Newest at the top. Tick when landed. Truth-pass applies to Cal's
 > ideas too.
 
+## Close of day 29 Jul — coach, schedule, skin ✅
+- **Installer AI Coach — real field brain** (`coachBrain.ts` + `aiCoach.ts`). Was
+  a generic fallback that still talked about "3 jobs today" and "this week's
+  surveys" (both wrong post-IA). Now grounded in the actual day: today's ONE
+  install + van BOM, the drive (never double back + km saved, restock), the
+  commissioning serial + NC6↔NC7 flip, handover/monitoring. **Surveys removed**
+  from the installer coach entirely (truth-pass + settled IA). New chips: what do
+  I load / route / serial / handover.
+- **Today → "the week ahead"** by just a little arrow (Cal) → Schedule.
+- **Schedule = week + roster + unscheduled queue** (settled IA now fully built):
+  the drag calendar, the **Unscheduled** queue (won, no date — `approved` /
+  `deposit_paid`), and the **Client roster** (every install). A roster/queue tap
+  opens the **client hub in a slide-over** — the ONE client surface, reached from
+  Schedule as the IA promised.
+- **JobViewV2 doc-colour pass:** completion now reads **doc-deposit** (the
+  signed-off green) everywhere — checklist ticks, photo-uploaded, phase-complete
+  and all-checks-complete banners — instead of the generic dark `primary`.
+  Matches the BOM load-state + handover accent; "done = green" across the job.
+- **`computeBOM` lifted to `lib/bom.ts`** — one BOM source for the hub, the coach,
+  Routing's load-out and (Sweep 8) the depot shelf.
+
+### Routing + scheduling — logic capture check (answering Cal: "did we get it all?")
+YES — captured in code, not just notes. The three worries, and where each lives:
+- **Never go back to the same job twice** → `routeOptimize.ts` solves an OPEN path,
+  nearest-neighbour **+ 2-opt**, each stop visited **once**; the coach says it plainly
+  ("you hit each job once — never doubling back").
+- **Save time + money** → real `savedKm/savedMin` vs booking order (2-opt), owner-
+  optimal day-slicing from home (`scheduling.ts`), and the **~2-day restock cadence**
+  (van holds ~2 days' gear) so reload trips are minimised, not nightly.
+- **Less chance of forgetting** → `computeBOM()` with **critical** flags = the van
+  checklist (hub + coach), so a missing item is caught before the drive, not on site.
+- **The 3 remaining wiring points (Sweep 8, filed):** staff home + depot addresses
+  (the inputs), the agent runtime that proposes the plan as a DRAFT for owner
+  approval, and Google Distance Matrix for real drive-time. See `SWEEP8_DB_WIRING.md`.
+
 ## One centralised conversation — installer inbox = consultant inbox (29 Jul) ✅
 Cal: *"I want the installer's inbox to be the same as the consultant's — and
 carry the same centralised conversation."* Done, by SHARING, not cloning:

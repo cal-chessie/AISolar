@@ -17,30 +17,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Phone, Navigation, MessageSquare, Play, Package, Sun, CheckCircle2, MapPin } from 'lucide-react';
 import type { DummyLead } from '@/lib/dummyData';
+import { computeBOM } from '@/lib/bom';
 
 const navUrl = (address: string) =>
   `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
-
-export interface BomLine { category: string; item: string; qty: number; critical: boolean }
-
-/** The job's bill of materials — what to load for THIS install. One source,
- *  used by the hub (fit-check) and Routing's van load-out (aggregate). */
-export function computeBOM(lead: DummyLead): BomLine[] {
-  const p = lead.proposal;
-  if (!p) return [];
-  const battery = p.battery_model
-    ? [{ category: 'Battery', item: p.battery_model, qty: 1, critical: true }]
-    : [];
-  return [
-    { category: 'Panels', item: `${p.panel_count} × ${p.panel_model}`, qty: p.panel_count, critical: true },
-    { category: 'Inverter', item: p.inverter_model, qty: 1, critical: true },
-    ...battery,
-    { category: 'Mounting', item: 'Rails + hooks + clamps', qty: Math.ceil(p.panel_count * 0.3), critical: true },
-    { category: 'Electrical', item: 'DC cable (6mm²)', qty: Math.ceil(8 + p.panel_count * 1.2), critical: true },
-    { category: 'Electrical', item: 'AC cable + isolators + SPD', qty: 4, critical: true },
-    { category: 'Safety', item: 'Harness + edge protection', qty: 2, critical: true },
-  ];
-}
 
 export default function ClientHub({ lead, onStart, onMessage, dateLabel }: {
   lead: DummyLead;

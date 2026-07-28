@@ -459,12 +459,12 @@ function OverviewTab({ lead, overallComplete }: {
     <div className="space-y-4">
       {/* Completion status banner */}
       {overallComplete ? (
-        <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
+        <Card className="border-doc-deposit/40 bg-doc-deposit/10 dark:bg-doc-deposit/10">
           <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
+            <CheckCircle2 className="h-8 w-8 text-doc-deposit" />
             <div>
-              <div className="font-bold text-primary dark:text-primary">All checks complete</div>
-              <div className="text-xs text-primary dark:text-primary">Ready to mark job complete. Customer has signed, all photos uploaded.</div>
+              <div className="font-bold text-doc-deposit dark:text-doc-deposit">All checks complete</div>
+              <div className="text-xs text-doc-deposit dark:text-doc-deposit">Ready to mark job complete. Customer has signed, all photos uploaded.</div>
             </div>
           </CardContent>
         </Card>
@@ -651,10 +651,10 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
 
       {/* Phase completion banner */}
       {allDone ? (
-        <Card className="border-primary/40 bg-primary/10 dark:bg-primary/10">
+        <Card className="border-doc-deposit/40 bg-doc-deposit/10 dark:bg-doc-deposit/10">
           <CardContent className="p-3 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-primary dark:text-primary">Phase complete — move to next tab</span>
+            <CheckCircle2 className="h-5 w-5 text-doc-deposit" />
+            <span className="text-sm font-medium text-doc-deposit dark:text-doc-deposit">Phase complete — move to next tab</span>
           </CardContent>
         </Card>
       ) : (
@@ -682,7 +682,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
                   <Label className={`text-sm font-medium flex-1 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
                     {item.label}
                   </Label>
-                  {item.done && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                  {item.done && <CheckCircle2 className="h-4 w-4 text-doc-deposit" />}
                 </div>
                 <Input
                   placeholder="Add note (e.g. '100A main fuse', 'earth bond at gas meter')"
@@ -710,9 +710,9 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
             <div className="divide-y">
               {photos.map(photo => (
                 <div key={photo.id} className="p-3 flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
+                  <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-doc-deposit/10 dark:bg-doc-deposit/10' : 'bg-muted'}`}>
                     {photo.uploaded ? (
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                      <CheckCircle2 className="h-4 w-4 text-doc-deposit" />
                     ) : (
                       <Camera className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -989,8 +989,8 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
           <div className="divide-y">
             {photos.map(photo => (
               <div key={photo.id} className="p-3 flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-primary/10 dark:bg-primary/10' : 'bg-muted'}`}>
-                  {photo.uploaded ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
+                <div className={`p-2 rounded-lg ${photo.uploaded ? 'bg-doc-deposit/10 dark:bg-doc-deposit/10' : 'bg-muted'}`}>
+                  {photo.uploaded ? <CheckCircle2 className="h-4 w-4 text-doc-deposit" /> : <Camera className="h-4 w-4 text-muted-foreground" />}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-sm">{photo.label}</div>

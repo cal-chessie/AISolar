@@ -30,7 +30,7 @@ import {
   Wrench, Sun, MapPin, ArrowRight, Package, Cloud, CloudRain, Wind,
   Calendar, Camera, CheckCircle2, AlertTriangle, Navigation, Building2,
   Users, ChevronRight, ClipboardList, MessageSquare, Play, Phone,
-  CalendarClock,
+  CalendarClock, X,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
@@ -61,6 +61,8 @@ export default function InstallerPortalV5() {
   const [tab, setTab] = useState<TabId>('today');
   // The inbox selection is by id so the thread stays live as touchpoints append.
   const [threadLeadId, setThreadLeadId] = useState<string | null>(null);
+  // Schedule → the client roster opens the client hub in a slide-over.
+  const [rosterLeadId, setRosterLeadId] = useState<string | null>(null);
 
   /** Append a message to the client's ONE conversation (a touchpoint on the
    *  lead), so it shows in the consultant + customer threads too — same record.
@@ -209,6 +211,10 @@ export default function InstallerPortalV5() {
                 <div className="space-y-3">
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <h2 className="text-lg font-semibold tracking-tight">{isToday ? "Today's install" : `Next install · ${dayLabel}`}</h2>
+                    {/* the week ahead — just a little arrow (Cal, 29 Jul) */}
+                    <button onClick={() => setTab('schedule')} className="inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors" aria-label="See the week ahead" title="See the week ahead">
+                      the week ahead <ChevronRight className="size-3.5" />
+                    </button>
                     {nextInstall && <button className="ml-auto text-xs font-medium text-tech hover:underline underline-offset-4" onClick={() => setTab('routing')}>View the week's routing <ArrowRight className="inline size-3" /></button>}
                   </div>
                   {nextInstall ? (
@@ -233,6 +239,13 @@ export default function InstallerPortalV5() {
                 .map(l => ({ l, d: effDate(l) }))
                 .filter((x): x is { l: DummyLead; d: string } => !!x.d && new Date(x.d).toDateString() === day.toDateString())
                 .sort((a, b) => +new Date(a.d) - +new Date(b.d));
+              const rShortAddr = (l: DummyLead) => l.address.split(',').slice(-2).join(',').trim();
+              // The full client roster (every install, scheduled or done) + the
+              // unscheduled queue: won jobs (deposit paid, no date) the agent
+              // will place. Both open the client hub — the ONE client surface.
+              const roster = [...new Map([...displayActive, ...completedJobs].map(l => [l.id, l])).values()]
+                .sort((a, b) => +new Date(a.assignment?.scheduled_date ?? a.assignment?.completed_date ?? 0) - +new Date(b.assignment?.scheduled_date ?? b.assignment?.completed_date ?? 0));
+              const unscheduledInstalls = leads.filter(l => ['approved', 'deposit_paid'].includes(l.workflow_stage) && !l.assignment);
               return (
                 <div className="space-y-3">
                   <div className="flex items-baseline gap-2 flex-wrap">
@@ -282,6 +295,55 @@ export default function InstallerPortalV5() {
                     })}
                   </div>
                   <p className="text-2xs text-muted-foreground">Sunday work needs the customer's OK — the message asks them to reply if it doesn't suit.</p>
+
+                  {/* Unscheduled queue — won jobs awaiting an install date */}
+                  <div className="pt-2 space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-sm font-semibold tracking-tight">Unscheduled</h3>
+                      <span className="text-xs text-muted-foreground">won, awaiting a date</span>
+                      <span className="ml-auto text-2xs tabular-nums text-muted-foreground">{unscheduledInstalls.length}</span>
+                    </div>
+                    {unscheduledInstalls.length ? (
+                      <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
+                        {unscheduledInstalls.map(l => (
+                          <button key={l.id} onClick={() => setRosterLeadId(l.id)}
+                            className="rounded-panel bg-card shadow-card p-3 text-left hover:bg-muted/50 transition-colors border-l-4 border-l-doc-deposit">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{l.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                              <span className="text-sm font-medium truncate flex-1">{l.name}</span>
+                              <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                            </div>
+                            <p className="mt-1 text-2xs text-muted-foreground truncate">{l.proposal?.system_size_kw}kWp · {getStage(l.workflow_stage)?.label} · {rShortAddr(l)}</p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-2xs text-muted-foreground">Nothing waiting — every won job has a date. The agent places new ones as deposits land.</p>
+                    )}
+                  </div>
+
+                  {/* The full client roster — every install, tap to open the hub */}
+                  <div className="pt-1 space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-sm font-semibold tracking-tight">Client roster</h3>
+                      <span className="text-xs text-muted-foreground">every install — tap to open the hub</span>
+                      <span className="ml-auto text-2xs tabular-nums text-muted-foreground">{roster.length}</span>
+                    </div>
+                    <div className="rounded-panel bg-card shadow-card divide-y divide-border overflow-hidden">
+                      {roster.map(l => (
+                        <button key={l.id} onClick={() => setRosterLeadId(l.id)}
+                          className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/50 transition-colors">
+                          <Avatar className="h-8 w-8"><AvatarFallback className="text-[11px]">{l.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{l.name}</p>
+                            <p className="text-2xs text-muted-foreground truncate">{l.proposal?.system_size_kw}kWp · {rShortAddr(l)}</p>
+                          </div>
+                          <Badge variant="outline" className="text-2xs shrink-0 hidden sm:inline-flex">{getStage(l.workflow_stage)?.label}</Badge>
+                          <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               );
             })()}
@@ -488,6 +550,38 @@ export default function InstallerPortalV5() {
           </div>
         </div>
       )}
+      {/* client hub slide-over — the Schedule roster + unscheduled queue open the
+          ONE client surface here (profile · BOM · message · Start) without
+          leaving Schedule. Same hub Today uses. */}
+      {rosterLeadId && (() => {
+        const rl = leads.find(l => l.id === rosterLeadId);
+        if (!rl) return null;
+        const when = rl.assignment?.scheduled_date
+          ? new Date(rl.assignment.scheduled_date).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' })
+          : 'unscheduled';
+        return (
+          <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${rl.name} — client hub`}>
+            <div className="absolute inset-0 bg-black/50" onClick={() => setRosterLeadId(null)} />
+            <div className="absolute inset-y-0 right-0 w-full max-w-md bg-background shadow-card flex flex-col animate-in slide-in-from-right duration-200">
+              <div className="flex items-center gap-2 px-4 h-12 border-b border-border shrink-0">
+                <span className="text-sm font-semibold">Client hub</span>
+                <span className="text-2xs text-muted-foreground">· {when}</span>
+                <button className="ml-auto grid place-items-center size-8 rounded-control hover:bg-muted" onClick={() => setRosterLeadId(null)} aria-label="Close">
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <ClientHub
+                  lead={rl}
+                  dateLabel={when}
+                  onStart={() => { setRosterLeadId(null); navigate(`/job/${rl.id}`); }}
+                  onMessage={() => { setRosterLeadId(null); setTab('inbox'); setThreadLeadId(rl.id); }}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* ONE install flow: every install card opens /job/:id (JobViewV2).
           InstallRunner retired 28 Jul — its moat (serials + triple check)
           lives in JobViewV2's commissioning tab now. */}

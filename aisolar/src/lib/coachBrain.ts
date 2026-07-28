@@ -14,8 +14,11 @@
 import { generateDummyLeads, type DummyLead } from './dummyData';
 import { leadIntel } from './consultantIntelligence';
 import { leadEngagement } from './engagement';
-import { selfConsumptionFromOccupancy } from './leadIntake';
+import { selfConsumptionFromOccupancy, getStage } from './leadIntake';
 import { getProduct } from '@/config/productCatalog';
+import { computeBOM } from './bom';
+import { optimiseRoute, coordsForAddress } from './routeOptimize';
+import { monitoringAppForModel } from './monitoringHandoff';
 import type { CoachRole } from './aiCoach';
 
 export interface CoachAnswer {
@@ -31,12 +34,13 @@ export const COACH_PROMPTS: Record<CoachRole, string[]> = {
   consultant: ['Who\'s my hottest lead?', 'What\'s slipping?', 'What should I do next?', 'How\'s my pipeline?'],
   owner: ['How\'s the team doing?', 'Where\'s the bottleneck?', 'What\'s my pipeline worth?'],
   admin: ['What\'s broken?', 'Where\'s the drop-off?', 'Who\'s overloaded?'],
-  installer: ['What\'s on today?', 'What needs photos?', 'Any ELS tests due?'],
+  installer: ['What do I load?', 'What\'s my route?', 'Which serial do I record?', 'What\'s on handover?'],
   customer: ['What happens next?', 'When\'s my install?', 'What do you need from me?'],
 };
 
 /** The live one-line situation — used as the opening line of the coach. */
 export function coachBriefing(role: CoachRole): CoachAnswer {
+  if (role === 'installer') return installerBriefing();
   if (role !== 'consultant' && role !== 'owner') {
     return { text: 'Ask me anything about your work — I read the live pipeline, so I can point you at exactly what needs you.' };
   }
@@ -64,6 +68,9 @@ export function coachBriefing(role: CoachRole): CoachAnswer {
 export function coachAnswer(role: CoachRole, qRaw: string): CoachAnswer {
   const q = qRaw.toLowerCase().trim();
   const leads = generateDummyLeads();
+
+  // The installer's world is installs, not the pipeline — its own brain.
+  if (role === 'installer') return installerAnswer(q, leads);
 
   // 1) A specific client by name — the richest answer.
   const named = leads.find(l => {
@@ -173,4 +180,152 @@ function sellStrategy(l: DummyLead): string | null {
       ? 'someone\'s usually home, so lead with the yearly bill saving, because the roof replaces expensive daytime units'
       : 'day use is balanced, so lead with the yearly saving and offer the battery as evening cover, not the headline';
   return `**Your angle:** open on their roof from above, then walk the gear as products, leading with the ${panel?.warrantyYears ?? 25}-year panel warranty${monitoring}, brand second. On the money, ${angle} (about **${pct}%** used at home). Price last.`;
+}
+
+/* ─────────────────────────── INSTALLER BRAIN ───────────────────────────────
+ * The installer's day is INSTALLS, not the pipeline (surveys are the
+ * consultant's — they never appear here). Grounded in the real jobs: today's
+ * one install, the van BOM (bom.ts), the drive (routeOptimize), commissioning
+ * serials + the NC6/NC7 flip, and handover/monitoring. Same truth-pass as the
+ * rest — no fabricated stock/weather numbers, no "machine-verified" sign-off.
+ * -------------------------------------------------------------------------- */
+
+const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return +d; };
+const shortAddr = (l: DummyLead) => l.address.split(',').slice(-2).join(',').trim();
+const fmtDay = (iso?: string) => iso
+  ? new Date(iso).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })
+  : 'a day to be set';
+const byDate = (a: DummyLead, b: DummyLead) =>
+  +new Date(a.assignment?.scheduled_date ?? 0) - +new Date(b.assignment?.scheduled_date ?? 0);
+
+/** The installer's job pools — mirrors InstallerPortalV5 so the coach and the
+ *  app never disagree. Scheduled installs, fitted-awaiting-handover, and the
+ *  won-but-undated queue (approved / deposit_paid, no install date yet). */
+function installerJobs(leads: DummyLead[]) {
+  const scheduled = leads.filter(l => l.assignment && ['install_scheduled', 'installing'].includes(l.workflow_stage));
+  const handover = leads.filter(l => l.workflow_stage === 'installed');
+  const unscheduled = leads.filter(l => ['approved', 'deposit_paid'].includes(l.workflow_stage) && !l.assignment);
+  return { scheduled, handover, unscheduled };
+}
+
+/** The soonest upcoming install (today first), else the soonest on the books. */
+function nextInstallOf(scheduled: DummyLead[]): DummyLead | undefined {
+  const dated = scheduled.filter(l => l.assignment?.scheduled_date).sort(byDate);
+  return dated.find(l => +new Date(l.assignment!.scheduled_date) >= startOfToday()) ?? dated[0];
+}
+
+function installerBriefing(): CoachAnswer {
+  const leads = generateDummyLeads();
+  const { scheduled, handover, unscheduled } = installerJobs(leads);
+  const job = nextInstallOf(scheduled);
+  if (!job) {
+    return { text: 'No installs on the books yet. The moment a deposit lands, the agent schedules the install and I\'ll brief you here — what to load, the drive, and the serials to record.' };
+  }
+  const p = job.proposal;
+  const critical = computeBOM(job).filter(b => b.critical).length;
+  const bits = [
+    `**${first(job)}** — ${p?.system_size_kw}kWp (${p?.panel_count} panels${p?.battery_model ? ' + battery' : ''}), ${shortAddr(job)}, ${fmtDay(job.assignment?.scheduled_date)}.`,
+    `**${critical} critical items** to load — open ${first(job)} and tick them onto the van.`,
+  ];
+  if (handover.length) bits.push(`${handover.length} system${handover.length > 1 ? 's' : ''} fitted and waiting on commissioning serials + handover.`);
+  if (unscheduled.length) bits.push(`${unscheduled.length} won job${unscheduled.length > 1 ? 's' : ''} in the unscheduled queue, awaiting a date.`);
+  return {
+    text: `Here's your day:\n\n${bits.map(b => `• ${b}`).join('\n')}\n\nAsk me what to load, the drive, or which serial to record.`,
+    actions: [{ label: `Open ${first(job)}`, route: '/installer' }],
+  };
+}
+
+function aboutJob(l: DummyLead): CoachAnswer {
+  const p = l.proposal;
+  const when = l.assignment?.scheduled_date ? fmtDay(l.assignment.scheduled_date)
+    : ['approved', 'deposit_paid'].includes(l.workflow_stage) ? 'awaiting an install date' : '—';
+  const critical = computeBOM(l).filter(b => b.critical).length;
+  const tail = l.workflow_stage === 'installed'
+    ? 'Fitted — needs commissioning serials + photos, then handover.'
+    : 'Open the hub to load the van and start.';
+  return {
+    text: `**${l.name}** — ${getStage(l.workflow_stage)?.label}, ${when}.\n\n${p ? `${p.system_size_kw}kWp · ${p.panel_count} panels${p.battery_model ? ` · ${p.battery_model}` : ''}. ${critical} critical items to load.` : 'No design on file yet.'}\n\nAt ${shortAddr(l)}. ${tail}`,
+    actions: [{ label: `Open ${first(l)}`, route: `/job/${l.id}` }],
+  };
+}
+
+function installerAnswer(q: string, leads: DummyLead[]): CoachAnswer {
+  const { scheduled, handover, unscheduled } = installerJobs(leads);
+  const job = nextInstallOf(scheduled);
+
+  // 1) A specific client the installer touches.
+  const pool = [...scheduled, ...handover, ...unscheduled];
+  const named = pool.find(l => {
+    const fn = l.name.split(' ')[0].toLowerCase();
+    const ln = l.name.split(' ').slice(-1)[0].toLowerCase();
+    return q.includes(l.name.toLowerCase()) || (fn.length > 2 && q.includes(fn)) || (ln.length > 3 && q.includes(ln));
+  });
+  if (named) return aboutJob(named);
+
+  // 2) What to load — the van BOM for today's install.
+  if (/(load|material|bom|gear|van|pack|kit|equipment|bring|carry|tools?)/.test(q)) {
+    if (!job) return { text: 'No install scheduled, so there\'s nothing to load yet.' };
+    const lines = computeBOM(job).map(b => `• ${b.qty} × ${b.item}${b.critical ? ' — critical' : ''}`);
+    return {
+      text: `For **${first(job)}**'s ${job.proposal?.system_size_kw}kWp install, load:\n\n${lines.join('\n')}\n\nEvery line is critical — a missing one is a wasted trip back. Tick them off in ${first(job)}'s hub as they go in the van.`,
+      actions: [{ label: `Open ${first(job)}`, route: '/installer' }],
+    };
+  }
+
+  // 3) The route — the drive, and why you never double back.
+  if (/(route|driv|road|way|traffic|order|sequence|depot|restock|reload|which.*first|fastest)/.test(q)) {
+    const week = [...scheduled].filter(l => l.assignment?.scheduled_date).sort(byDate);
+    const pts = week.map(l => coordsForAddress(l.address)).filter((p): p is NonNullable<typeof p> => !!p);
+    const solve = pts.length >= 3 ? optimiseRoute(pts, false) : null;
+    const savings = solve && solve.savedKm >= 0.5
+      ? ` The planned order saves ~${solve.savedKm.toFixed(0)} km (${solve.savedMin} min) over booking order.`
+      : '';
+    return {
+      text: `The agent sequences your installs so consecutive days sit beside each other and **you hit each job once — never doubling back**.${savings} A van holds ~2 days of gear, so a warehouse restock is woven in about every 2 days rather than a run home each night. **Routing** has today's drive, turn-by-turn, with the depot pickup folded in as stop 0.`,
+      actions: [{ label: 'Open routing', route: '/installer' }],
+    };
+  }
+
+  // 4) Serials / commissioning / the NC6↔NC7 flip.
+  if (/(serial|commission|model|nc6|nc7|inverter|attest|fitted|register|form)/.test(q)) {
+    return {
+      text: `Record the **fitted** model + serial — what's actually on the wall, not what the proposal designed. If the fitted inverter's AC rating crosses the ESB band, the statutory form flips **NC6 ↔ NC7** on its own and I flag it before you file. The sign-off is attested by **you, the named installer** — never "machine-verified". Provisional values stay in the appendix; only your attested figures go in the statutory boxes.`,
+      actions: [{ label: 'Open the job', route: job ? `/job/${job.id}` : '/installer' }],
+    };
+  }
+
+  // 5) Handover / monitoring / closing a fitted system out.
+  if (/(handover|hand over|monitor|finish|sign.?off|complete|close|photo|evidence|customer app|live)/.test(q)) {
+    if (handover.length) {
+      const h = handover[0];
+      const app = monitoringAppForModel(h.proposal?.inverter_model ?? '').appName;
+      return {
+        text: `**${first(h)}**'s system is fitted and needs closing out: capture the commissioning serials + photos, then handover sets up **${app}** and sends the "your system is live" note. Clean handover is the review and the referral — it's the flywheel, not paperwork.`,
+        actions: [{ label: `Open ${first(h)}`, route: `/job/${h.id}` }],
+      };
+    }
+    return { text: 'Nothing waiting on handover right now. When a system\'s fitted: serials + photos → set up the inverter brand\'s monitoring app → the "your system is live" note to the customer. Clean handover = the review and the referral.' };
+  }
+
+  // 6) What's ahead / next / schedule.
+  if (/(next|tomorrow|upcoming|when|schedule|week|ahead|after|coming)/.test(q)) {
+    const week = [...scheduled].filter(l => l.assignment?.scheduled_date).sort(byDate);
+    if (!week.length) return { text: 'No installs scheduled yet — the queue fills as deposits land.' };
+    const lines = week.slice(0, 5).map(l => `• **${first(l)}** — ${l.proposal?.system_size_kw}kWp, ${fmtDay(l.assignment?.scheduled_date)}`);
+    const extra = unscheduled.length ? `\n\nPlus ${unscheduled.length} won job${unscheduled.length > 1 ? 's' : ''} awaiting a date in the unscheduled queue.` : '';
+    return {
+      text: `Your installs ahead:\n\n${lines.join('\n')}${extra}\n\nDrag any to another day on **Schedule** — the customer's told why automatically.`,
+      actions: [{ label: 'Open schedule', route: '/installer' }],
+    };
+  }
+
+  // 7) Weather / rain.
+  if (/(weather|rain|wind|storm|forecast|met)/.test(q)) {
+    return { text: 'Roofs and rain don\'t mix. If Met Éireann flags orange or red on an install day, move it on **Schedule** — pick a reason and the customer\'s told automatically, with a line to reply if the new day doesn\'t suit. A yellow warning is a judgement call; either way the drag-to-reschedule is one tap.' };
+  }
+
+  // 8) Fallback — teach what the field coach can do.
+  return {
+    text: 'I read your real day, so I can be specific. Try:\n\n• "What do I load?" — the van BOM for today\'s install\n• "What\'s my route?" — the drive, and why you never double back\n• "Which serial do I record?" — commissioning + the NC6/NC7 flip\n• "What\'s on handover?" — closing a fitted system out\n• Or name a client — "what\'s the story with Anna?"',
+  };
 }
