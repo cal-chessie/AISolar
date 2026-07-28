@@ -175,3 +175,46 @@ fresh session per lane (Cal's own conductor rule):
    the crawl skills. Cal's notes to merge on arrival.
 
 *One read. Verified against disk. Correct it by adding. — Claude, 28 Jul 2026*
+
+## 9 · THE MEANING — why every law exists (the anti-drift layer)
+
+> Drift happens when a session inherits FACTS without MEANING. Facts decay;
+> meaning re-derives the facts. When anything below feels arbitrary, find its
+> chain here. If no chain fits, ask Cal — never invent one.
+
+**⚠️ CONSTITUTIONAL STATUS (Cal, 28 Jul): NOTHING IS INSCRIBED YET.** The
+Charter/Doctrine/terms/v0001 roots on disk are the STARTING PLACE — the drafts
+the real Version One will be forged from. Once inscribed it can only be
+amended, so v1 must hold for YEARS: follow its governing principles now, treat
+no text as immutable, and help HARDEN toward the inscription. Cal proves it in
+application while it stands.
+
+**The chains:**
+1. A name was taken from Cal → meaning must be un-stealable → versioned,
+   frozen, citable, anchored definitions → the OA. *"Meaning may stop. It may
+   not drift."*
+2. Definitions don't protect records → append-only, hash-chained, corrected
+   never erased → the kernel. *"I don't delete. I correct."*
+3. Machines can't trust words → admitted vocabulary (CDT: everything begins
+   rejected) + the stranger's proof + a conformance manifest → M2M. *"Verify
+   me, don't trust me."*
+4. Builders lie to themselves through drift → verify against DISK, truth-pass
+   every claim, the claims ladder: proven / hypothesis / horizon.
+5. A kernel is only credible under a real business → AISolar = Domain 001,
+   the PROOF not the product. One installer → one telemetry event → one
+   receipt = every layer true at once.
+6. The forms need what only the roof knows → AIField's commissioning finishes
+   the paperwork → AIField before the NC render, always.
+7. Autonomy without a veto is a liability → draft-never-send everywhere; the
+   power to STOP, never the power to push alone — the same shape at every
+   scale (founder veto, Cal's yes, approval gates, the mismatch note).
+8. Append-only + PII = an unhealable GDPR wound → kernel gets refs + hashes;
+   artifacts stay app-side, erasable.
+9. Every added primitive is permanent debt → subtraction is the method
+   (Musk's question = the CDT's question). Freeze in force: reality attacks
+   now; revision only when it leaves no alternative.
+10. No record reaches occurrence → everything field-captured is ATTESTED by a
+    named person, never "machine-verified" — law in UI, schema, payloads.
+11. The wound's inverse is the purpose: a name was taken; SonsSons is a name
+    GIVEN forward — the point is leaving the world a little better, or a lot.
+    Decisions that trade that away are wrong even when profitable.
