@@ -13,8 +13,23 @@
  * Premises decides the SEAI scheme: domestic grant vs Non-Domestic Microgen.
  */
 import type { DummyLead } from '@/lib/dummyData';
+import { getFieldRecord } from '@/lib/fieldRecord';
 
 export type EsbFormChoice = 'NC6' | 'NC7' | 'NC8';
+
+/** The ESB ladder as a pure function — one place the bands live, callable
+ *  from the field app to warn the crew the MOMENT a fitted rating would flip
+ *  the form (NC6→NC7 needs pre-approval; catching it on the roof is the
+ *  whole point of the triple check).
+ *  ⚠️ VERIFY BEFORE LIVE (flagged 28 Jul, needs ESB policy read + Cal's yes):
+ *  micro-gen is 25A/phase = 5.75 kVA single / 11.04 kVA three — the 6/11
+ *  bands here are the common shorthand and UNDER-FILE at exactly 5.75–6.0 kW
+ *  single-phase. Statutory threshold change requires sign-off, not a quiet
+ *  edit. Until then boundary cases should be eyeballed. */
+export function esbFormForAcKw(acKw: number, threePhase: boolean): EsbFormChoice {
+  const nc6Limit = threePhase ? 11 : 6;
+  return acKw <= nc6Limit ? 'NC6' : acKw <= 50 ? 'NC7' : 'NC8';
+}
 
 export interface ComplianceDecision {
   esbForm: EsbFormChoice;
@@ -37,7 +52,11 @@ export interface ComplianceDecision {
  *  back to array kWp only when no inverter is picked yet. */
 export function inverterAcKw(lead: DummyLead): number {
   const m = lead.proposal?.inverter_model ?? '';
-  const match = m.match(/(\d+(?:\.\d+)?)\s*k(?:W|VA)?/i) ?? m.match(/SE(\d+(?:\.\d+)?)K/i) ?? m.match(/-(\d+(?:\.\d+)?)(?:K|T)\b/i);
+  const match = m.match(/(\d+(?:\.\d+)?)\s*k(?:W|VA)?/i) ?? m.match(/SE(\d+(?:\.\d+)?)K/i) ?? m.match(/-(\d+(?:\.\d+)?)(?:K|T)\b/i)
+    // SolaX-style "X1-Hybrid-5.0 G4" / "X1-Mini-3.6": rating trails the family
+    // name as a bare decimal (caught live 28 Jul — fell through to kWp and
+    // over-filed NC7 on a 5kW hybrid).
+    ?? m.match(/(?:hybrid|mini|boost|air|pro)-(\d+(?:\.\d+)?)\b/i);
   const parsed = match ? parseFloat(match[1]) : 0;
   return parsed > 0 && parsed <= 1000 ? parsed : (lead.proposal?.system_size_kw ?? 0);
 }
@@ -45,11 +64,16 @@ export function inverterAcKw(lead: DummyLead): number {
 export function decideCompliance(lead: DummyLead): ComplianceDecision {
   const i = (lead.intake ?? {}) as Record<string, unknown>;
   const kW = lead.proposal?.system_size_kw ?? 0;
-  const tiic = inverterAcKw(lead);
+  // THE FIELD RECORD WINS (same law as pdfFill): once the crew has attested
+  // the AC rating off the plate, ESB routing runs on the FITTED number, not
+  // the designed one — a substitution that crosses a band flips the form
+  // here, automatically, before any paperwork generates.
+  const gate = getFieldRecord(lead.id)?.serials;
+  const attestedKw = gate?.confirmed ? parseFloat(gate.acRatingKw) : NaN;
+  const tiic = Number.isFinite(attestedKw) && attestedKw > 0 ? attestedKw : inverterAcKw(lead);
   const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
   const commercial = i.extracted_premises_type === 'commercial' || i.property_type === 'commercial';
-  const nc6Limit = threePhase ? 11 : 6;
-  const esbForm: EsbFormChoice = tiic <= nc6Limit ? 'NC6' : tiic <= 50 ? 'NC7' : 'NC8';
+  const esbForm: EsbFormChoice = esbFormForAcKw(tiic, threePhase);
 
   const requiredDocs = [
     'seai_app', 'seai_offer',            // grant route (scheme varies)

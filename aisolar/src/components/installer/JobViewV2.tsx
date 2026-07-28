@@ -39,6 +39,8 @@ import {
   User, ClipboardList, X, Star, Truck, ListChecks, Award, Cpu,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { DEFAULT_SERIALS, type SerialState } from '@/lib/fieldRecord';
+import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
 import { brand } from '@/config/brand';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -59,18 +61,9 @@ interface PhotoItem {
   // In production: storage URL
 }
 
-// Serials + the triple check (ported from InstallRunner, 28 Jul — the moat).
-// What's ACTUALLY on the wall, confirmed at the gate. Feeds NC6 §5 + the
-// warranty pack at Sweep 8. The note is part of the record
-// (COMPLIANCE_CHAIN_DESIGN §4, layer 3) — a mismatch can never clear silently.
-interface SerialState {
-  fittedModel: string;      // inverter model AS FITTED (off the rating plate)
-  serial: string;           // inverter serial number
-  confirmed: boolean;       // installer confirmed every digit at the gate
-  mismatchFlagged: boolean; // fitted ≠ proposal — recorded, never cleared silently
-  note: string;             // why — rides with the job record on a mismatch
-}
-const DEFAULT_SERIALS: SerialState = { fittedModel: '', serial: '', confirmed: false, mismatchFlagged: false, note: '' };
+// Serials + the triple check (the moat): SerialState lives in lib/fieldRecord
+// — ONE contract shared with pdfFill (the NC forms read the roof, not the
+// proposal) and with Sweep 8's installed_equipment tables.
 
 // ============= TAB DEFINITIONS =============
 type TabId = 'overview' | 'pre_install' | 'roof' | 'electrical' | 'commissioning' | 'handover';
@@ -272,6 +265,17 @@ export default function JobViewV2() {
   const proposal = lead.proposal;
   const survey = lead.survey;
 
+  // The second job of the triple check: if the FITTED AC rating crosses an
+  // ESB band, the form itself flips (NC6→NC7 needs pre-approval). Computed
+  // live off the plate rating so the crew learns ON THE ROOF, not at filing.
+  const threePhaseSupply = /three/i.test(survey?.confirmed_inverter_type ?? '');
+  const designedForm = esbFormForAcKw(inverterAcKw(lead), threePhaseSupply);
+  const fittedKwNum = parseFloat(serials.acRatingKw);
+  const fittedForm = Number.isFinite(fittedKwNum) && fittedKwNum > 0
+    ? esbFormForAcKw(fittedKwNum, threePhaseSupply) : null;
+  const formFlip = fittedForm && fittedForm !== designedForm
+    ? { from: designedForm, to: fittedForm } : null;
+
   return (
     // data-density="comfortable": THE fix for Cal's "sizing is the worst part".
     // The field app was silently running desktop density (36px controls); this
@@ -402,6 +406,7 @@ export default function JobViewV2() {
                   <CommissioningSerials
                     serials={serials}
                     specifiedInverter={proposal?.inverter_model || 'SolaX X1-Hybrid-5.0 G4'}
+                    formFlip={formFlip}
                     onChange={(updates) => {
                       const next = { ...serials, ...updates };
                       setSerials(next);
@@ -794,16 +799,22 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
 // NC6 → NC7, which needs ESB pre-approval. Nothing clears silently.
 // Sweep 8 wires: fitted model + serial → installed_equipment → pdfFill; the
 // mismatch flag → office notification BEFORE any NC6 generates.
-function CommissioningSerials({ serials, specifiedInverter, onChange }: {
+function CommissioningSerials({ serials, specifiedInverter, formFlip, onChange }: {
   serials: SerialState;
   specifiedInverter: string;
+  /** Set when the FITTED AC rating crosses an ESB band vs the design. */
+  formFlip: { from: EsbFormChoice; to: EsbFormChoice } | null;
   onChange: (updates: Partial<SerialState>) => void;
 }) {
   const modelsAgree = serials.fittedModel.trim() !== '' &&
     serials.fittedModel.trim().toLowerCase() === specifiedInverter.trim().toLowerCase();
   const mismatch = serials.fittedModel.trim() !== '' && !modelsAgree;
+  // Everything the NC6 §5 wants comes off the plate the installer is looking
+  // at, captured ONCE, here: model + serial + AC rating + export setting.
   // A mismatch cannot be confirmed without the why — the note IS the record.
-  const canConfirm = serials.serial.trim() !== '' && serials.fittedModel.trim() !== '' && (!mismatch || serials.note.trim() !== '');
+  const canConfirm = serials.serial.trim() !== '' && serials.fittedModel.trim() !== ''
+    && serials.acRatingKw.trim() !== '' && serials.exportLimit.trim() !== ''
+    && (!mismatch || serials.note.trim() !== '');
 
   return (
     <Card>
@@ -823,15 +834,65 @@ function CommissioningSerials({ serials, specifiedInverter, onChange }: {
             className="mt-1"
           />
         </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">Inverter serial number</Label>
-          <Input
-            value={serials.serial}
-            onChange={e => onChange({ serial: e.target.value, confirmed: false })}
-            placeholder="e.g. XB5012345678"
-            className="mt-1 font-mono"
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs text-muted-foreground">Inverter serial number</Label>
+            <Input
+              value={serials.serial}
+              onChange={e => onChange({ serial: e.target.value, confirmed: false })}
+              placeholder="e.g. XB5012345678"
+              className="mt-1 font-mono"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">AC rating (kW) — off the plate</Label>
+            <Input
+              value={serials.acRatingKw}
+              onChange={e => onChange({ acRatingKw: e.target.value.replace(/[^0-9.]/g, ''), confirmed: false })}
+              placeholder="e.g. 5.0"
+              inputMode="decimal"
+              className="mt-1 font-mono"
+            />
+          </div>
         </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Export limitation — as commissioned</Label>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            {(['None — full export', 'Limited'] as const).map(opt => {
+              const active = opt === 'Limited'
+                ? serials.exportLimit.startsWith('Limited')
+                : serials.exportLimit === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onChange({ exportLimit: opt === 'Limited' ? 'Limited to ' : opt, confirmed: false })}
+                  className={`h-10 rounded-control border text-xs font-medium transition-colors ${active ? 'border-tech bg-tech/10 text-tech' : 'border-border hover:bg-muted text-muted-foreground'}`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+          {serials.exportLimit.startsWith('Limited') && (
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                value={serials.exportLimit.replace(/^Limited to /, '').replace(/ kW$/, '')}
+                onChange={e => onChange({ exportLimit: `Limited to ${e.target.value.replace(/[^0-9.]/g, '')} kW`, confirmed: false })}
+                placeholder="e.g. 6"
+                inputMode="decimal"
+                className="font-mono"
+              />
+              <span className="text-xs text-muted-foreground shrink-0">kW export limit</span>
+            </div>
+          )}
+        </div>
+        {formFlip && (
+          <div className="rounded-control border-2 border-pop bg-pop-subtle p-3 text-xs space-y-1">
+            <p className="font-bold text-pop flex items-center gap-1.5"><AlertTriangle className="h-4 w-4" /> This rating changes the ESB form: {formFlip.from} → {formFlip.to}</p>
+            <p className="text-muted-foreground">The fitted unit's AC rating crosses an ESB band. {formFlip.to === 'NC7' ? 'NC7 needs ESB pre-approval — STOP and call the office before commissioning this unit.' : 'Confirm the correct form with the office before commissioning.'} Recorded either way — nothing clears silently.</p>
+          </div>
+        )}
         {serials.fittedModel.trim() !== '' && (modelsAgree ? (
           <div className="rounded-control border border-doc-deposit/40 bg-doc-deposit/10 p-2.5 text-xs">
             <p className="font-semibold text-doc-deposit flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> Matches the proposal</p>

@@ -26,6 +26,7 @@
  */
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { DummyLead } from '@/lib/dummyData';
+import { getFieldRecord } from '@/lib/fieldRecord';
 import { getTenantBrand } from '@/lib/tenantBrand';
 import { brand } from '@/config/brand';
 
@@ -115,6 +116,18 @@ function collect(lead: DummyLead): Array<[string, string]> {
   const i = (lead.intake ?? {}) as Record<string, unknown>;
   const p = lead.proposal;
   const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
+
+  // THE FIELD RECORD WINS. What the crew attested at the commissioning gate
+  // (fitted model, serial, AC rating, export setting — all off the plate)
+  // overrides what the proposal designed. A statutory form must describe the
+  // kit ON THE ROOF; the proposal is the fallback and is labelled as such.
+  // Wrong-number rule: better honestly-missing (amber on the appendix) than a
+  // designed value masquerading as a commissioned one — the old code put the
+  // DC kWp in the AC-rating box and a hardcoded 'full export' in the
+  // limitation box. Both lies are dead.
+  const fr = getFieldRecord(lead.id);
+  const gate = fr?.serials.confirmed ? fr.serials : null;
+
   const rows: Array<[string, string | undefined | null]> = [
     ['Customer name', (i.extracted_account_name as string) ?? lead.name],
     ['Installation address', (i.extracted_address as string) ?? lead.address],
@@ -123,12 +136,14 @@ function collect(lead: DummyLead): Array<[string, string]> {
     ['Phone', lead.phone],
     ['Email', lead.email],
     ['Supply type', threePhase ? 'Three phase' : 'Single phase'],
-    ['Inverter make/model', p?.inverter_model],
-    ['Inverter rating (kW)', p ? String(p.system_size_kw) : undefined],
+    ['Inverter make/model', gate?.fittedModel || (p?.inverter_model ? `${p.inverter_model} ( as designed — confirm at commissioning )` : undefined)],
+    ['Inverter serial', gate?.serial || '( captured at commissioning )'],
+    ['Inverter rating (kW)', gate?.acRatingKw ? `${gate.acRatingKw}` : '( off the plate at commissioning )'],
     ['Panels', p ? `${p.panel_count} x ${p.panel_model}` : undefined],
     ['Total DC capacity (kWp)', p ? String(p.system_size_kw) : undefined],
     ['Battery', p?.battery_model ?? 'None'],
-    ['Export limitation', 'None — full export'],
+    ['Export limitation', gate?.exportLimit || '( set + recorded at commissioning )'],
+    ...(gate?.mismatchFlagged ? [['Fitted vs proposal', 'SUBSTITUTION RECORDED — installer note on the job record'] as [string, string]] : []),
     ['Installer company', getTenantBrand().proposalCompanyName || brand.legal.tradingName],
     ['Installer RECI no.', brand.legal.reciNumber || '( Settings - RECI number )'],
   ];
@@ -190,7 +205,10 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
     const pages = doc.getPages();
     for (const m of map) {
       const v = data[m.field];
-      if (v && !v.startsWith('(')) pages[m.page]?.drawText(v.toUpperCase(), { x: m.x, y: m.y, size: m.size ?? 10, font });
+      // Never draw a placeholder OR a designed-fallback into a statutory box —
+      // the official page carries only captured/attested values; anything
+      // provisional lives on the appendix, labelled. (Any '(' marks it.)
+      if (v && !v.includes('(')) pages[m.page]?.drawText(v.toUpperCase(), { x: m.x, y: m.y, size: m.size ?? 10, font });
     }
   }
 
