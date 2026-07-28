@@ -1,5 +1,12 @@
 # AISOLAR — installer platform (Vite + React 18 + Supabase `coxmtpnq…`)
 
+> **START HERE: read [`docs/THE_ONE_READ.md`](docs/THE_ONE_READ.md) FIRST — every
+> session, before anything.** It is the estate consolidated and corrected: true
+> state, every gate with its owner, the ordered path, the drift ledger, the
+> kernel naming contract. This file below is the per-repo law; THE_ONE_READ is
+> the map. Skills are LAW: use the installed skills for the work at hand and
+> write a "Skills used:" line into docs/commits (Cal's standing order, 28 Jul).
+
 The per-tenant workbench: bill extract → survey → proposal → grant → install →
 customer portal, driven by a 10-agent runtime (queue + pg_cron drain).
 Estate map: `~/Desktop/SONSSONS/COMH/RENEWABLY/LAUNCH_MAP.md`

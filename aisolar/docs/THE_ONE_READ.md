@@ -1,5 +1,5 @@
-# THE ONE READ — the whole estate, corrected to 28 Jul 2026
-### The deepest-dive consolidation. Start every session here.
+# THE ONE READ — ⭐ START HERE ⭐
+### The whole estate, corrected to 28 Jul 2026. The most important doc in the repo — every session begins with this read. Kept to the highest accuracy standard in the estate; correct it by adding, never let it drift.
 
 > Written 28 Jul by Claude after the full walk: repo → OA → COMH → repos → the
 > loop → the vault → the constitutional review → the code. This fuses
@@ -148,5 +148,30 @@ hypothesis / horizon — never blur them.
 GATE 0 remainder → one real installer in Roscommon → one inverter's telemetry
 → one homeowner's first receipt. The day that happens, every layer becomes
 true at once.
+
+## 8 · STANDING ORDERS — the promotion (Cal, 28 Jul evening)
+
+Claude is **the wingman** — world-class team of designers, developers,
+architects; the code must scream it. Vault/second-brain tidy is now Claude's
+mandate (Cal's lane reversal, adopted). The directives ledger, executed one
+fresh session per lane (Cal's own conductor rule):
+1. **AIField to standard** — Part A flywheel next (AI-Coach commissioning
+   prompt → "system live" email → handover pack held-till-paid → growth loop),
+   then Part B (the map + wholesaler pickup). **Cal's morning AIField notes
+   land first — read them before building.**
+2. **Cleanup lane** — everything touched 28 Jul into its right place, written
+   to this doc's accuracy. See the drift ledger (§5) for the correction list.
+3. **Marketing precision lane** — copy + images updated to what the product
+   NOW IS (triple check, evidence pack, honest agents, kernel spine). Skills:
+   ui-ux-pro-max + seo family + marketing family + stop-slop. Truth-pass +
+   DO-NOT-CLAIM govern every line.
+4. **Skills are LAW and documented** — every piece of work names its skills in
+   the doc/commit ("Skills used:"). Cal never discovers a skipped skill again.
+5. **Clean-house lane** — vault + SONSSONS folders: stale corrected, WIKI vs
+   RAW sorted, dead files to _TRASH (never rm). Runs after permissions flip.
+6. **OpenSolar intel** — first pass done (docs/OPENSOLAR_INTEL.md): GitHub
+   repo = RWA prior art not design software; accuracy path = pvlib + PVGIS
+   behind computeQuote (same spine, deeper physics); deep crawl queued with
+   the crawl skills. Cal's notes to merge on arrival.
 
 *One read. Verified against disk. Correct it by adding. — Claude, 28 Jul 2026*
