@@ -204,8 +204,8 @@ export default function InstallerPortalV5() {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setThreadLead(null); }}
-                className={`flex items-center gap-1.5 px-3 h-control-sm rounded-control text-sm font-medium whitespace-nowrap cursor-pointer transition-colors duration-instant border ${active ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
-                <Icon className="size-3.5" /> {t.label}
+                className={`flex items-center gap-1.5 px-4 h-control rounded-control text-[15px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-instant border ${active ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
+                <Icon className="size-4" /> {t.label}
                 {!!t.count && <span className={`text-2xs px-1.5 rounded-full tabular-nums ${t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
               </button>
             );
@@ -679,6 +679,10 @@ export default function InstallerPortalV5() {
                       )}
                     </p>
                   )}
+                  {/* list 30% · map 70% (wide + 70vh) — the same shape as the
+                       consultant Route, so both apps read as one. */}
+                  <div className="grid gap-3 lg:grid-cols-[3fr_7fr]">
+                    <div className="lg:order-1 space-y-2">
                   {/* depot card — what the shelf holds for this run */}
                   {pickupStop && stops.length > 0 && (
                     <div className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3 border-l-2 border-doc-proposal">
@@ -692,7 +696,6 @@ export default function InstallerPortalV5() {
                       </a>
                     </div>
                   )}
-                  <MapPanel embedSrc={embedSrc} fullRouteUrl={fullRouteUrl} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" />
                   <div className="space-y-1.5">
                     {stops.map(({ l, d }, i) => {
                       const dayIdx = byDay.indexOf(new Date(d).toDateString());
@@ -726,6 +729,9 @@ export default function InstallerPortalV5() {
                       );
                     })}
                     {stops.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No stops to route.</p>}
+                  </div>
+                    </div>
+                    <MapPanel embedSrc={embedSrc} fullRouteUrl={fullRouteUrl} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" className="lg:order-2 lg:sticky lg:top-4 lg:self-start" />
                   </div>
                 </div>
               );

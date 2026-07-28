@@ -329,8 +329,8 @@ export default function ConsultantCockpitV5() {
               : 0;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 h-control-sm rounded-control text-sm font-medium whitespace-nowrap cursor-pointer transition-colors duration-instant border ${isActive ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
-                <Icon className="size-3.5" /> {tab.label}
+                className={`flex items-center gap-1.5 px-4 h-control rounded-control text-[15px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-instant border ${isActive ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
+                <Icon className="size-4" /> {tab.label}
                 {count > 0 && (
                   <span className={`text-2xs tabular-nums px-1.5 rounded-full ${tab.id === 'inbox' ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{count}</span>
                 )}
