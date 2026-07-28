@@ -40,6 +40,7 @@ import {
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 import LeadFormDialog, { leadFromForm, type LeadFormValues } from '@/components/leads/LeadFormDialog';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import DayRoute from '@/components/field/DayRoute';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
@@ -74,13 +75,14 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
  * same surface (lead list) with different `leads.filter(...)` predicates.
  * They're now filter chips inside Inbox.
  */
-type TabId = 'today' | 'inbox' | 'pipeline' | 'calendar' | 'products' | 'documents' | 'insights';
+type TabId = 'today' | 'inbox' | 'pipeline' | 'calendar' | 'route' | 'products' | 'documents' | 'insights';
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof Users }> = [
   { id: 'today', label: 'Today', icon: CalendarClock },
   { id: 'inbox', label: 'Inbox', icon: MessageSquare },
   { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
+  { id: 'route', label: 'Route', icon: MapPin },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
@@ -597,6 +599,35 @@ export default function ConsultantCockpitV5() {
                   <RealCalendar onOpenClient={(id) => { const l = leads.find(x => x.id === id); if (l) { setSelectedLead(l); setActiveTab('inbox'); } }} />
                 </Suspense>
               )}
+
+              {activeTab === 'route' && (() => {
+                // Where routing earns its weight: the consultant does 3+ surveys
+                // a day, so the drive between them is worth optimising. Take the
+                // next day that has booked surveys, sequence them into the
+                // shortest loop. (Installs are one-a-day — that view becomes
+                // month-ahead scheduling, next.)
+                const booked = leads
+                  .filter(l => l.workflow_stage === 'survey_scheduled' && l.survey?.scheduled_date)
+                  .map(l => ({ l, d: l.survey!.scheduled_date }))
+                  .sort((a, b) => +new Date(a.d) - +new Date(b.d));
+                const nextDay = booked.find(x => +new Date(x.d) > Date.now() - 864e5);
+                const dayStops = nextDay
+                  ? booked.filter(x => new Date(x.d).toDateString() === new Date(nextDay.d).toDateString())
+                  : [];
+                const label = nextDay
+                  ? new Date(nextDay.d).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' })
+                  : '';
+                return (
+                  <DayRoute
+                    title={dayStops.length ? `Survey run — ${label}` : 'Survey run'}
+                    subtitle={dayStops.length
+                      ? `${dayStops.length} ${dayStops.length === 1 ? 'survey' : 'surveys'} booked · sequenced to cut the drive`
+                      : 'Your booked surveys, sequenced into the shortest loop when there are three or more in a day.'}
+                    stops={dayStops.map(({ l, d }) => ({ id: l.id, name: l.name, address: l.address, date: d, kindLabel: 'Survey' }))}
+                    onOpen={(id) => { const l = leads.find(x => x.id === id); if (l) { setSelectedLead(l); setActiveTab('inbox'); } }}
+                  />
+                );
+              })()}
 
               {activeTab === 'products' && (
                 <Suspense fallback={<CardListSkeleton count={3} />}>

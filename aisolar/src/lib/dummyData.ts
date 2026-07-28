@@ -147,8 +147,8 @@ export function generateDummyLeads(): DummyLead[] {
   const scenarios = [
     // 1. New lead — bill uploaded 2 hours ago
     {
-      name: 'Mary O\'Brien', stage: 'new', daysAgo: 0, bill: 245, kwh: 8400,
-      address: DUBLIN_ADDRESSES[0], consultant: CONSULTANTS[0],
+      name: 'Mary O\'Brien', stage: 'survey_scheduled', daysAgo: 0, routeDate: 3, bill: 245, kwh: 8400,
+      address: DUBLIN_ADDRESSES[7], consultant: CONSULTANTS[0],
       touchpoints: [
         { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded via landing page', timestamp: iso(0, 9), actor: 'customer' },
         { stage: 'new', channel: 'email', direction: 'outbound', summary: 'LeadIntakeAgent sent auto-acknowledge', timestamp: iso(0, 9), actor: 'agent' },
@@ -156,8 +156,8 @@ export function generateDummyLeads(): DummyLead[] {
     },
     // 2. Intake complete
     {
-      name: 'Patrick Kelly', stage: 'intake_complete', daysAgo: 1, bill: 312, kwh: 10800,
-      address: DUBLIN_ADDRESSES[1], consultant: CONSULTANTS[1],
+      name: 'Patrick Kelly', stage: 'survey_scheduled', daysAgo: 1, routeDate: 3, bill: 312, kwh: 10800,
+      address: DUBLIN_ADDRESSES[3], consultant: CONSULTANTS[1],
       touchpoints: [
         { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded', timestamp: iso(1, 14), actor: 'customer' },
         { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'AI analysis sent to customer', timestamp: iso(1, 14), actor: 'agent' },
