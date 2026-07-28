@@ -165,7 +165,7 @@ export function generateDummyLeads(): DummyLead[] {
     },
     // 3. Survey scheduled
     {
-      name: 'Linda O\'Sullivan', stage: 'survey_scheduled', daysAgo: 2, bill: 198, kwh: 6800,
+      name: 'Linda O\'Sullivan', stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, bill: 198, kwh: 6800,
       address: DUBLIN_ADDRESSES[2], consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       surveyDate: isoFuture(2),
       touchpoints: [
@@ -175,7 +175,7 @@ export function generateDummyLeads(): DummyLead[] {
     },
     // 4. Survey complete — proposal not yet drafted
     {
-      name: 'Tom Brennan', stage: 'survey_complete', daysAgo: 3, bill: 278, kwh: 9600,
+      name: 'Tom Brennan', stage: 'survey_complete', daysAgo: 3, routeDate: 3, bill: 278, kwh: 9600,
       address: DUBLIN_ADDRESSES[3], consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + roof data', timestamp: iso(1, 15), actor: 'installer' },
@@ -235,7 +235,7 @@ export function generateDummyLeads(): DummyLead[] {
     },
     // 10. Installing — currently on site
     {
-      name: 'John O\'Connor', stage: 'installing', daysAgo: 9, bill: 267, kwh: 9200,
+      name: 'John O\'Connor', stage: 'installing', daysAgo: 9, routeDate: 3, bill: 267, kwh: 9200,
       address: DUBLIN_ADDRESSES[9], consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
         { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Installer marked "on site" + uploaded 4 progress photos', timestamp: iso(0, 9), actor: 'installer' },
@@ -243,7 +243,7 @@ export function generateDummyLeads(): DummyLead[] {
     },
     // 11. Installed — awaiting final payment
     {
-      name: 'Emma Ryan', stage: 'installed', daysAgo: 10, bill: 245, kwh: 8400,
+      name: 'Emma Ryan', stage: 'installed', daysAgo: 10, routeDate: 3, bill: 245, kwh: 8400,
       address: DUBLIN_ADDRESSES[10], consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + final photos', timestamp: iso(1, 16), actor: 'installer' },
@@ -327,7 +327,7 @@ export function generateDummyLeads(): DummyLead[] {
     // Add survey data for stages >= survey_scheduled
     if (['survey_scheduled', 'survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage)) {
       lead.survey = {
-        scheduled_date: (s as any).surveyDate || isoFuture(idx),
+        scheduled_date: (s as any).routeDate != null ? isoFuture((s as any).routeDate) : ((s as any).surveyDate || isoFuture(idx)),
         completed_date: ['survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx + 1) : undefined,
         surveyor: s.installer?.name || 'Unassigned',
         household_occupants: ['2', '4', '3', '5+'][idx % 4],
@@ -392,7 +392,7 @@ export function generateDummyLeads(): DummyLead[] {
         installer_id: s.installer.id,
         installer_name: s.installer.name,
         status: s.stage === 'installing' ? 'accepted' : s.stage === 'installed' || s.stage === 'final_paid' || s.stage === 'completed' ? 'completed' : 'accepted',
-        scheduled_date: (s as any).surveyDate || isoFuture(idx - 2),
+        scheduled_date: (s as any).routeDate != null ? isoFuture((s as any).routeDate) : ((s as any).surveyDate || isoFuture(idx - 2)),
         completed_date: ['installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx - 3) : undefined,
       };
     }

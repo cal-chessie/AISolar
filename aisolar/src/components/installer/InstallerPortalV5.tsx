@@ -16,6 +16,7 @@
  */
 import { useMemo, useState } from 'react';
 import { AifieldWordmark } from '@/components/brand/AiosMark';
+import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -581,7 +582,29 @@ export default function InstallerPortalV5() {
                 .filter((x): x is { l: DummyLead; d: string } => !!x.d && +new Date(x.d) < Date.now() + 7 * 864e5 && +new Date(x.d) > Date.now() - 864e5)
                 .sort((a, b) => +new Date(a.d) - +new Date(b.d));
               const byDay = [...new Map(weekJobs.map(x => [new Date(x.d).toDateString(), true])).keys()];
-              const stops = mapView === 'day' ? dayJobs : weekJobs;
+              const listed = mapView === 'day' ? dayJobs : weekJobs;
+
+              // THE REAL SOLVE — only for a single day's loop (a week isn't one
+              // drive). Optimise the JOB order (depot pinned as the fixed start
+              // when picking up). If any address is off-gazetteer we DON'T claim
+              // optimisation — honest as-listed order, no invented saving.
+              const depotPt = pickupStop ? coordsForAddress(WHOLESALER_DEPOT.address) : null;
+              const stopPts = listed.map(({ l }) => coordsForAddress(l.address));
+              const canSolve = mapView === 'day' && listed.length >= 2 && stopPts.every(Boolean) && (!pickupStop || depotPt);
+              let stops = listed;
+              let solve: ReturnType<typeof optimiseRoute> = null;
+              if (canSolve) {
+                const pts = [...(depotPt ? [depotPt] : []), ...(stopPts as GeoPoint[])];
+                // pin the start only when it's the depot (gear collected first);
+                // otherwise the crew leaves from home — no fixed start.
+                solve = optimiseRoute(pts, !!depotPt);
+                if (solve) {
+                  const depotOffset = depotPt ? 1 : 0;
+                  // drop the pinned depot slot, map remaining order back to jobs
+                  stops = solve.order.filter(i => i >= depotOffset).map(i => listed[i - depotOffset]);
+                }
+              }
+
               const addrs = [...(pickupStop && stops.length ? [WHOLESALER_DEPOT.address] : []), ...stops.map(({ l }) => l.address)];
               const fullRouteUrl = `https://www.google.com/maps/dir/${addrs.map(encodeURIComponent).join('/')}`;
               const embedSrc = addrs.length >= 2
@@ -618,10 +641,20 @@ export default function InstallerPortalV5() {
                       </a>
                     )}
                   </div>
-                  {/* the honest insight line — the route's promise, no invented km */}
-                  {stops.length > 0 && first && last && (
+                  {/* the insight line — a COMPUTED saving or honest neutral copy,
+                       never a slogan the code doesn't back (Cal, 28 Jul). */}
+                  {stops.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      {stops.length} {stops.length === 1 ? 'stop' : 'stops'}{pickupStop ? ' + the depot' : ''} · out {t(first)}, last stop {t(last)} — one loop, in order, never back twice. Home earlier.
+                      {solve && solve.savedKm >= 0.5 ? (
+                        <>
+                          <span className="text-doc-deposit font-semibold">Smart route · ~{solve.optimisedKm.toFixed(0)} km</span>
+                          {' — saves ~'}{solve.savedKm.toFixed(0)} km{solve.savedMin >= 1 ? ` (${solve.savedMin} min)` : ''} vs the unplanned order. One loop home.
+                        </>
+                      ) : solve ? (
+                        <><span className="text-doc-deposit font-semibold">Smart route · ~{solve.optimisedKm.toFixed(0)} km</span> — already the shortest loop.</>
+                      ) : (
+                        <>{stops.length} {stops.length === 1 ? 'stop' : 'stops'}{pickupStop ? ' + the depot' : ''}{mapView === 'week' ? ', across the week' : ', in appointment order'}.</>
+                      )}
                     </p>
                   )}
                   {/* depot card — what the shelf holds for this run */}
