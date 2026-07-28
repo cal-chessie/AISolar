@@ -159,3 +159,43 @@ NC6→NC7 warning, office flag), field signature canvas. ALL local
 - signature dataURL → storage + hash on the NC6/DoW record (kernel append)
 - "camera assist reads the plate" = OCR at launch (edge fn); manual entry
   stays as the fallback
+
+## THE LAUNCH WIRING MAP — every email, RLS point, migration (28 Jul, Cal's ask)
+_Marked out NOW so wiring day is execution, not archaeology._
+
+### EMAILS — every send point in the product (state: real / fake / new)
+| Email | Trigger | State |
+|---|---|---|
+| Survey booking confirm | survey_scheduler agent | REAL (Postmark) |
+| Install scheduled | install_coordinator | REAL (Postmark) |
+| Follow-up sequence | follow_up agent | REAL (Postmark) |
+| Payment reminder / digest / stale-lead | crons | REAL (Postmark) |
+| Warranty + review ask | post_install | REAL (Postmark) |
+| **"Your system is live"** | commissioning complete (serials confirmed) | **DRAFTED (monitoringHandoff.ts) — wire send + SEAI wording gate** |
+| Proposal send + magic link | GateCheck human click | UI-fake → wire |
+| Deposit link | consultant chat / FinanceWindow | UI-fake → wire (create-checkout exists) |
+| Photo request | consultant chat chip | UI-fake → wire |
+| Reschedule + reason (weather flow) | AIField exception | UI-fake → wire |
+| Handover pack released | final payment confirmed | NEW — build with pack |
+| Referral invite / share / review (growth loop) | pack release | NEW — tier-locked |
+| Team invite | Owner add person | honest-queued → wire (auth invite + grant_role) |
+| Both-ends notification law | EVERY customer interaction | NEW — notifications table + magic links |
+
+### RLS — the isolation proof points (before ANY real signup)
+1. `fix_all_41_advisories.sql` on kernel/CRM (GATE 0 item — RLS was OFF on grant tables).
+2. The ~43 `coalesce(jwt,default)` read-path policies (kernel side, post-write-path law).
+3. Per-POV proof: owner=ALL · consultant=his pipeline · installer=HIS jobs · customer=token-scoped self. Test logged-in-isolation per role.
+4. New tables below ship WITH tenant+role policies on day one — never retrofit.
+5. Storage buckets (photos, signatures, datasheets, packs): scoped read; signed URLs only.
+
+### MIGRATIONS QUEUE — idempotent, add-only, in dependency order
+1. `installed_equipment` (lead_id, fitted_model, serial, ac_rating_kw, export_limit, mismatch, note, attested_by, attested_at) ← fieldRecord contract.
+2. `install_evidence` (lead_id, stage, slot, storage_path, taken_at) + `install_checklist`.
+3. Signature → storage + sha256 on the DoW/NC record (kernel append per kernelVocabulary).
+4. `notifications` (both-ends law) + magic-link tokens.
+5. `agent_corrections` (learning loop) + weekly owner report view.
+6. `designs` persistence (arrays[], geometry, strings) — kills stored-vs-live kWp delta.
+7. Proposal versions append-only + drafter stores `selfConsumptionFromOccupancy()` (the 0.70 kill).
+8. `products` table (warranty, dims, watts, kwh, AC kW, type-test cert) — unify catalogs.
+9. `feedback`, referral tracking (code, referrer, commission), tier entitlements (the lock-off).
+10. Installer vault (their serials/certs across jobs — Cal's note).

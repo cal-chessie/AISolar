@@ -41,6 +41,7 @@ import {
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { DEFAULT_SERIALS, type SerialState } from '@/lib/fieldRecord';
 import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
+import { monitoringAppForModel, commissioningSteps, systemLiveEmail } from '@/lib/monitoringHandoff';
 import { brand } from '@/config/brand';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -403,16 +404,19 @@ export default function JobViewV2() {
                 onPhoto={(id, uploaded) => updatePhoto('commissioning', id, uploaded)}
                 onComplete={() => setActiveTab('handover')}
                 extra={
-                  <CommissioningSerials
-                    serials={serials}
-                    specifiedInverter={proposal?.inverter_model || 'SolaX X1-Hybrid-5.0 G4'}
-                    formFlip={formFlip}
-                    onChange={(updates) => {
-                      const next = { ...serials, ...updates };
-                      setSerials(next);
-                      persist({ serials: next });
-                    }}
-                  />
+                  <>
+                    <CommissioningSerials
+                      serials={serials}
+                      specifiedInverter={proposal?.inverter_model || 'SolaX X1-Hybrid-5.0 G4'}
+                      formFlip={formFlip}
+                      onChange={(updates) => {
+                        const next = { ...serials, ...updates };
+                        setSerials(next);
+                        persist({ serials: next });
+                      }}
+                    />
+                    {serials.confirmed && <MonitoringHandoff fittedModel={serials.fittedModel} customerName={lead.name} />}
+                  </>
                 }
                 extraDone={serials.confirmed}
               />
@@ -1116,6 +1120,69 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
         />
       )}
     </div>
+  );
+}
+
+// ============= MONITORING HANDOFF — THE TROJAN HORSE =============
+// Appears the moment the plate is confirmed: the coach knows the FITTED unit
+// (never the proposal's), walks the drill for THAT inverter, and stages the
+// customer's one-tap handoff to the RIGHT app. At VPP, their app becomes OUR
+// app — same handoff, our door. Email SENDS at Sweep 8; preview is honest.
+function MonitoringHandoff({ fittedModel, customerName }: { fittedModel: string; customerName: string }) {
+  const [showEmail, setShowEmail] = useState(false);
+  const app = monitoringAppForModel(fittedModel);
+  const steps = commissioningSteps(app, fittedModel);
+  const first = customerName.split(' ')[0];
+  const email = systemLiveEmail({
+    customerFirst: first, fittedModel, app,
+    installerCompany: brand.legal.tradingName || 'your installer',
+  });
+
+  return (
+    <Card className="border-tech/40">
+      <CardContent className="p-4 space-y-3">
+        <div>
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Wifi className="h-4 w-4 text-tech" /> AI Coach — commission the {app.brand} you just fitted
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            The coach reads the plate you confirmed: this is a <strong className="text-foreground">{fittedModel}</strong>, so {first}'s app is <strong className="text-foreground">{app.appName}</strong>. Run the drill:
+          </p>
+        </div>
+        <ol className="space-y-1.5">
+          {steps.map((s, n) => (
+            <li key={n} className="flex gap-2.5 text-xs">
+              <span className="size-5 rounded-full bg-tech/10 text-tech font-semibold grid place-items-center shrink-0">{n + 1}</span>
+              <span className="text-muted-foreground pt-0.5">{s}</span>
+            </li>
+          ))}
+        </ol>
+        {app.ios && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="flex-1 h-9 text-xs" asChild>
+              <a href={app.ios} target="_blank" rel="noopener noreferrer">{app.appName} — iPhone</a>
+            </Button>
+            <Button size="sm" variant="outline" className="flex-1 h-9 text-xs" asChild>
+              <a href={app.android} target="_blank" rel="noopener noreferrer">{app.appName} — Android</a>
+            </Button>
+          </div>
+        )}
+        <div className="rounded-control border border-border p-2.5">
+          <button className="w-full flex items-center justify-between text-xs font-medium" onClick={() => setShowEmail(v => !v)}>
+            <span className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-tech" /> "{email.subject}" — the live email, drafted</span>
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showEmail ? 'rotate-90' : ''}`} />
+          </button>
+          {showEmail && (
+            <div className="mt-2 space-y-2">
+              <pre className="text-2xs whitespace-pre-wrap font-sans text-muted-foreground bg-muted/40 rounded p-2.5">{email.body}</pre>
+              <p className="text-2xs text-muted-foreground">
+                Draft only — sending wires at launch (Postmark, both ends notified). SEAI wording ships after verification.
+              </p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

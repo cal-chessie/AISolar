@@ -313,3 +313,26 @@ overnight (DMA change; API 403s "not available for your account and region")
    synthetic .click() bypasses capture and false-passes.
 Launch notes: keep Esri fallback forever (resilience); Maps JS key must be
 referrer-locked before prod; Sweep 8 may move imagery behind an edge proxy.
+
+## .NOTE — NC6/NC7 field completeness (28 Jul, post-AIField target)
+Cal: make sure NC6/NC7 have every field to complete themselves; trace bill/manual
+→ whole app → final render. Final NC render is the task AFTER the AIField build.
+
+AUDIT (grounded in src/lib/pdfFill.ts `collect()` — the field→source map):
+WIRED OK (bill/manual → forms): customer name, install address, Eircode, MPRN,
+phone, email (21-pt bill read w/ manual fallback); installer company + RECI
+(Owner→Settings); system kWp, panels, battery (studio design); supply phase (survey).
+GAPS — and they ARE the AIField handoff (this is why AIField comes first):
+1. FITTED vs PROPOSED: NC6/7 pull inverter make/model from the PROPOSAL, not what
+   AIField confirms was fitted. The exact risk the triple-check exists for. Wire
+   AIField commissioning (fitted model + mismatch flag) → pdfFill.
+2. SERIALS: captured in AIField (localStorage per job) but `collect()` has NO serial
+   field. Needed for SEAI warranty + declarations. Not connected.
+3. Inverter rating (kW) WRONG: reuses system_size_kw (DC kWp) as inverter AC rating.
+   Needs the fitted inverter's real AC kW (catalog spec).
+4. Export limitation HARDCODED 'None — full export'; AIField has an "Export limit set"
+   check — the real value must flow.
+5. NC7 "Contact person" unmapped → "( not captured yet )"; default to customer/site contact.
+6. RECI falls back to placeholder if Settings unfilled — launch checklist item.
+FORM SELECTION (which of NC5/6/7/8) lives in seaiPipeline/ComplianceDecision — separate
+concern, verify it picks right. Verify survey actually captures phase.
