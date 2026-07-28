@@ -19,7 +19,7 @@
  * No scrolling for days. Click a tab → see that phase → done → next tab.
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -36,7 +36,7 @@ import {
   ArrowLeft, MapPin, Phone, Calendar, Clock, Navigation, Camera,
   Package, CheckCircle2, AlertTriangle, ChevronRight, Zap, Wrench,
   Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind, Upload,
-  User, ClipboardList, X, Star, Truck, ListChecks, Award,
+  User, ClipboardList, X, Star, Truck, ListChecks, Award, Cpu,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { brand } from '@/config/brand';
@@ -58,6 +58,19 @@ interface PhotoItem {
   uploaded: boolean;
   // In production: storage URL
 }
+
+// Serials + the triple check (ported from InstallRunner, 28 Jul — the moat).
+// What's ACTUALLY on the wall, confirmed at the gate. Feeds NC6 §5 + the
+// warranty pack at Sweep 8. The note is part of the record
+// (COMPLIANCE_CHAIN_DESIGN §4, layer 3) — a mismatch can never clear silently.
+interface SerialState {
+  fittedModel: string;      // inverter model AS FITTED (off the rating plate)
+  serial: string;           // inverter serial number
+  confirmed: boolean;       // installer confirmed every digit at the gate
+  mismatchFlagged: boolean; // fitted ≠ proposal — recorded, never cleared silently
+  note: string;             // why — rides with the job record on a mismatch
+}
+const DEFAULT_SERIALS: SerialState = { fittedModel: '', serial: '', confirmed: false, mismatchFlagged: false, note: '' };
 
 // ============= TAB DEFINITIONS =============
 type TabId = 'overview' | 'pre_install' | 'roof' | 'electrical' | 'commissioning' | 'handover';
@@ -113,7 +126,8 @@ const DEFAULT_COMMISSIONING: ToggleItem[] = [
   { id: 'monitoring_online', label: 'Monitoring Online', done: false, notes: '' },
   { id: 'customer_app_setup', label: 'Customer App Setup', done: false, notes: '' },
   { id: 'myenergi_setup', label: 'MyEnergi Setup', done: false, notes: '' },
-  { id: 'serial_numbers_recorded', label: 'All serial numbers recorded', done: false, notes: '' },
+  // 'serial_numbers_recorded' checkbox retired 28 Jul — superseded by the real
+  // serial capture + triple check (SerialState / CommissioningSerials below).
   { id: 'production_verified', label: 'Production verified (kW output confirmed)', done: false, notes: '' },
 ];
 
@@ -183,6 +197,7 @@ export default function JobViewV2() {
   const [photos, setPhotos] = useState<Record<TabId, PhotoItem[]>>(DEFAULT_PHOTOS);
   const [signature, setSignature] = useState<string | null>(null);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [serials, setSerials] = useState<SerialState>(DEFAULT_SERIALS);
 
   const storageKey = `jobview_v2_${lead.id}`;
 
@@ -199,6 +214,7 @@ export default function JobViewV2() {
         if (data.handover) setHandover(data.handover);
         if (data.photos) setPhotos(data.photos);
         if (data.signature) setSignature(data.signature);
+        if (data.serials) setSerials({ ...DEFAULT_SERIALS, ...data.serials });
       }
     } catch { /* ignore */ }
   }, [storageKey]);
@@ -207,9 +223,10 @@ export default function JobViewV2() {
     preInstall: ToggleItem[]; roof: ToggleItem[]; electrical: ToggleItem[];
     commissioning: ToggleItem[]; handover: ToggleItem[];
     photos: Record<TabId, PhotoItem[]>; signature: string | null;
+    serials: SerialState;
   }>) => {
     const data = {
-      preInstall, roof, electrical, commissioning, handover, photos, signature,
+      preInstall, roof, electrical, commissioning, handover, photos, signature, serials,
       ...updates,
     };
     try {
@@ -243,7 +260,9 @@ export default function JobViewV2() {
     pre_install: preInstall.every(t => t.done),
     roof: roof.every(t => t.done),
     electrical: electrical.every(t => t.done),
-    commissioning: commissioning.every(t => t.done),
+    // Commissioning needs the serial confirmed at the gate — the triple check
+    // is the moat, not an optional extra.
+    commissioning: commissioning.every(t => t.done) && serials.confirmed,
     handover: handover.every(t => t.done) && !!signature,
   };
 
@@ -373,12 +392,24 @@ export default function JobViewV2() {
             {activeTab === 'commissioning' && (
               <ChecklistTab
                 title="Commissioning & monitoring"
-                description="Power up, verify production, set up monitoring apps, record serials."
+                description="Power up, verify production, set up monitoring apps, capture the serials off the plate."
                 items={commissioning}
                 photos={photos.commissioning}
                 onToggle={(id, updates) => updateToggle('commissioning', id, updates)}
                 onPhoto={(id, uploaded) => updatePhoto('commissioning', id, uploaded)}
                 onComplete={() => setActiveTab('handover')}
+                extra={
+                  <CommissioningSerials
+                    serials={serials}
+                    specifiedInverter={proposal?.inverter_model || 'SolaX X1-Hybrid-5.0 G4'}
+                    onChange={(updates) => {
+                      const next = { ...serials, ...updates };
+                      setSerials(next);
+                      persist({ serials: next });
+                    }}
+                  />
+                }
+                extraDone={serials.confirmed}
               />
             )}
             {activeTab === 'handover' && (
@@ -626,7 +657,7 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
 }
 
 // ============= CHECKLIST TAB (used for pre-install, roof, electrical, commissioning) =============
-function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, onComplete }: {
+function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, onComplete, extra, extraDone = true }: {
   title: string;
   description: string;
   items: ToggleItem[];
@@ -634,8 +665,12 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
   onToggle: (id: string, updates: Partial<ToggleItem>) => void;
   onPhoto: (id: string, uploaded: boolean) => void;
   onComplete: () => void;
+  /** Phase-specific section (e.g. commissioning's serial triple check). */
+  extra?: ReactNode;
+  /** Gate the phase on the extra section (defaults open when no extra). */
+  extraDone?: boolean;
 }) {
-  const allDone = items.every(t => t.done) && photos.every(p => p.uploaded);
+  const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && extraDone;
 
   return (
     <div className="space-y-4">
@@ -731,6 +766,9 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
         </Card>
       )}
 
+      {/* Phase-specific section (commissioning: the serial triple check) */}
+      {extra}
+
       {/* Next button */}
       <Button
         onClick={onComplete}
@@ -744,6 +782,101 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
         )}
       </Button>
     </div>
+  );
+}
+
+// ============= COMMISSIONING SERIALS — THE TRIPLE CHECK =============
+// Ported from InstallRunner (28 Jul, the moat): the machine captures what was
+// fitted → cross-checks it against what the proposal specified → the installer
+// confirms at the gate, with a note when they don't match. The note is part of
+// the record (COMPLIANCE_CHAIN_DESIGN §4 layer 3). A substituted inverter makes
+// the NC6 describe kit that isn't on the roof — and a kW change can flip
+// NC6 → NC7, which needs ESB pre-approval. Nothing clears silently.
+// Sweep 8 wires: fitted model + serial → installed_equipment → pdfFill; the
+// mismatch flag → office notification BEFORE any NC6 generates.
+function CommissioningSerials({ serials, specifiedInverter, onChange }: {
+  serials: SerialState;
+  specifiedInverter: string;
+  onChange: (updates: Partial<SerialState>) => void;
+}) {
+  const modelsAgree = serials.fittedModel.trim() !== '' &&
+    serials.fittedModel.trim().toLowerCase() === specifiedInverter.trim().toLowerCase();
+  const mismatch = serials.fittedModel.trim() !== '' && !modelsAgree;
+  // A mismatch cannot be confirmed without the why — the note IS the record.
+  const canConfirm = serials.serial.trim() !== '' && serials.fittedModel.trim() !== '' && (!mismatch || serials.note.trim() !== '');
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div>
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-tech" /> Serials off the van — the triple check
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">Feeds NC6 §5 + the warranty pack. Captured once, off the rating plate.</p>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Inverter model AS FITTED (off the rating plate)</Label>
+          <Input
+            value={serials.fittedModel}
+            onChange={e => onChange({ fittedModel: e.target.value, confirmed: false })}
+            placeholder={specifiedInverter}
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Inverter serial number</Label>
+          <Input
+            value={serials.serial}
+            onChange={e => onChange({ serial: e.target.value, confirmed: false })}
+            placeholder="e.g. XB5012345678"
+            className="mt-1 font-mono"
+          />
+        </div>
+        {serials.fittedModel.trim() !== '' && (modelsAgree ? (
+          <div className="rounded-control border border-doc-deposit/40 bg-doc-deposit/10 p-2.5 text-xs">
+            <p className="font-semibold text-doc-deposit flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> Matches the proposal</p>
+            <p className="text-muted-foreground mt-0.5">Proposal specified <strong className="text-foreground">{specifiedInverter}</strong>. NC6 §5 and the protection table will describe what's actually on the wall.</p>
+          </div>
+        ) : (
+          <div className="rounded-control border border-pop/40 bg-pop-subtle p-2.5 text-xs space-y-2">
+            <p className="font-semibold text-pop flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> Doesn't match the proposal</p>
+            <p className="text-muted-foreground">Proposal specified <strong className="text-foreground">{specifiedInverter}</strong>. A substituted inverter makes the NC6 describe kit that isn't on the roof — and a kW change can flip NC6 → NC7, which needs ESB pre-approval. Nothing clears silently.</p>
+            <div>
+              <Label className="text-xs text-muted-foreground">Why — the note rides with the record (required)</Label>
+              <Textarea
+                value={serials.note}
+                onChange={e => onChange({ note: e.target.value })}
+                placeholder='e.g. "SE5K unavailable, fitted SE6K with customer agreement"'
+                className="mt-1 min-h-16 text-sm"
+              />
+            </div>
+          </div>
+        ))}
+        {serials.confirmed ? (
+          <div className={`rounded-control border p-2.5 text-xs font-medium flex items-center gap-1.5 ${serials.mismatchFlagged ? 'border-pop/40 bg-pop-subtle text-pop' : 'border-doc-deposit/40 bg-doc-deposit/10 text-doc-deposit'}`}>
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+            {serials.mismatchFlagged
+              ? 'Recorded as fitted — substitution flagged, note filed with the job record'
+              : 'Confirmed at the gate — every digit checked by you'}
+          </div>
+        ) : (
+          <Button
+            disabled={!canConfirm}
+            onClick={() => {
+              onChange({ confirmed: true, mismatchFlagged: mismatch });
+              toast.success(mismatch ? 'Recorded as fitted — substitution flagged' : 'Serial confirmed — matches the proposal', {
+                description: mismatch
+                  ? 'Flag + note ride with the job record.'
+                  : 'Every digit confirmed by you at the gate.',
+              });
+            }}
+            className={`w-full h-11 text-sm font-semibold text-white disabled:opacity-40 ${mismatch ? 'bg-pop hover:bg-pop/90' : 'bg-tech hover:bg-tech/90'}`}
+          >
+            {mismatch ? 'Record as fitted + flag it' : 'I confirm every digit'}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
