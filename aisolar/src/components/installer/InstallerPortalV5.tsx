@@ -17,6 +17,7 @@
 import { useMemo, useState } from 'react';
 import { AifieldWordmark } from '@/components/brand/AiosMark';
 import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
+import MapPanel from '@/components/field/MapPanel';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -174,53 +175,53 @@ export default function InstallerPortalV5() {
   ];
 
   return (
-    <div className="min-h-dvh bg-background" data-density="comfortable">
-      {/* ── header: slim, cal.com ─────────────────────────────────────────── */}
-      <header className="bg-background/90 backdrop-blur border-b border-border/60 sticky top-0 z-30">
-        <div className="mx-auto max-w-6xl px-4 h-14 flex items-center gap-3">
+    <div className="h-screen flex flex-col bg-background overflow-hidden" data-density="comfortable">
+      {/* ── header: the SAME app-shell as the consultant cockpit (full-bleed,
+           not a centred column) — matched 28 Jul so both apps read as one. ── */}
+      <header className="bg-background border-b flex-shrink-0">
+        <div className="px-4 py-2 flex items-center gap-2">
           <AifieldWordmark className="size-9" />
-          <div className="leading-tight">
-            <span className="font-semibold text-sm">{tb.name}</span>
-            <span className="block text-2xs text-muted-foreground">{new Date().toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-          </div>
+          <span className="font-bold text-sm">{tb.name}</span>
+          <span className="text-xs text-muted-foreground">Installer</span>
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="text-xs h-8 hidden sm:inline-flex" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
-            <Button variant="ghost" size="sm" className="text-xs h-8 hidden sm:inline-flex" onClick={() => navigate('/consultant')}><Users className="h-3.5 w-3.5 mr-1" /> Consultant</Button>
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/consultant')}><Users className="h-3.5 w-3.5 mr-1" /> Consultant</Button>
             <NotificationsBell role="installer" />
             <DarkModeToggle />
           </div>
         </div>
         {/* weather strip — real signal for roof work */}
-        <div className="mx-auto max-w-6xl px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
+        <div className="px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
           <span className="flex items-center gap-1 shrink-0"><Cloud className="h-3 w-3" /> 18°C Dublin</span>
           <span className="flex items-center gap-1 shrink-0 text-doc-proposal"><CloudRain className="h-3 w-3 text-doc-proposal" /> Yellow rain warning tomorrow</span>
           <span className="flex items-center gap-1 shrink-0"><Wind className="h-3 w-3" /> 12 km/h SW</span>
           <span className="flex items-center gap-1 shrink-0"><Sun className="h-3 w-3" /> Sunset 21:47</span>
         </div>
-        {/* tabs */}
-        <div className="mx-auto max-w-6xl px-2 pb-1.5 flex gap-0.5 overflow-x-auto scrollbar-hide">
+        {/* tabs — identical styling to the consultant cockpit */}
+        <div className="flex gap-0.5 px-2 pb-1.5 overflow-x-auto scrollbar-hide">
           {TABS.map(t => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setThreadLead(null); }}
-                className={`flex items-center gap-1.5 px-3 h-9 rounded-control text-xs font-medium shrink-0 transition-colors ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
-                <Icon className="h-3.5 w-3.5" /> {t.label}
-                {!!t.count && <span className={`text-[11px] px-1.5 rounded-full tabular-nums ${active ? 'bg-white/20' : t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
+                className={`flex items-center gap-1.5 px-3 h-control-sm rounded-control text-sm font-medium whitespace-nowrap cursor-pointer transition-colors duration-instant border ${active ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
+                <Icon className="size-3.5" /> {t.label}
+                {!!t.count && <span className={`text-2xs px-1.5 rounded-full tabular-nums ${t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
               </button>
             );
           })}
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 py-4 pb-24 sm:px-4">
+      <main className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 pb-24">
         {/* No AnimatePresence here: its exit got stuck and froze tab content.
             An operator tool switches instantly; the fade earned nothing. */}
         <div key={tab} className="animate-in fade-in duration-150">
 
             {/* ═══ TODAY ═══ */}
             {tab === 'today' && (
-              <div className="space-y-4">
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-6 lg:items-start">
+                <div className="space-y-4">
                 <div className="flex items-baseline gap-3 flex-wrap">
                   <h2 className="text-lg font-semibold tracking-tight">{isToday ? 'Your day' : `Next out: ${dayLabel}`}</h2>
                   <p className="text-sm text-muted-foreground">
@@ -289,6 +290,23 @@ export default function InstallerPortalV5() {
                     No stops scheduled. The scheduler fills this as installs are booked.
                   </div>
                 )}
+                </div>
+                {/* desktop context rail — the day on a map (click for a bigger view) */}
+                {dayJobs.length > 0 && (() => {
+                  const a = dayJobs.map(({ l }) => l.address);
+                  const embed = a.length >= 2
+                    ? `https://maps.google.com/maps?saddr=${encodeURIComponent(a[0])}&daddr=${a.slice(1).map(encodeURIComponent).join('+to:')}&output=embed`
+                    : `https://maps.google.com/maps?q=${encodeURIComponent(a[0])}&z=13&output=embed`;
+                  const full = `https://www.google.com/maps/dir/${a.map(encodeURIComponent).join('/')}`;
+                  return (
+                    <aside className="hidden lg:block">
+                      <div className="sticky top-4">
+                        <MapPanel embedSrc={embed} fullRouteUrl={full} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" />
+                        <p className="mt-2 text-xs text-muted-foreground">Your day on the map. {dayJobs.length > 1 && <button className="text-tech font-medium hover:underline" onClick={() => setTab('map')}>See the smart route →</button>}</p>
+                      </div>
+                    </aside>
+                  );
+                })()}
               </div>
             )}
 
@@ -670,11 +688,7 @@ export default function InstallerPortalV5() {
                       </a>
                     </div>
                   )}
-                  <div className="rounded-panel bg-card shadow-card overflow-hidden">
-                    <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted">
-                      <iframe title="Route map" src={embedSrc} className="w-full h-full border-0" loading="lazy" />
-                    </div>
-                  </div>
+                  <MapPanel embedSrc={embedSrc} fullRouteUrl={fullRouteUrl} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" />
                   <div className="space-y-1.5">
                     {stops.map(({ l, d }, i) => {
                       const dayIdx = byDay.indexOf(new Date(d).toDateString());

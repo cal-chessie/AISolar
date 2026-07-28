@@ -13,6 +13,7 @@
  */
 import { Navigation, ChevronRight, Route as RouteIcon } from 'lucide-react';
 import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
+import MapPanel from '@/components/field/MapPanel';
 
 export interface RouteStop {
   id: string;
@@ -82,13 +83,9 @@ export default function DayRoute({ stops, title, subtitle, onOpen }: {
         </p>
       )}
 
-      {/* Desktop: map + list side by side. Mobile: stacked. */}
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="rounded-panel bg-card shadow-card overflow-hidden lg:order-2 lg:sticky lg:top-4 lg:self-start">
-          <div className="aspect-[16/10] bg-muted">
-            <iframe title="Route map" src={embedSrc} className="w-full h-full border-0" loading="lazy" />
-          </div>
-        </div>
+      {/* Desktop: map + list side by side, map ~70% viewport tall. Mobile: stacked. */}
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_28rem]">
+        <MapPanel embedSrc={embedSrc} fullRouteUrl={fullRouteUrl} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" className="lg:order-2 lg:sticky lg:top-4 lg:self-start" />
         <div className="space-y-1.5 lg:order-1">
           {ordered.map((s, i) => (
             <div key={s.id} className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3">
