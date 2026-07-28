@@ -30,6 +30,9 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
 export interface ChatMessage {
   id: string;
   type: 'system' | 'agent' | 'company' | 'customer' | 'ai';
+  /** For company-side messages: who on the team spoke, so the one shared
+   *  thread labels the field team "Installer" and sales "Consultant". */
+  sender?: 'consultant' | 'installer';
   body: string;
   timestamp: string;
   /** Inline action button — rendered below the message body. */
@@ -61,7 +64,7 @@ export interface ChatMessage {
  * which action buttons are interactive (the customer can pay/sign; the
  * consultant can edit/resend).
  */
-export function buildConversation(lead: DummyLead, opts: { audience?: 'customer' | 'consultant' } = {}): ChatMessage[] {
+export function buildConversation(lead: DummyLead, opts: { audience?: 'customer' | 'consultant' | 'installer' } = {}): ChatMessage[] {
   const msgs: ChatMessage[] = [];
   // The customer must never see engagement tracking ("opened proposal 4×") —
   // that's an internal buying signal for the consultant, and it reads as
@@ -107,10 +110,16 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
         actionLabel: tp.channel === 'email' ? 'View email' : undefined,
         actionIcon: tp.channel === 'email' ? FileText : undefined,
       });
-    } else if (tp.actor === 'consultant') {
+    } else if (tp.actor === 'consultant' || tp.actor === 'installer') {
+      // Company-side voice in the ONE thread. An installer's INBOUND touchpoints
+      // are internal field ops ("uploaded 8 photos") — kept off the homeowner's
+      // view; an installer's OUTBOUND message is a real message to the customer
+      // and reaches everyone. The consultant + installer always see both.
+      if (forCustomer && tp.actor === 'installer' && tp.direction === 'inbound') return;
       msgs.push({
         id: `tp_${i}`,
         type: 'company',
+        sender: tp.actor,
         body: tp.summary,
         timestamp: tp.timestamp,
         actionLabel: tp.channel === 'email' ? 'View email' : undefined,

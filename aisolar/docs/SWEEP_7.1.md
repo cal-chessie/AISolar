@@ -6,6 +6,56 @@
 > Sweep 8. Newest at the top. Tick when landed. Truth-pass applies to Cal's
 > ideas too.
 
+## One centralised conversation — installer inbox = consultant inbox (29 Jul) ✅
+Cal: *"I want the installer's inbox to be the same as the consultant's — and
+carry the same centralised conversation."* Done, by SHARING, not cloning:
+- **`buildConversation(lead)`** (`src/lib/conversation.ts`) is THE one thread per
+  client. Customer portal + consultant + installer all read it. A reply is a
+  **touchpoint on the lead**, tagged with the sender (`consultant` / `installer`),
+  so the field team now has a first-class voice in the same record. An
+  installer's internal ops touchpoints (e.g. "uploaded 8 photos") stay off the
+  homeowner's view; an installer's OUTBOUND message reaches everyone.
+- **`components/shared/MessageBubble.tsx`** — the ONE renderer (rich proposal /
+  contract / install / warranty cards, agent/customer/company bubbles). Extracted
+  from the consultant so both apps draw the thread identically; the label reads
+  "Installer" or "Consultant" from the message's `sender`.
+- **`components/shared/ConversationInbox.tsx`** — the ONE two-pane inbox (search +
+  client list with last-message preview · thread · reply). Installer uses it with
+  `audience="installer"` + Call / Open-job header actions; the consultant keeps
+  its richer chrome (summarise, slide-outs) but shares the same bubble + thread.
+- Truth-pass: NO "delivered / email sent" claim is made — the thread is the shared
+  in-memory record today. **Sweep 8:** persist touchpoints + Supabase Realtime so
+  a reply on one device shows on another (real cross-device centralisation), and
+  wire Postmark for the actual send.
+
+## AIField — the named IA (28 Jul) ✅ "name everything"
+The settled structure, every part named. Two facts kill the old duplication: an
+installer does **ONE install a day**, and **surveys are the consultant's** — so
+Today is *the one job*, not a list, and nothing re-shows "jobs" four ways.
+
+**The 4 tabs** (`InstallerPortalV5.tsx`, `TabId = 'today'|'schedule'|'routing'|'inbox'`):
+| Tab | Its one job | Built as |
+|-----|-------------|----------|
+| **Today** | Today's ONE install, in full — the map layout Cal loves | `ClientHub` (30%) + 70% site `MapPanel` + "View the week's routing" |
+| **Schedule** | The plan ahead — drag an install to another day | the week/fortnight calendar (`+ roster + unscheduled queue = TODO`) |
+| **Routing** | The drive | day route ↔ week eagle view · wholesaler pickup folded in as stop 0 |
+| **Inbox** | Talk to the customer | the shared **`ConversationInbox`** (above) |
+
+**Surfaces (reached FROM tabs, not tabs):**
+- **`ClientHub`** (`components/installer/ClientHub.tsx`) — the ONE client surface:
+  profile · BOM (`computeBOM(lead)`) · message · **Start**. From Today (and, next,
+  Schedule's roster). The anti-duplication keystone.
+- **`JobViewV2`** — the install itself (checklist → commissioning serials +
+  triple-check + coach → handover). Reached by **Start** in the hub. The moat.
+
+**Dissolved / renamed (what the merge killed):**
+- **Materials** tab → gone: BOM into `ClientHub`, van load-out into **Routing**,
+  shelf/ordering into the **Owner** interface.
+- **Jobs** tab → merged into **Schedule** (same information).
+- **Map** → renamed **Routing** (purpose now unambiguous: the drive).
+- **Surveys** → gone from the installer entirely (consultant's world).
+- Full spec: [`docs/AIFIELD_IA.md`](AIFIELD_IA.md).
+
 ## .note — agents plan the schedule ahead (28 Jul) · LOGIC BUILT
 Agents plan the best route/schedule ahead of time, for BOTH sides:
 - **Consultant — a WEEK ahead:** batch the week's booked surveys geographically
@@ -52,6 +102,10 @@ Refines the scheduling note above.
 ## AIField family transform (from AIFIELD_BUILD_PLAN v1.1 — carried here)
 - Installer app-shell now MATCHES the consultant (full-bleed header, same tab
   styling, content uses width, Today two-column, 70vh maps, MapPanel expand). ✅
-- STILL OPEN: installer **Inbox → the consultant two-pane inbox** (Cal's ask).
+- Installer **Inbox → the consultant two-pane inbox + one centralised
+  conversation** (Cal's ask). ✅ (shared `ConversationInbox` + `MessageBubble` +
+  `buildConversation` — see top section, 29 Jul).
+- STILL OPEN: **Schedule** roster + unscheduled queue (drag calendar is in;
+  the full client roster below it → opens `ClientHub` is not).
 - STILL OPEN: JobViewV2 chrome family pass (doc-colour semantics over the
   generic greens; the moat works, the skin lags).

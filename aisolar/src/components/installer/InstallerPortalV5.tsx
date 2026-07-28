@@ -19,6 +19,7 @@ import { AifieldWordmark } from '@/components/brand/AiosMark';
 import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
 import MapPanel from '@/components/field/MapPanel';
 import ClientHub from '@/components/installer/ClientHub';
+import ConversationInbox from '@/components/shared/ConversationInbox';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,7 +29,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Wrench, Sun, MapPin, ArrowRight, Package, Cloud, CloudRain, Wind,
   Calendar, Camera, CheckCircle2, AlertTriangle, Navigation, Building2,
-  Users, ChevronRight, ClipboardList, MessageSquare, Send, Play, Phone,
+  Users, ChevronRight, ClipboardList, MessageSquare, Play, Phone,
   CalendarClock,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
@@ -38,8 +39,6 @@ import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 
 type TabId = 'today' | 'schedule' | 'routing' | 'inbox';
-
-interface Msg { from: 'customer' | 'installer' | 'system'; text: string; at: string }
 
 const navUrl = (address: string) =>
   `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -58,11 +57,27 @@ const DAY_TONE = ['bg-tech', 'bg-doc-deposit', 'bg-doc-proposal', 'bg-pop', 'bg-
 export default function InstallerPortalV5() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [tab, setTab] = useState<TabId>('today');
-  const [threadLead, setThreadLead] = useState<DummyLead | null>(null);
-  const [reply, setReply] = useState('');
-  const [localMsgs, setLocalMsgs] = useState<Record<string, Msg[]>>({});
+  // The inbox selection is by id so the thread stays live as touchpoints append.
+  const [threadLeadId, setThreadLeadId] = useState<string | null>(null);
+
+  /** Append a message to the client's ONE conversation (a touchpoint on the
+   *  lead), so it shows in the consultant + customer threads too — same record.
+   *  Real send (Postmark) + cross-device sync is the Sweep 8 wire-up. */
+  const appendTouchpoint = (leadId: string, t: { actor: 'installer' | 'system'; summary: string; direction?: 'inbound' | 'outbound' }) => {
+    setLeads(prev => prev.map(l => l.id === leadId ? {
+      ...l,
+      touchpoints: [...l.touchpoints, {
+        stage: l.workflow_stage,
+        channel: 'portal' as const,
+        direction: t.direction ?? 'outbound',
+        summary: t.summary,
+        timestamp: new Date().toISOString(),
+        actor: t.actor,
+      }],
+    } : l));
+  };
   // Week view: drag-and-drop reschedules live here (assignment table at launch)
   const [scheduleOverride, setScheduleOverride] = useState<Record<string, string>>({});
   const [dragId, setDragId] = useState<string | null>(null);
@@ -122,31 +137,15 @@ export default function InstallerPortalV5() {
     setScheduleOverride(prev => ({ ...prev, [lead.id]: dst.toISOString() }));
     const fmt = (d: Date) => d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' });
     const msg = `Hi ${lead.name.split(' ')[0]} — we've moved your ${lead.workflow_stage.includes('survey') ? 'survey' : 'installation'} from ${fmt(src)} to ${fmt(dst)} at ${src.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}. Why: ${moveReason.toLowerCase()}.${moveNote.trim() ? ` ${moveNote.trim()}` : ''} Everything else stays the same — reply here if the new day doesn't suit and we'll sort it.`;
-    setLocalMsgs(prev => ({ ...prev, [lead.id]: [...(prev[lead.id] ?? []), { from: 'system', text: msg, at: new Date().toISOString() }] }));
-    toast.success(`${lead.name.split(' ')[0]} notified of the move`, { description: `Rescheduled to ${fmt(dst)} — reason sent to their portal + email.` });
+    appendTouchpoint(lead.id, { actor: 'system', summary: msg });
+    toast.success(`Moved to ${fmt(dst)}`, { description: `The reason is on ${lead.name.split(' ')[0]}'s conversation. Real send lands with messaging wire-up.` });
     setPendingMove(null); setMoveReason(null); setMoveNote('');
   };
 
-  const sendReply = (lead: DummyLead) => {
-    if (!reply.trim()) return;
-    setLocalMsgs(prev => ({
-      ...prev,
-      [lead.id]: [...(prev[lead.id] ?? []), { from: 'installer', text: reply.trim(), at: new Date().toISOString() }],
-    }));
-    setReply('');
-    toast.success('Sent to the customer', { description: 'Delivered to their portal thread + email notification.' });
-  };
-
-  /** Thread = comms touchpoints + local messages. */
-  const threadFor = (lead: DummyLead): Msg[] => {
-    const fromTouchpoints: Msg[] = lead.touchpoints
-      .filter(tp => ['email', 'portal', 'phone'].includes(tp.channel))
-      .map(tp => ({
-        from: tp.direction === 'inbound' ? 'customer' as const : 'system' as const,
-        text: tp.summary ?? '',
-        at: tp.timestamp,
-      }));
-    return [...fromTouchpoints, ...(localMsgs[lead.id] ?? [])];
+  /** The installer's reply — an OUTBOUND installer touchpoint, i.e. part of the
+   *  ONE centralised thread (same as the consultant's reply). No send claimed. */
+  const sendReply = (lead: DummyLead, text: string) => {
+    appendTouchpoint(lead.id, { actor: 'installer', summary: text });
   };
 
   const TABS: Array<{ id: TabId; label: string; icon: typeof Sun; count?: number }> = [
@@ -185,7 +184,7 @@ export default function InstallerPortalV5() {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setThreadLead(null); }}
+              <button key={t.id} onClick={() => { setTab(t.id); setThreadLeadId(null); }}
                 className={`flex items-center gap-1.5 px-4 h-control rounded-control text-[15px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-instant border ${active ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
                 <Icon className="size-4" /> {t.label}
                 {!!t.count && <span className={`text-2xs px-1.5 rounded-full tabular-nums ${t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
@@ -214,7 +213,7 @@ export default function InstallerPortalV5() {
                   </div>
                   {nextInstall ? (
                     <div className="grid gap-3 lg:grid-cols-[3fr_7fr] lg:items-start">
-                      <div className="lg:order-1"><ClientHub lead={nextInstall} dateLabel={isToday ? 'today' : dayLabel} onStart={() => navigate(`/job/${nextInstall.id}`)} onMessage={() => { setTab('inbox'); setThreadLead(nextInstall); }} /></div>
+                      <div className="lg:order-1"><ClientHub lead={nextInstall} dateLabel={isToday ? 'today' : dayLabel} onStart={() => navigate(`/job/${nextInstall.id}`)} onMessage={() => { setTab('inbox'); setThreadLeadId(nextInstall.id); }} /></div>
                       <MapPanel embedSrc={embed} fullRouteUrl={navUrl(nextInstall.address)} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" className="lg:order-2 lg:sticky lg:top-4 lg:self-start" />
                     </div>
                   ) : (
@@ -287,71 +286,26 @@ export default function InstallerPortalV5() {
               );
             })()}
 
-            {/* ═══ INBOX ═══ */}
+            {/* ═══ INBOX — the SAME component + the SAME centralised conversation
+                 as the consultant (Cal, 28 Jul). One thread per client; a reply
+                 here is an installer touchpoint on that one record. ═══ */}
             {tab === 'inbox' && (
-              <div className="grid lg:grid-cols-[minmax(240px,1fr)_2fr] gap-3 items-start">
-                {/* job list */}
-                <div className={`space-y-1.5 ${threadLead ? 'hidden lg:block' : ''}`}>
-                  {inboxJobs.map(l => {
-                    const th = threadFor(l);
-                    const last = th[th.length - 1];
-                    return (
-                      <button key={l.id} onClick={() => setThreadLead(l)}
-                        className={`w-full rounded-panel p-3 text-left transition-colors ${threadLead?.id === l.id ? 'bg-primary/5 shadow-card' : 'bg-card shadow-card hover:bg-muted/50'}`}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{l.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                          <span className="text-sm font-medium truncate flex-1">{l.name}</span>
-                          <span className="text-2xs text-muted-foreground">{getStage(l.workflow_stage)?.label}</span>
-                        </div>
-                        {last && <p className="mt-1 text-xs text-muted-foreground truncate">{last.text}</p>}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* thread */}
-                {threadLead ? (
-                  <div className="rounded-panel bg-card shadow-card flex flex-col min-h-[24rem] max-h-[calc(100dvh-16rem)]">
-                    <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border shrink-0">
-                      <button className="lg:hidden text-muted-foreground" onClick={() => setThreadLead(null)} aria-label="Back">←</button>
-                      <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{threadLead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                      <div className="leading-tight min-w-0">
-                        <p className="text-sm font-semibold truncate">{threadLead.name}</p>
-                        <p className="text-2xs text-muted-foreground truncate">{threadLead.address}</p>
-                      </div>
-                      <div className="ml-auto flex items-center gap-1">
-                        <a href={`tel:${threadLead.phone ?? ''}`} className="inline-grid place-items-center size-8 rounded-control hover:bg-muted" aria-label="Call"><Phone className="size-4" /></a>
-                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate(`/job/${threadLead.id}`)}>Open job</Button>
-                      </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto scroll-slim p-4 space-y-2.5">
-                      {threadFor(threadLead).map((m, i) => (
-                        <div key={i} className={`max-w-[85%] rounded-panel px-3 py-2 text-sm leading-body ${m.from === 'customer' ? 'bg-muted mr-auto' : m.from === 'installer' ? 'bg-primary text-primary-foreground ml-auto' : 'bg-tech/10 text-foreground ml-auto'}`}>
-                          {m.from === 'system' && <p className="label-micro mb-0.5 text-tech">auto · {tb.name}</p>}
-                          {m.text}
-                        </div>
-                      ))}
-                      {threadFor(threadLead).length === 0 && <p className="text-xs text-muted-foreground text-center py-6">No messages yet — say hello before you arrive.</p>}
-                    </div>
-                    <div className="border-t border-border p-3 flex items-center gap-2 shrink-0">
-                      <input
-                        value={reply}
-                        onChange={e => setReply(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && sendReply(threadLead)}
-                        placeholder={`Message ${threadLead.name.split(' ')[0]}…`}
-                        className="flex-1 h-10 rounded-control border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25"
-                      />
-                      <Button size="sm" className="h-10" onClick={() => sendReply(threadLead)} disabled={!reply.trim()}>
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="hidden lg:grid rounded-panel bg-card shadow-card min-h-[24rem] place-items-center text-sm text-muted-foreground">
-                    Pick a customer to open the thread
-                  </div>
+              <ConversationInbox
+                leads={inboxJobs}
+                selectedId={threadLeadId}
+                onSelect={l => setThreadLeadId(l.id)}
+                onBack={() => setThreadLeadId(null)}
+                onReply={(l, text) => sendReply(l, text)}
+                audience="installer"
+                emptyThreadHint="No messages yet — say hello before you arrive."
+                onAction={l => navigate(`/job/${l.id}`)}
+                headerActions={l => (
+                  <>
+                    <a href={`tel:${l.phone ?? ''}`} className="inline-grid place-items-center size-8 rounded-control hover:bg-muted" aria-label="Call"><Phone className="size-4" /></a>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate(`/job/${l.id}`)}>Open job</Button>
+                  </>
                 )}
-              </div>
+              />
             )}
 
             {/* ═══ MAP — jobs + supplier collection + compliance, ONE screen.
