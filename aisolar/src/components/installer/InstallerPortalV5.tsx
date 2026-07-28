@@ -254,31 +254,35 @@ export default function InstallerPortalV5() {
                             {l.proposal && <span className="text-xs text-muted-foreground">{l.proposal.system_size_kw} kWp · {l.proposal.panel_count} panels{l.proposal.battery_model ? ' + battery' : ''}</span>}
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5 truncate flex items-center gap-1"><MapPin className="h-3.5 w-3.5 shrink-0" /> {l.address}</p>
-                          <div className="mt-3 flex items-center gap-2 flex-wrap">
+                          {/* ONE tight row: prominent primary + compact icon
+                              actions (field-app standard). Was a 2x2 block of
+                              giant buttons eating the whole screen on mobile. */}
+                          <div className="mt-3 flex items-center gap-2">
                             {started ? (
-                              <>
-                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Job started</span>
-                                {!isSurvey && (
-                                  <Button size="sm" className="h-9 bg-tech text-white hover:bg-tech/90" onClick={() => navigate(`/job/${l.id}`)}>
-                                    <Wrench className="h-3.5 w-3.5 mr-1" /> Run the install
-                                  </Button>
-                                )}
-                              </>
+                              !isSurvey ? (
+                                <Button size="sm" className="flex-1 h-10 bg-tech text-white hover:bg-tech/90" onClick={() => navigate(`/job/${l.id}`)}>
+                                  <Wrench className="h-4 w-4 mr-1.5" /> Run the install
+                                </Button>
+                              ) : (
+                                <span className="flex-1 inline-flex items-center gap-1.5 text-sm font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — on site</span>
+                              )
                             ) : (
-                              <Button size="sm" className="h-9 bg-primary text-primary-foreground hover:opacity-90 transition-opacity" onClick={() => startJob(l)}>
-                                <Play className="h-3.5 w-3.5 mr-1" /> Start job
+                              <Button size="sm" className="flex-1 h-10 bg-primary text-primary-foreground hover:opacity-90 transition-opacity" onClick={() => startJob(l)}>
+                                <Play className="h-4 w-4 mr-1.5" /> Start job
                               </Button>
                             )}
-                            <a href={navUrl(l.address)} target="_blank" rel="noreferrer"
-                              className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-background px-3 text-xs font-medium hover:bg-muted transition-colors">
-                              <Navigation className="h-3.5 w-3.5 text-tech" /> Navigate
+                            <a href={navUrl(l.address)} target="_blank" rel="noreferrer" aria-label="Navigate"
+                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
+                              <Navigation className="h-4 w-4 text-tech" />
                             </a>
-                            <Button variant="outline" size="sm" className="h-9" onClick={() => { setTab('inbox'); setThreadLead(l); }}>
-                              <MessageSquare className="h-3.5 w-3.5 mr-1" /> Message
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-9" onClick={() => navigate(`/job/${l.id}`)}>
-                              <ClipboardList className="h-3.5 w-3.5 mr-1" /> Open job
-                            </Button>
+                            <button aria-label="Message" onClick={() => { setTab('inbox'); setThreadLead(l); }}
+                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
+                              <MessageSquare className="h-4 w-4" />
+                            </button>
+                            <button aria-label="Open job" onClick={() => navigate(`/job/${l.id}`)}
+                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
+                              <ClipboardList className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       </div>
