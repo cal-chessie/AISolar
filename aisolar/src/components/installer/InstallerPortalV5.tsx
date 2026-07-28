@@ -241,7 +241,7 @@ export default function InstallerPortalV5() {
                           <div className="mt-3 flex items-center gap-2 flex-wrap">
                             {started ? (
                               <>
-                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — customer notified</span>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Job started</span>
                                 {!isSurvey && (
                                   <Button size="sm" className="h-9 bg-tech text-white hover:bg-tech/90" onClick={() => navigate(`/job/${l.id}`)}>
                                     <Wrench className="h-3.5 w-3.5 mr-1" /> Run the install

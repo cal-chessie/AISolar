@@ -95,6 +95,56 @@ Needs REAL wiring for Sweep 8 (currently local/toast-only):
 - **Analytics time-range buttons** (7d/30d/90d/all) — state exists but demo dataset ignores range; wire `created_at` filters when real queries land.
 - **CeoWindow "Download report" / KPI exports** — works on demo data; point at the same real queries when wired.
 
+## LANE AUDIT — 28 Jul pre-migration pass (Claude, full run-through, code-verified)
+
+**Verified GREEN in code (don't re-litigate):**
+- `status: "draft" // CRITICAL: never auto-send` — real, in agent-drain (proposal path).
+- Idempotency on every agent (existing-side-effect checks before acting).
+- **LLM daily cost cap real**: `_shared/llm.ts` pre-flight daily-spend check
+  (default $5/day, `daily_cost_cap_usd` in ai_config), per-run cost recorded
+  on agent_runs. Budget guardrail ✓.
+- Kernel-side brakes live (separate DB): llm_budget_cap / outbound_approval_gate
+  / loop_ceiling policies + ApprovalRequested/Resolved event types registered.
+- 24h dedupe at ingest-lead; extract-bill-data auth + `persisted:boolean` honesty.
+
+**FIXED this pass (truth-pass violations that were shipping):**
+- `agents.ts` grant agent said "submits when complete" → now "prepares the
+  pack — submission stays with a human (SEAI has no public API)" + explicit
+  guardrail line. (This description feeds the PUBLIC /agents page.)
+- OwnerCockpit "Invite sent" badges ×2 → "Invite queued" (nothing sends yet).
+- InstallerPortalV5 "Started — customer notified" → "Job started" (the
+  auto-notify does not exist yet — it is the Part A flywheel wire below).
+
+**FILED (wire in Sweep 8, don't cosmetically patch):**
+- [ ] Start-job → REAL customer notify (email+magic link) — then the honest
+      copy earns back "customer notified".
+- [ ] SystemSettingsV2 Twilio/WhatsApp integration cards: acceptable as config
+      placeholders ONLY if they render an explicit "Not connected" state at
+      launch; verify before cohort (truth-pass: no SMS/WA claims while dark).
+- [ ] `kernelVocabulary.ts` (NEW, src/lib) is the naming contract — Sweep 8's
+      emit edge fn consumes it verbatim; payload shapes for the AIField moments
+      (InstallStepCompleted / InverterConnected / SignOffCaptured) are defined
+      there refs-only (signature/note → hash, artifact stays app-side).
+
+**SELF-HEAL · REPORT · LOG · IMPROVE — the layer spec (Cal, 28 Jul):**
+Principle (constitutional): *self-healing ACTS, self-reporting LOGS,
+self-improvement PROPOSES — humans approve.* Draft-first applies to the system
+improving itself exactly as to outbound email.
+1. **Agent layer** — corrections ("Wrong" buttons) → `agent_corrections` table
+   (agent, run_ref, context, fix) → weekly OWNER report ("what the agents
+   learned / where they're corrected most") → proposed prompt/rule revisions
+   ride AgentTraining's EXISTING versioned prompts as DRAFTS → owner approves
+   → version bump. Cross-tenant aggregation via kernel refs-only (the moat).
+2. **Runtime layer** — agent_runs failure classification + bounded auto-retry
+   (idempotent by design), stuck-sweeper (exists) reports weekly instead of
+   silently sweeping; Sentry on edge fns; `EscalationRaised` (registered) when
+   self-heal gives up — nothing fails silently, ever.
+3. **App layer** — ErrorBoundary → structured error report (component, route,
+   tenant) instead of today's silent catch; /health endpoint for uptime cron
+   → #monitoring (SLACK_OPS).
+4. **Kernel layer (post-Gate B)** — prompt-version activations emit
+   ApprovalRequested/Resolved; the improvement history becomes chain-recorded.
+
 ### AIField install runner — `installer/InstallRunner.tsx` (built 27 Jul, screens 3–6)
 Staged gated checklist (pre-install→roof→electrical→commissioning→handover),
 photo-slot evidence pack, serial capture + TRIPLE CHECK (fitted vs proposal,

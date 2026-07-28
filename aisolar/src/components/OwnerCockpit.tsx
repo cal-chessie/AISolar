@@ -643,7 +643,7 @@ function ConsultantsView({ consultants, navigate }: { consultants: any[]; naviga
               <Avatar className="h-12 w-12"><AvatarFallback>{c.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
                 <div className="font-bold flex items-center gap-2">{c.name}
-                  {c.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite sent</span>}
+                  {c.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite queued</span>}
                 </div>
                 <div className="text-xs text-muted-foreground">{c.activeLeads} active · {c.hotLeads} hot</div>
                 <div className="text-sm font-bold text-primary mt-1">{eur(c.pipelineValue)}</div>
@@ -717,7 +717,7 @@ function InstallersView({ installers, navigate }: { installers: any[]; navigate:
               <Avatar className="h-12 w-12"><AvatarFallback>{i.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
               <div className="flex-1">
                 <div className="font-bold flex items-center gap-2">{i.name}
-                  {i.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite sent</span>}
+                  {i.invited && <span className="text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">Invite queued</span>}
                 </div>
                 <div className="text-xs text-muted-foreground">{i.activeJobs} active · {i.completedJobs} completed</div>
               </div>
