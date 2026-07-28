@@ -6,6 +6,14 @@
  * FORTNIGHT out (1/day, sequence so consecutive days are geographically
  * adjacent — never crisscross the county from a home base).
  *
+ * VAN CAPACITY / RESTOCK (Cal, 28 Jul .note → 7.1): a van typically holds ~2
+ * days of gear, so the installer plan is NOT per-day-from-home — the agent
+ * optimises the whole fortnight as home ↔ warehouse/wholesaler ↔ jobs ↔ home
+ * with a RESTOCK stop every ~2 days, minimising total driving incl. reloads.
+ * Extension points (Sweep 8): PlanOptions.restockEveryDays + a depot/warehouse
+ * position; the current core is the rigid per-capacity slice — the restock
+ * layer wraps it. Kept a comment, not half-built code (no leftover junk).
+ *
  * One engine, two configs — order the jobs into the shortest path from HOME
  * (reusing the route solver), then slice that path into working days by
  * capacity. Because the path is geographically coherent, each day's jobs sit

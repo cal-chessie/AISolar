@@ -29,6 +29,26 @@ Agents plan the best route/schedule ahead of time, for BOTH sides:
   consultant's HOME ADDRESS captured in settings. Live-launch swaps the
   gazetteer/haversine cost for the Google Distance Matrix (real drive time).
 
+### .note — van capacity + the OWNER interface for scheduling (28 Jul)
+Refines the scheduling note above.
+- **Van holds ~2 days of gear → restock cadence.** The installer fortnight plan
+  optimises the WHOLE route: home ↔ warehouse/wholesaler ↔ jobs ↔ home, with a
+  restock stop every ~2 days (not daily). The agent finds the best path incl.
+  the reload trips — vehicle routing WITH replenishment. Extension points wired
+  in `scheduling.ts` comment (restockEveryDays + depot position; Sweep 8).
+- **Put the logic in the OWNER interface:**
+  - Owner Settings holds **every employee's HOME address** (installers +
+    consultants) + the **warehouse / wholesaler addresses**. The agents do the
+    rest — compute survey routes + install schedules automatically from these.
+  - **Agent transparency (trust through explainability):** the owner can CLICK
+    an agent and SEE HOW IT'S PROGRAMMED — the route it chose, WHY, and the
+    SAVINGS it's producing (km / min / €). **View-first** — not necessarily
+    editable; the point is the owner watches the agent think and sees its value.
+    (This is the opposite of a black box — the exact trust move the whole kernel
+    thesis rests on: verify, don't trust.)
+  - Ties to: the home-address capture is the same Settings pass as the compliance
+    company details; agent-transparency belongs beside the agent console.
+
 ## AIField family transform (from AIFIELD_BUILD_PLAN v1.1 — carried here)
 - Installer app-shell now MATCHES the consultant (full-bleed header, same tab
   styling, content uses width, Today two-column, 70vh maps, MapPanel expand). ✅
