@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { AifieldWordmark } from '@/components/brand/AiosMark';
 import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
 import MapPanel from '@/components/field/MapPanel';
+import ClientHub from '@/components/installer/ClientHub';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +37,7 @@ import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 
-type TabId = 'today' | 'week' | 'jobs' | 'inbox' | 'materials' | 'map';
+type TabId = 'today' | 'schedule' | 'routing' | 'inbox';
 
 interface Msg { from: 'customer' | 'installer' | 'system'; text: string; at: string }
 
@@ -59,10 +60,6 @@ export default function InstallerPortalV5() {
   const navigate = useNavigate();
   const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
   const [tab, setTab] = useState<TabId>('today');
-  const [jobSubTab, setJobSubTab] = useState<'active' | 'completed'>('active');
-  const [matSubTab, setMatSubTab] = useState<'per_customer' | 'stock'>('per_customer');
-  const [expandedJob, setExpandedJob] = useState<string | null>(null);
-  const [startedJobs, setStartedJobs] = useState<Set<string>>(new Set());
   const [threadLead, setThreadLead] = useState<DummyLead | null>(null);
   const [reply, setReply] = useState('');
   const [localMsgs, setLocalMsgs] = useState<Record<string, Msg[]>>({});
@@ -79,11 +76,10 @@ export default function InstallerPortalV5() {
   // ── job pools ────────────────────────────────────────────────────────────
   const activeJobs = useMemo(() => leads.filter(l => l.assignment && ['install_scheduled', 'installing'].includes(l.workflow_stage)), [leads]);
   const completedJobs = useMemo(() => leads.filter(l => l.assignment && l.assignment.status === 'completed'), [leads]);
-  const surveyJobs = useMemo(() => leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage)), [leads]);
   const handoverJobs = useMemo(() => leads.filter(l => l.workflow_stage === 'installed'), [leads]);
-  const displayActive = [...surveyJobs, ...activeJobs, ...handoverJobs];
+  const displayActive = [...activeJobs, ...handoverJobs]; // installs only — surveys are the consultant's
   // Dedupe: a job can sit in two pools (e.g. installed + completed) — one thread each.
-  const inboxJobs = [...new Map([...surveyJobs, ...activeJobs, ...handoverJobs, ...completedJobs].map(l => [l.id, l])).values()];
+  const inboxJobs = [...new Map([...activeJobs, ...handoverJobs, ...completedJobs].map(l => [l.id, l])).values()];
 
   /** Scheduled date with any drag-and-drop move applied. */
   const effDate = (l: DummyLead): string | undefined =>
@@ -108,18 +104,6 @@ export default function InstallerPortalV5() {
     };
   }, [displayActive, scheduleOverride]);
 
-  // ── start job → the system messages the client ──────────────────────────
-  const startJob = (lead: DummyLead) => {
-    setStartedJobs(prev => new Set(prev).add(lead.id));
-    const msg = `Hi ${lead.name.split(' ')[0]} — great news, your ${lead.workflow_stage.includes('survey') ? 'survey' : 'installation'} team is on the way. Before we arrive: please keep driveway access clear, unlock attic access if you have it, and keep pets indoors while we work. Looking forward to getting your system ${lead.workflow_stage.includes('survey') ? 'measured up' : 'live'}!`;
-    setLocalMsgs(prev => ({
-      ...prev,
-      [lead.id]: [...(prev[lead.id] ?? []), { from: 'system', text: msg, at: new Date().toISOString() }],
-    }));
-    toast.success(`${lead.name.split(' ')[0]} has been messaged`, {
-      description: 'Arrival notice + prep steps sent to their portal and email.',
-    });
-  };
 
   const MOVE_REASONS = [
     'Weather warning on your original day — roofs and rain don\'t mix',
@@ -166,12 +150,10 @@ export default function InstallerPortalV5() {
   };
 
   const TABS: Array<{ id: TabId; label: string; icon: typeof Sun; count?: number }> = [
-    { id: 'today', label: 'Today', icon: CalendarClock, count: dayJobs.length },
-    { id: 'week', label: 'Week', icon: Calendar },
-    { id: 'jobs', label: 'Jobs', icon: Wrench, count: displayActive.length },
+    { id: 'today', label: 'Today', icon: CalendarClock },
+    { id: 'schedule', label: 'Schedule', icon: Calendar, count: displayActive.length },
+    { id: 'routing', label: 'Routing', icon: MapPin },
     { id: 'inbox', label: 'Inbox', icon: MessageSquare, count: inboxJobs.length },
-    { id: 'materials', label: 'Materials', icon: Package },
-    { id: 'map', label: 'Map', icon: MapPin, count: dayJobs.length },
   ];
 
   return (
@@ -218,104 +200,32 @@ export default function InstallerPortalV5() {
             An operator tool switches instantly; the fade earned nothing. */}
         <div key={tab} className="animate-in fade-in duration-150">
 
-            {/* ═══ TODAY ═══ */}
-            {tab === 'today' && (
-              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-6 lg:items-start">
-                <div className="space-y-4">
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <h2 className="text-lg font-semibold tracking-tight">{isToday ? 'Your day' : `Next out: ${dayLabel}`}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {dayJobs.length === 0 ? 'Nothing scheduled — check Jobs for open work.' :
-                      <><strong className="text-foreground">{dayJobs.length}</strong> {dayJobs.length === 1 ? 'stop' : 'stops'}{isToday ? ' today' : ''} · first at <strong className="text-foreground">{new Date(dayJobs[0].d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</strong></>}
-                  </p>
-                  {dayJobs.length > 1 && (
-                    <a className="ml-auto text-xs font-medium text-tech hover:underline underline-offset-4 cursor-pointer" onClick={() => setTab('map')}>
-                      View route <ArrowRight className="inline size-3" />
-                    </a>
+            {/* ═══ TODAY — the one install, in full (client hub + map) ═══ */}
+            {tab === 'today' && (() => {
+              const nextInstall = dayJobs[0]?.l;
+              const embed = nextInstall
+                ? `https://maps.google.com/maps?q=${encodeURIComponent(nextInstall.address)}&z=14&output=embed`
+                : 'https://maps.google.com/maps?q=Dublin,Ireland&t=m&z=11&output=embed';
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <h2 className="text-lg font-semibold tracking-tight">{isToday ? "Today's install" : `Next install · ${dayLabel}`}</h2>
+                    {nextInstall && <button className="ml-auto text-xs font-medium text-tech hover:underline underline-offset-4" onClick={() => setTab('routing')}>View the week's routing <ArrowRight className="inline size-3" /></button>}
+                  </div>
+                  {nextInstall ? (
+                    <div className="grid gap-3 lg:grid-cols-[3fr_7fr] lg:items-start">
+                      <div className="lg:order-1"><ClientHub lead={nextInstall} dateLabel={isToday ? 'today' : dayLabel} onStart={() => navigate(`/job/${nextInstall.id}`)} onMessage={() => { setTab('inbox'); setThreadLead(nextInstall); }} /></div>
+                      <MapPanel embedSrc={embed} fullRouteUrl={navUrl(nextInstall.address)} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" className="lg:order-2 lg:sticky lg:top-4 lg:self-start" />
+                    </div>
+                  ) : (
+                    <div className="rounded-panel bg-card shadow-card p-8 text-center text-sm text-muted-foreground">No install scheduled. The agent fills this as installs are booked.</div>
                   )}
                 </div>
-
-                {dayJobs.map(({ l, d }, i) => {
-                  const started = startedJobs.has(l.id);
-                  const isSurvey = l.workflow_stage.includes('survey');
-                  return (
-                    <div key={l.id} className={`rounded-panel bg-card shadow-card border-l-4 ${isToday ? 'border-l-pop' : 'border-l-tech'} p-4`}>
-                      <div className="flex items-start gap-3">
-                        <div className="text-center shrink-0 w-12">
-                          <p className="text-sm font-semibold tabular-nums">{new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</p>
-                          <p className="label-micro mt-0.5">stop {i + 1}</p>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold">{l.name}</span>
-                            <Badge variant="outline" className={`text-[11px] ${isSurvey ? 'bg-tech/10 text-tech border-tech/30' : 'bg-primary/10 text-primary border-primary/30'}`}>
-                              {isSurvey ? <><Camera className="h-3 w-3 mr-0.5" /> Survey</> : <><Wrench className="h-3 w-3 mr-0.5" /> Install</>}
-                            </Badge>
-                            {l.proposal && <span className="text-xs text-muted-foreground">{l.proposal.system_size_kw} kWp · {l.proposal.panel_count} panels{l.proposal.battery_model ? ' + battery' : ''}</span>}
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-0.5 truncate flex items-center gap-1"><MapPin className="h-3.5 w-3.5 shrink-0" /> {l.address}</p>
-                          {/* ONE tight row: prominent primary + compact icon
-                              actions (field-app standard). Was a 2x2 block of
-                              giant buttons eating the whole screen on mobile. */}
-                          <div className="mt-3 flex items-center gap-2">
-                            {started ? (
-                              !isSurvey ? (
-                                <Button size="sm" className="flex-1 h-10 bg-tech text-white hover:bg-tech/90" onClick={() => navigate(`/job/${l.id}`)}>
-                                  <Wrench className="h-4 w-4 mr-1.5" /> Run the install
-                                </Button>
-                              ) : (
-                                <span className="flex-1 inline-flex items-center gap-1.5 text-sm font-medium text-doc-deposit"><CheckCircle2 className="size-4" /> Started — on site</span>
-                              )
-                            ) : (
-                              <Button size="sm" className="flex-1 h-10 bg-primary text-primary-foreground hover:opacity-90 transition-opacity" onClick={() => startJob(l)}>
-                                <Play className="h-4 w-4 mr-1.5" /> Start job
-                              </Button>
-                            )}
-                            <a href={navUrl(l.address)} target="_blank" rel="noreferrer" aria-label="Navigate"
-                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
-                              <Navigation className="h-4 w-4 text-tech" />
-                            </a>
-                            <button aria-label="Message" onClick={() => { setTab('inbox'); setThreadLead(l); }}
-                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
-                              <MessageSquare className="h-4 w-4" />
-                            </button>
-                            <button aria-label="Open job" onClick={() => navigate(`/job/${l.id}`)}
-                              className="size-10 grid place-items-center rounded-control border border-border bg-background hover:bg-muted transition-colors shrink-0">
-                              <ClipboardList className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {dayJobs.length === 0 && (
-                  <div className="rounded-panel bg-card shadow-card p-8 text-center text-sm text-muted-foreground">
-                    No stops scheduled. The scheduler fills this as installs are booked.
-                  </div>
-                )}
-                </div>
-                {/* desktop context rail — the day on a map (click for a bigger view) */}
-                {dayJobs.length > 0 && (() => {
-                  const a = dayJobs.map(({ l }) => l.address);
-                  const embed = a.length >= 2
-                    ? `https://maps.google.com/maps?saddr=${encodeURIComponent(a[0])}&daddr=${a.slice(1).map(encodeURIComponent).join('+to:')}&output=embed`
-                    : `https://maps.google.com/maps?q=${encodeURIComponent(a[0])}&z=13&output=embed`;
-                  const full = `https://www.google.com/maps/dir/${a.map(encodeURIComponent).join('/')}`;
-                  return (
-                    <aside className="hidden lg:block">
-                      <div className="sticky top-4">
-                        <MapPanel embedSrc={embed} fullRouteUrl={full} aspect="aspect-[4/3] lg:aspect-auto lg:h-[70vh]" />
-                        <p className="mt-2 text-xs text-muted-foreground">Your day on the map. {dayJobs.length > 1 && <button className="text-tech font-medium hover:underline" onClick={() => setTab('map')}>See the smart route →</button>}</p>
-                      </div>
-                    </aside>
-                  );
-                })()}
-              </div>
-            )}
+              );
+            })()}
 
             {/* ═══ WEEK — drag a job to another day; the customer hears why ═══ */}
-            {tab === 'week' && (() => {
+            {tab === 'schedule' && (() => {
               const days = Array.from({ length: 7 }, (_, i) => {
                 const d = new Date(); d.setDate(d.getDate() + i); d.setHours(0, 0, 0, 0);
                 return d;
@@ -376,39 +286,6 @@ export default function InstallerPortalV5() {
                 </div>
               );
             })()}
-
-            {/* ═══ JOBS ═══ */}
-            {tab === 'jobs' && (
-              <div className="space-y-3">
-                <div className="flex gap-1">
-                  <button onClick={() => setJobSubTab('active')}
-                    className={`px-3 h-9 rounded-control text-xs font-medium ${jobSubTab === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                    Active ({displayActive.length})
-                  </button>
-                  <button onClick={() => setJobSubTab('completed')}
-                    className={`px-3 h-9 rounded-control text-xs font-medium ${jobSubTab === 'completed' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                    Completed ({completedJobs.length})
-                  </button>
-                </div>
-                {jobSubTab === 'active' && (
-                  <div className="space-y-3">
-                    {[['Surveys', surveyJobs, Camera, 'survey'], ['Installs', activeJobs, Wrench, 'install'], ['Handovers', handoverJobs, CheckCircle2, 'handover']].map(([label, pool, Icon, variant]: any) => pool.length > 0 && (
-                      <div key={label}>
-                        <h3 className="label-micro mb-1.5 flex items-center gap-1"><Icon className="h-3 w-3" /> {label} ({pool.length})</h3>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{pool.map((lead: DummyLead) => <JobCard key={lead.id} lead={lead} variant={variant} onClick={() => navigate(`/job/${lead.id}`)} />)}</div>
-                      </div>
-                    ))}
-                    {displayActive.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No active jobs.</p>}
-                  </div>
-                )}
-                {jobSubTab === 'completed' && (
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {completedJobs.map(lead => <JobCard key={lead.id} lead={lead} variant="completed" onClick={() => navigate(`/job/${lead.id}`)} />)}
-                    {completedJobs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No completed jobs yet.</p>}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* ═══ INBOX ═══ */}
             {tab === 'inbox' && (
@@ -477,128 +354,11 @@ export default function InstallerPortalV5() {
               </div>
             )}
 
-            {/* ═══ MATERIALS ═══ */}
-            {tab === 'materials' && (
-              <div className="space-y-3">
-                <div className="flex gap-1">
-                  <button onClick={() => setMatSubTab('per_customer')} className={`px-3 h-9 rounded-control text-xs font-medium ${matSubTab === 'per_customer' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Per Customer</button>
-                  <button onClick={() => setMatSubTab('stock')} className={`px-3 h-9 rounded-control text-xs font-medium ${matSubTab === 'stock' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>Depot Stock</button>
-                </div>
-                {matSubTab === 'per_customer' && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Auto-generated BOM for each job. Expand + check off as you load the van.</p>
-                    {[...activeJobs, ...handoverJobs].map(lead => {
-                      const proposal = lead.proposal;
-                      const isExpanded = expandedJob === lead.id;
-                      const hasBattery = !!proposal?.battery_model;
-                      const bomItems = proposal ? [
-                        { category: 'Panels', item: `${proposal.panel_count} × ${proposal.panel_model}`, qty: proposal.panel_count, critical: true },
-                        { category: 'Inverter', item: proposal.inverter_model, qty: 1, critical: true },
-                        ...(hasBattery ? [{ category: 'Battery', item: proposal.battery_model!, qty: 1, critical: true }] : []),
-                        { category: 'Mounting', item: 'Rails + hooks + clamps', qty: Math.ceil(proposal.panel_count * 0.3), critical: true },
-                        { category: 'Electrical', item: 'DC cable (6mm²)', qty: Math.ceil(8 + proposal.panel_count * 1.2), critical: true },
-                        { category: 'Electrical', item: 'AC cable + isolators + SPD', qty: 4, critical: true },
-                        { category: 'Safety', item: 'Harness + edge protection', qty: 2, critical: true },
-                      ] : [];
-                      return (
-                        <div key={lead.id} className="rounded-panel bg-card shadow-card overflow-hidden">
-                          <button onClick={() => setExpandedJob(isExpanded ? null : lead.id)} className="w-full p-3 flex items-center gap-3 text-left transition-colors hover:bg-muted/30">
-                            <div className="p-2 bg-tech/10 rounded-lg"><Package className="h-4 w-4 text-tech" /></div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm">{lead.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{lead.address.split(',').slice(-1)[0]?.trim()} · {proposal?.system_size_kw}kWp</div>
-                            </div>
-                            <Badge variant="outline" className="text-[11px]">{bomItems.length} items</Badge>
-                          </button>
-                          {isExpanded && (
-                            <div className="border-t border-border p-3 space-y-1">
-                              {bomItems.map((item, i) => (
-                                <label key={i} className="flex items-center gap-2 p-2 border border-border rounded-control text-xs cursor-pointer">
-                                  <input type="checkbox" className="h-4 w-4 rounded" />
-                                  <Badge variant="outline" className="text-[11px] shrink-0">{item.category}</Badge>
-                                  <span className="flex-1 truncate">{item.qty} × {item.item}</span>
-                                  {item.critical && <Badge variant="outline" className="text-[11px] bg-pop/10 text-pop border-pop/30">Critical</Badge>}
-                                </label>
-                              ))}
-                              <Button size="sm" className="w-full mt-2" onClick={() => navigate(`/job/${lead.id}`)}>Open job <ChevronRight className="h-3 w-3 ml-1" /></Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {matSubTab === 'stock' && (
-                  <div className="space-y-2">
-                    {/* The wholesaler story: every van load is a picked order off
-                        the shelf; every green tick is sell-through with a paper
-                        trail. Reorders DRAFT — the owner approves every PO. */}
-                    <p className="text-xs text-muted-foreground">Depot inventory — every van load is a picked order from your wholesaler's shelf. Reorder lines draft when available runs low; the owner approves every PO.</p>
-                    {(() => {
-                      const rows = [
-                        { item: 'TrinaSolar TSM-440 NEG9RC.28', stock: 48, alloc: 32 },
-                        { item: 'SolaX X1-Hybrid-5.0 G4', stock: 6, alloc: 4 },
-                        { item: 'SolaX X1-Hybrid-6.0 G4', stock: 4, alloc: 1 },
-                        { item: 'SolaX Triple Power T-BAT 5.8kWh', stock: 8, alloc: 5 },
-                        { item: 'SolaX Triple Power 11.6kWh (2×5.8)', stock: 5, alloc: 4 },
-                        { item: 'myenergi Eddi diverter', stock: 9, alloc: 3 },
-                        { item: 'myenergi Zappi 7kW', stock: 6, alloc: 2 },
-                        { item: 'Mounting rails (1.6m)', stock: 120, alloc: 84 },
-                        { item: 'DC cable (6mm²)', stock: 800, alloc: 400 },
-                      ];
-                      const drawn = rows.reduce((s, r) => s + r.alloc, 0);
-                      const lowLines = rows.filter(r => r.stock - r.alloc < 5).length;
-                      return (
-                        <>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-panel bg-card shadow-card p-3">
-                              <div className="text-lg font-bold tabular-nums">{drawn}</div>
-                              <div className="text-2xs text-muted-foreground">units allocated this week — sell-through with a paper trail</div>
-                            </div>
-                            <div className="rounded-panel bg-card shadow-card p-3">
-                              <div className={`text-lg font-bold tabular-nums ${lowLines ? 'text-pop' : 'text-doc-deposit'}`}>{lowLines}</div>
-                              <div className="text-2xs text-muted-foreground">lines below reorder point — PO drafts waiting on approval</div>
-                            </div>
-                          </div>
-                          {rows.map(row => {
-                      const available = row.stock - row.alloc;
-                      const low = available < 5;
-                      return (
-                        <div key={row.item} className="rounded-panel bg-card shadow-card p-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="font-semibold text-sm">{row.item}</div>
-                              <div className="text-xs text-muted-foreground">{row.stock} in stock · {row.alloc} allocated this week</div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-bold tabular-nums ${low ? 'text-pop' : 'text-foreground'}`}>{available}</div>
-                              <div className="text-[11px] text-muted-foreground">available</div>
-                            </div>
-                          </div>
-                          {low && (
-                            <div className="mt-2 flex items-center gap-2 text-xs text-pop">
-                              <AlertTriangle className="h-3 w-3" /> Below reorder point — PO line drafted for your wholesaler, goes with the owner's approval
-                            </div>
-                          )}
-                          <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className={`h-full ${low ? 'bg-pop' : available < 15 ? 'bg-doc-proposal' : 'bg-doc-deposit'}`} style={{ width: `${Math.min(100, (available / Math.max(1, row.stock)) * 100)}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* ═══ MAP — jobs + supplier collection + compliance, ONE screen.
                  Day = the route in time order (one loop, never back twice).
                  Week = the eagle view: every stop, colour-coded by day.
                  Pickup = the wholesaler depot folded in as stop 0 (the deal). ═══ */}
-            {tab === 'map' && (() => {
+            {tab === 'routing' && (() => {
               const weekJobs = displayActive
                 .map(l => ({ l, d: effDate(l) }))
                 .filter((x): x is { l: DummyLead; d: string } => !!x.d && +new Date(x.d) < Date.now() + 7 * 864e5 && +new Date(x.d) > Date.now() - 864e5)
