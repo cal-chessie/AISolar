@@ -165,3 +165,32 @@ fewer moving parts. Subtraction is the design method at every step below.
   record (their vault or one we create) — filed to Sweep 8 schema.
 - **Standard, every turn**: senior expert dev team; bulletproof, crystal
   clean, zero junk; institutional grade OOTB, sitting on the kernel.
+
+---
+# 7.1 OPENS WITH: THE AIFIELD FAMILY TRANSFORM (spec'd 28 Jul, evidence-scoped)
+> Cal, verbatim: "the sizing isnt the same as the rest of the app and cal.com
+> hasnt transformed it the way it has the rest of the app." CORRECT — the
+> family pass never reached AIField (NOTES rollout list still-to-do; Last List
+> item 27). AUDIT CORRECTION on the record: AIFIELD_AUDIT's "family colours
+> per stage ✅" oversold — icons are tinted, the CHROME is not.
+
+## The transform (fresh session, ui-ux-pro-max + design tokens LOADED, one pass)
+1. **Tokens everywhere**: kill h-8/h-12 mixes → `h-control`; `rounded-lg`/
+   `rounded-2xl` → `rounded-panel`/`rounded-control`; shadcn Card defaults →
+   the cockpit card language. Same sizing as the rest of the app, exactly.
+2. **Family semantics replace generic green**: `bg-primary/10 text-primary`
+   throughout JobViewV2 → doc-family logic (deposit-green = done/confirmed,
+   tech-blue = active/capture, pop-red = exception/mismatch, gold = pending);
+   phase chrome carries PHASE_TINT, not just icons.
+3. **cockpitUi language in**: Kpi strip on the job header (checks done ·
+   photos · serials · form NC6/NC7 live), label-micro section heads, the
+   calm cal.com density — identical DNA to Today/Insights/Calendar.
+4. **Desktop = the two-worlds screen** (the market gap made visible): day
+   list + LIVE map + weather/reschedule rail co-visible ≥1280px; jobs
+   multi-column; JobViewV2 two-column (checklist | evidence). Kill the
+   dead space Cal called out. Tablet keeps its (good) current shape;
+   mobile is verified clean — don't regress it.
+5. **Per-crew polish**: portal Today keeps weather strip wired to the
+   reschedule flow (rain → roof-job flag → offer the move).
+6. Exit bar: mobile/tablet/desktop screenshots all three, zero horizontal
+   overflow, tsc green, dev-mount probe, dark-mode pass — then Cal's eyes.
