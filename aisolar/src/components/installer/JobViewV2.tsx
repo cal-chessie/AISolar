@@ -359,7 +359,7 @@ export default function JobViewV2() {
         <div key={activeTab}
           >
             {activeTab === 'overview' && (
-              <OverviewTab lead={lead} phaseCompletion={phaseCompletion} overallComplete={overallComplete} />
+              <OverviewTab lead={lead} overallComplete={overallComplete} />
             )}
             {activeTab === 'pre_install' && (
               <ChecklistTab
@@ -448,20 +448,12 @@ export default function JobViewV2() {
 }
 
 // ============= OVERVIEW TAB =============
-function OverviewTab({ lead, phaseCompletion, overallComplete }: {
+function OverviewTab({ lead, overallComplete }: {
   lead: DummyLead;
-  phaseCompletion: Record<string, boolean>;
   overallComplete: boolean;
 }) {
   const proposal = lead.proposal;
   const survey = lead.survey;
-  const phases = [
-    { id: 'pre_install', label: 'Pre-install checks', icon: Shield },
-    { id: 'roof', label: 'Roof work', icon: Home },
-    { id: 'electrical', label: 'Electrical', icon: Zap },
-    { id: 'commissioning', label: 'Commissioning', icon: Wifi },
-    { id: 'handover', label: 'Handover', icon: PenLine },
-  ];
 
   return (
     <div className="space-y-4">
@@ -490,50 +482,19 @@ function OverviewTab({ lead, phaseCompletion, overallComplete }: {
         </Card>
       )}
 
-      {/* Phase completion grid */}
-      <div>
-        <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-2">Phase status</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {phases.map(phase => {
-            const done = phaseCompletion[phase.id];
-            const Icon = phase.icon;
-            return (
-              <Card key={phase.id} className={done ? 'border-primary/40' : ''}>
-                <CardContent className="p-3 text-center">
-                  <Icon className={`h-5 w-5 mx-auto mb-1 ${done ? 'text-doc-deposit' : PHASE_TINT[phase.id] ?? 'text-muted-foreground'}`} />
-                  <div className="text-[11px] font-medium leading-tight">{phase.label}</div>
-                  {done ? (
-                    <Badge variant="outline" className="mt-1 text-[11px] bg-primary/10 text-primary border-primary/40">
-                      <CheckCircle2 className="h-2 w-2 mr-0.5" /> Done
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="mt-1 text-[11px] bg-muted">Pending</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Customer snapshot */}
+      {/* SUBTRACTION (Cal, 28 Jul — "why would I see my header twice?"):
+          the phase grid is GONE (the tab strip already carries every phase +
+          its done-tick) and name/address are GONE from this card (the sticky
+          header owns them). What remains is only what the header DOESN'T say. */}
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <User className="h-4 w-4" /> Customer
+            <User className="h-4 w-4" /> Job essentials
           </h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground">Name</div>
-              <div className="font-medium">{lead.name}</div>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
             <div>
               <div className="text-xs text-muted-foreground">Phone</div>
               <div className="font-medium">{lead.phone}</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-xs text-muted-foreground">Address</div>
-              <div className="font-medium">{lead.address}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">MPRN</div>

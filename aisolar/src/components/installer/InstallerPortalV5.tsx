@@ -41,6 +41,17 @@ interface Msg { from: 'customer' | 'installer' | 'system'; text: string; at: str
 const navUrl = (address: string) =>
   `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
 
+/** The Leinster wholesaler depot — the killer tie-in: jobs + supplier
+ *  collection + compliance on ONE screen (Cal's deal, 27 Jul). Demo address;
+ *  tenant-config at launch (each region gets its own depot). */
+const WHOLESALER_DEPOT = {
+  name: 'SolaX Distribution — Leinster depot',
+  address: 'Citywest Business Campus, Dublin 24',
+};
+
+/** Family tone per weekday for the eagle view — jobs read by hue. */
+const DAY_TONE = ['bg-tech', 'bg-doc-deposit', 'bg-doc-proposal', 'bg-pop', 'bg-tech', 'bg-doc-deposit', 'bg-doc-proposal'];
+
 export default function InstallerPortalV5() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
@@ -59,6 +70,9 @@ export default function InstallerPortalV5() {
   const [pendingMove, setPendingMove] = useState<{ lead: DummyLead; from: string; to: string } | null>(null);
   const [moveReason, setMoveReason] = useState<string | null>(null);
   const [moveNote, setMoveNote] = useState('');
+  // Map: day route ↔ week eagle view · wholesaler pickup folded into the route
+  const [mapView, setMapView] = useState<'day' | 'week'>('day');
+  const [pickupStop, setPickupStop] = useState(false);
 
   // ── job pools ────────────────────────────────────────────────────────────
   const activeJobs = useMemo(() => leads.filter(l => l.assignment && ['install_scheduled', 'installing'].includes(l.workflow_stage)), [leads]);
@@ -557,53 +571,114 @@ export default function InstallerPortalV5() {
               </div>
             )}
 
-            {/* ═══ MAP — the day's ROUTE, not a decoration ═══ */}
-            {tab === 'map' && (
-              <div className="space-y-3">
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <h3 className="text-sm font-semibold">{isToday ? "Today's route" : `Route — ${dayLabel}`}</h3>
-                  <span className="text-xs text-muted-foreground">{dayJobs.length} {dayJobs.length === 1 ? 'stop' : 'stops'} in time order</span>
-                  {dayJobs.length > 0 && (
-                    <a
-                      href={`https://www.google.com/maps/dir/${dayJobs.map(({ l }) => encodeURIComponent(l.address)).join('/')}`}
-                      target="_blank" rel="noreferrer"
-                      className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control bg-tech px-3 text-xs font-semibold text-white hover:bg-tech/90 transition-colors">
-                      <Navigation className="h-3.5 w-3.5" /> Open full route
-                    </a>
+            {/* ═══ MAP — jobs + supplier collection + compliance, ONE screen.
+                 Day = the route in time order (one loop, never back twice).
+                 Week = the eagle view: every stop, colour-coded by day.
+                 Pickup = the wholesaler depot folded in as stop 0 (the deal). ═══ */}
+            {tab === 'map' && (() => {
+              const weekJobs = displayActive
+                .map(l => ({ l, d: effDate(l) }))
+                .filter((x): x is { l: DummyLead; d: string } => !!x.d && +new Date(x.d) < Date.now() + 7 * 864e5 && +new Date(x.d) > Date.now() - 864e5)
+                .sort((a, b) => +new Date(a.d) - +new Date(b.d));
+              const byDay = [...new Map(weekJobs.map(x => [new Date(x.d).toDateString(), true])).keys()];
+              const stops = mapView === 'day' ? dayJobs : weekJobs;
+              const addrs = [...(pickupStop && stops.length ? [WHOLESALER_DEPOT.address] : []), ...stops.map(({ l }) => l.address)];
+              const fullRouteUrl = `https://www.google.com/maps/dir/${addrs.map(encodeURIComponent).join('/')}`;
+              const embedSrc = addrs.length >= 2
+                ? `https://maps.google.com/maps?saddr=${encodeURIComponent(addrs[0])}&daddr=${addrs.slice(1).map(encodeURIComponent).join('+to:')}&output=embed`
+                : addrs.length === 1
+                  ? `https://maps.google.com/maps?q=${encodeURIComponent(addrs[0])}&z=13&output=embed`
+                  : 'https://maps.google.com/maps?q=Dublin,Ireland&t=m&z=11&output=embed';
+              const tmrw = new Date(Date.now() + 864e5).toDateString();
+              const rainRisk = (d: string, l: DummyLead) =>
+                new Date(d).toDateString() === tmrw && !l.workflow_stage.includes('survey');
+              const first = stops[0]?.d, last = stops[stops.length - 1]?.d;
+              const t = (d: string) => new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Day ↔ Week eagle toggle */}
+                    <div className="inline-flex rounded-control border border-border p-0.5">
+                      {(['day', 'week'] as const).map(v => (
+                        <button key={v} onClick={() => setMapView(v)}
+                          className={`h-8 px-3 rounded-[7px] text-xs font-semibold transition-colors ${mapView === v ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}>
+                          {v === 'day' ? (isToday ? "Today's route" : dayLabel) : 'Week — eagle view'}
+                        </button>
+                      ))}
+                    </div>
+                    {/* The wholesaler pickup — the deal, on the route */}
+                    <button onClick={() => setPickupStop(p => !p)}
+                      className={`h-8 inline-flex items-center gap-1.5 rounded-control border px-3 text-xs font-semibold transition-colors ${pickupStop ? 'border-doc-proposal bg-doc-proposal/10 text-doc-proposal' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'}`}>
+                      <Package className="h-3.5 w-3.5" /> Collect at the depot first
+                    </button>
+                    {stops.length > 0 && (
+                      <a href={fullRouteUrl} target="_blank" rel="noreferrer"
+                        className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control bg-tech px-3 text-xs font-semibold text-white hover:bg-tech/90 transition-colors">
+                        <Navigation className="h-3.5 w-3.5" /> Open full route
+                      </a>
+                    )}
+                  </div>
+                  {/* the honest insight line — the route's promise, no invented km */}
+                  {stops.length > 0 && first && last && (
+                    <p className="text-xs text-muted-foreground">
+                      {stops.length} {stops.length === 1 ? 'stop' : 'stops'}{pickupStop ? ' + the depot' : ''} · out {t(first)}, last stop {t(last)} — one loop, in order, never back twice. Home earlier.
+                    </p>
                   )}
-                </div>
-                <div className="rounded-panel bg-card shadow-card overflow-hidden">
-                  <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted">
-                    <iframe
-                      title="Route map"
-                      src={dayJobs.length >= 2
-                        ? `https://maps.google.com/maps?saddr=${encodeURIComponent(dayJobs[0].l.address)}&daddr=${dayJobs.slice(1).map(({ l }) => encodeURIComponent(l.address)).join('+to:')}&output=embed`
-                        : dayJobs.length === 1
-                          ? `https://maps.google.com/maps?q=${encodeURIComponent(dayJobs[0].l.address)}&z=13&output=embed`
-                          : 'https://maps.google.com/maps?q=Dublin,Ireland&t=m&z=11&output=embed'}
-                      className="w-full h-full border-0" loading="lazy" />
+                  {/* depot card — what the shelf holds for this run */}
+                  {pickupStop && stops.length > 0 && (
+                    <div className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3 border-l-2 border-doc-proposal">
+                      <span className="size-6 rounded-full grid place-items-center text-xs font-bold text-white shrink-0 bg-doc-proposal">0</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{WHOLESALER_DEPOT.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{WHOLESALER_DEPOT.address} · SolaX gear for {stops.filter(({ l }) => !l.workflow_stage.includes('survey')).length} install{stops.filter(({ l }) => !l.workflow_stage.includes('survey')).length === 1 ? '' : 's'} on this run</div>
+                      </div>
+                      <a href={navUrl(WHOLESALER_DEPOT.address)} target="_blank" rel="noreferrer" className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" aria-label="Navigate to depot">
+                        <Navigation className="h-4 w-4 text-doc-proposal" />
+                      </a>
+                    </div>
+                  )}
+                  <div className="rounded-panel bg-card shadow-card overflow-hidden">
+                    <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted">
+                      <iframe title="Route map" src={embedSrc} className="w-full h-full border-0" loading="lazy" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {stops.map(({ l, d }, i) => {
+                      const dayIdx = byDay.indexOf(new Date(d).toDateString());
+                      const risk = rainRisk(d, l);
+                      return (
+                        <div key={l.id} className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3">
+                          <span className={`size-6 rounded-full grid place-items-center text-xs font-bold text-white shrink-0 ${mapView === 'week' ? DAY_TONE[dayIdx % DAY_TONE.length] : i === 0 ? 'bg-pop' : 'bg-tech'}`}>{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">
+                              {l.name}
+                              <span className="text-muted-foreground font-normal"> · {mapView === 'week' ? `${new Date(d).toLocaleDateString('en-IE', { weekday: 'short' })} ${t(d)}` : t(d)}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">{l.address}</div>
+                            {risk && (
+                              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-doc-proposal/10 text-doc-proposal px-2 py-0.5 text-2xs font-semibold">
+                                ⚠ Rain warning tomorrow — roof job
+                                <button className="underline underline-offset-2 hover:opacity-80"
+                                  onClick={() => setPendingMove({ lead: l, from: d, to: new Date(+new Date(d) + 864e5).toISOString() })}>
+                                  Move it
+                                </button>
+                              </span>
+                            )}
+                          </div>
+                          <a href={navUrl(l.address)} target="_blank" rel="noreferrer" className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" aria-label={`Navigate to ${l.name}`}>
+                            <Navigation className="h-4 w-4 text-tech" />
+                          </a>
+                          <button className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" onClick={() => navigate(`/job/${l.id}`)} aria-label={`Open ${l.name}`}>
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {stops.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No stops to route.</p>}
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  {dayJobs.map(({ l, d }, i) => (
-                    <div key={l.id} className="rounded-panel bg-card shadow-card p-3 flex items-center gap-3">
-                      <span className={`size-6 rounded-full grid place-items-center text-xs font-bold text-white shrink-0 ${i === 0 ? 'bg-pop' : 'bg-tech'}`}>{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{l.name} <span className="text-muted-foreground font-normal">· {new Date(d).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span></div>
-                        <div className="text-xs text-muted-foreground truncate">{l.address}</div>
-                      </div>
-                      <a href={navUrl(l.address)} target="_blank" rel="noreferrer" className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" aria-label={`Navigate to ${l.name}`}>
-                        <Navigation className="h-4 w-4 text-tech" />
-                      </a>
-                      <button className="inline-grid place-items-center size-9 rounded-control border border-border hover:bg-muted transition-colors" onClick={() => navigate(`/job/${l.id}`)} aria-label={`Open ${l.name}`}>
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {dayJobs.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No stops to route.</p>}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
       </main>
