@@ -16,8 +16,9 @@
  *
  * Skills: ui-ux-pro-max (family tokens, one purpose), stop-slop.
  */
-import { useMemo } from 'react';
-import { CalendarClock, Route, Sparkles, TrendingDown, Info, Building2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CalendarClock, Route, Sparkles, TrendingDown, Info, Building2, CheckCircle2, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { planSchedule, type PlannableJob } from '@/lib/scheduling';
 import { optimiseRoute, coordsForAddress, type GeoPoint } from '@/lib/routeOptimize';
 import type { DummyLead } from '@/lib/dummyData';
@@ -66,6 +67,11 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
     return { surveyPlan, installPlan, surveySave, installSave, totalKm, totalMin, totalEuro };
   }, [leads]);
 
+  // Draft-never-send made real, view-first: the agent PROPOSES, the owner
+  // APPROVES here. Approving is local/honest in the demo — no schedule is
+  // written and nothing is sent (see the approved-state copy + SWEEP8 note).
+  const [approved, setApproved] = useState({ survey: false, install: false });
+
   const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
@@ -107,6 +113,8 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
           plan={model.surveyPlan}
           save={model.surveySave}
           fmtDay={fmtDay}
+          approved={approved.survey}
+          onApprove={() => setApproved(a => ({ ...a, survey: true }))}
         />
         <PlannerColumn
           title="Install planner"
@@ -114,6 +122,8 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
           plan={model.installPlan}
           save={model.installSave}
           fmtDay={fmtDay}
+          approved={approved.install}
+          onApprove={() => setApproved(a => ({ ...a, install: true }))}
         />
       </div>
 
@@ -133,12 +143,14 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
   );
 }
 
-function PlannerColumn({ title, who, plan, save, fmtDay }: {
+function PlannerColumn({ title, who, plan, save, fmtDay, approved, onApprove }: {
   title: string;
   who: string;
   plan: { days: Array<{ date: string; jobs: Array<{ id: string; label?: string }> }>; unplaceable: Array<{ id: string; label?: string }> };
   save: { savedKm: number; savedMin: number; optimisedKm: number } | null;
   fmtDay: (iso: string) => string;
+  approved: boolean;
+  onApprove: () => void;
 }) {
   return (
     <div className="p-4">
@@ -173,6 +185,21 @@ function PlannerColumn({ title, who, plan, save, fmtDay }: {
 
       {plan.unplaceable.length > 0 && (
         <p className="mt-2 text-[10px] text-muted-foreground">{plan.unplaceable.length} address{plan.unplaceable.length > 1 ? 'es' : ''} not on the map yet — surfaced, never dropped.</p>
+      )}
+
+      {/* propose → approve — the human gate. Honest in the demo: approving marks
+          it accepted; it does NOT write the schedule or send anything. */}
+      {plan.days.length > 0 && (
+        approved ? (
+          <div className="mt-3 flex items-start gap-1.5 rounded-control bg-doc-deposit/10 text-doc-deposit px-2.5 py-2 text-[10px] font-medium leading-relaxed">
+            <CheckCircle2 className="size-3.5 shrink-0 mt-0.5" />
+            <span>Plan approved. In production this writes the schedule, then the messaging agent <strong>offers each customer their day</strong> (a draft they can reply to). Nothing is sent yet — draft-never-send holds.</span>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" className="mt-3 w-full h-8 text-xs" onClick={onApprove}>
+            <Check className="size-3.5 mr-1" /> Approve this plan
+          </Button>
+        )
       )}
     </div>
   );

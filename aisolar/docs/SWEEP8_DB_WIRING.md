@@ -299,8 +299,14 @@ for the UI. What's DEMO and must become REAL in Sweep 8:
 - **Close the loop**: today the panel RECOMPUTES the plan; wire it to read what the
   scheduler-v2 agents (survey_scheduler / install_coordinator) actually proposed
   from `agent_route_runs` (migration #13), so the owner sees the agent's real run +
-  its logged savings — and add an **Approve** action (draft→approve writes the
-  `scheduled_date`; draft-never-send until then).
+  its logged savings.
+- **Approve loop** (added 30 Jul, per-planner): the propose→approve gate now EXISTS
+  in the UI — "Approve this plan" → an honest approved state (demo: local only,
+  writes nothing, sends nothing, "draft-never-send holds"). Production wiring: on
+  approve → write `scheduled_date` to `site_surveys` / `assignments`, then trigger
+  the messaging agent to OFFER each customer their day (a draft they can reply to),
+  and record the approval + run to `agent_route_runs`. Until wired, it's view+intent
+  only — the copy says so.
 
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
