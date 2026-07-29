@@ -438,6 +438,38 @@ The "last 30%" built + verified. What changed (`src/lib/pdfFill.ts`,
   is printed on the PDF but not yet surfaced as a PaperworkWindow chip (small UI wire);
   (d) the 6/11kW band-boundary VERIFY-BEFORE-LIVE flag on `esbFormForAcKw` still stands.
 
+### NC6 FIELD-COMPLETE — Cal's field-by-field audit closed (30 Jul, round 2)
+Cal audited every NC6 box; the misses he flagged are now filled + gated:
+- **§2 first-microgen-connection Yes/No** — new `SerialState.firstConnection`; ticks the
+  confirmed answer; "No" shows the ESB do-not-connect warning + blocks nothing silently.
+- **§3 installer MOBILE** (was landline-only) + fixed the page-3 "Installer Mobile No."
+  mislabel (was drawing landline). New `companyCompliance.companyMobile`.
+- **§5 Rated Current (Amps) as per Type Test** — CAPTURED off the cert
+  (`SerialState.ratedCurrentA`), NOT derived (a derived amp is not a type-test figure).
+- **§5A Type-Test Cert reference** (`SerialState.typeTestCertRef`) — the cert PDF still
+  attaches separately.
+- **§5A Single/Three phase tick** nudged into its box (x184).
+- **Signature + Date** — Cal's call: fill with the named installer's TYPED name (eIDAS
+  simple e-signature) + date, drawn only once the gate is attested, backed by the drawn
+  pad + audit trail. ⚠️ VERIFY-BEFORE-LIVE: confirm ESB accept a typed e-sig vs wet ink.
+- **§5B/§5C stay BLANK** — pre-2022 retrofit branches; a new install (§4-A + §5A) must not
+  fill them. (Future: a pre-2022 mode branched on install-date.)
+- Commissioning gate now REQUIRES ratedCurrentA + typeTestCertRef + firstConnection before
+  the crew can confirm; `nc6Completeness()` blocks on all of them + company mobile.
+- **VERIFIED:** `node scripts/pdf-verify.mjs` = **all placements clear** (overlap gate,
+  pages 1–3, ~43 fields incl. all new ones) + `nc6Completeness` ready:true end-to-end with
+  the dummy-attested seed. tsc clean (8 baseline). Newest fields node/overlap-verified;
+  browser visual of the core done earlier, the newest-fields render pending (pdfjs pane
+  wedges in-dev — not a code issue).
+
+### Certs — the installer's last step (EXISTS; persistence/send = Sweep 8)
+`JobViewV2` HandoverTab: "Certs — required to finish" gates **Mark job complete** on two
+uploads — Safe Electric (RECI) cert + signed Declaration of Works. Today the files are
+LOCAL state (filenames) + a toast; the copy is now honest (routes to BER "on completion /
+messaging wire-up", not "Sent"). Sweep 8: files → storage (`install_evidence`, M2), the
+pack → customer portal documents (M3), and the DoW → the BER assessor via the notification
+path (X1 Postmark). Draft-never-send until then.
+
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,

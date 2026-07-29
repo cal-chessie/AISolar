@@ -81,8 +81,13 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     //    visual pass of the filled form. Pages 4–5 are the PRE-2022 legacy
     //    sections (5B/5C + Table 2) — for a NEW install they stay BLANK by
     //    design; filling them would be wrong. Page 6 has no fields.
-    // § 3 correspondence (page 1): "Landline:" ends x≈82 y153 · "Email:" ends x=68 y131
+    // § 2 (page 1): "Is this the first Microgenerator connection...?" Yes/No —
+    // "Yes" ends x375 y294, "No" ends x416. Tick the confirmed answer only.
+    { field: 'First connection yes', page: 0, x: 381, y: 291, size: 11 },
+    { field: 'First connection no', page: 0, x: 421, y: 291, size: 11 },
+    // § 3 correspondence (page 1): Landline x40, Mobile x235, Email x40 (y131)
     { field: 'Installer landline', page: 0, x: 95, y: 153 },
+    { field: 'Installer mobile', page: 0, x: 315, y: 153 },
     { field: 'Installer email', page: 0, x: 80, y: 131, size: 9 },
     // § 4 (page 2): route boxes at right margin x≈552 — NC6 here is always the
     // NEW-microgen notification (option A). B/C are legacy — never ticked.
@@ -90,19 +95,24 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // § 5 "New Installation / Unit 1" column
     { field: 'Energy source', page: 1, x: 395, y: 495 },
     { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
+    { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 8 },
     { field: '1PH tick', page: 1, x: 416, y: 523 },
     { field: '3PH tick', page: 1, x: 459, y: 523 },
     { field: 'Type test yes tick', page: 1, x: 418, y: 317 },
     { field: 'Settings yes tick', page: 1, x: 418, y: 270 },
-    // § 5A (page 2, bottom) — comb rows + phase tick
+    // § 5A (page 2, bottom) — comb rows + cert ref + phase tick
     { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 9 },
     { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
-    { field: '5A single tick', page: 1, x: 190, y: 87 },
-    { field: '5A three tick', page: 1, x: 252, y: 87 },
+    { field: '5A cert ref', page: 1, x: 330, y: 130, size: 8 },
+    { field: '5A single tick', page: 1, x: 184, y: 87 },
+    { field: '5A three tick', page: 1, x: 240, y: 87 },
     // Page 3 — TABLE 1 "Confirm Settings Applied (Y/N)" column + Installer
-    // Details. The Y is drawn ONLY from the installer's protectionConfirmed
-    // attestation at the commissioning gate. Signature + Date are NEVER
-    // drawn — the named installer signs by hand (attestation law).
+    // Details + the signature/date. The Y is drawn ONLY from the installer's
+    // protectionConfirmed attestation. Signature = the named installer's TYPED
+    // name (eIDAS simple e-signature, Cal 30 Jul) — backed by the drawn pad +
+    // the kernel audit trail. VERIFY-BEFORE-LIVE: confirm ESB accept a typed
+    // e-signature vs wet ink on the NC6 (policy read) — until then a wet sign
+    // is the fallback and the pack says so.
     { field: 'Protection confirm 1', page: 2, x: 505, y: 724, size: 9 },
     { field: 'Protection confirm 2', page: 2, x: 505, y: 709, size: 9 },
     { field: 'Protection confirm 3', page: 2, x: 505, y: 694, size: 9 },
@@ -112,9 +122,11 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Protection confirm 7', page: 2, x: 505, y: 596, size: 9 },
     { field: 'Installer name', page: 2, x: 118, y: 288, size: 9 },
     { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 288, size: 9 },
-    { field: 'Installer landline', page: 2, x: 135, y: 273, size: 9 },
+    { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 9 },
     { field: 'Installer email', page: 2, x: 372, y: 273, size: 8 },
     { field: 'Installer address', page: 2, x: 192, y: 257, size: 7 },
+    { field: 'Installer signature', page: 2, x: 118, y: 221, size: 10 },
+    { field: 'Signature date', page: 2, x: 88, y: 205, size: 9 },
   ],
   // NC7 — 595x842pt. Page 1 is a COMB form: each field is a row of individual
   // character boxes, so the value must sit ON the row's baseline or it reads
@@ -178,10 +190,8 @@ function collect(lead: DummyLead): Array<[string, string]> {
   // placeholder, never a silent blank (A4 closed 30 Jul).
   const cc = getCompanyCompliance();
   const maker = ((gate?.fittedModel || p?.inverter_model || '').split(' ')[0] || '').trim();
-  const acKwNum = parseFloat(gate?.acRatingKw ?? '');
-  const ratedAmps = Number.isFinite(acKwNum) && acKwNum > 0
-    ? `${(threePhase ? (acKwNum * 1000) / (400 * 1.732) : (acKwNum * 1000) / 230).toFixed(1)} A - derived from attested AC rating`
-    : undefined;
+  const installerName = lead.assignment?.installer_name;
+  const signedOff = !!gate; // the commissioning gate is confirmed
 
   const rows: Array<[string, string | undefined | null]> = [
     ['Customer name', (i.extracted_account_name as string) ?? lead.name],
@@ -191,23 +201,35 @@ function collect(lead: DummyLead): Array<[string, string]> {
     ['Phone', lead.phone],
     ['Email', lead.email],
     ['Supply type', threePhase ? 'Three phase' : 'Single phase'],
+    ['First connection', gate?.firstConnection === 'yes' ? 'Yes - first microgenerator at these premises'
+      : gate?.firstConnection === 'no' ? 'No - awaiting ESB confirmation before connection'
+      : '( confirm at commissioning )'],
     ['Inverter make/model', gate?.fittedModel || (p?.inverter_model ? `${p.inverter_model} ( as designed — confirm at commissioning )` : undefined)],
     ['Inverter serial', gate?.serial || '( captured at commissioning )'],
     ['Inverter rating (kW)', gate?.acRatingKw ? `${gate.acRatingKw}` : '( off the plate at commissioning )'],
+    // "as per Type Test" — the CERTIFIED figure off the datasheet, entered by
+    // the installer at the gate. Never derived (a derived amp is not a
+    // type-test value).
+    ['Rated current (A)', gate?.ratedCurrentA ? `${gate.ratedCurrentA}` : '( from the type-test cert at commissioning )'],
     ['Panels', p ? `${p.panel_count} x ${p.panel_model}` : undefined],
     ['Total DC capacity (kWp)', p ? String(p.system_size_kw) : undefined],
     ['Battery', p?.battery_model ?? 'None'],
     ['Export limitation', gate?.exportLimit || '( set + recorded at commissioning )'],
     ...(gate?.mismatchFlagged ? [['Fitted vs proposal', 'SUBSTITUTION RECORDED — installer note on the job record'] as [string, string]] : []),
-    ['Installer company', getTenantBrand().proposalCompanyName || brand.legal.tradingName],
-    ['Installer RECI no.', cc.reciNumber || '( Owner -> Settings -> RECI number )'],
-    ['Installer name', lead.assignment?.installer_name],
-    ['Installer landline', cc.companyLandline],
-    ['Installer email', cc.companyEmail],
-    ['Installer address', cc.registeredAddress],
     ['Manufacturer', maker || undefined],
     ['Energy source', 'P (Solar PV)'],
-    ['Rated current (A)', ratedAmps ?? '( derived at commissioning )'],
+    ['5A cert ref', gate?.typeTestCertRef || '( type-test cert reference at commissioning )'],
+    ['Installer company', getTenantBrand().proposalCompanyName || brand.legal.tradingName],
+    ['Installer RECI no.', cc.reciNumber || '( Owner -> Settings -> RECI number )'],
+    ['Installer name', installerName],
+    ['Installer landline', cc.companyLandline],
+    ['Installer mobile', cc.companyMobile],
+    ['Installer email', cc.companyEmail],
+    ['Installer address', cc.registeredAddress],
+    // eIDAS simple e-signature: the named installer's OWN typed name, drawn only
+    // once they've attested at the gate. Backed by the drawn pad + audit trail.
+    ['Installer signature', (signedOff && installerName) ? installerName : undefined],
+    ['Signature date', signedOff ? new Date().toLocaleDateString('en-IE') : undefined],
     ['Protection settings (EN 50549-1)', gate?.protectionConfirmed
       ? 'Table 1 applied & verified - Y (attested by the named installer)'
       : '( attested at the commissioning gate )'],
@@ -246,9 +268,15 @@ export function nc6Completeness(lead: DummyLead): { ready: boolean; missing: str
   if (!cc.reciNumber) missing.push('SafeElectric/RECI no. (Owner -> Settings)');
   if (!cc.registeredAddress) missing.push('Installer address (Owner -> Settings)');
   if (!cc.companyEmail) missing.push('Installer email (Owner -> Settings)');
+  if (!cc.companyMobile) missing.push('Installer mobile (Owner -> Settings)');
   if (!lead.assignment?.installer_name) missing.push('Named installer (assignment)');
   if (!gate) missing.push('Commissioning gate - serials confirmed on site');
-  else if (!gate.protectionConfirmed) missing.push('EN 50549-1 Table 1 settings attested');
+  else {
+    if (!gate.protectionConfirmed) missing.push('EN 50549-1 Table 1 settings attested');
+    if (!gate.ratedCurrentA.trim()) missing.push('Rated current off the type-test cert (§5)');
+    if (!gate.typeTestCertRef.trim()) missing.push('Type-test cert reference (§5A)');
+    if (!gate.firstConnection) missing.push('First-connection Yes/No (§2)');
+  }
   return { ready: missing.length === 0, missing };
 }
 
@@ -304,6 +332,9 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         // Page-3 installer block: SafeElectric = the RECI number (same store).
         // Carries the '(' placeholder when unset → never drawn half-filled.
         'Installer SafeElectric no.': base['Installer RECI no.'] ?? '',
+        // § 2 first-connection: tick the confirmed answer only (blank until set).
+        'First connection yes': gateT?.firstConnection === 'yes' ? 'X' : '',
+        'First connection no': gateT?.firstConnection === 'no' ? 'X' : '',
         'New install tick': 'X',
         'Energy source': lead.proposal ? 'P' : '',
         'Manufacturer': gateT ? makerT : '',        // statutory column: as-fitted only

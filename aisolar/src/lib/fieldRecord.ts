@@ -30,11 +30,22 @@ export interface SerialState {
    *  Attested by the named installer at the gate — the ONLY source that ever
    *  puts a Y in the form's "Confirm Settings Applied" column. */
   protectionConfirmed: boolean;
+  /** NC6 §5 "Rated Current (Amps) as per Type Test" — read OFF the type-test
+   *  cert / datasheet (a certified figure), NOT derived. ≤25A single / 16A per
+   *  phase three. */
+  ratedCurrentA: string;
+  /** NC6 §5A "Corresponding Type Test Certificate Referencing above Unit" — the
+   *  cert's reference number (the cert PDF is attached separately). */
+  typeTestCertRef: string;
+  /** NC6 §2 "Is this the first Microgenerator connection at these premises?" —
+   *  '' until confirmed. 'no' triggers the ESB do-not-connect warning. */
+  firstConnection: '' | 'yes' | 'no';
 }
 
 export const DEFAULT_SERIALS: SerialState = {
   fittedModel: '', serial: '', acRatingKw: '', exportLimit: '',
   confirmed: false, mismatchFlagged: false, note: '', protectionConfirmed: false,
+  ratedCurrentA: '', typeTestCertRef: '', firstConnection: '',
 };
 
 export interface FieldRecord {

@@ -49,17 +49,26 @@ export class ErrorBoundary extends Component<Props, State> {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              An unexpected error occurred. Please try refreshing or contact support if the problem persists.
+              This view hit an error. <strong>Reload the page</strong> — that clears it in almost every case (a stale
+              module after a code update). If it keeps happening on the same view, it's a real bug — tell us what you
+              were doing.
             </p>
             {this.state.error && (
               <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-32">
                 {this.state.error.message}
               </pre>
             )}
-            <Button onClick={this.handleReset} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* A hard reload is what actually clears a stale/HMR module — the
+                  soft reset just re-renders the same broken component. */}
+              <Button onClick={() => window.location.reload()} size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reload the page
+              </Button>
+              <Button onClick={this.handleReset} variant="outline" size="sm">
+                Try again without reloading
+              </Button>
+            </div>
           </CardContent>
         </Card>
       );

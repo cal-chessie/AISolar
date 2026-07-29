@@ -24,6 +24,7 @@ export interface CompanyCompliance {
   vatNumber: string;
   /** Correspondence details ESB want for the installer (NC6 §3). */
   companyLandline: string;
+  companyMobile: string;
   companyEmail: string;
   registeredAddress: string;
 }
@@ -34,6 +35,7 @@ const DEFAULTS: CompanyCompliance = {
   croNumber: brand.legal?.companyNumber ?? '',
   vatNumber: brand.legal?.vatNumber ?? '',
   companyLandline: brand.contact?.phoneDisplay ?? '',
+  companyMobile: '',
   companyEmail: brand.contact?.email ?? '',
   registeredAddress: brand.legal?.registeredAddress ?? '',
 };

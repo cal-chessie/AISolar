@@ -852,6 +852,8 @@ function CommissioningSerials({ serials, specifiedInverter, formFlip, onChange }
   // A mismatch cannot be confirmed without the why — the note IS the record.
   const canConfirm = serials.serial.trim() !== '' && serials.fittedModel.trim() !== ''
     && serials.acRatingKw.trim() !== '' && serials.exportLimit.trim() !== ''
+    && serials.ratedCurrentA.trim() !== '' && serials.typeTestCertRef.trim() !== ''
+    && !!serials.firstConnection
     && (!mismatch || serials.note.trim() !== '');
 
   return (
@@ -892,6 +894,44 @@ function CommissioningSerials({ serials, specifiedInverter, formFlip, onChange }
               className="mt-1 font-mono"
             />
           </div>
+        </div>
+        {/* NC6 §5 needs the CERTIFIED rated current + the cert reference — off
+            the type-test cert/datasheet, not derived. */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs text-muted-foreground">Rated current (A) — as per Type Test</Label>
+            <Input
+              value={serials.ratedCurrentA}
+              onChange={e => onChange({ ratedCurrentA: e.target.value.replace(/[^0-9.]/g, ''), confirmed: false })}
+              placeholder="≤25A single / 16A/ph three"
+              inputMode="decimal"
+              className="mt-1 font-mono"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Type-test cert reference</Label>
+            <Input
+              value={serials.typeTestCertRef}
+              onChange={e => onChange({ typeTestCertRef: e.target.value, confirmed: false })}
+              placeholder="off the cert — attach the PDF too"
+              className="mt-1 font-mono"
+            />
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">First microgenerator connection at these premises? (NC6 §2)</Label>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            {(['yes', 'no'] as const).map(opt => (
+              <button key={opt} type="button"
+                onClick={() => onChange({ firstConnection: opt, confirmed: false })}
+                className={`h-10 rounded-control border text-xs font-medium capitalize transition-colors ${serials.firstConnection === opt ? (opt === 'no' ? 'border-pop bg-pop/10 text-pop' : 'border-tech bg-tech/10 text-tech') : 'border-border hover:bg-muted text-muted-foreground'}`}>
+                {opt === 'yes' ? 'Yes — first here' : 'No'}
+              </button>
+            ))}
+          </div>
+          {serials.firstConnection === 'no' && (
+            <p className="mt-1.5 text-2xs text-pop">Do NOT connect until ESB Networks confirm — a prior microgenerator exists at this MPRN.</p>
+          )}
         </div>
         <div>
           <Label className="text-xs text-muted-foreground">Export limitation — as commissioned</Label>
@@ -1105,12 +1145,12 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-1 flex items-center gap-2"><Shield className="h-4 w-4 text-doc-contract" /> Certs — required to finish</h3>
-          <p className="text-xs text-muted-foreground mb-3">Both go straight into {lead.name.split(' ')[0]}'s paperwork pack. The Declaration of Works auto-sends to the BER assessor.</p>
+          <p className="text-xs text-muted-foreground mb-3">Both file into {lead.name.split(' ')[0]}'s paperwork pack. The Declaration of Works routes to the BER assessor on completion.</p>
           <div className="grid sm:grid-cols-2 gap-2">
             {([['reci', 'Safe Electric (RECI) certificate'], ['dow', 'Signed Declaration of Works']] as const).map(([id, label]) => (
               <label key={id} className={`flex items-center gap-2.5 p-3 rounded-control border cursor-pointer transition-colors ${certs[id] ? 'border-doc-deposit/40 bg-doc-deposit/5' : 'border-dashed border-border hover:bg-muted/40'}`}>
                 <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) { setCerts(c => ({ ...c, [id]: e.target.files![0].name })); toast.success(`${label} filed`, { description: id === 'dow' ? 'Sent to the BER assessor + filed in the paperwork pack.' : 'Filed in the paperwork pack.' }); } }} />
+                  onChange={e => { if (e.target.files?.[0]) { setCerts(c => ({ ...c, [id]: e.target.files![0].name })); toast.success(`${label} filed`, { description: id === 'dow' ? 'In the pack. The Declaration of Works routes to the BER assessor on completion (real send: messaging wire-up).' : 'Filed in the paperwork pack.' }); } }} />
                 {certs[id] ? <CheckCircle2 className="h-4 w-4 text-doc-deposit shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
                 <span className="min-w-0">
                   <span className="block text-xs font-medium">{label}</span>
