@@ -99,13 +99,17 @@ function HashChain() {
 }
 
 const HUB = { x: 360, y: 232 };
-const NODES = [
+/** Named products carry a label + breathe; the unnamed "next verticals" don't.
+ *  Typed explicitly so the optional fields stay readable — `as const` inferred a
+ *  union where TS refused `n.label` / `n.breathe` on the plain nodes. */
+type LatticeNode = { x: number; y: number; r: number; color: string; label?: string; breathe?: boolean };
+const NODES: LatticeNode[] = [
   { x: 200, y: 92,  r: 9, color: 'var(--pop)',         label: 'AISolar', breathe: true },
   { x: 520, y: 92,  r: 9, color: 'var(--doc-deposit)', label: 'AITeam',  breathe: true },
   { x: 110, y: 188, r: 6, color: 'var(--brand-accent)' },
   { x: 620, y: 176, r: 6, color: 'var(--brand-accent)' },
   { x: 360, y: 74,  r: 6, color: 'var(--brand-accent)' },
-] as const;
+];
 
 /** The family lattice — the "distributed" made visual. Products (red/green) and
  *  the verticals next (yellow) sit on the blue AIOS hub; signals flow in. */

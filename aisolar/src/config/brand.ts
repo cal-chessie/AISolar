@@ -69,31 +69,33 @@ export const brand = {
   },
   
   // ===== TRUST BADGES & STATS =====
-  // ⚠️ TODO (Task 4 polish): these stats are placeholder marketing numbers.
-  // Same legal risk as the fake reviews removed from the RI site — replace
-  // with real figures or remove before serious traffic.
-  stats: {
-    customers: "2,500+",
-    savingsGenerated: "€3.2M",
-    installedCapacity: "15 MW",
-    googleRating: "4.9★",
-    yearsInBusiness: "10+",
-    installationsCompleted: "500+",
-  },
-  
+  // DELETED 27 Jul 2026 — this block held invented marketing numbers
+  // ("2,500+ customers", "€3.2M saved", "15 MW", "4.9★", "10+ years",
+  // "500+ installations") behind its own ⚠️ TODO. Nothing rendered them, but
+  // dead config is a loaded gun: the next session wires it to a hero and we
+  // ship a lie. /about literally promises "no invented stars, no fake
+  // testimonials" and /privacy promises "no certifications we don't hold" —
+  // so this file must not carry either.
+  //
+  // When real figures exist they come from DATA, not config: install counts
+  // and savings computed from the tenant's own rows, reviews with names
+  // attached. Do NOT re-add hardcoded stats here.
+
   certifications: [
     { name: "SEAI Registered", icon: "ShieldCheck" },
     { name: "RECI Certified", icon: "Award" },
     { name: "Fully Insured", icon: "ShieldCheck" },
   ],
-  
-  // ===== SEAI GRANT INFO (Ireland-specific) =====
-  grants: {
-    maxDomestic: 1800,
-    maxCommercialSmall: 2700,
-    perKwpDomestic: 900,
-    perKwpCommercial: 450,
-  },
+
+  // ===== SEAI GRANT INFO =====
+  // DELETED 27 Jul 2026 — held the OLD WRONG grant maths (flat €900/kWp
+  // domestic, €450/kWp commercial). The real domestic scheme is TIERED:
+  // €700/kWp for the first 2 kWp then €200/kWp, capped at €1,800 (fixed in
+  // the engine, commit 64b4ffa). Nothing imported these, but dead config with
+  // wrong numbers is a loaded gun — wire it to a page and we quote a grant
+  // that doesn't exist.
+  // Grant maths lives in ONE place: seaiPipeline.ts / leadIntake.ts
+  // (computeQuote). Do NOT re-add rates here.
 
   // ===== PRICING (per-tenant — set here or itemise on the Products page) =====
   // The ONE place system cost is shaped. Every screen (estimate → design →
