@@ -18,6 +18,7 @@ import { AGENTS, AgentDefinition } from '@/lib/agents';
 import { isDemoMode } from '@/lib/demoMode';
 import { toast } from 'sonner';
 import { generateDummyLeads } from '@/lib/dummyData';
+import AgentWindow from '@/components/owner/AgentWindow';
 import { supabase } from '@/integrations/supabase/client';
 import {
   X, Download, Upload, ScrollText, Send,
@@ -144,6 +145,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
   );
   const [activeTab, setActiveTab] = useState<'agents' | 'training' | 'ai_config'>('agents');
   const [logAgent, setLogAgent] = useState<AgentDefinition | null>(null);
+  const [windowAgent, setWindowAgent] = useState<AgentDefinition | null>(null);
   const demo = isDemoMode();
 
   useEffect(() => {
@@ -308,6 +310,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
                     )}
                   </div>
                   <div className="flex items-center gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => setWindowAgent(agent)} className="h-7 text-xs">Inside</Button>
                     <Button size="sm" variant="outline" onClick={() => setLogAgent(agent)} className="h-7 text-xs">
                       <ScrollText className="h-3 w-3 mr-1" /> Log
                     </Button>
@@ -429,6 +432,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       )}
 
       {logAgent && <AgentLogWindow agent={logAgent} onClose={() => setLogAgent(null)} />}
+      {windowAgent && <AgentWindow agent={windowAgent} leads={generateDummyLeads()} onClose={() => setWindowAgent(null)} />}
     </div>
   );
 }

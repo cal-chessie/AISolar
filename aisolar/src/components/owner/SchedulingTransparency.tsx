@@ -46,7 +46,7 @@ function savingsFor(jobs: PlannableJob[]) {
   return { ...r, euro };
 }
 
-export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }) {
+export default function SchedulingTransparency({ leads, only }: { leads: DummyLead[]; only?: 'survey' | 'install' }) {
   const model = useMemo(() => {
     const surveyLeads = leads.filter(l => ['survey_scheduled', 'survey_complete'].includes(l.workflow_stage));
     const installLeads = leads.filter(l => l.assignment && ['install_scheduled', 'installing', 'installed'].includes(l.workflow_stage));
@@ -74,6 +74,12 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
 
   const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  // When embedded in one agent's window (`only`), the headline reflects just that
+  // planner's savings; standalone it sums both.
+  const dispKm = only === 'survey' ? (model.surveySave?.savedKm ?? 0) : only === 'install' ? (model.installSave?.savedKm ?? 0) : model.totalKm;
+  const dispMin = only === 'survey' ? (model.surveySave?.savedMin ?? 0) : only === 'install' ? (model.installSave?.savedMin ?? 0) : model.totalMin;
+  const dispEuro = only === 'survey' ? (model.surveySave?.euro ?? 0) : only === 'install' ? (model.installSave?.euro ?? 0) : model.totalEuro;
+
   return (
     <div className="rounded-panel bg-card shadow-card overflow-hidden">
       {/* header */}
@@ -90,15 +96,15 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
         {/* savings headline — the trust payoff */}
         <div className="mt-3 grid grid-cols-3 gap-2">
           <div className="rounded-control border border-doc-deposit/30 bg-doc-deposit/5 p-2.5 text-center">
-            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">{model.totalKm.toFixed(0)}<span className="text-2xs font-medium"> km</span></div>
+            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">{dispKm.toFixed(0)}<span className="text-2xs font-medium"> km</span></div>
             <div className="text-2xs text-muted-foreground mt-1">saved vs unplanned</div>
           </div>
           <div className="rounded-control border border-doc-deposit/30 bg-doc-deposit/5 p-2.5 text-center">
-            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">{model.totalMin.toFixed(0)}<span className="text-2xs font-medium"> min</span></div>
+            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">{dispMin.toFixed(0)}<span className="text-2xs font-medium"> min</span></div>
             <div className="text-2xs text-muted-foreground mt-1">less driving</div>
           </div>
           <div className="rounded-control border border-doc-deposit/30 bg-doc-deposit/5 p-2.5 text-center">
-            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">≈{eur(model.totalEuro)}</div>
+            <div className="text-lg font-bold text-doc-deposit tabular-nums leading-none">≈{eur(dispEuro)}</div>
             <div className="text-2xs text-muted-foreground mt-1">per cycle</div>
           </div>
         </div>
@@ -106,25 +112,29 @@ export default function SchedulingTransparency({ leads }: { leads: DummyLead[] }
       </div>
 
       {/* the two planners */}
-      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-        <PlannerColumn
-          title="Survey planner"
-          who="Consultant · up to 3/day, a week ahead"
-          plan={model.surveyPlan}
-          save={model.surveySave}
-          fmtDay={fmtDay}
-          approved={approved.survey}
-          onApprove={() => setApproved(a => ({ ...a, survey: true }))}
-        />
-        <PlannerColumn
-          title="Install planner"
-          who="Installer · 1/day, a fortnight ahead"
-          plan={model.installPlan}
-          save={model.installSave}
-          fmtDay={fmtDay}
-          approved={approved.install}
-          onApprove={() => setApproved(a => ({ ...a, install: true }))}
-        />
+      <div className={only ? '' : 'grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border'}>
+        {only !== 'install' && (
+          <PlannerColumn
+            title="Survey planner"
+            who="Consultant · up to 3/day, a week ahead"
+            plan={model.surveyPlan}
+            save={model.surveySave}
+            fmtDay={fmtDay}
+            approved={approved.survey}
+            onApprove={() => setApproved(a => ({ ...a, survey: true }))}
+          />
+        )}
+        {only !== 'survey' && (
+          <PlannerColumn
+            title="Install planner"
+            who="Installer · 1/day, a fortnight ahead"
+            plan={model.installPlan}
+            save={model.installSave}
+            fmtDay={fmtDay}
+            approved={approved.install}
+            onApprove={() => setApproved(a => ({ ...a, install: true }))}
+          />
+        )}
       </div>
 
       {/* how it's programmed */}

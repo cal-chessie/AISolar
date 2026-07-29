@@ -378,6 +378,21 @@ for the UI. What's DEMO and must become REAL in Sweep 8:
   and record the approval + run to `agent_route_runs`. Until wired, it's view+intent
   only — the copy says so.
 
+### Per-agent transparency windows (30 Jul, FRONTEND — live in app)
+`src/components/owner/AgentWindow.tsx` — Cal: "each agent needs the same window as
+the scheduling agent." Every agent in Owner → Agents has an **Inside** button → a
+window with the SAME shape for all 10: **how it's programmed** (logic + trigger +
+guardrails from `agents.ts`) → **what it's working on right now** (grounded per-agent
+on the book by workflow stage) → **reads / writes**. The two schedulers additionally
+embed `SchedulingTransparency` (parameterised `only='survey'|'install'`). Verified
+in-browser 30 Jul. Sweep 8 to make it real:
+- **"Working on now"** computes from demo leads by stage → read `agent_runs` + the
+  real pipeline (each agent's actual queue depth + last run + what it's about to act on).
+- **Impact numbers** (savings, counts) → aggregate from `agent_runs` (same wiring as
+  the Owner Analytics `agentImpact` item).
+- `agents.ts` guardrail/trigger/description text is the "how it's programmed" source —
+  keep it in step with the real handler behaviour (it also feeds the PUBLIC /agents page).
+
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
