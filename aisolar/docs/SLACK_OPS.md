@@ -1,5 +1,35 @@
 # SLACK OPS — the coordination nervous system (28 Jul 2026)
 
+> ## ✅ BUILT AND LIVE — 30 Jul 2026
+> Workspace **AIOS Ops** exists · 3 channels live · 3 webhooks minted and stored in
+> `~/.aios/slack-webhooks.env` (chmod 600) · first real posts landed in all three.
+>
+> **The deepest purpose, named (30 Jul):** this is not a chat tool. The Hardening
+> Amendment abolished the power to act alone and RETAINED the power to stop alone —
+> but until today that veto lived inside a Claude session, which means it existed only
+> while a session was open. Slack is where the founder's veto becomes **persistent,
+> mobile, and able to survive his absence** — and it is the first room in which a
+> second steward could ever stand (v0001 needs five).
+>
+> | Piece | State |
+> |---|---|
+> | `~/.aios/slack-post` | ✅ CLI. **No `--proof`, no post** (exit 2, tested). Refuses a 4th channel — Doctrine 002. |
+> | `~/.aios/kernel-heartbeat` | ✅ Green = silence. Red only on orphans/immutability/receipt loss. |
+> | `supabase/functions/_shared/slack.ts` | ✅ Same contract for edge functions + `requestApproval()` buttons. |
+> | `supabase/functions/slack-approve` | ✅ Written + kernel side verified. Deploys with the runbook. |
+> | kernel `0013_APPROVAL_RESOLUTION.sql` | ✅ Applied live. Receipt names the attestor (`resolved_by: "slack:cal"`). |
+>
+> **The loop, proven on the live kernel (rolled back, nothing polluted):** agent writes
+> `kernel.commands(pending)` → `CommandIssued` receipts → buttons post to `#decisions` →
+> Cal taps → Slack HMAC verified → narrow `service_role`-only RPC resolves it →
+> `CommandResolved` receipts **naming Cal**. A second tap returns *already resolved* and
+> cannot overwrite the first. **No Claude in the loop.**
+>
+> Remaining (2 min, at deploy): Slack app → *Basic Information* → Signing Secret →
+> `SLACK_SIGNING_SECRET`; *Interactivity & Shortcuts* → ON → Request URL = the deployed
+> `slack-approve`. Both are steps 5/5b of the cutover runbook.
+
+
 > The ops layer for the WHOLE build (all repos + agents + vault), not just
 > AISolar — it lives here because this is where the active work and the
 > accountability spine (FINAL_PUSH.md) already sit.
