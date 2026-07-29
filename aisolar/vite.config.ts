@@ -16,8 +16,19 @@ export default defineConfig(({ mode }) => ({
   // Pre-bundle the heavy deps that lazy-loaded routes pull in, so Vite never
   // stops to re-optimise mid-session and 404 an in-flight dynamic import
   // ("Failed to fetch dynamically imported module"). See src/lib/lazyWithRetry.
+  //
+  // ROOT CAUSE of the "crashes every day" (found 30 Jul): pdf-lib is imported
+  // ONLY inside pdfFill.ts, which is reached ONLY via the lazy installer/
+  // paperwork route. So Vite never saw it at startup and discovered it the first
+  // time a job's paperwork opened each session — triggering a full dep re-optimise
+  // that 404'd whatever navigation was in flight. Pre-bundling it (and the other
+  // lazy-only heavies) removes the mid-session re-optimise entirely.
   optimizeDeps: {
-    include: ['framer-motion', 'recharts', 'lucide-react', '@supabase/supabase-js'],
+    include: [
+      'framer-motion', 'recharts', 'lucide-react', '@supabase/supabase-js',
+      'pdf-lib',            // ← the daily-crash culprit: lazy-route-only, heavy
+      'sonner', 'cmdk', '@tanstack/react-query', 'zod', 'date-fns',
+    ],
   },
   build: {
     chunkSizeWarningLimit: 600,
