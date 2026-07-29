@@ -35,11 +35,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, MapPin, Phone, Calendar, Clock, Navigation, Camera,
   Package, CheckCircle2, AlertTriangle, ChevronRight, Zap, Wrench,
-  Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind, Upload,
+  Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind, Upload, Download,
   User, ClipboardList, X, Star, Truck, ListChecks, Award, Cpu,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
-import { DEFAULT_SERIALS, type SerialState } from '@/lib/fieldRecord';
+import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
+import { downloadSubmissionPack } from '@/lib/pdfFill';
 import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
 import { monitoringAppForModel, commissioningSteps, systemLiveEmail } from '@/lib/monitoringHandoff';
 import { brand } from '@/config/brand';
@@ -192,6 +193,7 @@ export default function JobViewV2() {
   const [signature, setSignature] = useState<string | null>(null);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [serials, setSerials] = useState<SerialState>(DEFAULT_SERIALS);
+  const [certs, setCerts] = useState<CertRecord>({});
 
   const storageKey = `jobview_v2_${lead.id}`;
 
@@ -209,6 +211,7 @@ export default function JobViewV2() {
         if (data.photos) setPhotos(data.photos);
         if (data.signature) setSignature(data.signature);
         if (data.serials) setSerials({ ...DEFAULT_SERIALS, ...data.serials });
+        if (data.certs) setCerts(data.certs);
       }
     } catch { /* ignore */ }
   }, [storageKey]);
@@ -217,10 +220,10 @@ export default function JobViewV2() {
     preInstall: ToggleItem[]; roof: ToggleItem[]; electrical: ToggleItem[];
     commissioning: ToggleItem[]; handover: ToggleItem[];
     photos: Record<TabId, PhotoItem[]>; signature: string | null;
-    serials: SerialState;
+    serials: SerialState; certs: CertRecord;
   }>) => {
     const data = {
-      preInstall, roof, electrical, commissioning, handover, photos, signature, serials,
+      preInstall, roof, electrical, commissioning, handover, photos, signature, serials, certs,
       ...updates,
     };
     try {
@@ -446,6 +449,11 @@ export default function JobViewV2() {
                 items={handover}
                 photos={photos.handover}
                 signature={signature}
+                certs={certs}
+                onCert={(id, file) => {
+                  const next = { ...certs, [id]: file };
+                  setCerts(next); persist({ certs: next });
+                }}
                 onToggle={(id, updates) => updateToggle('handover', id, updates)}
                 onPhoto={(id, uploaded) => updatePhoto('handover', id, uploaded)}
                 onSignature={(sig) => { setSignature(sig); persist({ signature: sig }); }}
@@ -1036,10 +1044,12 @@ function CommissioningSerials({ serials, specifiedInverter, formFlip, onChange }
 }
 
 // ============= HANDOVER TAB =============
-function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature, overallComplete, lead, jobCompleted, onMarkJobComplete }: {
+function HandoverTab({ items, photos, signature, certs, onCert, onToggle, onPhoto, onSignature, overallComplete, lead, jobCompleted, onMarkJobComplete }: {
   items: ToggleItem[];
   photos: PhotoItem[];
   signature: string | null;
+  certs: CertRecord;
+  onCert: (id: keyof CertRecord, file: CertFile) => void;
   onToggle: (id: string, updates: Partial<ToggleItem>) => void;
   onPhoto: (id: string, uploaded: boolean) => void;
   onSignature: (sig: string) => void;
@@ -1048,9 +1058,10 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
   jobCompleted?: boolean;
   onMarkJobComplete?: () => void;
 }) {
-  // Cal's gate: no certs, no job-complete
-  const [certs, setCerts] = useState<{ reci?: string; dow?: string }>({});
+  // Cal's gate: no certs, no job-complete. The REAL files (data URLs) bundle
+  // into the ESB submission pack.
   const certsDone = !!certs.reci && !!certs.dow;
+  const [packBusy, setPackBusy] = useState(false);
   const [showPad, setShowPad] = useState(false);
   const allDone = items.every(t => t.done) && photos.every(p => p.uploaded) && !!signature;
 
@@ -1145,20 +1156,35 @@ function HandoverTab({ items, photos, signature, onToggle, onPhoto, onSignature,
       <Card>
         <CardContent className="p-4">
           <h3 className="font-semibold text-sm mb-1 flex items-center gap-2"><Shield className="h-4 w-4 text-doc-contract" /> Certs — required to finish</h3>
-          <p className="text-xs text-muted-foreground mb-3">Both file into {lead.name.split(' ')[0]}'s paperwork pack. The Declaration of Works routes to the BER assessor on completion.</p>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {([['reci', 'Safe Electric (RECI) certificate'], ['dow', 'Signed Declaration of Works']] as const).map(([id, label]) => (
+          <p className="text-xs text-muted-foreground mb-3">All four bundle into the ESB submission pack. The signed Declaration of Works routes to the BER assessor on completion.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([['reci', 'Safe Electric (RECI) cert'], ['dow', 'Signed Declaration of Works'], ['typeTest', 'Inverter type-test cert'], ['sld', 'Single-line diagram (SLD)']] as const).map(([id, label]) => (
               <label key={id} className={`flex items-center gap-2.5 p-3 rounded-control border cursor-pointer transition-colors ${certs[id] ? 'border-doc-deposit/40 bg-doc-deposit/5' : 'border-dashed border-border hover:bg-muted/40'}`}>
                 <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) { setCerts(c => ({ ...c, [id]: e.target.files![0].name })); toast.success(`${label} filed`, { description: id === 'dow' ? 'In the pack. The Declaration of Works routes to the BER assessor on completion (real send: messaging wire-up).' : 'Filed in the paperwork pack.' }); } }} />
+                  onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      onCert(id, { name: f.name, dataUrl: String(reader.result), kind: f.type === 'application/pdf' ? 'pdf' : 'image' });
+                      toast.success(`${label} filed`, { description: id === 'dow' ? 'In the pack; the DoW routes to the BER assessor on completion (real send: messaging wire-up).' : 'Bundled into the ESB submission pack.' });
+                    };
+                    reader.readAsDataURL(f);
+                  }} />
                 {certs[id] ? <CheckCircle2 className="h-4 w-4 text-doc-deposit shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
                 <span className="min-w-0">
                   <span className="block text-xs font-medium">{label}</span>
-                  <span className="block text-[11px] text-muted-foreground truncate">{certs[id] ?? 'Photo or PDF — tap to upload'}</span>
+                  <span className="block text-[11px] text-muted-foreground truncate">{certs[id]?.name ?? 'Photo or PDF — tap to upload'}</span>
                 </span>
               </label>
             ))}
           </div>
+          {/* THE selling point: one download the installer takes to the ESB
+              portal — filled NC6 + portal entry sheet + the bundled certs. */}
+          <Button size="sm" className="mt-3 w-full h-control" disabled={packBusy}
+            onClick={async () => { setPackBusy(true); try { await downloadSubmissionPack(lead); toast.success('ESB submission pack ready', { description: 'Filled NC6 + portal entry sheet + your certs — take it to the ESB portal.' }); } finally { setPackBusy(false); } }}>
+            <Download className="h-4 w-4 mr-1.5" /> {packBusy ? 'Building pack…' : 'Download ESB submission pack'}
+          </Button>
         </CardContent>
       </Card>
 

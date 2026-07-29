@@ -280,11 +280,30 @@ export function nc6Completeness(lead: DummyLead): { ready: boolean; missing: str
   return { ready: missing.length === 0, missing };
 }
 
+// Brittleness guard (#8): the overlay coordinates are pinned to THESE exact ESB
+// PDFs. If ESB revise a form its byte length + page count change and every
+// coordinate is suspect — warn LOUDLY so nobody files a mis-placed form.
+// Recalibrate via scripts/pdf-probe.mjs + pdf-verify.mjs, then update here.
+const FORM_INTEGRITY: Partial<Record<EsbForm, { bytes: number; pages: number }>> = {
+  NC6: { bytes: 240733, pages: 6 }, // sha256 12b: 821a5a321216430a (30 Jul 2026)
+};
+let integrityWarned = false;
+function assertFormIntegrity(form: EsbForm, bytes: ArrayBuffer, doc: PDFDocument) {
+  const exp = FORM_INTEGRITY[form];
+  if (!exp || integrityWarned) return;
+  if (bytes.byteLength !== exp.bytes || doc.getPageCount() !== exp.pages) {
+    integrityWarned = true;
+    console.warn(`[pdfFill] ${form} looks REVISED by ESB (bytes ${bytes.byteLength}≠${exp.bytes} or pages ${doc.getPageCount()}≠${exp.pages}). Overlay coordinates are no longer trustworthy — recalibrate (probe+verify) before filing.`);
+    try { (window as { __esbFormRevised?: string }).__esbFormRevised = form; } catch { /* noop */ }
+  }
+}
+
 /** Official form(s) + typed data appendix → returns a Blob for download. */
 export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob> {
   const [first, ...rest] = FORM_PARTS[form];
   const bytes = await fetch(first).then(r => r.arrayBuffer());
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  assertFormIntegrity(form, bytes, doc);
   for (const partUrl of rest) {
     const partBytes = await fetch(partUrl).then(r => r.arrayBuffer());
     const part = await PDFDocument.load(partBytes, { ignoreEncryption: true });
@@ -392,6 +411,176 @@ export async function downloadEsbForm(lead: DummyLead, form: EsbForm) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${form}-${lead.name.replace(/\s+/g, '-')}-prepared.pdf`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const bin = atob(dataUrl.split(',')[1] ?? '');
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/** SHA-256 of the exact filled-NC6 bytes — the tamper-evident seal (#11/#12).
+ *  Browser-side (crypto.subtle); the pack builder only ever runs in the app. */
+async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * buildSubmissionPack — THE selling point. ONE sealed PDF the installer takes to
+ * the ESB portal, in order:
+ *   (10) MANIFEST / checklist cover — what's in the pack + what's still
+ *        outstanding, seen at a glance BEFORE the portal is opened.
+ *   (1)  the filled official NC6 (overlay + prepared-data appendix).
+ *   (2)  the ESB PORTAL ENTRY SHEET — every real value, top-to-bottom, for
+ *        error-free re-keying (ESB killed email over data-entry mistakes; this
+ *        eliminates them — the wedge).
+ *   (3/9) the attachments ESB require bundled: Safe Electric (RECI) cert, signed
+ *        Declaration of Works, inverter type-test cert, and the single-line
+ *        diagram (SLD).
+ *   (11) ATTESTATION & AUDIT TRAIL — who attested, when, eIDAS simple-signature
+ *        note, and a SHA-256 seal of the exact filled-NC6 bytes.
+ *   (12) tamper-evident PDF metadata (Title/Author/Subject/Keywords/Producer)
+ *        carrying MPRN + RECI + the NC6 seal. Overlay values are drawn onto the
+ *        content stream (not editable form fields), so the filed form can't be
+ *        silently re-typed.
+ * Client-side today; DB persistence + real submission/notify are Sweep 8 (M1-M3, X1).
+ */
+export async function buildSubmissionPack(lead: DummyLead): Promise<Blob> {
+  const nc6Bytes = await (await fillEsbForm(lead, 'NC6')).arrayBuffer();
+  const nc6Hash = await sha256Hex(nc6Bytes);            // (11)(12) seal of the filled NC6
+  const doc = await PDFDocument.load(nc6Bytes, { ignoreEncryption: true });
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  const c = nc6Completeness(lead);
+  const fr = getFieldRecord(lead.id);
+  const base = Object.fromEntries(collect(lead));
+  const real = (k: string) => { const v = base[k]; return v && !String(v).startsWith('(') ? String(v) : ''; };
+  const mprn = real('MPRN'), installer = real('Installer name'), reciNo = real('Installer RECI no.');
+
+  // (3/9) the attachments ESB require bundled with the NC6.
+  const certs: Array<[string, import('@/lib/fieldRecord').CertFile | undefined]> = [
+    ['Safe Electric (RECI) certificate', fr?.certs.reci],
+    ['Signed Declaration of Works (-> BER assessor)', fr?.certs.dow],
+    ['Inverter type-test certificate', fr?.certs.typeTest],
+    ['Single-line diagram (SLD)', fr?.certs.sld],
+  ];
+
+  // (10) MANIFEST / completeness cover — inserted as page 1, the front of the
+  // pack. The installer sees what's in the pack and what's still outstanding
+  // BEFORE opening the portal: the anti-rejection wedge, made visible.
+  const cover = doc.insertPage(0, [595, 842]);
+  let cy = 800;
+  cover.drawText('ESB SUBMISSION PACK - CONTENTS & CHECKLIST', { x: 40, y: cy, size: 15, font: bold }); cy -= 20;
+  cover.drawText(`${lead.name}${mprn ? '   MPRN ' + mprn : ''}`, { x: 40, y: cy, size: 10, font }); cy -= 14;
+  cover.drawText(`Prepared ${new Date().toLocaleString('en-IE')}${installer ? '   ' + installer : ''}${reciNo ? '   Safe Electric ' + reciNo : ''}`, { x: 40, y: cy, size: 8, font, color: rgb(0.4, 0.4, 0.4) }); cy -= 22;
+  cover.drawText(c.ready ? 'STATUS: READY TO FILE' : 'STATUS: INCOMPLETE - see outstanding below', { x: 40, y: cy, size: 11, font: bold, color: c.ready ? rgb(0, 0.45, 0.2) : rgb(0.7, 0.45, 0) }); cy -= 26;
+
+  cover.drawText('IN THIS PACK', { x: 40, y: cy, size: 10, font: bold }); cy -= 16;
+  const rows: Array<[string, boolean]> = [
+    ['NC6 microgeneration form - filled, ready to sign', c.ready],
+    ['ESB portal entry sheet - every value to re-key', true],
+    ...certs.map(([label, cert]) => [label, !!cert?.dataUrl] as [string, boolean]),
+  ];
+  for (const [label, ok] of rows) {
+    cover.drawText(ok ? '[ok]' : '[  ]', { x: 40, y: cy, size: 9, font: bold, color: ok ? rgb(0, 0.45, 0.2) : rgb(0.75, 0.2, 0.2) });
+    cover.drawText(label, { x: 74, y: cy, size: 9, font, color: ok ? rgb(0, 0, 0) : rgb(0.5, 0.5, 0.5) });
+    cy -= 15;
+  }
+  cy -= 12;
+
+  const outstanding = [
+    ...c.missing,
+    ...certs.filter(([, cert]) => !cert?.dataUrl).map(([label]) => `Attach: ${label}`),
+  ];
+  cover.drawText('OUTSTANDING BEFORE YOU FILE', { x: 40, y: cy, size: 10, font: bold }); cy -= 16;
+  if (outstanding.length === 0) {
+    cover.drawText('Nothing - the pack is complete. Sign & date the NC6 by hand, then submit on the ESB portal.', { x: 40, y: cy, size: 9, font, color: rgb(0, 0.45, 0.2) });
+  } else {
+    for (const item of outstanding.slice(0, 14)) {
+      cover.drawText('-', { x: 40, y: cy, size: 9, font: bold, color: rgb(0.7, 0.45, 0) });
+      cover.drawText(String(item).slice(0, 92), { x: 52, y: cy, size: 9, font, color: rgb(0.3, 0.3, 0.3) });
+      cy -= 15;
+    }
+  }
+  cover.drawText(`NC6 seal (SHA-256): ${nc6Hash.slice(0, 40)}...`, { x: 40, y: 38, size: 7, font, color: rgb(0.5, 0.5, 0.5) });
+
+  // (2) the portal entry sheet
+  const sheet = doc.addPage([595, 842]);
+  let y = 800;
+  sheet.drawText('ESB PORTAL ENTRY SHEET - NC6 Microgeneration', { x: 40, y, size: 14, font: bold }); y -= 18;
+  sheet.drawText(`${lead.name} - copy top to bottom into the ESB Networks portal`, { x: 40, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) }); y -= 16;
+  sheet.drawText(c.ready ? 'STATUS: READY TO SUBMIT' : `STATUS: INCOMPLETE - ${c.missing.join(' | ')}`.slice(0, 118), { x: 40, y, size: 9, font: bold, color: c.ready ? rgb(0, 0.45, 0.2) : rgb(0.7, 0.45, 0) }); y -= 22;
+  for (const [k, v] of collect(lead)) {
+    if (!v || String(v).startsWith('(')) continue; // real values only — no placeholders in the portal sheet
+    sheet.drawText(k, { x: 40, y, size: 9, font: bold });
+    sheet.drawText(String(v).slice(0, 60), { x: 250, y, size: 9, font });
+    y -= 15;
+  }
+
+  // (3/9) bundle the captured certs — each on its own page (image) or spliced in (PDF)
+  for (const [label, cert] of certs) {
+    if (!cert?.dataUrl) continue;
+    try {
+      if (cert.kind === 'pdf') {
+        const part = await PDFDocument.load(dataUrlToBytes(cert.dataUrl), { ignoreEncryption: true });
+        (await doc.copyPages(part, part.getPageIndices())).forEach(pg => doc.addPage(pg));
+      } else {
+        const b = dataUrlToBytes(cert.dataUrl);
+        const img = /image\/png/i.test(cert.dataUrl) ? await doc.embedPng(b) : await doc.embedJpg(b);
+        const pg = doc.addPage([595, 842]);
+        pg.drawText(label.toUpperCase(), { x: 40, y: 805, size: 11, font: bold });
+        const s = Math.min(515 / img.width, 720 / img.height);
+        pg.drawImage(img, { x: 40, y: 780 - img.height * s, width: img.width * s, height: img.height * s });
+      }
+    } catch { /* a corrupt upload never breaks the pack */ }
+  }
+
+  // (11) ATTESTATION & AUDIT TRAIL — eIDAS simple-signature provenance + hash seal.
+  const att = doc.addPage([595, 842]);
+  let ay = 800;
+  att.drawText('ATTESTATION & AUDIT TRAIL', { x: 40, y: ay, size: 14, font: bold }); ay -= 22;
+  const wrap = (t: string, color = rgb(0.25, 0.25, 0.25), size = 9) => {
+    for (const line of t.match(/.{1,96}(\s|$)/g) ?? [t]) { att.drawText(line.trim(), { x: 40, y: ay, size, font, color }); ay -= 13; }
+  };
+  wrap('This NC6 was prepared from the AISolar field record (bill read -> survey -> design -> commissioning gate). Every value on the official form was captured from a document or ATTESTED on site by the named Safe Electric installer at the gate - never machine-verified.');
+  ay -= 6;
+  const line = (k: string, v: string) => { att.drawText(k, { x: 40, y: ay, size: 9, font: bold }); att.drawText(v || '-', { x: 220, y: ay, size: 9, font }); ay -= 15; };
+  line('Installer (attesting)', installer);
+  line('Safe Electric (RECI) no.', reciNo);
+  line('Customer / site', real('Customer name') || lead.name);
+  line('MPRN', mprn);
+  line('Prepared (Europe/Dublin)', new Date().toLocaleString('en-IE'));
+  ay -= 8;
+  att.drawText('Filled NC6 SHA-256 seal:', { x: 40, y: ay, size: 9, font: bold }); ay -= 14;
+  att.drawText(nc6Hash.slice(0, 32), { x: 40, y: ay, size: 9, font, color: rgb(0.15, 0.15, 0.5) }); ay -= 13;
+  att.drawText(nc6Hash.slice(32), { x: 40, y: ay, size: 9, font, color: rgb(0.15, 0.15, 0.5) }); ay -= 20;
+  wrap('Signature: the NC6 carries the installer\'s typed name as a simple electronic signature (eIDAS Art. 3(10) - a typed name with intent to sign). Where a wet signature is required, print, sign and date the NC6 by hand before filing.', rgb(0.4, 0.4, 0.4), 8);
+  ay -= 4;
+  wrap('This pack was generated by AISolar. The seal above fixes the exact NC6 bytes in this pack - any later change to the form changes the hash.', rgb(0.4, 0.4, 0.4), 8);
+
+  // (12) tamper-evident metadata seal. NOTE: pdf-lib owns Producer/Creator and
+  // re-stamps them on save() (verified — updateMetadata:false doesn't change it),
+  // so the seal lives in Subject + Keywords (which survive) and, human-readable,
+  // on the cover + attestation pages.
+  doc.setTitle(`ESB NC6 submission pack - ${lead.name}${mprn ? ' - MPRN ' + mprn : ''}`);
+  doc.setAuthor(installer || 'AISolar');
+  doc.setSubject(`ESB Networks NC6 microgeneration connection - submission pack - NC6 seal ${nc6Hash.slice(0, 16)}`);
+  doc.setKeywords(['NC6', 'ESB Networks', 'microgeneration', mprn, reciNo, `seal:${nc6Hash.slice(0, 16)}`, 'AISolar'].filter(Boolean));
+  doc.setCreationDate(new Date());
+
+  return new Blob([await doc.save()], { type: 'application/pdf' });
+}
+
+export async function downloadSubmissionPack(lead: DummyLead) {
+  const blob = await buildSubmissionPack(lead);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ESB-submission-pack-${lead.name.replace(/\s+/g, '-')}.pdf`;
   a.click();
   URL.revokeObjectURL(a.href);
 }

@@ -48,9 +48,30 @@ export const DEFAULT_SERIALS: SerialState = {
   ratedCurrentA: '', typeTestCertRef: '', firstConnection: '',
 };
 
+/** A cert captured on site — the REAL file, held as a data URL so it can be
+ *  previewed, bundled into the submission pack, and (Sweep 8) uploaded to
+ *  storage + hashed onto the record. `kind` drives how the pack embeds it. */
+export interface CertFile {
+  name: string;
+  dataUrl: string;
+  kind: 'image' | 'pdf';
+}
+
+export interface CertRecord {
+  /** Safe Electric (RECI) completion cert — I.S. 10101. */
+  reci?: CertFile;
+  /** Signed Declaration of Works (→ the BER assessor). */
+  dow?: CertFile;
+  /** Inverter type-test cert — ESB require it ATTACHED to the NC6. */
+  typeTest?: CertFile;
+  /** Electrical single-line diagram — ESB require it attached to the NC6. */
+  sld?: CertFile;
+}
+
 export interface FieldRecord {
   serials: SerialState;
   signature: string | null; // dataURL today; storage URL + hash at Sweep 8
+  certs: CertRecord;
 }
 
 /** Read a job's field record. Null when the crew hasn't started that job on
@@ -64,6 +85,7 @@ export function getFieldRecord(leadId: string): FieldRecord | null {
     return {
       serials: { ...DEFAULT_SERIALS, ...(data.serials ?? {}) },
       signature: data.signature ?? null,
+      certs: (data.certs ?? {}) as CertRecord,
     };
   } catch {
     return null;

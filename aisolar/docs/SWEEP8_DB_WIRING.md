@@ -462,13 +462,15 @@ Cal audited every NC6 box; the misses he flagged are now filled + gated:
   browser visual of the core done earlier, the newest-fields render pending (pdfjs pane
   wedges in-dev — not a code issue).
 
-### Certs — the installer's last step (EXISTS; persistence/send = Sweep 8)
-`JobViewV2` HandoverTab: "Certs — required to finish" gates **Mark job complete** on two
-uploads — Safe Electric (RECI) cert + signed Declaration of Works. Today the files are
-LOCAL state (filenames) + a toast; the copy is now honest (routes to BER "on completion /
-messaging wire-up", not "Sent"). Sweep 8: files → storage (`install_evidence`, M2), the
-pack → customer portal documents (M3), and the DoW → the BER assessor via the notification
-path (X1 Postmark). Draft-never-send until then.
+### Certs — the installer's last step (now REAL files + a bundled pack — see the ESB Submission Pack section below)
+`JobViewV2` HandoverTab: "Certs — required to finish". **Superseded 30 Jul** — the certs are
+no longer filename-only: they capture the REAL file (FileReader → data URL, `CertFile{name,
+dataUrl,kind}` on `fieldRecord.certs`) and there are now **four** — Safe Electric (RECI),
+signed Declaration of Works, inverter type-test cert, and the single-line diagram (SLD). Copy
+stays honest (DoW "routes to BER on completion / messaging wire-up", never "Sent"). Sweep 8
+still owns: files → storage (`install_evidence`, M2), the pack → customer portal documents
+(M3), and the DoW → the BER assessor via the notification path (X1 Postmark). Draft-never-send
+until then.
 
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
@@ -550,3 +552,79 @@ covered. The audit's material adds are **A1 (auth/tenant)** and **A2 (front-door
 creation)** — the two ends of the funnel that aren't wired: you can't sign a tenant up, and the
 public bill upload doesn't yet birth a lead. Those are the launch-critical gaps; A3–A7 are
 cleanup with clear homes. Master list updated with the A-items.
+
+## THE ESB SUBMISSION PACK — "biggest selling point" (Cal, 30 Jul: "knock out step 1-8… & 9-10-11-12")
+**What it is.** ESB Networks has no API and STOPPED taking NC6 by email (their own data-entry
+errors) — portal-only. Their pain is our wedge: AISolar produces ONE sealed PDF the installer
+carries to the portal, so the re-key is error-free and nothing is missing. `pdfFill.buildSubmissionPack(lead)`
++ the "Download ESB submission pack" button on `JobViewV2` HandoverTab (gated on the record).
+
+**The pack, in order (14 pages on a complete job):** (10) manifest/checklist cover → (1) the
+filled official NC6 + its prepared-data appendix → (2) the ESB PORTAL ENTRY SHEET (every real
+value, top-to-bottom, for re-keying) → (3/9) the four required attachments (RECI, DoW, type-test,
+SLD) → (11) attestation & audit-trail page. Metadata (12) sealed on save.
+
+### The 12-item ledger — what's DONE (client-side, verified) vs DEPLOY-GATED (Sweep 8)
+| # | Item | State |
+|---|---|---|
+| 1 | **DB persistence** of the field record (serials + certs + signature) | ⬜ Sweep 8 — M1 `installed_equipment` + M2 `install_evidence`. Today: offline-first `localStorage jobview_v2_<id>` (the `fieldRecord.ts` contract IS the table shape). |
+| 2 | **Real cert files** (not filenames) | ✅ DONE — `CertFile{name,dataUrl,kind}`; HandoverTab reads the file via FileReader → data URL. |
+| 3 | **DoW → BER assessor send** | ⬜ Sweep 8 — X1 Postmark (notification path). Copy is honest until then ("on completion / messaging wire-up"), never "Sent". |
+| 4 | **Pack → customer** (portal delivery) | ⬜ Sweep 8 — M3 customer-portal documents. |
+| 5 | **Type-test cert attached** | ✅ DONE — 3rd cert slot; bundled into the pack. |
+| 6 | **Portal-ready pack** (the entry sheet) | ✅ DONE — real values only (placeholders/`(` guards stripped); READY/INCOMPLETE banner. |
+| 7 | **Multi-unit ready** | ✅ shape ready — `collect()`/overlay carry the fitted unit; §5/§5A single-unit today, multi-row when M1 lands N rows. |
+| 8 | **Brittleness guard** | ✅ DONE — `FORM_INTEGRITY{NC6:{bytes:240733,pages:6}}` + `assertFormIntegrity()`; warns loudly + sets `window.__esbFormRevised` if ESB revise the PDF (coords then suspect). Silent on the pinned form (verified). |
+| 9 | **Single-line diagram (SLD)** attached | ✅ DONE — 4th cert slot (`certs.sld`); bundled; on the manifest checklist. |
+| 10 | **Manifest / completeness cover** | ✅ DONE — inserted as page 1: `[ok]`/`[ ]` contents list + "OUTSTANDING BEFORE YOU FILE" from `nc6Completeness()`. The anti-rejection wedge, made visible. |
+| 11 | **Attestation & audit trail** | ✅ DONE — appendix page: attesting installer, RECI, customer/MPRN, timestamp, full SHA-256 of the filled NC6, eIDAS Art. 3(10) simple-signature note. Blank (never fabricated) until the named installer + gate exist. |
+| 12 | **Tamper-evident metadata seal** | ✅ DONE — Title(MPRN) / Author(installer) / Subject+Keywords carry `seal:<sha16>` + MPRN + RECI. (pdf-lib owns Producer/Creator and re-stamps them on save — verified — so the seal lives in Subject/Keywords + the two visible pages, not Producer.) Overlay values are drawn onto the content stream, not fillable fields → the filed form can't be silently re-typed. |
+
+**Files touched (this pass):** `src/lib/pdfFill.ts` (`buildSubmissionPack`/`downloadSubmissionPack`,
+`sha256Hex`, `dataUrlToBytes`, `FORM_INTEGRITY`/`assertFormIntegrity`), `src/lib/fieldRecord.ts`
+(`CertFile`/`CertRecord` incl. `sld`, `getFieldRecord` returns `certs`), `src/components/installer/JobViewV2.tsx`
+(4 real-file cert slots + the download button + `packBusy`).
+
+**Verified (30 Jul, in-browser, dummy-attested lead-005 + Dave Byrne assignment):** pack builds
+with no throw (⇒ no WinAnsi encoding crash on any drawn page) · **14 pages** exactly (10 base +
+4 certs — proves the certs bundled) · Title `…MPRN 10000039595` · Subject/Keywords carry the seal ·
+`__esbFormRevised` null (NC6 unrevised) · rendered pages 1 + 14 via pdfjs: cover shows READY (green,
+six `[ok]`, "Nothing — the pack is complete") when seeded complete AND INCOMPLETE (amber, lists
+"Named installer (assignment)") when the assignment is missing — it never fabricates the attester.
+NC6 overlay itself unchanged: `node scripts/pdf-verify.mjs` all placements clear.
+
+**Deploy note:** all of 1/3/4 hang off the SAME Sweep-8 wiring already named above (M1/M2/M3 tables +
+RLS, X1 Postmark). No new migration is introduced here — the pack is a pure client-side artifact today;
+Sweep 8 swaps the `localStorage` read for the `installed_equipment`/`install_evidence` rows and adds the
+storage upload + hash-onto-record. `buildSubmissionPack` is unchanged by that swap (it reads `getFieldRecord`).
+
+### Persistence — LANDED as a migration (30 Jul, `20260730_esb_submission_pack.sql`, WRITTEN not deployed)
+Cal, 30 Jul: "make the migration logic all safe now that it's in your head." Done — idempotent,
+add-only, RLS via the real `public.has_role()` helper (not the naive `auth.role()='authenticated'`),
+parked behind GATE 0 + GATE B (deploy `supabase db push` when they open).
+
+**Architecture decision (the important one):** the attachment BYTES (4 certs + the sealed pack)
+live in **Supabase Storage** (`lead-documents` bucket — already created by `20260727_paperwork_engine`).
+Postgres stores **storage_path + SHA-256 + size**, NOT bytea. bytea-in-Postgres bloats backups,
+breaks replication, hits TOAST/row limits at cohort scale — wrong for 100+ installers. This finishes
+the pattern `20260727` already chose.
+
+**Verified-before-writing (avoided drift):** `lead_documents` + the `lead-documents` bucket + `tenant_settings`
+ALREADY exist. The 4 certs map onto existing `doc_type`s (reci_cert / declaration_of_works /
+inspection_test_cert / **block_diagram = SLD**). So the migration REUSES them and only ADDs:
+- **`installed_equipment`** (M1) — the commissioning-gate attestation = `fieldRecord.SerialState`, 1 row
+  per inverter (`unit_index` → multi-unit #7). `attested_by`/`attested_at` = the eIDAS provenance.
+- **`esb_submissions`** — the submission record: `pack_storage_path` + `pack_sha256` + completeness
+  snapshot + lifecycle `sealed→staged→submitted→accepted/rejected/superseded`. `esb_reference`/`submitted_*`
+  stay NULL until a REAL portal submission (truth-pass). **This is the browser-agent write-back target.**
+- **`lead_documents`** seal columns: `sha256`, `size_bytes`, `original_name`.
+- **`tenant_settings`** allowed keys widened to include `company_compliance` (RECI/mobile/email/address —
+  what `nc6Completeness` gates on — needs a per-tenant server home before 100+).
+
+**Wiring still to write (app + edge, NOT in the migration — Sweep 8 execution):** JobViewV2 writes
+`installed_equipment` + `lead_documents`(cert→Storage) instead of localStorage · a `seal-esb-pack` edge fn
+(build/accept pack → PUT to Storage → insert `esb_submissions{status:'sealed'}`) · `companyCompliance` →
+`tenant_settings` · (Phase 2) the `portal_submitter` browser agent flips `staged→submitted` + writes `esb_reference`.
+Supersedes the notional "M2 install_evidence" name in the master list — we reuse `lead_documents` + add `esb_submissions`.
+
+**Skills used:** aisolar-frontend (React/Vite/pdf-lib surface), renewably-repo-workflow (branch/notes discipline).
