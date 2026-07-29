@@ -242,6 +242,46 @@ The time/money/never-revisit logic is CAPTURED in code, not just notes:
   the single load-out list with **critical** flags — the van checklist in the hub, the
   coach's "what do I load", and (Sweep 8) the depot aggregate + reorder all read it.
 
+### DEPLOY + VERIFY — scheduler-v2 (30 Jul, `agent-drain`) — NOT YET DEPLOYED
+Written 30 Jul (commit `9591d56`), on branch `cowork-jul25`. Deno edge code —
+**written + convention-matched but NOT run/deployed** (no Deno/DB access in the
+build session). This is the checklist to make it live + prove it. Cal/Hermes lane.
+
+**Changed:** `supabase/functions/agent-drain/index.ts` (survey_scheduler,
+install_coordinator, proposal_drafter) + NEW `supabase/functions/_shared/scheduling.ts`.
+
+**Migration needed? NO.** It only READS existing columns — `site_surveys`
+(scheduled_date, surveyor_id, status), `assignments` (scheduled_date, installer_id,
+status), `solar_products` (product_type, manufacturer, model, power_rating, active,
+in_stock). Nothing to migrate; this is a function redeploy only (so GATE B — which
+gates prod *migrations* — doesn't block it; the deploy call is still Cal/Hermes's).
+
+**Preconditions to check first:**
+- `solar_products` has `active = true AND in_stock = true` rows for `panel` and
+  ideally `inverter` (it's seeded — confirm they weren't deactivated).
+- `installers` has ≥1 `availability_status = 'available'` row (else the agents
+  early-return "No available installers", same as before).
+
+**Deploy (one command — `_shared/scheduling.ts` bundles with the import):**
+```
+supabase functions deploy agent-drain
+```
+(Local dry-run instead: `supabase functions serve agent-drain` and hit it with a
+test enqueue.)
+
+**Verify (after a lead runs the pipeline, or a manual enqueue):**
+1. `site_surveys.scheduled_date` → a **weekday**, ≥3 days out, and NOT a day the
+   surveyor already has 3 surveys.
+2. `assignments.scheduled_date` → a **weekday**, ≥10 days out, 1 per installer/day.
+3. `proposals.panel_model` / `inverter_model` → come from `solar_products` (not the
+   "Longi/SolarEdge" fallback), and `panel_count` matches the chosen panel's watts.
+4. `lead_intake.finalized_inverter_model` === the proposal's inverter (the bug fix).
+5. `touchpoints.metadata.schedulingReason` present on both scheduler touchpoints.
+6. `agent_runs` rows = success, no errors.
+
+**Still Sweep 8 (not in this deploy):** the geographic ordering half needs geocoded
+lat/lng on leads + Distance Matrix — migration #12 above.
+
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
