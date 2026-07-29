@@ -68,14 +68,31 @@ the day it can leak.
 
 ---
 
-## 9.1 — Domestic vs Commercial: intake + estimate (Cal's directive, 30 Jul)
-> "The lead intake serves the installer's customers — ask if they're a **home owner
-> or a business owner** and make a logical intake to match either. If they want to
-> view their estimate, how do we differentiate like industry standard?"
+## 9.1 — "Who are you?" — the two identity forks (Cal's directive + 30 Jul correction)
+> Correction (Cal, 30 Jul): **"The APP is for business owners or sales guys — but home
+> owners will come through too. They have to choose who they are."**
 
-**Ask it FIRST.** The very first intake question (front door `/start`) is
-**"Is this for your home or your business?"** — it forks the whole flow. Everything
-downstream (grant scheme, VAT, sizing bands, estimate framing, CTA) branches off it.
+Two DIFFERENT identity choices — don't conflate them:
+
+**Fork 1 — the APP user (who's using AISolar).** AISolar's customers are **installer
+business owners** (the Owner role — buys/runs the platform) and their **sales guys**
+(the Consultant / AISales role). They choose their role at **signup / onboarding**
+(ties to SWEEP8 **A1** auth + tenant-provisioning). AISolar is NOT a homeowner app; it's
+the installer's operating system + their sales team's tool.
+
+**Fork 2 — the LEAD (who's the solar customer), captured on the installer's SOLAR SITE
+— not inside AISolar.** AISolar is B2B **SaaS**. Homeowner/business leads come through
+the **tenant's own solar website** (tenant-branded — powered by AISolar's calculator
+**widget/embed** or the `ingest-lead` API; `CalculatorWidget` already posts to it), not
+through the AISolar app. AISolar itself may NOT run a generic public lead door
+("maybe we don't accept leads" — Cal, 30 Jul); the funnel belongs to each installer's
+site. So the domestic/commercial split below is a spec for the **lead-capture surface
+(widget/embed/branded site → `ingest-lead`)**, which then flows into the SaaS pipeline.
+
+**Ask it FIRST (on the capture surface):** "Is this for your home or your business?"
+forks grant scheme, VAT, sizing bands, estimate framing, and CTA off the answer.
+(Re-scopes audit item **A2**: lead creation is the tenant site's job via `ingest-lead`,
+not an AISolar-hosted `/start` door.)
 
 **Engine status (good news):** the split is HALF-built already —
 - `agent-drain` proposal_drafter + `computeQuote()` already detect commercial via
@@ -171,5 +188,33 @@ copy off that flag; (3) verify NDMG + ACA figures against SEAI source (truth-pas
 
 ---
 
+## 9.5 — Marketing materials (Cal, 30 Jul)
+Beyond the site copy/snapshots (9.2) — the FULL go-to-market set, reflecting what the
+product NOW is and the constitutional story, all truth-pass / DO-NOT-CLAIM:
+- **Pitch / investor deck** — the two-worlds thesis, the compliance moat (bill→install→
+  NC), Domain 001 = the proof, the agent-transparency trust move.
+- **One-pagers per offer** — AISolar (blue/red) + AITeam (green) off the family ladder.
+- **Domain-001 case study** — the real installer running end-to-end (the existence proof).
+- **Demo video / GIFs** — the current UI: agent **Inside** windows, owner scheduling
+  transparency + savings, AIField (JobViewV2 rail), the unified inbox, the approve loop.
+- **Ad creative + explainer** — "what it is" in one honest line ("an Irish solar
+  installer operating system; reads the day/night split from your bill").
+- Owned by **Product & Copy** (words), **Design** (visuals/snapshots), **Institutional**
+  (truth-pass). No invented stats/reviews; no SMS/WhatsApp/roof-detection claims.
+
+## 9.6 — Full teaching founder walkthrough (Cal, 30 Jul)
+A guided, TEACHING walkthrough of the ENTIRE app **for Cal (the founder)** — so a
+non-developer founder can walk any prospect / investor / installer through every
+surface fluently, and it doubles as new-user onboarding.
+- **Per surface:** what it is · what it does · **how it's programmed** (reuse the agent
+  **Inside** windows + owner scheduling transparency he built — those ARE the teaching
+  surfaces) · the **talk track** (what to say) · **why it matters** (the moat, the kernel
+  "verify don't trust").
+- **Format:** a script/doc + a **guided demo mode** (enrich the existing `/demo` + Route
+  Index into a step-through teaching flow — "next / here's what this is / here's the
+  point"). Teaches the SaaS users (business owner + sales guy) AND arms Cal to sell.
+- Owned by **Product & Copy** (narrative/enablement) + **Design** (the guided UX).
+
+---
 *Sweep order: 8 = migrate + deploy (make it real). 9 = smooth + harden (make it sing +
-bulletproof). Add here as we spot things; build after deployment.*
+bulletproof) — to the five-team bar. Add here as we spot things; build after deployment.*
