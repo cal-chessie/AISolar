@@ -6,11 +6,18 @@
 > Sweep 8. Newest at the top. Tick when landed. Truth-pass applies to Cal's
 > ideas too.
 
-## ▶ START HERE — tomorrow 30 Jul (Cal's two foci)
-1. **7.1 installer polish** — the **job-survey click-through** + the **family UI/UX
-   makeover on Overview** + **kill the tablet sizing** (full detail in the .note just
-   below). Then mop up the other open 7.1 items (JobViewV2 chrome finish, Schedule niceties).
-2. **The thin middle layer** — the *decision-quality* gap. **STARTED 30 Jul** ⏳:
+## ▶ 7.1 STATUS — 30 Jul: the UI/UX pass is DONE ✅
+The two-worlds pass (unify consultant + installer, harden the app) is **built and
+browser-verified end to end.** Every screen item below is ✅. The ONE thing not
+"done-done" is **scheduler-v2** (focus #2): it's *written* but **deploy-gated** —
+that's the bridge into Sweep 8, not a UI gap. So: **7.1 the visible app = done;
+7.1 the backend brain = written, awaiting deploy.**
+1. **7.1 installer polish** — ✅ DONE (30 Jul, `8cedc62`): job-survey click-through
+   (desktop phase rail + Begin CTA), family makeover on Overview (2-col grid,
+   tech/doc-deposit tints), tablet sizing killed (full-bleed shell + rail). Mobile
+   parity verified.
+2. **The thin middle layer** — the *decision-quality* gap. **WRITTEN 30 Jul, deploy-
+   gated** ⏳:
    - ✅ `supabase/functions/_shared/scheduling.ts` (NEW, mirrors `src/lib/scheduling.ts`)
      — `nextFreeWorkingDay()`: weekend-skip + lead time + per-day capacity + **no
      double-book**.
@@ -29,7 +36,7 @@
      so consecutive days sit adjacent) needs geocoded lat/lng on leads + Distance Matrix
      — see `SWEEP8_DB_WIRING.md` migration #12. The working-day/capacity half is done.
 
-## .note — installer job-survey click-through + family makeover (BEGIN 30 Jul AM)
+## .note — installer job-survey click-through + family makeover ✅ DONE 30 Jul (`8cedc62`)
 Cal, 29 Jul: the installer app's **job/survey flow still needs a clear click-through**,
 and the screens still carry the **OLD version + tablet sizing** — they never got the
 family UI/UX + full-bleed desktop makeover the rest of AIField got.
@@ -177,7 +184,8 @@ Refines the scheduling note above.
 - Installer **Inbox → the consultant two-pane inbox + one centralised
   conversation** (Cal's ask). ✅ (shared `ConversationInbox` + `MessageBubble` +
   `buildConversation` — see top section, 29 Jul).
-- STILL OPEN: **Schedule** roster + unscheduled queue (drag calendar is in;
-  the full client roster below it → opens `ClientHub` is not).
-- STILL OPEN: JobViewV2 chrome family pass (doc-colour semantics over the
-  generic greens; the moat works, the skin lags).
+- ✅ **Schedule** roster + unscheduled queue — BUILT 29 Jul (drag calendar +
+  Unscheduled queue + Client roster → ClientHub slide-over). *(line was stale)*
+- ✅ **JobViewV2 chrome family pass** — completion = doc-deposit (29 Jul) + full-
+  bleed shell + phase rail + Overview family makeover (30 Jul, `8cedc62`). Pass
+  complete; if any inner phase-card chrome still reads generic, polish on sight.
