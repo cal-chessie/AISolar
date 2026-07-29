@@ -21,11 +21,54 @@ const NC6 = [
   { field: 'Eircode', page: 0, x: 402, y: 332 },
   { field: 'Installer company', page: 0, x: 110, y: 194 },
   { field: 'Installer RECI no.', page: 0, x: 110, y: 171 },
-  { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 8 },
+  { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 7 },
   { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
   { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
   { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
+  // Full-coverage extension (30 Jul) — mirrors OVERLAY_MAPS.NC6 in pdfFill.ts
+  { field: 'Installer landline', page: 0, x: 95, y: 153 },
+  { field: 'Installer email', page: 0, x: 80, y: 131, size: 9 },
+  { field: 'New install tick', page: 1, x: 549, y: 721, size: 11 },
+  { field: 'Energy source', page: 1, x: 395, y: 495 },
+  { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
+  { field: '1PH tick', page: 1, x: 416, y: 523 },
+  { field: 'Type test yes tick', page: 1, x: 418, y: 317 },
+  { field: 'Settings yes tick', page: 1, x: 418, y: 270 },
+  { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 9 },
+  { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
+  { field: '5A single tick', page: 1, x: 190, y: 87 },
+  { field: 'Protection confirm 1', page: 2, x: 505, y: 724, size: 9 },
+  { field: 'Protection confirm 2', page: 2, x: 505, y: 709, size: 9 },
+  { field: 'Protection confirm 3', page: 2, x: 505, y: 694, size: 9 },
+  { field: 'Protection confirm 4', page: 2, x: 505, y: 679, size: 9 },
+  { field: 'Protection confirm 5', page: 2, x: 505, y: 663, size: 9 },
+  { field: 'Protection confirm 6', page: 2, x: 505, y: 648, size: 9 },
+  { field: 'Protection confirm 7', page: 2, x: 505, y: 596, size: 9 },
+  { field: 'Installer name', page: 2, x: 118, y: 288, size: 9 },
+  { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 288, size: 9 },
+  { field: 'Installer landline', page: 2, x: 135, y: 273, size: 9 },
+  { field: 'Installer email', page: 2, x: 372, y: 273, size: 8 },
+  { field: 'Installer address', page: 2, x: 192, y: 257, size: 7 },
 ];
+const SAMPLE_EXTRA = {
+  'Installer landline': '01 555 0182',
+  'Installer email': 'OFFICE@AISOLAR.IE',
+  'New install tick': 'X',
+  'Energy source': 'P',
+  'Manufacturer': 'SOLAX',
+  '1PH tick': 'X',
+  'Type test yes tick': 'X',
+  'Settings yes tick': 'X',
+  '5A manufacturer': 'SOLAX',
+  '5A model': 'SOLAX X1-HYBRID-5.0 G4',
+  '5A single tick': 'X',
+  'Protection confirm 1': 'Y', 'Protection confirm 2': 'Y', 'Protection confirm 3': 'Y',
+  'Protection confirm 4': 'Y', 'Protection confirm 5': 'Y', 'Protection confirm 6': 'Y',
+  'Protection confirm 7': 'Y',
+  'Installer name': 'LIAM MURPHY',
+  'Installer SafeElectric no.': 'RECI-30821',
+  'Installer address': 'UNIT 4, CITYWEST BUSINESS CAMPUS, DUBLIN 24',
+};
 
 const SAMPLE = {
   'Customer name': 'JAMES WILSON',
@@ -57,10 +100,11 @@ SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';
 SAMPLE['Site address 2'] = 'DUNDRUM, DUBLIN 16';
+Object.assign(SAMPLE, SAMPLE_EXTRA);
 
 const FORM = process.argv[2] === 'nc7' ? 'nc7' : 'nc6';
 const MAP = FORM === 'nc7' ? NC7 : NC6;
-const PAGES = FORM === 'nc7' ? [1] : [1, 2];
+const PAGES = FORM === 'nc7' ? [1] : [1, 2, 3];
 
 const src = fs.readFileSync(`public/forms/esbn-form-${FORM}.pdf`);
 const doc = await PDFDocument.load(src, { ignoreEncryption: true });

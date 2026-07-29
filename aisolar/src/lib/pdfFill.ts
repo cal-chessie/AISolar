@@ -11,12 +11,16 @@
  *     appended typed page carrying every captured field — bill read, survey,
  *     design, tenant — laid out A4-clean. The installer transcribes or
  *     staples; nothing is ever mis-placed on ESB's own pages.
- *  2. COORDINATE OVERLAY (calibrated + verified, commit ca6f232): OVERLAY_MAPS
- *     below take {page,x,y} per field and draw straight into the form's boxes.
+ *  2. COORDINATE OVERLAY (calibrated + verified): OVERLAY_MAPS below take
+ *     {page,x,y} per field and draw straight into the form's boxes.
  *     Coordinates are MEASURED, not guessed — scripts/pdf-probe.mjs dumps each
  *     ESB label's baseline, scripts/pdf-verify.mjs draws the values and fails on
- *     overlap with ESB's own wording. 12/12 NC6 and 9/9 NC7 placements clear.
- *     Rerun both scripts when ESB revise a form.
+ *     overlap with ESB's own wording. 30 Jul full-coverage pass: 35/35 NC6
+ *     placements clear (pages 1–3 incl. §4 route tick, §5 unit column, §5A,
+ *     Table 1 confirm column, installer block) + 9/9 NC7; ticks additionally
+ *     verified VISUALLY inside their boxes on the rendered form. NC6 pages 4–5
+ *     are the pre-2022 legacy sections — BLANK BY DESIGN for new installs.
+ *     Rerun probe + verify + a visual pass when ESB revise a form.
  *
  * Signatures: eIDAS "simple electronic signature" — the drawn signature
  * (the pad already in the app) placed as an image + the kernel's append-only
@@ -28,6 +32,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { DummyLead } from '@/lib/dummyData';
 import { getFieldRecord } from '@/lib/fieldRecord';
 import { getTenantBrand } from '@/lib/tenantBrand';
+import { getCompanyCompliance } from '@/lib/companyCompliance';
 import { brand } from '@/config/brand';
 
 type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
@@ -66,10 +71,50 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
     // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
     // from x≈390. Row baselines probed off their labels.
-    { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 8 },
+    { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 7 },
     { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
     { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
     { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
+    // ── FULL-COVERAGE EXTENSION (30 Jul) — pages 1–3 of 6. Probed via
+    //    scripts/pdf-probe.mjs + the §4 box column pixel-scanned at x≈552;
+    //    every placement gated by scripts/pdf-verify.mjs (overlap-fail) and a
+    //    visual pass of the filled form. Pages 4–5 are the PRE-2022 legacy
+    //    sections (5B/5C + Table 2) — for a NEW install they stay BLANK by
+    //    design; filling them would be wrong. Page 6 has no fields.
+    // § 3 correspondence (page 1): "Landline:" ends x≈82 y153 · "Email:" ends x=68 y131
+    { field: 'Installer landline', page: 0, x: 95, y: 153 },
+    { field: 'Installer email', page: 0, x: 80, y: 131, size: 9 },
+    // § 4 (page 2): route boxes at right margin x≈552 — NC6 here is always the
+    // NEW-microgen notification (option A). B/C are legacy — never ticked.
+    { field: 'New install tick', page: 1, x: 549, y: 721, size: 11 },
+    // § 5 "New Installation / Unit 1" column
+    { field: 'Energy source', page: 1, x: 395, y: 495 },
+    { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
+    { field: '1PH tick', page: 1, x: 416, y: 523 },
+    { field: '3PH tick', page: 1, x: 459, y: 523 },
+    { field: 'Type test yes tick', page: 1, x: 418, y: 317 },
+    { field: 'Settings yes tick', page: 1, x: 418, y: 270 },
+    // § 5A (page 2, bottom) — comb rows + phase tick
+    { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 9 },
+    { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
+    { field: '5A single tick', page: 1, x: 190, y: 87 },
+    { field: '5A three tick', page: 1, x: 252, y: 87 },
+    // Page 3 — TABLE 1 "Confirm Settings Applied (Y/N)" column + Installer
+    // Details. The Y is drawn ONLY from the installer's protectionConfirmed
+    // attestation at the commissioning gate. Signature + Date are NEVER
+    // drawn — the named installer signs by hand (attestation law).
+    { field: 'Protection confirm 1', page: 2, x: 505, y: 724, size: 9 },
+    { field: 'Protection confirm 2', page: 2, x: 505, y: 709, size: 9 },
+    { field: 'Protection confirm 3', page: 2, x: 505, y: 694, size: 9 },
+    { field: 'Protection confirm 4', page: 2, x: 505, y: 679, size: 9 },
+    { field: 'Protection confirm 5', page: 2, x: 505, y: 663, size: 9 },
+    { field: 'Protection confirm 6', page: 2, x: 505, y: 648, size: 9 },
+    { field: 'Protection confirm 7', page: 2, x: 505, y: 596, size: 9 },
+    { field: 'Installer name', page: 2, x: 118, y: 288, size: 9 },
+    { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 288, size: 9 },
+    { field: 'Installer landline', page: 2, x: 135, y: 273, size: 9 },
+    { field: 'Installer email', page: 2, x: 372, y: 273, size: 8 },
+    { field: 'Installer address', page: 2, x: 192, y: 257, size: 7 },
   ],
   // NC7 — 595x842pt. Page 1 is a COMB form: each field is a row of individual
   // character boxes, so the value must sit ON the row's baseline or it reads
@@ -128,6 +173,16 @@ function collect(lead: DummyLead): Array<[string, string]> {
   const fr = getFieldRecord(lead.id);
   const gate = fr?.serials.confirmed ? fr.serials : null;
 
+  // Company-level facts come from Owner → Settings (companyCompliance store) —
+  // the RECI/SafeElectric number is a REAL captured value or an honest
+  // placeholder, never a silent blank (A4 closed 30 Jul).
+  const cc = getCompanyCompliance();
+  const maker = ((gate?.fittedModel || p?.inverter_model || '').split(' ')[0] || '').trim();
+  const acKwNum = parseFloat(gate?.acRatingKw ?? '');
+  const ratedAmps = Number.isFinite(acKwNum) && acKwNum > 0
+    ? `${(threePhase ? (acKwNum * 1000) / (400 * 1.732) : (acKwNum * 1000) / 230).toFixed(1)} A - derived from attested AC rating`
+    : undefined;
+
   const rows: Array<[string, string | undefined | null]> = [
     ['Customer name', (i.extracted_account_name as string) ?? lead.name],
     ['Installation address', (i.extracted_address as string) ?? lead.address],
@@ -145,7 +200,17 @@ function collect(lead: DummyLead): Array<[string, string]> {
     ['Export limitation', gate?.exportLimit || '( set + recorded at commissioning )'],
     ...(gate?.mismatchFlagged ? [['Fitted vs proposal', 'SUBSTITUTION RECORDED — installer note on the job record'] as [string, string]] : []),
     ['Installer company', getTenantBrand().proposalCompanyName || brand.legal.tradingName],
-    ['Installer RECI no.', brand.legal.reciNumber || '( Settings - RECI number )'],
+    ['Installer RECI no.', cc.reciNumber || '( Owner -> Settings -> RECI number )'],
+    ['Installer name', lead.assignment?.installer_name],
+    ['Installer landline', cc.companyLandline],
+    ['Installer email', cc.companyEmail],
+    ['Installer address', cc.registeredAddress],
+    ['Manufacturer', maker || undefined],
+    ['Energy source', 'P (Solar PV)'],
+    ['Rated current (A)', ratedAmps ?? '( derived at commissioning )'],
+    ['Protection settings (EN 50549-1)', gate?.protectionConfirmed
+      ? 'Table 1 applied & verified - Y (attested by the named installer)'
+      : '( attested at the commissioning gate )'],
   ];
   return rows.map(([k, v]) => [k, v && String(v).trim() ? String(v) : '( not captured yet )']);
 }
@@ -164,6 +229,28 @@ const FORM_PARTS: Record<EsbForm, string[]> = {
     '/forms/esbn-nc7-03-els-declaration.pdf',
   ],
 };
+
+/**
+ * nc6Completeness — the regulator gate. Lists every item still blocking a
+ * filable NC6 (missing = blockers; the hand signature is ALWAYS separate and
+ * never counted — it is the named installer's, on paper). `ready` means: print
+ * it, sign it, send it.
+ */
+export function nc6Completeness(lead: DummyLead): { ready: boolean; missing: string[] } {
+  const i = (lead.intake ?? {}) as Record<string, unknown>;
+  const cc = getCompanyCompliance();
+  const fr = getFieldRecord(lead.id);
+  const gate = fr?.serials.confirmed ? fr.serials : null;
+  const missing: string[] = [];
+  if (!(((i.extracted_mprn as string) ?? lead.mprn) || '').trim()) missing.push('MPRN');
+  if (!cc.reciNumber) missing.push('SafeElectric/RECI no. (Owner -> Settings)');
+  if (!cc.registeredAddress) missing.push('Installer address (Owner -> Settings)');
+  if (!cc.companyEmail) missing.push('Installer email (Owner -> Settings)');
+  if (!lead.assignment?.installer_name) missing.push('Named installer (assignment)');
+  if (!gate) missing.push('Commissioning gate - serials confirmed on site');
+  else if (!gate.protectionConfirmed) missing.push('EN 50549-1 Table 1 settings attested');
+  return { ready: missing.length === 0, missing };
+}
 
 /** Official form(s) + typed data appendix → returns a Blob for download. */
 export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob> {
@@ -202,6 +289,35 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
       'Site address 1': addr[0] ?? '',
       'Site address 2': addr.slice(1).join(', '),
     };
+    // NC6 ticks + attested-only values. The law: a tick that ATTESTS something
+    // (type-test, Table 1 settings) is drawn ONLY from the installer's
+    // protectionConfirmed at the commissioning gate; design facts (phase,
+    // energy source, the new-install route) draw from the record. Empty string
+    // = not drawn.
+    if (form === 'NC6') {
+      const frT = getFieldRecord(lead.id);
+      const gateT = frT?.serials.confirmed ? frT.serials : null;
+      const attested = !!gateT?.protectionConfirmed;
+      const threePhaseT = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
+      const makerT = ((gateT?.fittedModel || lead.proposal?.inverter_model || '').split(' ')[0] || '').trim();
+      Object.assign(data, {
+        // Page-3 installer block: SafeElectric = the RECI number (same store).
+        // Carries the '(' placeholder when unset → never drawn half-filled.
+        'Installer SafeElectric no.': base['Installer RECI no.'] ?? '',
+        'New install tick': 'X',
+        'Energy source': lead.proposal ? 'P' : '',
+        'Manufacturer': gateT ? makerT : '',        // statutory column: as-fitted only
+        '1PH tick': threePhaseT ? '' : 'X',
+        '3PH tick': threePhaseT ? 'X' : '',
+        'Type test yes tick': attested ? 'X' : '',
+        'Settings yes tick': attested ? 'X' : '',
+        '5A manufacturer': gateT ? makerT : '',
+        '5A model': data['Inverter make/model'] ?? '', // carries the '(' guard pre-gate
+        '5A single tick': threePhaseT ? '' : 'X',
+        '5A three tick': threePhaseT ? 'X' : '',
+        ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map(n => [`Protection confirm ${n}`, attested ? 'Y' : ''])),
+      });
+    }
     const pages = doc.getPages();
     for (const m of map) {
       const v = data[m.field];
@@ -218,6 +334,15 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
   page.drawText(`${form} - PREPARED DATA (attach to the official form)`, { x: 40, y, size: 13, font: bold });
   y -= 18;
   page.drawText(`${lead.name} - prepared ${new Date().toLocaleDateString('en-IE')} - from the AISolar record (bill read -> survey -> design)`, { x: 40, y, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
+  // The regulator gate, printed ON the artifact: filable or not, and why.
+  if (form === 'NC6') {
+    const c = nc6Completeness(lead);
+    y -= 14;
+    const status = c.ready
+      ? 'STATUS: READY TO FILE - print, sign & date by hand (never machine-signed)'
+      : `STATUS: INCOMPLETE - ${c.missing.join(' | ')}`;
+    page.drawText(status.slice(0, 118), { x: 40, y, size: 8, font: bold, color: c.ready ? rgb(0, 0.45, 0.2) : rgb(0.7, 0.45, 0) });
+  }
   y -= 24;
   for (const [k, v] of collect(lead)) {
     page.drawText(k, { x: 40, y, size: 9, font: bold });

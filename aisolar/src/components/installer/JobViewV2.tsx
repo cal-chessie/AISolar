@@ -925,6 +925,22 @@ function CommissioningSerials({ serials, specifiedInverter, formFlip, onChange }
             </div>
           )}
         </div>
+        {/* NC6 Table 1 / §5A attestation — the ONLY source of the form's
+            "Confirm Settings Applied (Y)" column. Attested by the named
+            installer; never machine-verified. */}
+        <button
+          type="button"
+          onClick={() => onChange({ protectionConfirmed: !serials.protectionConfirmed })}
+          className={`w-full flex items-start gap-2.5 rounded-control border p-2.5 text-left text-xs transition-colors ${serials.protectionConfirmed ? 'border-doc-deposit/40 bg-doc-deposit/10' : 'border-border hover:bg-muted/50'}`}
+        >
+          {serials.protectionConfirmed
+            ? <CheckCircle2 className="h-4 w-4 text-doc-deposit shrink-0 mt-0.5" />
+            : <span className="size-4 rounded-full border border-muted-foreground/40 shrink-0 mt-0.5" />}
+          <span>
+            <span className={`font-semibold block ${serials.protectionConfirmed ? 'text-doc-deposit' : ''}`}>Type-tested unit · EN 50549-1 protection settings applied &amp; verified</span>
+            <span className="text-muted-foreground">Ticks NC6 Table 1 "Confirm Settings Applied — Y" + the §5 type-test/settings boxes. Only you can attest this.</span>
+          </span>
+        </button>
         {formFlip && (
           <div className="rounded-control border-2 border-pop bg-pop-subtle p-3 text-xs space-y-1">
             <p className="font-bold text-pop flex items-center gap-1.5"><AlertTriangle className="h-4 w-4" /> This rating changes the ESB form: {formFlip.from} → {formFlip.to}</p>

@@ -25,11 +25,16 @@ export interface SerialState {
   confirmed: boolean;       // installer confirmed every digit at the gate
   mismatchFlagged: boolean; // fitted ≠ proposal — recorded, never cleared silently
   note: string;             // why — rides with the record on a mismatch
+  /** NC6 §4/§5A + Table 1 attestation: the fitted unit is type-test certified
+   *  (EN 50549-1) and the Table 1 protection settings are applied & verified.
+   *  Attested by the named installer at the gate — the ONLY source that ever
+   *  puts a Y in the form's "Confirm Settings Applied" column. */
+  protectionConfirmed: boolean;
 }
 
 export const DEFAULT_SERIALS: SerialState = {
   fittedModel: '', serial: '', acRatingKw: '', exportLimit: '',
-  confirmed: false, mismatchFlagged: false, note: '',
+  confirmed: false, mismatchFlagged: false, note: '', protectionConfirmed: false,
 };
 
 export interface FieldRecord {

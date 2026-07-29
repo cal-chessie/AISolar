@@ -155,8 +155,15 @@ Strategic calls not yet made — YOUR decisions, flagged so they stop being invi
   - **D. Installer/RECI (2):** company, **RECI number** → Settings. ⚠️ RECI NOT persisted (A4).
   - **E. Pages 3–6 (protection / ELS / earthing / declarations):** NOT mapped — overlay only
     covers pages 1–2. Signature ✅ (eIDAS drawn). **This is the true "entirety" gap.**
-  - **The real last 30% = D (RECI from Settings) + E (map the checklist's protection/ELS/
-    earthing fields to NC6 pages 3–6 + full box coverage).** Commissioning + signature: done.
+  - **✅ D + E CLOSED 30 Jul — the NC6 now completes itself.** RECI/company fill from
+    Owner → Settings; pages 1–3 fully overlaid (route tick, §5 column, §5A, the seven
+    Table-1 "Y" confirmations, the installer block); pages 4–5 correctly BLANK (legacy
+    sections); a printed READY-TO-FILE / INCOMPLETE status on every generated pack; a
+    new commissioning attestation toggle is the only thing that can put the Y's on.
+    Proven: 35/35 automated placement checks + visual pass of the filled form with
+    dummy data. Still human by design: the installer signs + dates by hand and attaches
+    the inverter's type-test cert. Still Sweep 8: the record moves from the phone's
+    localStorage to the database (M1).
 
 ---
 

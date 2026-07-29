@@ -406,6 +406,38 @@ in-browser 30 Jul. Sweep 8 to make it real:
 - `agents.ts` guardrail/trigger/description text is the "how it's programmed" source —
   keep it in step with the real handler behaviour (it also feeds the PUBLIC /agents page).
 
+### NC6 SELF-COMPLETION — D + E CLOSED (30 Jul, regulator-grade pass)
+The "last 30%" built + verified. What changed (`src/lib/pdfFill.ts`,
+`src/lib/fieldRecord.ts`, `src/components/installer/JobViewV2.tsx`,
+`scripts/pdf-verify.mjs`):
+- **D closed:** RECI/company now read from the `companyCompliance` store (Owner →
+  Settings), not static brand config — page 1 §3 (company, RECI, landline, email) +
+  the page-3 Installer Details block (name = the ASSIGNED installer, SafeElectric =
+  RECI, mobile/email/address) fill for real. Placeholder-guarded when unset.
+- **E closed:** full-coverage overlay pages 1–3 — §4 route tick (new-install box,
+  x549/y721, pixel-scanned + visually centred) · §5 Unit-1 column (phase tick, energy
+  source P, manufacturer, model, kVA, generator/storage) · §5 type-test + settings
+  Yes ticks · §5A manufacturer/model combs + phase tick · **Table 1: seven Y's in the
+  "Confirm Settings Applied" column** · installer block. **Pages 4–5 BLANK BY DESIGN**
+  (pre-2022 legacy sections 5B/5C — filling them would be wrong); page 6 has no fields.
+- **New attestation:** `SerialState.protectionConfirmed` + a JobViewV2 commissioning
+  toggle ("type-tested unit · EN 50549-1 Table 1 settings applied & verified") — the
+  ONLY source of the Y column + the Yes ticks. Named-installer attestation, never
+  machine-verified. Signature + Date NEVER drawn (hand-signed).
+- **Regulator gate:** `nc6Completeness(lead)` → {ready, missing[]}; the appendix now
+  prints `STATUS: READY TO FILE` (green) or `INCOMPLETE — <blockers>` (amber) ON the
+  artifact. Derived rated-current appears on the appendix only (never in a statutory box).
+- **VERIFIED:** `node scripts/pdf-verify.mjs` = **35/35 placements clear** (overlap
+  gate) + visual render of the FILLED form (dummy-attested John O'Connor / SolaX
+  5.0kW / RECI-30821): page 2 + page 3 screenshots confirm every tick INSIDE its box,
+  legacy sections untouched, completeness = ready:true end-to-end on the app path.
+- **Honest remaining (filed):** (a) §5A "Type Test Certificate reference" line not
+  captured (no cert-ref field yet — appendix carries a placeholder; attach the cert
+  PDF manually as ESB require); (b) the commissioning record is still
+  **localStorage** — M1 (`installed_equipment`) moves it to the DB; (c) `nc6Completeness`
+  is printed on the PDF but not yet surfaced as a PaperworkWindow chip (small UI wire);
+  (d) the 6/11kW band-boundary VERIFY-BEFORE-LIVE flag on `esbFormForAcKw` still stands.
+
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
