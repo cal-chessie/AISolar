@@ -16,6 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
 import { corsHeaders, log, HttpError, errorResponse, requireRole } from "../_shared/auth.ts";
 import { callLLM, getActivePrompt, fillTemplate } from "../_shared/llm.ts";
 import { sendEmail, wrapEmailHtml, buildWarrantyEmailHtml } from "../_shared/email.ts";
+import { nextFreeWorkingDay } from "../_shared/scheduling.ts";
 
 const FN = "agent-drain";
 
@@ -288,9 +289,24 @@ async function handleSurveyScheduler({ supabase, leadId }: AgentRunParams): Prom
   const { data: existing } = await supabase.from("site_surveys").select("id").eq("lead_id", leadId).in("status", ["draft", "scheduled"]).limit(1);
   if (existing && existing.length > 0) return { success: true, outputs: { skipped: "survey exists" } };
 
-  const slot = new Date();
-  slot.setDate(slot.getDate() + 5);
-  slot.setHours(10, 0, 0, 0);
+  // scheduler-v2: stop stamping a blind today+5. Find the surveyor's NEXT FREE
+  // WORKING DAY — skip weekends, honour a few days' notice, and don't overfill a
+  // day (a consultant does ≈3 surveys/day). Proposed, not imposed: the customer
+  // is told and can reply to rearrange. (Geographic clustering of the day's
+  // surveys needs geocoded coords — Sweep 8; see _shared/scheduling.ts.)
+  const surveyorId = installers[0].user_id;
+  const { data: surveyorBookings } = await supabase
+    .from("site_surveys")
+    .select("scheduled_date")
+    .eq("surveyor_id", surveyorId)
+    .in("status", ["draft", "scheduled"])
+    .gte("scheduled_date", new Date().toISOString());
+  const slot = nextFreeWorkingDay({
+    leadDays: 3,
+    booked: (surveyorBookings ?? []).map((s: any) => s.scheduled_date),
+    perDayCapacity: 3,
+    hour: 10,
+  });
 
   const { error } = await supabase.from("site_surveys").insert({
     lead_id: leadId, surveyor_id: installers[0].user_id, status: "scheduled", scheduled_date: slot.toISOString(),
@@ -317,7 +333,7 @@ async function handleSurveyScheduler({ supabase, leadId }: AgentRunParams): Prom
     channel: emailResult.ok ? "email" : "system", direction: "outbound",
     summary: `Survey Scheduler Agent booked site survey for ${slot.toLocaleDateString("en-IE")}${emailResult.ok ? " and emailed the customer" : ` (email not sent: ${emailResult.error})`}.`,
     actor: "agent", agent_id: "survey_scheduler",
-    metadata: { surveyDate: slot.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId },
+    metadata: { surveyDate: slot.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId, schedulingReason: "next free working day for the surveyor (weekend-skip, ≤3/day)" },
   });
 
   return { success: true, outputs: { surveyDate: slot.toISOString(), emailSent: emailResult.ok } };
@@ -342,11 +358,30 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
   const systemSize =
     intake.confirmed_system_size_kw || survey.recommended_system_size ||
     intake.estimated_system_size_kw || 6;
+
+  // Product-pick from the catalog (solar_products) instead of a hardcoded panel.
+  // Pick the active, in-stock panel with the most watts (fewest panels on the
+  // roof); the survey's confirmed inverter wins, else a catalog inverter, else
+  // the default. Falls back to the prior defaults if the catalog is empty —
+  // never blocks a draft.
+  const { data: catalog } = await supabase
+    .from("solar_products")
+    .select("product_type, manufacturer, model, power_rating")
+    .eq("active", true).eq("in_stock", true);
+  const bestPanel = (catalog ?? [])
+    .filter((p: any) => p.product_type === "panel" && p.power_rating > 0)
+    .sort((a: any, b: any) => b.power_rating - a.power_rating)[0];
+  const panelModel = bestPanel ? `${bestPanel.manufacturer} ${bestPanel.model}` : "Longi Hi-MO 6 435W";
+  const panelWatts = bestPanel?.power_rating || 435;
+  const catalogInverter = (catalog ?? []).find((p: any) => p.product_type === "inverter");
+  const inverterModel =
+    intake.confirmed_inverter_type || survey.recommended_inverter_type ||
+    (catalogInverter ? `${catalogInverter.manufacturer} ${catalogInverter.model}` : "SolarEdge SE5K");
+
   const panelCount =
     intake.confirmed_panel_count || survey.recommended_panel_count ||
-    Math.ceil((systemSize * 1000) / 435);
+    Math.ceil((systemSize * 1000) / panelWatts);
   const batteryKwh = intake.confirmed_battery_kwh || survey.recommended_battery_kwh || null;
-  const inverterType = intake.confirmed_inverter_type || survey.recommended_inverter_type || "SolarEdge SE5K";
   // Pricing mirror of src/lib/pricing.ts (brand.pricing.perKwp) — edge functions
   // can't import from src/. Keep this rate in step with brand.pricing.perKwp.
   const PER_KWP = 1800;
@@ -378,8 +413,8 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
       annual_kwh: lead?.annual_kwh || intake.extracted_annual_kwh || 0,
       system_size_kw: systemSize,
       panel_count: panelCount,
-      panel_model: "Longi Hi-MO 6 435W",
-      inverter_model: inverterType,
+      panel_model: panelModel,
+      inverter_model: inverterModel,
       battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : "None",
       gross_cost: grossCost,
       seai_grant: seaiGrant,
@@ -412,7 +447,7 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
     lead_id: leadId, consultant_id: lead?.assigned_consultant_id,
     status: "draft", // CRITICAL: never auto-send
     system_size_kw: systemSize, panel_count: panelCount,
-    panel_model: "Longi Hi-MO 6 435W", inverter_model: inverterType,
+    panel_model: panelModel, inverter_model: inverterModel,
     battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
     gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
     annual_savings: intake.estimated_annual_savings,
@@ -428,7 +463,7 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
         lead_id: leadId, consultant_id: lead?.assigned_consultant_id,
         status: "draft",
         system_size_kw: systemSize, panel_count: panelCount,
-        panel_model: "Longi Hi-MO 6 435W", inverter_model: inverterType,
+        panel_model: panelModel, inverter_model: inverterModel,
         battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
         gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
         annual_savings: intake.estimated_annual_savings,
@@ -446,8 +481,8 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
 
 async function finishProposalDrafter(supabase: any, leadId: string, lead: any, intake: any, systemSize: number, panelCount: number, grossCost: number, seaiGrant: number, netCost: number, proposal: any, narrative: string): Promise<AgentRunResult> {
   await supabase.from("lead_intake").update({
-    finalized_panel_model: "Longi Hi-MO 6 435W",
-    finalized_inverter_model: "SolarEdge SE5K",
+    finalized_panel_model: proposal.panel_model,
+    finalized_inverter_model: proposal.inverter_model,
     finalized_total_cost: grossCost, finalized_seai_grant: seaiGrant, finalized_net_cost: netCost,
   }).eq("lead_id", leadId);
 
@@ -612,9 +647,24 @@ async function handleInstallCoordinator({ supabase, leadId }: AgentRunParams): P
   const { data: installers } = await supabase.from("installers").select("id, user_id").eq("availability_status", "available").limit(1);
   if (!installers || installers.length === 0) return { success: false, error: "No available installers" };
 
-  const installDate = new Date();
-  installDate.setDate(installDate.getDate() + 28);
-  installDate.setHours(8, 0, 0, 0);
+  // scheduler-v2: stop stamping a blind today+28. An installer does ONE install a
+  // day, and materials need ~2 working weeks' notice — so find this installer's
+  // NEXT FREE WORKING DAY at least 10 days out, weekend-skipped, one per day.
+  // (Sequencing the fortnight geographically from home base is Sweep 8 — needs
+  // geocoded coords; see _shared/scheduling.ts.)
+  const installerId = installers[0].id;
+  const { data: installerBookings } = await supabase
+    .from("assignments")
+    .select("scheduled_date")
+    .eq("installer_id", installerId)
+    .in("status", ["pending", "accepted"])
+    .gte("scheduled_date", new Date().toISOString());
+  const installDate = nextFreeWorkingDay({
+    leadDays: 10,
+    booked: (installerBookings ?? []).map((a: any) => a.scheduled_date),
+    perDayCapacity: 1,
+    hour: 8,
+  });
 
   const { error } = await supabase.from("assignments").insert({
     lead_id: leadId, installer_id: installers[0].id, status: "pending", scheduled_date: installDate.toISOString(),
@@ -640,7 +690,7 @@ async function handleInstallCoordinator({ supabase, leadId }: AgentRunParams): P
     channel: emailResult.ok ? "email" : "system", direction: "outbound",
     summary: `Install Coordinator Agent scheduled install for ${installDate.toLocaleDateString("en-IE")}${emailResult.ok ? " and emailed the customer" : ` (email not sent: ${emailResult.error})`}.`,
     actor: "agent", agent_id: "install_coordinator",
-    metadata: { installDate: installDate.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId },
+    metadata: { installDate: installDate.toISOString(), emailSent: emailResult.ok, messageId: emailResult.messageId, schedulingReason: "next free working day for the installer (≥10 days' notice, weekend-skip, 1/day)" },
   });
 
   return { success: true, outputs: { installDate: installDate.toISOString(), emailSent: emailResult.ok } };

@@ -10,13 +10,24 @@
 1. **7.1 installer polish** — the **job-survey click-through** + the **family UI/UX
    makeover on Overview** + **kill the tablet sizing** (full detail in the .note just
    below). Then mop up the other open 7.1 items (JobViewV2 chrome finish, Schedule niceties).
-2. **The thin middle layer** — the *decision-quality* gap, not the plumbing. Wire the real
-   scheduling brain into the agent runtime: `scheduling.ts` + `routeOptimize.ts` →
-   **scheduler-v2 / install-coordinator-v2** (so the agents stop *stamping* dates and
-   actually plan), + **product-pick from `solar_products`** in the proposal drafter.
-   Graded starting point = `docs/PIPELINE_AUTONOMY_AUDIT.md` (the C/C+ agents); wiring
-   targets = `docs/SWEEP8_DB_WIRING.md`. This is the ~10% that turns "assisted" into real
-   decision-autonomy — the middle we talked about.
+2. **The thin middle layer** — the *decision-quality* gap. **STARTED 30 Jul** ⏳:
+   - ✅ `supabase/functions/_shared/scheduling.ts` (NEW, mirrors `src/lib/scheduling.ts`)
+     — `nextFreeWorkingDay()`: weekend-skip + lead time + per-day capacity + **no
+     double-book**.
+   - ✅ **survey_scheduler** + **install_coordinator** rewired: query the surveyor's /
+     installer's existing bookings → next FREE working day (surveys ≤3/day, lead 3d;
+     installs 1/day, lead 10d) instead of blind `today+5` / `today+28`. Honest
+     `schedulingReason` on the touchpoint.
+   - ✅ **proposal_drafter** product-pick: panel + inverter chosen from `solar_products`
+     (active + in-stock; most-watts panel → fewest panels), recomputed panel count,
+     killed the 4 hardcoded "Longi/SolarEdge" (now fallbacks), and fixed the
+     finalized-vs-proposal inverter mismatch. Falls back safely if the catalog is empty.
+   - ⚠️ **VERIFICATION**: this is Deno edge code — written + convention-matched but NOT
+     run here (no Deno/DB access, GATE B). Needs `supabase functions serve` / deploy to
+     prove (Cal/Hermes lane). **Not deployed.**
+   - ⛔ **STILL Sweep 8**: the *geographic* half of the brain (`routeOptimize.ts` ordering
+     so consecutive days sit adjacent) needs geocoded lat/lng on leads + Distance Matrix
+     — see `SWEEP8_DB_WIRING.md` migration #12. The working-day/capacity half is done.
 
 ## .note — installer job-survey click-through + family makeover (BEGIN 30 Jul AM)
 Cal, 29 Jul: the installer app's **job/survey flow still needs a clear click-through**,
