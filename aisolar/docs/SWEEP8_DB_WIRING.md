@@ -8,6 +8,76 @@
 > land.** House rules still apply: agents run ONLY through `agent-drain`; proposals
 > stay `status: "draft"` (never auto-send); migrations idempotent + add-only.
 
+## ★ SWEEP 8 — THE NAMED MASTER LIST (30 Jul — the index; detail follows below)
+> Every Sweep 8 item, named + handled, in one place. Status: ✅ done · ⏳ partial /
+> written-but-deploy-gated · ⬜ to build · ⛔ gate. ~45 items. The sections beneath
+> hold the file refs + specifics; this is the checklist.
+
+### Migrations — idempotent, add-only (the numbered queue)
+- **M1 installed_equipment** — fitted model/serial/AC/export/mismatch/attestation (fieldRecord contract). ⬜
+- **M2 install_evidence + install_checklist** — photo-slot + stage-completion rows. ⬜
+- **M3 signature_hash** — signature → storage + sha256 on the DoW/NC record (kernel append). ⬜
+- **M4 notifications + magic_link_tokens** — the both-ends notification law's table. ⬜
+- **M5 agent_corrections + owner_report_view** — the learning loop. ⬜
+- **M6 designs** — persist array geometry/strings (kills stored-vs-live kWp delta). ⬜
+- **M7 proposal_versions + 0.70-kill** — append-only versions; drafter stores `selfConsumptionFromOccupancy()`. ⬜
+- **M8 products** — warranty/dims/watts/kwh/AC/type-test; unify the two catalogs. ⬜
+- **M9 feedback + referrals + tier_entitlements** — the paid lock-off. ⬜
+- **M10 installer_vault** — an installer's serials/certs across all their jobs. ⬜
+- **M11 touchpoints.sender** — the field team's voice in the one thread (+ Realtime). ⬜
+- **M12 staff_profiles.home_address + depots** — the scheduler's real inputs. ⬜
+- **M13 agent_route_runs** — chosen order + savings (km/min/€) per run (owner transparency). ⬜
+- **M14 inventory** — the depot shelf; `computeBOM()` aggregates load-out + reorder. ⬜
+
+### Edge functions — deploys / new (D)
+- **D1 scheduler-v2 (agent-drain redeploy)** — next-free-working-day + product-pick. **WRITTEN, NOT DEPLOYED** — `supabase functions deploy agent-drain`; **NO migration needed** (reads existing cols). ⏳
+- **D2 kernel-emit** — emit fn consuming `kernelVocabulary` (ProposalAccepted / DepositPaid / InstallStepCompleted / InverterConnected / SignOffCaptured, refs-only). ⬜
+- **D3 buildingInsights-server** — Google Solar panel-fit moved off the browser (CORS). ⬜
+- **D4 maps-static-proxy** — referrer-locked Maps key never ships to the client. ⬜
+- **D5 system-live-email** — wire the DRAFTED `monitoringHandoff` send + SEAI wording gate. ⬜
+- **D6 plate-OCR** — camera-assist serial read (manual entry stays the fallback). ⬜
+
+### External integrations / keys (X)
+- **X1 Postmark-sends** — wire every UI-fake send (proposal, deposit, photo-request, reschedule, handover-pack, referral, team-invite, both-ends). ⬜
+- **X2 cal.com** — real booking, white-labelled, front + back (agent scheduler flows). ⬜
+- **X3 distance-matrix** — Google Distance Matrix for real drive-time (scheduling). ⬜
+- **X4 maps-keys** — Maps Static + Solar API, referrer-locked / proxied. ⬜
+- **X5 realtime** — Supabase Realtime on `touchpoints` (cross-device conversation). ⬜
+- **X6 sentry** — edge fns + app ErrorBoundary → structured reports. ⬜
+- **X7 uptime** — `/health` endpoint + cron → #monitoring (SLACK_OPS). ⬜
+- **X8 llm** — OpenRouter behind `coachBrain` + `generateAIResponse`. ⬜
+- **X9 e-sign** — the contract Sign flow. ⬜
+
+### Cross-cutting laws / infra (L)
+- **L1 both-ends-notify** — every interaction notifies customer + consultant (email + magic link; NO SMS/WA). ⬜
+- **L2 numbers-through-spine** — drafter STORES `computeQuote()` + `selfConsumptionFromOccupancy()` + `annualProduction()` (the 0.70 kill). ⏳ engine built; drafter-store remains.
+- **L3 learning-loop** — Wrong → `agent_corrections` → owner report → draft prompt revisions → approve → version bump. ⬜
+- **L4 ask-ai-guardrail** — customer AI refuses anything outside THEIR project. ⬜
+- **L5 white-label** — every customer-facing "AISOLAR" → tenant brand (`useTenantBrand`). ⬜
+- **L6 kernel-events** — wire the emit points (see D2). ⬜
+- **L7 self-heal-report-improve** — the 4-layer spec (agent / runtime / app / kernel), draft-first. ⬜
+
+### Growth loops (G)
+- **G1 referral-link** — AIChat money-off + tracked fee. ⬜  · **G2 review→GBP** — testimonial → Google Business on completion. ⬜  · **G3 social-share** — installer's completion photo. ⬜ (all tier-locked)
+
+### Gates & security — MUST pass before cohort/prod
+- **GATE 0** — rotate 3 leaked Supabase keys + Maps key + purge git history. ⛔ deploy gate
+- **RLS-audit** — `fix_all_41_advisories` + ~43 read-path policies + per-POV isolation proof + new tables ship WITH policies + storage buckets scoped/signed. ⛔
+- **GATE B** — no prod migration until Cal aligns OA / GRIDS / COMH. ⛔
+- **truth-guard** — SystemSettingsV2 Twilio/WhatsApp render an explicit "Not connected". ⬜
+
+### Per-surface wiring (frontend fakes → real) — full detail in the inventory below
+Consultant cockpit · ProposalView · EstimateView · CustomerProposal · CustomerPortalV2 ·
+RealCalendar · ProfessionalProducts · Owner cockpit · Design Studio · Owner scheduling
+transparency (incl. the **Approve-loop write**) · AIField/JobViewV2 (start-job notify,
+photos→storage, serials→M1, offline sign-off, NC submission). ⬜ — see "Per-surface
+trigger inventory" + "Owner cockpit" + "AIField install runner" sections.
+
+### Housekeeping
+- **HK1 vault-commit** — commit the Obsidian vault git repo (final sweep). ⬜
+
+---
+
 ## Already wired (baseline — from CLAUDE.md, don't rebuild)
 - Edge fns: `ingest-lead` (public door, `x-ingest-key`, stamps AISOLAR_TENANT_ID, 24h dedupe), `agent-drain` (queue + pg_cron, 10 agents, lead_intake→intake_complete cascade), `extract-bill-data` (21-field bill extract, PERSISTS to lead_intake, auth via staff JWT or lead access_token, returns `persisted:boolean`), `create-checkout` (payment).
 - Migrations: website_ingest, survey_handoff (survey→lead_intake confirmed_* copy), role_management (grant_role RPC, recursion-safe RLS), bill_extract_complete (+ GDPR fix in anonymise_lead).
