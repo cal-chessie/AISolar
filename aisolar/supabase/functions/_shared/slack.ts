@@ -65,6 +65,85 @@ interface PostToSlackResult {
   error?: string;
 }
 
+interface RequestApprovalParams {
+  /** kernel.commands.command_id — the pending intent this button resolves. */
+  commandId: string;
+  who: string;
+  what: string;
+  proof: string;
+  title?: string;
+}
+
+/**
+ * requestApproval — post a decision with real Approve/Reject buttons.
+ *
+ * THIS IS THE VETO, MADE AUTONOMOUS. The button carries the kernel command_id;
+ * Cal's tap goes Slack → `slack-approve` → kernel.commands.status → the 0012
+ * trigger emits CommandResolved onto the chain. No Claude in the loop: the
+ * power to stop survives everyone's absence, and every use of it is receipted.
+ *
+ * Precondition: the caller has ALREADY written the command as `pending`. Never
+ * post a button for an intent that does not exist — a tap must always resolve
+ * something real.
+ */
+export async function requestApproval(params: RequestApprovalParams): Promise<PostToSlackResult> {
+  const { commandId, who, what, proof, title } = params;
+  if (!proof?.trim()) return { ok: false, error: "proof is required — no post without proof" };
+  if (!commandId?.trim()) return { ok: false, error: "commandId is required — a button must resolve a real command" };
+
+  const url = Deno.env.get(WEBHOOK_ENV.decisions);
+  if (!url) return { ok: false, error: "Slack not configured for #decisions" };
+
+  const body = {
+    text: `Decision needed: ${what}`, // notification fallback
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: [
+            `*${title ?? "Decision needed"}*`,
+            `*WHO* ${who}`,
+            `*WHAT* ${what}`,
+            `*PROOF* ${proof}`,
+          ].join("\n"),
+        },
+      },
+      {
+        type: "actions",
+        elements: [
+          { type: "button", action_id: "approve", style: "primary",
+            text: { type: "plain_text", text: "Approve" }, value: commandId },
+          { type: "button", action_id: "reject", style: "danger",
+            text: { type: "plain_text", text: "Reject" }, value: commandId },
+        ],
+      },
+      {
+        type: "context",
+        elements: [{ type: "mrkdwn", text:
+          `_Nothing ships without your tick. This one resolves kernel command \`${commandId.slice(0, 8)}…\` and receipts to the chain._` }],
+      },
+    ],
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      log(FN, "error", "Slack approval post failed", { status: response.status });
+      return { ok: false, error: `Slack error ${response.status}` };
+    }
+    log(FN, "info", "approval requested", { who, commandId });
+    return { ok: true };
+  } catch (err) {
+    log(FN, "error", "Slack approval post failed", { error: String(err) });
+    return { ok: false, error: String(err) };
+  }
+}
+
 export async function postToSlack(params: PostToSlackParams): Promise<PostToSlackResult> {
   const { channel, who, what, proof, ask, title, alert = false } = params;
 
