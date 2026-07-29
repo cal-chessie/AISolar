@@ -113,19 +113,22 @@ const isoFuture = (daysAhead: number, hour = 10) => {
   return d.toISOString();
 };
 
+// Demo addresses carry a real-format Eircode (routing key matches the Dublin
+// area) so the whole record — incl. the NC6 §2 Eircode box — completes. These
+// are demo values in the correct format, not lookups of real premises.
 const DUBLIN_ADDRESSES = [
-  '12 Beech Hill Road, Donnybrook, Dublin 4',
-  '47 Shrewsbury Road, Ballsbridge, Dublin 4',
-  '8 Castle Park Road, Sandymount, Dublin 4',
-  '23 Torquay Road, Bray, Co. Wicklow',
-  '5 Foxrock Road, Foxrock, Dublin 18',
-  '18 Mulberry Lane, Dundrum, Dublin 16',
-  '34 Seafield Road, Clontarf, Dublin 3',
-  '9 Howth Road, Howth, Dublin 13',
-  '27 Ranelagh Village, Ranelagh, Dublin 6',
-  '14 Orwell Road, Rathgar, Dublin 6',
-  '6 Silchester Road, Glasnevin, Dublin 11',
-  '31 Rathmines Road Lower, Rathmines, Dublin 6',
+  '12 Beech Hill Road, Donnybrook, Dublin 4, D04 K729',
+  '47 Shrewsbury Road, Ballsbridge, Dublin 4, D04 W820',
+  '8 Castle Park Road, Sandymount, Dublin 4, D04 R6H8',
+  '23 Torquay Road, Bray, Co. Wicklow, A98 X4P7',
+  '5 Foxrock Road, Foxrock, Dublin 18, D18 F5T2',
+  '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
+  '34 Seafield Road, Clontarf, Dublin 3, D03 V2N6',
+  '9 Howth Road, Howth, Dublin 13, D13 E8W1',
+  '27 Ranelagh Village, Ranelagh, Dublin 6, D06 P3Y9',
+  '14 Orwell Road, Rathgar, Dublin 6, D06 X5F8',
+  '6 Silchester Road, Glasnevin, Dublin 11, D11 A7C3',
+  '31 Rathmines Road Lower, Rathmines, Dublin 6, D06 T4M2',
 ];
 
 const INSTALLERS = [
