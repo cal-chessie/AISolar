@@ -125,6 +125,25 @@ built yet. All three (demo-off, RLS proof, entitlements) are pre-launch. (SWEEP8
 A9/A10/A11.) *Why this only surfaced now: I'd been working in demo the whole time, which
 turns the gates off. A senior team flags that first — my miss.*
 
+## 11. Product & business-model — open threads (Cal, 30 Jul)
+Strategic calls not yet made — YOUR decisions, flagged so they stop being invisible:
+- **Single simple product (start → grant)?** Worth seriously weighing. But strip the
+  ACCIDENTAL complexity (role sprawl, the second offer, demo cruft) — NOT the essential
+  complexity (the compliance moat: one record into NC6/NC7). "Start→grant" *without* the
+  install/compliance is a commodity calculator anyone can clone; the defensible wedge is
+  the bill-read + grant + **the NC completion**. Simplify the SHAPE, keep the moat.
+- **Financing.** Not built. The single biggest conversion lever ("€89/mo finance vs
+  €127/mo saving = cashflow-positive from month one") + the commercial ACA case. Needs a
+  lender integration + the finance line in the estimate. Real feature, real revenue.
+- **SaaS billing — 7-day free trial + card.** Not built. `create-checkout` / Stripe
+  exist for CUSTOMER deposits, but the AISolar SUBSCRIPTION (trial → card → recurring) is
+  a different Stripe flow (Stripe Billing, trial period). You cannot charge installers
+  without it. Ties to A1 (signup/onboarding).
+- **NC6 completion — now UNBLOCKED.** The 30% was waiting on AIField (the fitted-equipment
+  feed); AIField is closed, so it's actionable. Remaining: company/RECI from Settings
+  (A4) + map the electrical-protection fields (from the install checklist) + a full
+  field-coverage verify against the real NC6 PDF. This is the moat — worth finishing next.
+
 ---
 
 ## The launch-critical shortlist (what actually blocks go-live)
