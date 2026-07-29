@@ -139,10 +139,24 @@ Strategic calls not yet made — YOUR decisions, flagged so they stop being invi
   exist for CUSTOMER deposits, but the AISolar SUBSCRIPTION (trial → card → recurring) is
   a different Stripe flow (Stripe Billing, trial period). You cannot charge installers
   without it. Ties to A1 (signup/onboarding).
-- **NC6 completion — now UNBLOCKED.** The 30% was waiting on AIField (the fitted-equipment
-  feed); AIField is closed, so it's actionable. Remaining: company/RECI from Settings
-  (A4) + map the electrical-protection fields (from the install checklist) + a full
-  field-coverage verify against the real NC6 PDF. This is the moat — worth finishing next.
+- **Single product (start→grant) — the decision:** NOT as a permanent product that STOPS
+  at grant (that's a commodity calculator — the moat is the compliance past it). YES as
+  the **launch beachhead**: launch simple on bill→grant (the hook, mostly built), ship
+  **NC6 compliance as the fast-follow** (the barb that locks installers in). Kill the
+  *shape* complexity (4 role-worlds, the AITeam 2nd offer, demo sprawl); keep the *depth*
+  into compliance. One product, one buyer (the installer): "bill to grant," delivered
+  through to compliance.
+
+- **NC6 — everything it needs to complete itself (17 data points, 5 sources):**
+  - **A. Identity & site (6):** name, address, eircode, MPRN, phone, email → bill/lead. ✅
+  - **B. Supply & system (4):** supply type (survey), panels, DC kWp, battery → survey+proposal. ✅
+  - **C. Fitted/commissioning (5):** inverter model, serial, AC rating, export limit, mismatch
+    flag → AIField commissioning gate. ✅ (the 30% that was blocked; now flows on crew confirm)
+  - **D. Installer/RECI (2):** company, **RECI number** → Settings. ⚠️ RECI NOT persisted (A4).
+  - **E. Pages 3–6 (protection / ELS / earthing / declarations):** NOT mapped — overlay only
+    covers pages 1–2. Signature ✅ (eIDAS drawn). **This is the true "entirety" gap.**
+  - **The real last 30% = D (RECI from Settings) + E (map the checklist's protection/ELS/
+    earthing fields to NC6 pages 3–6 + full box coverage).** Commissioning + signature: done.
 
 ---
 
