@@ -42,6 +42,7 @@ import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/
 import { computeOwnerStats } from '@/lib/ownerStats';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
+import SchedulingTransparency from '@/components/owner/SchedulingTransparency';
 import { PipelineBar } from '@/components/layout/PipelineBar';
 import InsightsView from '@/components/InsightsView';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
@@ -269,7 +270,7 @@ export default function OwnerCockpit() {
           )}
           {activeView === 'products' && <ProfessionalProducts />}
           {activeView === 'settings' && <SystemSettings />}
-          {activeView === 'agents' && <AgentFoundation />}
+          {activeView === 'agents' && <div className="space-y-4"><AgentFoundation /><SchedulingTransparency leads={leads} /></div>}
           {activeView === 'analytics' && <Suspense fallback={<CockpitSkeleton />}><CeoWindow onOpenFinancials={() => setActiveView('financials')} /></Suspense>}
           {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
           {activeView === 'feedback' && <HelpUsImprove />}

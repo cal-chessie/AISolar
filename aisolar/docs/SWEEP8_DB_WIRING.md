@@ -282,6 +282,26 @@ test enqueue.)
 **Still Sweep 8 (not in this deploy):** the geographic ordering half needs geocoded
 lat/lng on leads + Distance Matrix — migration #12 above.
 
+### Owner scheduling transparency (30 Jul, FRONTEND — live in app, data is Sweep 8)
+`src/components/owner/SchedulingTransparency.tsx`, mounted in `OwnerCockpit` →
+**Agents** view (under AgentFoundation). Cal's 28-Jul .note: "owner clicks the
+agent, sees how it's programmed + its savings." View-first (writes nothing): runs
+the REAL `scheduling.ts` + `routeOptimize.ts` on the book and shows the proposed
+survey/install plans + savings (km / min / €). **Verified in-browser 30 Jul** (real
+numbers: 48 km / 103 min / ≈€78; survey ≤3/day clustered, install 1/day weekend-
+skipped). It's frontend, so it's LIVE in the app on the branch — no deploy needed
+for the UI. What's DEMO and must become REAL in Sweep 8:
+- **Home base**: fixed Citywest depot → per-employee `staff_profiles.home_address`
+  (Owner Settings, migration #12). Each consultant/installer plans from THEIR home.
+- **Drive-time**: haversine×1.35 estimate → **Google Distance Matrix** (real time).
+- **Data source**: computes on demo leads → read real `site_surveys` / `assignments`.
+- **The € cost model** (€0.55/km + €30/hr) → tenant-configurable in Settings.
+- **Close the loop**: today the panel RECOMPUTES the plan; wire it to read what the
+  scheduler-v2 agents (survey_scheduler / install_coordinator) actually proposed
+  from `agent_route_runs` (migration #13), so the owner sees the agent's real run +
+  its logged savings — and add an **Approve** action (draft→approve writes the
+  `scheduled_date`; draft-never-send until then).
+
 ### Housekeeping (final Sweep 8)
 - [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
