@@ -73,6 +73,16 @@ transparency (incl. the **Approve-loop write**) · AIField/JobViewV2 (start-job 
 photos→storage, serials→M1, offline sign-off, NC submission). ⬜ — see "Per-surface
 trigger inventory" + "Owner cockpit" + "AIField install runner" sections.
 
+### Audit-found gaps (A) — 30 Jul full-app audit; detail in "FULL APP AUDIT" section
+- **A1 auth + tenant-provisioning** (`/auth`, `/onboarding`) — signup → tenant + role + first-admin bootstrap. ⬜ *launch-critical*
+- **A2 front-door lead creation** (`/start`, `/upload`) — bill upload/booking must birth a lead via `ingest-lead`. ⬜ *launch-critical, highest-leverage*
+- **A3 leadflow-sends** — `/lead-flow` fake survey/proposal sends → real records + Postmark. ⬜
+- **A4 settings-persist** — `SystemSettingsV2` brand/terms/compliance localStorage → tenant tables (+ home-addr M12 UI). ⬜
+- **A5 ai-config** — `/agent-console` model + cost-cap UI → `ai_config`. ⬜
+- **A6 gdpr-consent** — cookie/consent localStorage → real consent record. ⬜
+- **A7 calculator-carry** — `CalculatorWidget` drawn-array persists onto the created lead. ⏳
+- **A8 client-state** — recent-searches / nav-theme localStorage. ✅ no action.
+
 ### Housekeeping
 - **HK1 vault-commit** — commit the Obsidian vault git repo (final sweep). ⬜
 
@@ -398,3 +408,58 @@ in-browser 30 Jul. Sweep 8 to make it real:
   writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
   commit the vault repo (Hermes's sync lane) so the disk-proofed record and git agree
   — Cal's call, 29 Jul: "lets do this on final sweep 8".
+
+## FULL APP AUDIT — 30 Jul (Cal: "harden Sweep 8 with a full app audit")
+Walked every route in `App.tsx` against SWEEP8 coverage. Surfaces already inventoried
+above aren't repeated; below is the coverage map + the NEW gaps the audit surfaced.
+
+### Coverage matrix (every route)
+| Route(s) | Surface | Sweep 8 status |
+|---|---|---|
+| `/` `/about` `/pricing` `/faq` `/privacy` `/terms` `/docs` `/aios` `/aisolar` `/aiteam` `/blog` | marketing / static | n/a — truth-pass only, no backend |
+| `/auth` | AuthPage | ⬜ **A1** signup/login + first-admin bootstrap |
+| `/onboarding` | OnboardingMode | ⬜ **A1** tenant provisioning |
+| `/start` `/get-started` `/upload` | StartAnalysis (bill front door) | ⬜ **A2** booking must CREATE a lead |
+| `/calculator` `/embed` | CalculatorWidget | ⏳ **A7** posts to `ingest-lead` ✓; array carry-through open |
+| `/lead-flow` | LeadFlow | ⬜ **A3** fake survey/proposal sends |
+| `/consultant` | ConsultantCockpitV5 | ✅ covered (per-surface inventory) |
+| `/owner` | OwnerCockpit (+Agents/Finance/Analytics/Settings) | ✅ covered · **A4/A5** settings/AI-config new |
+| `/installer` `/job` | AIField / JobViewV2 | ✅ covered (install-runner section) |
+| `/my-projects` | CustomerPortalV2 | ✅ covered |
+| `/p/:leadId` | CustomerProposal | ✅ covered |
+| `/agent-console` | AIConfig / AgentTraining | ⬜ **A5** |
+| `/demo` `/agents` | demo index / public agents page | n/a — public |
+
+### New named gaps (A) — added to Sweep 8
+- **A1 auth + tenant-provisioning** (`/auth`, `/onboarding`) — signup → create tenant +
+  `grant_role` + the first-admin bootstrap SQL (`docs/AUTH_RUNBOOK.md` — MUST run once or
+  Cal is locked out as a customer). Foundational: no real users without it. ⬜
+- **A2 front-door lead creation** (`/start` StartAnalysis, `/upload`) — the bill upload +
+  booking must CREATE the lead (via `ingest-lead`) so agents pick it up. Today the booking
+  does NOT create a lead (CLAUDE.md: "blocked on coxmtpnq access"). `CalculatorWidget`
+  already posts to `ingest-lead` — mirror it. ⬜ **highest-leverage: everything downstream
+  is wired and waiting on a lead to exist.**
+- **A3 LeadFlow sends** (`/lead-flow`) — "Survey options sent" / "Site survey booked" /
+  "Proposal sent" toasts + `setTimeout` stage jumps → real survey/proposal records +
+  Postmark + `workflow_stage` update. Overlaps the consultant-cockpit chat triggers — build
+  the send path once, call from both. ⬜
+- **A4 settings persistence** (`SystemSettingsV2`) — `saveTenantBrand` / `saveProposalTerms`
+  / `saveCompanyCompliance` are localStorage → real per-tenant tables. This screen is ALSO
+  the home-address (M12) + depot (M14) input UI and the Twilio/WhatsApp "Not connected"
+  truth-guard. ⬜
+- **A5 ai-config** (`/agent-console` AIConfig) — per-agent model + cost-cap UI → `ai_config`
+  (the server-side daily cap exists; the UI save + per-agent model selection persistence do not). ⬜
+- **A6 gdpr-consent** (`lib/gdpr.tsx`, CookieConsentBanner) — consent in localStorage → a real
+  consent record (GDPR audit trail) the app honours server-side (ties to `anonymise_lead`). ⬜
+- **A7 calculator carry-through** (`CalculatorWidget`) — lead capture via `ingest-lead` works;
+  the DRAWN ARRAY / bill-analyser output must persist onto the created lead so survey→proposal
+  reuse it (the calculator-widget carry-through intent). ⏳
+- **A8 client-state** (`GlobalSearchModal` recent searches, `AppShell` nav/theme) — localStorage,
+  fine as pure client state; leave unless multi-device sync is wanted. ✅ no action.
+
+### Audit verdict
+The pipeline SPINE (bill→survey→proposal→grant→install→portal) + the owner/agent surfaces are
+covered. The audit's material adds are **A1 (auth/tenant)** and **A2 (front-door lead
+creation)** — the two ends of the funnel that aren't wired: you can't sign a tenant up, and the
+public bill upload doesn't yet birth a lead. Those are the launch-critical gaps; A3–A7 are
+cleanup with clear homes. Master list updated with the A-items.
