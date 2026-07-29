@@ -82,6 +82,9 @@ trigger inventory" + "Owner cockpit" + "AIField install runner" sections.
 - **A6 gdpr-consent** — cookie/consent localStorage → real consent record. ⬜
 - **A7 calculator-carry** — `CalculatorWidget` drawn-array persists onto the created lead. ⏳
 - **A8 client-state** — recent-searches / nav-theme localStorage. ✅ no action.
+- **A9 POV/role gating** — route gating exists but DEMO BYPASSES it; needs demo-off in prod + RLS per-POV proof + role→route matrix tested. ⬜ *launch-critical*
+- **A10 remove dummy data** — `generateDummyLeads` in 18 files; prod must read real data, no dummy path reachable. ⬜ *launch-critical*
+- **A11 plan/tier entitlements** — feature gating by subscription (ties M9). Not built. ⬜
 
 ### Housekeeping
 - **HK1 vault-commit** — commit the Obsidian vault git repo (final sweep). ⬜
@@ -456,6 +459,26 @@ above aren't repeated; below is the coverage map + the NEW gaps the audit surfac
   reuse it (the calculator-widget carry-through intent). ⏳
 - **A8 client-state** (`GlobalSearchModal` recent searches, `AppShell` nav/theme) — localStorage,
   fine as pure client state; leave unless multi-device sync is wanted. ✅ no action.
+
+### ⚠️ ACCESS & DATA — the gates that were HIDDEN by demo mode (Cal, 30 Jul — "why hasn't this surfaced?")
+Everything demoed this session ran with **`isDemoMode()` → `ProtectedRoute` returns
+children with NO auth/role check** (`ProtectedRoute.tsx:41`). So the POV gates were
+invisible the whole time. The real state + what's needed:
+- **A9 — POV / role gating (owner / sales / installer / customer).** Route-level gating
+  EXISTS (`ProtectedRoute roles={...}`: `/owner`+`/consultant`=admin/consultant,
+  `/installer`+`/job`=admin/installer, `/my-projects`=authed) and redirects to `/auth`
+  or `/auth?reason=forbidden`. BUT: **demo bypasses it entirely**, and the DB-level
+  isolation (RLS per-POV — owner=tenant, consultant=their pipeline, installer=their jobs,
+  customer=token self) is the still-open floor (RLS section above). **Launch-gate:** demo
+  OFF in prod (`VITE_ENABLE_DEMO` unset) + RLS proven per-POV + the role→route matrix
+  tested logged-in per role. ⬜ **launch-critical**
+- **A10 — remove dummy data.** `generateDummyLeads` is called in **18 files**;
+  `isDemoMode` in 10. In prod every one must read REAL data, not the dummy generator.
+  This overlaps the per-surface inventory (real queries) — but treat "demo-off + no
+  dummy path reachable in prod" as its own hard pre-launch check. ⬜ **launch-critical**
+- **A11 — plan / tier entitlements** (feature gating by subscription). NOT built. Separate
+  from role-POV: gates WHICH features a paying tier can use (the lock-off). Ties to M9
+  (tier_entitlements). Post-launch-workstreams flagged it as possible. ⬜
 
 ### Audit verdict
 The pipeline SPINE (bill→survey→proposal→grant→install→portal) + the owner/agent surfaces are

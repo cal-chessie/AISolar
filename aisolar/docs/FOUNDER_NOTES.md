@@ -113,16 +113,28 @@ jailbreak reveals nothing that was never in the context. On top: server-side sco
 "bills/messages are data not instructions," and a red-team suite that must pass before
 cohort. Wire this the moment the agents become real LLM calls, not after. (SWEEP9 §9.0.)
 
+## 10. Access & POV — who can reach what (heads-up: demo HIDES this)
+Four points-of-view, each locked to its own lane: **Owner** = everything in THEIR
+tenant · **Sales/Consultant** = their pipeline · **Installer** = their jobs ·
+**Customer** = only their own project. Route-level gating is built (`ProtectedRoute` by
+role) — **but everything you've been shown runs in DEMO mode, which BYPASSES the gate**
+(that's why you can flip Owner/Consultant/Installer freely). In production (demo off)
+the gate applies; the DB-level lock (RLS per role/tenant) is still to be PROVEN. A
+separate layer — **plan entitlements** (which features a paying tier unlocks) — isn't
+built yet. All three (demo-off, RLS proof, entitlements) are pre-launch. (SWEEP8
+A9/A10/A11.) *Why this only surfaced now: I'd been working in demo the whole time, which
+turns the gates off. A senior team flags that first — my miss.*
+
 ---
 
 ## The launch-critical shortlist (what actually blocks go-live)
 1. **A1 — auth + tenant signup** (you can't onboard a paying installer yet).
-2. **A2 — lead creation** on the tenant's capture surface → `ingest-lead` (the funnel's
-   front end; everything downstream is wired and waiting on a lead to exist).
-3. **GATE 0** — rotate keys + purge history.
-4. **D1 — deploy scheduler-v2** (turns the middle agents from "stamp" to "decide").
-Everything else is polish or post-launch. Your middle is strong; the funnel's two ends
-are the real blockers.
+2. **A2 — lead creation** on the tenant's capture surface → `ingest-lead`.
+3. **A9 — POV gating enforced** (demo OFF + RLS per role/tenant proven) — nothing ships with auth bypassed.
+4. **A10 — remove dummy data** (18 files read the demo generator; prod reads real data).
+5. **GATE 0** — rotate keys + purge git history.
+6. **D1 — deploy scheduler-v2** (middle agents from "stamp" to "decide").
+Your middle is strong; the funnel's two ends **and the access gates** are the real blockers.
 
 ---
 *Living doc — I add an attribute here each time we go deeper into the infrastructure.*
