@@ -282,10 +282,10 @@ export default function JobViewV2() {
     // The field app was silently running desktop density (36px controls); this
     // opts the whole job view into 44px+ targets, bigger text for outdoor
     // legibility, and roomier rows — gloves, roofs, one hand free.
-    <div data-density="comfortable" className="min-h-dvh bg-background">
-      {/* Sticky header with completion status */}
-      <header className={`border-b sticky top-0 z-30 ${overallComplete ? 'bg-primary/10 dark:bg-primary/10' : 'bg-background/95 backdrop-blur'}`}>
-        <div className="px-4 py-3 flex items-center gap-3">
+    <div data-density="comfortable" className="h-dvh flex flex-col bg-background overflow-hidden">
+      {/* Job header — the SAME full-bleed shell as the installer portal */}
+      <header className={`border-b flex-shrink-0 ${overallComplete ? 'bg-doc-deposit/10 dark:bg-doc-deposit/10' : 'bg-background'}`}>
+        <div className="px-4 lg:px-6 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/installer')} className="p-2" aria-label="Back to installer portal">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -299,14 +299,14 @@ export default function JobViewV2() {
               {lead.address.split(',').slice(-2).join(',').trim()}
             </div>
           </div>
-          {/* Completion status badge */}
+          {/* Completion status badge — done reads doc-deposit (family "signed off") */}
           {overallComplete ? (
-            <Badge className="bg-primary text-primary-foreground">
+            <Badge className="bg-doc-deposit text-white">
               <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
             </Badge>
           ) : (
             <div className="text-right">
-              <div className="text-sm font-bold">{overallProgress}%</div>
+              <div className="text-sm font-bold tabular-nums">{overallProgress}%</div>
               <div className="text-[11px] text-muted-foreground">complete</div>
             </div>
           )}
@@ -314,52 +314,72 @@ export default function JobViewV2() {
         {/* Progress bar */}
         <div className="h-1 bg-muted">
           <motion.div
-            className={`h-full transition-all ${overallComplete ? 'bg-primary' : 'bg-primary/70'}`}
+            className={`h-full transition-all ${overallComplete ? 'bg-doc-deposit' : 'bg-primary/70'}`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
       </header>
 
-      {/* Tab navigation — Cal 2026-07-21: was a 244px-overflowing scroll strip,
-          so Handover sat off-screen and had to be swiped to. Now a 3x2 grid on
-          phones (every phase reachable without scrolling) and one row on
-          tablet/desktop. */}
-      <nav className="border-b bg-background sticky top-[57px] z-20">
-        <div className="grid grid-cols-3 sm:flex sm:flex-wrap px-2 py-2 gap-1">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            const phaseDone = tab.id !== 'overview' && phaseCompletion[tab.id as keyof typeof phaseCompletion];
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                aria-current={isActive ? 'step' : undefined}
-                className={`flex items-center justify-center sm:justify-start gap-1.5 px-2 sm:px-3 h-control rounded-control text-sm font-medium cursor-pointer border transition-colors duration-instant ${
-                  isActive
-                    ? 'bg-foreground text-background border-foreground'
-                    : phaseDone
-                    ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Icon className={`size-4 shrink-0 ${isActive ? '' : phaseDone ? 'text-doc-deposit' : PHASE_TINT[tab.id] ?? ''}`} />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden truncate">{tab.shortLabel}</span>
-                {phaseDone && <CheckCircle2 className="size-3.5 shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Body: the desktop PHASE RAIL (the click-through, vertical stepper) +
+          the active phase. Full-bleed — no more centred tablet column. */}
+      <div className="flex-1 min-h-0 flex">
+        <aside className="hidden lg:flex lg:flex-col w-[288px] shrink-0 border-r bg-muted/20 overflow-y-auto">
+          <div className="p-4 border-b border-border">
+            <div className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">This install</div>
+            <dl className="mt-2 space-y-1.5 text-sm">
+              {proposal && (
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">System</dt>
+                  <dd className="font-medium">{proposal.system_size_kw}kWp · {proposal.panel_count} panels</dd>
+                </div>
+              )}
+              {lead.assignment?.scheduled_date && (
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">Install day</dt>
+                  <dd className="font-medium">{new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' })}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+          <PhaseStepper activeTab={activeTab} phaseCompletion={phaseCompletion} onSelect={setActiveTab} />
+        </aside>
 
-      <main className="max-w-4xl mx-auto px-4 py-4 pb-20">
-        {/* FIFTH AnimatePresence freeze site — same bug as installer tabs,
-            LeadFlow, routes, consultant tabs. Tabs switch instantly. */}
-        <div key={activeTab}
-          >
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Mobile phase tabs (the rail is desktop-only) — 3×2 grid, all reachable */}
+          <nav className="lg:hidden border-b bg-background flex-shrink-0">
+            <div className="grid grid-cols-3 px-2 py-2 gap-1">
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                const phaseDone = tab.id !== 'overview' && phaseCompletion[tab.id as keyof typeof phaseCompletion];
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    aria-current={isActive ? 'step' : undefined}
+                    className={`flex items-center justify-center gap-1.5 px-2 h-control rounded-control text-sm font-medium cursor-pointer border transition-colors duration-instant ${
+                      isActive
+                        ? 'bg-foreground text-background border-foreground'
+                        : phaseDone
+                        ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/20'
+                        : 'text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className={`size-4 shrink-0 ${isActive ? '' : phaseDone ? 'text-doc-deposit' : PHASE_TINT[tab.id] ?? ''}`} />
+                    <span className="truncate">{tab.shortLabel}</span>
+                    {phaseDone && <CheckCircle2 className="size-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
+          <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 pb-24">
+            {/* readable measure for checklists; the rail fills the left so the
+                page reads full-bleed, not a floating centred card */}
+            <div key={activeTab} className="max-w-3xl">
             {activeTab === 'overview' && (
-              <OverviewTab lead={lead} overallComplete={overallComplete} />
+              <OverviewTab lead={lead} overallComplete={overallComplete} onBegin={() => setActiveTab('pre_install')} />
             )}
             {activeTab === 'pre_install' && (
               <ChecklistTab
@@ -441,16 +461,55 @@ export default function JobViewV2() {
                 }}
               />
             )}
-          </div>
-      </main>
+            </div>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
 
+/* PhaseStepper — the vertical click-through in the desktop rail. Where you are,
+ * what's done (doc-deposit ticks), what's next. Family-tinted per phase. */
+function PhaseStepper({ activeTab, phaseCompletion, onSelect }: {
+  activeTab: TabId;
+  phaseCompletion: Record<string, boolean>;
+  onSelect: (t: TabId) => void;
+}) {
+  return (
+    <nav className="p-3 space-y-1" aria-label="Install phases">
+      {TABS.map((tab, i) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        const done = tab.id !== 'overview' && phaseCompletion[tab.id];
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onSelect(tab.id)}
+            aria-current={isActive ? 'step' : undefined}
+            className={`w-full flex items-center gap-3 px-3 h-11 rounded-control text-sm font-medium text-left transition-colors ${
+              isActive ? 'bg-foreground text-background'
+              : done ? 'text-foreground hover:bg-muted'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <span className={`grid place-items-center size-6 rounded-full shrink-0 ${isActive ? 'bg-background/20' : done ? 'bg-doc-deposit/15' : 'bg-muted'}`}>
+              {done ? <CheckCircle2 className="size-4 text-doc-deposit" /> : <Icon className={`size-4 ${isActive ? '' : PHASE_TINT[tab.id] ?? ''}`} />}
+            </span>
+            <span className="flex-1 truncate">{tab.label}</span>
+            <span className={`text-2xs tabular-nums ${isActive ? 'text-background/60' : 'text-muted-foreground/60'}`}>{i + 1}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 // ============= OVERVIEW TAB =============
-function OverviewTab({ lead, overallComplete }: {
+function OverviewTab({ lead, overallComplete, onBegin }: {
   lead: DummyLead;
   overallComplete: boolean;
+  onBegin: () => void;
 }) {
   const proposal = lead.proposal;
   const survey = lead.survey;
@@ -482,6 +541,9 @@ function OverviewTab({ lead, overallComplete }: {
         </Card>
       )}
 
+      {/* Job context — two columns on desktop so the page uses the full width
+          (no more centred tablet column). */}
+      <div className="grid gap-4 lg:grid-cols-2 items-start">
       {/* SUBTRACTION (Cal, 28 Jul — "why would I see my header twice?"):
           the phase grid is GONE (the tab strip already carries every phase +
           its done-tick) and name/address are GONE from this card (the sticky
@@ -520,10 +582,10 @@ function OverviewTab({ lead, overallComplete }: {
 
       {/* Site notes from survey (read-only snapshot, not the survey questions) */}
       {survey && (
-        <Card className="border-primary/40 dark:border-primary/40 bg-primary/10 dark:bg-primary/10">
+        <Card className="border-tech/30 dark:border-tech/30 bg-tech/5 dark:bg-tech/5">
           <CardContent className="p-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-primary" /> Site notes (from survey)
+              <ClipboardList className="h-4 w-4 text-tech" /> Site notes (from survey)
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
@@ -590,7 +652,7 @@ function OverviewTab({ lead, overallComplete }: {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">SEAI grant</div>
-                <div className="font-medium text-primary">{eur(proposal.seai_grant)}</div>
+                <div className="font-medium text-doc-deposit">{eur(proposal.seai_grant)}</div>
               </div>
             </div>
           </CardContent>
@@ -617,11 +679,22 @@ function OverviewTab({ lead, overallComplete }: {
               <span>12 km/h SW</span>
             </div>
           </div>
-          <div className="mt-2 text-xs text-primary dark:text-primary">
+          <div className="mt-2 text-xs text-doc-deposit dark:text-doc-deposit">
             ✓ Safe for roof work
           </div>
         </CardContent>
       </Card>
+      </div>
+
+      {/* The click-through starts here — the rail (desktop) tracks the rest */}
+      {!overallComplete && (
+        <div className="pt-1">
+          <Button size="lg" className="h-control px-6" onClick={onBegin}>
+            Begin — Pre-install checks <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+          <p className="mt-2 text-2xs text-muted-foreground">Six phases, in order — the rail on the left tracks where you are.</p>
+        </div>
+      )}
     </div>
   );
 }

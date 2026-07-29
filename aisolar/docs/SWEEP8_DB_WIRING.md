@@ -241,3 +241,9 @@ The time/money/never-revisit logic is CAPTURED in code, not just notes:
 - **What "less chance of forgetting" rests on:** `computeBOM()` (now `lib/bom.ts`) is
   the single load-out list with **critical** flags — the van checklist in the hub, the
   coach's "what do I load", and (Sweep 8) the depot aggregate + reorder all read it.
+
+### Housekeeping (final Sweep 8)
+- [ ] **Commit the vault's own git repo** (`~/Documents/Obsidian Vault`). Claude now
+  writes session notes to RAW under the wingman mandate; on the final Sweep 8 pass,
+  commit the vault repo (Hermes's sync lane) so the disk-proofed record and git agree
+  — Cal's call, 29 Jul: "lets do this on final sweep 8".

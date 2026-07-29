@@ -6,6 +6,32 @@
 > Sweep 8. Newest at the top. Tick when landed. Truth-pass applies to Cal's
 > ideas too.
 
+## ▶ START HERE — tomorrow 30 Jul (Cal's two foci)
+1. **7.1 installer polish** — the **job-survey click-through** + the **family UI/UX
+   makeover on Overview** + **kill the tablet sizing** (full detail in the .note just
+   below). Then mop up the other open 7.1 items (JobViewV2 chrome finish, Schedule niceties).
+2. **The thin middle layer** — the *decision-quality* gap, not the plumbing. Wire the real
+   scheduling brain into the agent runtime: `scheduling.ts` + `routeOptimize.ts` →
+   **scheduler-v2 / install-coordinator-v2** (so the agents stop *stamping* dates and
+   actually plan), + **product-pick from `solar_products`** in the proposal drafter.
+   Graded starting point = `docs/PIPELINE_AUTONOMY_AUDIT.md` (the C/C+ agents); wiring
+   targets = `docs/SWEEP8_DB_WIRING.md`. This is the ~10% that turns "assisted" into real
+   decision-autonomy — the middle we talked about.
+
+## .note — installer job-survey click-through + family makeover (BEGIN 30 Jul AM)
+Cal, 29 Jul: the installer app's **job/survey flow still needs a clear click-through**,
+and the screens still carry the **OLD version + tablet sizing** — they never got the
+family UI/UX + full-bleed desktop makeover the rest of AIField got.
+- **Job survey click-through** — walk the whole install/survey journey end-to-end, make
+  each step obviously lead to the next (the same "one step at a time" clarity JobViewV2's
+  phases have, applied to the survey/overview path).
+- **Family design on the OVERVIEW too** — doc-colour semantics + the family palette (like
+  the phase-tint pass), not the generic old chrome.
+- **Sizing** — kill the tablet-locked widths; full-bleed desktop shell + responsive, same
+  as the Today/Schedule/Inbox pass already done. [[design-tokens]] is the token law.
+- Platform-ops / Steward Console mapped separately in `docs/STEWARD_CONSOLE.md` (Cal's
+  "owner overview for MY ownership of the whole app" — the buy-vs-build + safe-deploy map).
+
 ## Close of day 29 Jul — coach, schedule, skin ✅
 - **Installer AI Coach — real field brain** (`coachBrain.ts` + `aiCoach.ts`). Was
   a generic fallback that still talked about "3 jobs today" and "this week's
