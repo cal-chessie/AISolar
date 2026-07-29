@@ -7,7 +7,7 @@
  *   - Proposal data (system, products, pricing)
  *   - Contract + invoice data
  *   - SEAI grant status
- *   - All touchpoints (email, SMS, calls, AI chat)
+ *   - All touchpoints (email, calls, AI chat — SMS only if/when the channel is truly connected)
  *   - Install photos + checklist
  *   - Post-install feedback + review
  *   - Referral info

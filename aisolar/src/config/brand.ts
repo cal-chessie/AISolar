@@ -31,7 +31,7 @@ export const brand = {
   contact: {
     phone: "+353 1 234 5678",
     phoneDisplay: "01 234 5678",
-    whatsapp: "353851234567", // No + or spaces for wa.me link
+    whatsapp: "", // truth-pass: EMPTY until a real, manned WhatsApp number exists — never a placeholder
     email: "hello@aisolar.ie",
     address: "Dublin, Ireland",
   },
@@ -119,7 +119,7 @@ export const brand = {
   
   // ===== FEATURE FLAGS =====
   features: {
-    showWhatsApp: true,
+    showWhatsApp: false, // truth-pass: off until WhatsApp is real (channel disconnected)
     showPhoneNumber: true,
     showSocialLinks: false,
     enableCryptoPayments: false,
