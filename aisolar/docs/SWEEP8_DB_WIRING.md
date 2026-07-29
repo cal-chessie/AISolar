@@ -627,4 +627,28 @@ inspection_test_cert / **block_diagram = SLD**). So the migration REUSES them an
 `tenant_settings` · (Phase 2) the `portal_submitter` browser agent flips `staged→submitted` + writes `esb_reference`.
 Supersedes the notional "M2 install_evidence" name in the master list — we reuse `lead_documents` + add `esb_submissions`.
 
+## THE CUTOVER LAYER — dual-write LIVE in the app (30 Jul evening, Cal: "DO IT ALL")
+**`src/lib/serverStore.ts`** — the one adapter between every client store and its Postgres
+home. Fire-and-forget, never throws, silently no-ops with no session or undeployed tables:
+**the app behaves byte-identical today** (verified: tsc at baseline 8, zero console errors),
+and the moment the backend deploys, data flows to the tables with NO further frontend change.
+
+**Wired through it (7 paths):**
+| Save path | → Table |
+|---|---|
+| `saveTenantBrand` | tenant_settings·tenant_brand |
+| `saveProposalTerms` | tenant_settings·proposal_terms |
+| `saveCompanyCompliance` | tenant_settings·company_compliance |
+| `saveFinanceConfig` (pk_ only — secret-key guard upstream) | tenant_settings·finance_config |
+| `captureConsent` (banner) | consent_records (append-only) |
+| OwnerCockpit HelpUsImprove | feedback |
+| **JobViewV2 gate confirm** (`updates.confirmed`) | **installed_equipment** (attested_by = signed-in installer) |
+
+**Design law:** localStorage stays the offline-first source of truth UNTIL deploy is
+verified; then the cutover pass flips read order (DB first) + regenerates
+`types.ts` (`supabase gen types`) + removes the adapter's `as any` bridge (documented
+in-file). `pushTouchpoint` exported, awaiting the touchpoint call-sites.
+**Still staged (needs live DB to verify):** the 18-file real-data queries (demo-off),
+products localStorage ×4 → `products` table, conversations UI → tables.
+
 **Skills used:** aisolar-frontend (React/Vite/pdf-lib surface), renewably-repo-workflow (branch/notes discipline).

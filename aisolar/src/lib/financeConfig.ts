@@ -18,6 +18,7 @@
  * Demo mode persists to localStorage; live mode reads tenant_settings.
  */
 import { useSyncExternalStore } from 'react';
+import { pushTenantSetting } from '@/lib/serverStore';
 
 export interface FinanceConfig {
   stripe: {
@@ -63,6 +64,7 @@ export function saveFinanceConfig(cfg: FinanceConfig) {
     throw new Error('Stripe publishable keys start with pk_test_ or pk_live_.');
   }
   localStorage.setItem(KEY, JSON.stringify(cfg));
+  pushTenantSetting('finance_config', cfg); // dual-write → tenant_settings (cutover; pk_ only, secrets blocked above)
   window.dispatchEvent(new Event(EVENT));
 }
 

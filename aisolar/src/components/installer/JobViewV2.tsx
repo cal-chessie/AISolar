@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { pushInstalledEquipment } from '@/lib/serverStore';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -436,6 +437,10 @@ export default function JobViewV2() {
                         const next = { ...serials, ...updates };
                         setSerials(next);
                         persist({ serials: next });
+                        // THE GATE MOMENT: attestation confirmed on site → dual-write the
+                        // record to installed_equipment (offline-safe fire-and-forget;
+                        // localStorage stays the offline-first cache).
+                        if (updates.confirmed) pushInstalledEquipment(lead.id, next);
                       }}
                     />
                     {serials.confirmed && <MonitoringHandoff fittedModel={serials.fittedModel} customerName={lead.name} />}

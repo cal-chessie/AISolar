@@ -10,6 +10,7 @@
  * same shape, so the swap is one function.
  */
 import { brand } from '@/config/brand';
+import { pushTenantSetting } from '@/lib/serverStore';
 
 const KEY = 'aisolar_company_compliance';
 
@@ -52,6 +53,7 @@ export function getCompanyCompliance(): CompanyCompliance {
 export function saveCompanyCompliance(patch: Partial<CompanyCompliance>): CompanyCompliance {
   const next = { ...getCompanyCompliance(), ...patch };
   try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  pushTenantSetting('company_compliance', next); // dual-write → tenant_settings (cutover)
   window.dispatchEvent(new CustomEvent('company-compliance-changed'));
   return next;
 }

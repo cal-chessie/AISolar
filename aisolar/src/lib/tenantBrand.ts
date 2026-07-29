@@ -8,6 +8,7 @@
  * without touching code.
  */
 import { brand } from '@/config/brand';
+import { pushTenantSetting } from '@/lib/serverStore';
 
 const KEY = 'aisolar_tenant_brand';
 
@@ -40,6 +41,7 @@ export function getTenantBrand(): TenantBrand {
 export function saveTenantBrand(patch: Partial<TenantBrand>): TenantBrand {
   const next = { ...getTenantBrand(), ...patch };
   try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  pushTenantSetting('tenant_brand', next); // dual-write → tenant_settings (cutover)
   // same-tab listeners (storage events only fire cross-tab)
   window.dispatchEvent(new CustomEvent('tenant-brand-changed'));
   return next;

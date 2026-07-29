@@ -10,6 +10,7 @@
  * Demo persists to localStorage; tenant_settings at launch.
  */
 import { useSyncExternalStore } from 'react';
+import { pushTenantSetting } from '@/lib/serverStore';
 
 export interface ProposalTerms {
   validityDays: number;        // how long the quoted price holds
@@ -42,11 +43,13 @@ export function getProposalTerms(): ProposalTerms {
 }
 
 export function saveProposalTerms(t: ProposalTerms) {
-  localStorage.setItem(KEY, JSON.stringify({
+  const next = {
     ...t,
     coolingOffDays: Math.max(14, t.coolingOffDays), // statutory floor
     validityDays: Math.max(1, t.validityDays),
-  }));
+  };
+  localStorage.setItem(KEY, JSON.stringify(next));
+  pushTenantSetting('proposal_terms', next); // dual-write → tenant_settings (cutover)
   window.dispatchEvent(new Event(EVENT));
 }
 

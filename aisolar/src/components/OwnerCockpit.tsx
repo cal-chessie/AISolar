@@ -18,6 +18,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useEffect } from 'react';
+import { pushFeedback } from '@/lib/serverStore';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1086,6 +1087,7 @@ function HelpUsImprove() {
       list.push({ at: new Date().toISOString(), text: text.trim() });
       localStorage.setItem(KEY, JSON.stringify(list));
     } catch { /* ignore */ }
+    pushFeedback('owner_cockpit', text.trim()); // dual-write → feedback table (cutover)
     setSent(true);
     setText('');
   };

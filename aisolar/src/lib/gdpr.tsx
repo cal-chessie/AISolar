@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { pushConsent } from '@/lib/serverStore';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -68,7 +69,9 @@ export function captureConsent(consent: Omit<ConsentRecord, 'capturedAt' | 'vers
   try {
     localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(record));
   } catch { /* ignore */ }
-  // In production: also write to `consent_records` table via Supabase
+  // Dual-write → consent_records (append-only trail; a change of mind = a new row).
+  // subject_ref is the anonymous-safe consent version key until a session exists.
+  pushConsent(CONSENT_VERSION, { essential: true, performance: record.performance, marketing: record.marketing, thirdPartyAi: record.thirdPartyAi }, record.performance || record.marketing || record.thirdPartyAi, 'cookie_banner');
   return record;
 }
 
