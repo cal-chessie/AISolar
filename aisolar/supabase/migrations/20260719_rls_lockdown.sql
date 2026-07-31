@@ -45,6 +45,7 @@ ALTER TABLE public.leads
 -- access_token (passed as session setting by customer-portal edge functions
 -- — but for direct Supabase calls we rely on the customer_portal RLS pattern
 -- using a request.jwt.claim.role check). For now: staff + lead.owner_user_id.
+DROP POLICY IF EXISTS "leads_select_staff_or_owner" ON public.leads;
 CREATE POLICY "leads_select_staff_or_owner" ON public.leads
   FOR SELECT USING (
     public.has_role(auth.uid(), 'admin')
@@ -56,10 +57,12 @@ CREATE POLICY "leads_select_staff_or_owner" ON public.leads
 
 -- INSERT: any authenticated user (lead capture form, customer signup) can
 -- create a lead — but ownership is assigned server-side via trigger.
+DROP POLICY IF EXISTS "leads_insert_authenticated" ON public.leads;
 CREATE POLICY "leads_insert_authenticated" ON public.leads
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- UPDATE: admin + assigned consultant only.
+DROP POLICY IF EXISTS "leads_update_staff_or_owner" ON public.leads;
 CREATE POLICY "leads_update_staff_or_owner" ON public.leads
   FOR UPDATE USING (
     public.has_role(auth.uid(), 'admin')
@@ -73,6 +76,7 @@ CREATE POLICY "leads_update_staff_or_owner" ON public.leads
   );
 
 -- DELETE: admin only.
+DROP POLICY IF EXISTS "leads_delete_admin_only" ON public.leads;
 CREATE POLICY "leads_delete_admin_only" ON public.leads
   FOR DELETE USING (public.has_role(auth.uid(), 'admin'));
 
@@ -84,6 +88,7 @@ ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Authenticated users can insert contracts" ON public.contracts;
 DROP POLICY IF EXISTS "contracts_insert_authenticated" ON public.contracts;
 
+DROP POLICY IF EXISTS "contracts_insert_staff_only" ON public.contracts;
 CREATE POLICY "contracts_insert_staff_only" ON public.contracts
   FOR INSERT WITH CHECK (
     public.has_role(auth.uid(), 'admin')
@@ -100,12 +105,14 @@ DROP POLICY IF EXISTS "Authenticated users can update assignments" ON public.ass
 DROP POLICY IF EXISTS "assignments_insert_authenticated" ON public.assignments;
 DROP POLICY IF EXISTS "assignments_update_authenticated" ON public.assignments;
 
+DROP POLICY IF EXISTS "assignments_insert_staff_only" ON public.assignments;
 CREATE POLICY "assignments_insert_staff_only" ON public.assignments
   FOR INSERT WITH CHECK (
     public.has_role(auth.uid(), 'admin')
     OR public.has_role(auth.uid(), 'consultant')
   );
 
+DROP POLICY IF EXISTS "assignments_update_staff_only" ON public.assignments;
 CREATE POLICY "assignments_update_staff_only" ON public.assignments
   FOR UPDATE USING (
     public.has_role(auth.uid(), 'admin')
@@ -128,6 +135,7 @@ DROP POLICY IF EXISTS "Authenticated users can update installation_checklists" O
 DROP POLICY IF EXISTS "installation_checklists_insert_authenticated" ON public.installation_checklists;
 DROP POLICY IF EXISTS "installation_checklists_update_authenticated" ON public.installation_checklists;
 
+DROP POLICY IF EXISTS "installation_checklists_insert_staff_only" ON public.installation_checklists;
 CREATE POLICY "installation_checklists_insert_staff_only" ON public.installation_checklists
   FOR INSERT WITH CHECK (
     public.has_role(auth.uid(), 'admin')
@@ -135,6 +143,7 @@ CREATE POLICY "installation_checklists_insert_staff_only" ON public.installation
     OR public.has_role(auth.uid(), 'installer')
   );
 
+DROP POLICY IF EXISTS "installation_checklists_update_staff_or_assigned" ON public.installation_checklists;
 CREATE POLICY "installation_checklists_update_staff_or_assigned" ON public.installation_checklists
   FOR UPDATE USING (
     public.has_role(auth.uid(), 'admin')
@@ -157,6 +166,7 @@ DROP POLICY IF EXISTS "Authenticated users can insert SEAI documents" ON public.
 DROP POLICY IF EXISTS "seai_documents_select_authenticated" ON public.seai_documents;
 DROP POLICY IF EXISTS "seai_documents_insert_authenticated" ON public.seai_documents;
 
+DROP POLICY IF EXISTS "seai_documents_select_staff_only" ON public.seai_documents;
 CREATE POLICY "seai_documents_select_staff_only" ON public.seai_documents
   FOR SELECT USING (
     public.has_role(auth.uid(), 'admin')
@@ -164,6 +174,7 @@ CREATE POLICY "seai_documents_select_staff_only" ON public.seai_documents
     OR public.has_role(auth.uid(), 'installer')
   );
 
+DROP POLICY IF EXISTS "seai_documents_insert_staff_only" ON public.seai_documents;
 CREATE POLICY "seai_documents_insert_staff_only" ON public.seai_documents
   FOR INSERT WITH CHECK (
     public.has_role(auth.uid(), 'admin')
@@ -195,10 +206,12 @@ DROP POLICY IF EXISTS "notifications_insert_open" ON public.notifications;
 
 -- The v3-added policies (if they exist) are sufficient. If they were never
 -- created, add them here:
-CREATE POLICY IF NOT EXISTS "notifications_insert_service_role" ON public.notifications
+DROP POLICY IF EXISTS "notifications_insert_service_role" ON public.notifications;
+CREATE POLICY "notifications_insert_service_role" ON public.notifications
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
-CREATE POLICY IF NOT EXISTS "notifications_insert_self" ON public.notifications
+DROP POLICY IF EXISTS "notifications_insert_self" ON public.notifications;
+CREATE POLICY "notifications_insert_self" ON public.notifications
   FOR INSERT WITH CHECK (user_id = auth.uid());
 
 -- ============================================================================
@@ -213,6 +226,7 @@ DROP POLICY IF EXISTS "Authenticated users can insert survey photos" ON public.s
 DROP POLICY IF EXISTS "survey_photos_select_authenticated" ON public.survey_photos;
 DROP POLICY IF EXISTS "survey_photos_insert_authenticated" ON public.survey_photos;
 
+DROP POLICY IF EXISTS "survey_photos_select_staff_only" ON public.survey_photos;
 CREATE POLICY "survey_photos_select_staff_only" ON public.survey_photos
   FOR SELECT USING (
     public.has_role(auth.uid(), 'admin')
@@ -238,7 +252,8 @@ DROP POLICY IF EXISTS "Touchpoints can be inserted by service or authenticated" 
 
 -- Allow service_role (agents/triggers) and staff to insert touchpoints.
 -- Customers can insert their own (chat replies via portal).
-CREATE POLICY IF NOT EXISTS "touchpoints_insert_service_or_staff_or_self" ON public.touchpoints
+DROP POLICY IF EXISTS "touchpoints_insert_service_or_staff_or_self" ON public.touchpoints;
+CREATE POLICY "touchpoints_insert_service_or_staff_or_self" ON public.touchpoints
   FOR INSERT WITH CHECK (
     auth.role() = 'service_role'
     OR public.has_role(auth.uid(), 'admin')
@@ -253,8 +268,10 @@ CREATE POLICY IF NOT EXISTS "touchpoints_insert_service_or_staff_or_self" ON pub
 
 -- Add a UNIQUE constraint to prevent duplicate agent runs (idempotency)
 -- Per Phase 1 P0-8 / agent-foundation audit issue #8.
+-- Index-safe IMMUTABLE day bucket (date_trunc on timestamptz is STABLE, illegal in an index).
+CREATE OR REPLACE FUNCTION public.utc_day(ts timestamptz) RETURNS date LANGUAGE sql IMMUTABLE AS $utcday$ SELECT (ts AT TIME ZONE 'UTC')::date $utcday$;
 CREATE UNIQUE INDEX IF NOT EXISTS touchpoints_one_per_agent_per_lead_per_day
-  ON public.touchpoints(lead_id, agent_id, date_trunc('day', created_at))
+  ON public.touchpoints(lead_id, agent_id, public.utc_day(created_at))
   WHERE agent_id IS NOT NULL;
 
 -- ============================================================================
@@ -300,6 +317,7 @@ DROP POLICY IF EXISTS "seai_documents_bucket_insert" ON storage.objects;
 DROP POLICY IF EXISTS "seai_documents_bucket_delete" ON storage.objects;
 
 -- SELECT: staff only
+DROP POLICY IF EXISTS "seai_docs_bucket_select_staff" ON storage.objects;
 CREATE POLICY "seai_docs_bucket_select_staff" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'seai-documents'
@@ -311,6 +329,7 @@ CREATE POLICY "seai_docs_bucket_select_staff" ON storage.objects
   );
 
 -- INSERT: staff only (consultants upload BER certs, grant PDFs, etc.)
+DROP POLICY IF EXISTS "seai_docs_bucket_insert_staff" ON storage.objects;
 CREATE POLICY "seai_docs_bucket_insert_staff" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'seai-documents'
@@ -321,6 +340,7 @@ CREATE POLICY "seai_docs_bucket_insert_staff" ON storage.objects
   );
 
 -- DELETE: uploader + admin only
+DROP POLICY IF EXISTS "seai_docs_bucket_delete_uploader_or_admin" ON storage.objects;
 CREATE POLICY "seai_docs_bucket_delete_uploader_or_admin" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'seai-documents'
@@ -338,6 +358,7 @@ ALTER TABLE public.installers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Authenticated users can view installers" ON public.installers;
 DROP POLICY IF EXISTS "installers_select_authenticated" ON public.installers;
 
+DROP POLICY IF EXISTS "installers_select_staff_only" ON public.installers;
 CREATE POLICY "installers_select_staff_only" ON public.installers
   FOR SELECT USING (
     public.has_role(auth.uid(), 'admin')
@@ -353,6 +374,7 @@ ALTER TABLE public.follow_up_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Authenticated users can view follow_up_settings" ON public.follow_up_settings;
 DROP POLICY IF EXISTS "follow_up_settings_select_authenticated" ON public.follow_up_settings;
 
+DROP POLICY IF EXISTS "follow_up_settings_select_staff_only" ON public.follow_up_settings;
 CREATE POLICY "follow_up_settings_select_staff_only" ON public.follow_up_settings
   FOR SELECT USING (
     public.has_role(auth.uid(), 'admin')

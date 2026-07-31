@@ -23,7 +23,16 @@ ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'customer';
 ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS tenant_id UUID,
   ADD COLUMN IF NOT EXISTS brand TEXT,
-  ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+  ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual',
+  -- Staff-assignment columns: existed in the live DB (added via Lovable UI) but
+  -- no migration created them; the index below and the app both need them.
+  ADD COLUMN IF NOT EXISTS assigned_consultant_id UUID,
+  ADD COLUMN IF NOT EXISTS assigned_installer_id UUID,
+  ADD COLUMN IF NOT EXISTS owner_user_id UUID,
+  ADD COLUMN IF NOT EXISTS county TEXT,
+  ADD COLUMN IF NOT EXISTS segment TEXT DEFAULT 'residential',
+  ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS released_by UUID;
 
 CREATE INDEX IF NOT EXISTS idx_leads_tenant_id ON public.leads(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_leads_email_lower ON public.leads(LOWER(email));
@@ -301,16 +310,18 @@ BEGIN
   BEGIN
     CREATE EXTENSION IF NOT EXISTS pg_cron;
     -- Schedule follow-up digest: daily 09:00 Dublin (08:00 UTC summer, 09:00 UTC winter)
+    -- URL points at the current project; the cron auth header (service role) is
+    -- set at DEPLOY via Vault — never a real secret baked into a migration.
     PERFORM cron.schedule('follow-up-digest', '0 8 * * *',
-      $$SELECT net.http_post('https://coxmtpnqjybwlrfwkols.supabase.co/functions/v1/send-follow-up-digest', '{}'::jsonb, '{"Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SUPABASE_SERVICE_ROLE"}'::jsonb)$$);
+      $agent$SELECT net.http_post('https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/send-follow-up-digest', '{}'::jsonb, '{"Authorization":"Bearer SERVICE_ROLE_KEY_SET_AT_DEPLOY"}'::jsonb)$agent$);
 
     -- Schedule notification digest: Monday 10:00 Dublin
     PERFORM cron.schedule('notification-digest', '0 9 * * 1',
-      $$SELECT net.http_post('https://coxmtpnqjybwlrfwkols.supabase.co/functions/v1/send-notification-digest', '{}'::jsonb, '{"Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SUPABASE_SERVICE_ROLE"}'::jsonb)$$);
+      $agent$SELECT net.http_post('https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/send-notification-digest', '{}'::jsonb, '{"Authorization":"Bearer SERVICE_ROLE_KEY_SET_AT_DEPLOY"}'::jsonb)$agent$);
 
     -- Schedule payment reminder: daily 09:30 Dublin
     PERFORM cron.schedule('payment-reminder', '30 8 * * *',
-      $$SELECT net.http_post('https://coxmtpnqjybwlrfwkols.supabase.co/functions/v1/send-payment-reminder', '{}'::jsonb, '{"Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SUPABASE_SERVICE_ROLE"}'::jsonb)$$);
+      $agent$SELECT net.http_post('https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/send-payment-reminder', '{}'::jsonb, '{"Authorization":"Bearer SERVICE_ROLE_KEY_SET_AT_DEPLOY"}'::jsonb)$agent$);
 
     RAISE NOTICE 'pg_cron schedules created for 3 agents';
   EXCEPTION WHEN OTHERS THEN

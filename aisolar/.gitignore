@@ -36,3 +36,8 @@ supabase/.temp
 
 # ephemeral spawn_task worktrees
 .claude/worktrees/
+
+# --- 31 Jul: keep secrets, PII, and dead files out of git ---
+.env.LOCAL*.bak
+_migration_extract/
+_TRASH/

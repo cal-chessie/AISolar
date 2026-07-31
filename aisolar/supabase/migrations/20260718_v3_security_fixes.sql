@@ -42,6 +42,7 @@ WHERE id = 'project-documents';
 -- storage.objects has an `owner` column = auth.uid() of the uploader
 
 DROP POLICY IF EXISTS "Users can upload survey photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload survey photos" ON storage.objects;
 CREATE POLICY "Authenticated users can upload survey photos"
   ON storage.objects FOR INSERT
   TO authenticated
@@ -51,6 +52,7 @@ CREATE POLICY "Authenticated users can upload survey photos"
   );
 
 DROP POLICY IF EXISTS "Users can update/delete their own survey photos" ON storage.objects;
+DROP POLICY IF EXISTS "Owners can update/delete their own survey photos" ON storage.objects;
 CREATE POLICY "Owners can update/delete their own survey photos"
   ON storage.objects FOR UPDATE
   TO authenticated
@@ -58,6 +60,7 @@ CREATE POLICY "Owners can update/delete their own survey photos"
   WITH CHECK (bucket_id = 'survey-photos' AND owner = auth.uid());
 
 DROP POLICY IF EXISTS "Users can delete their own survey photos" ON storage.objects;
+DROP POLICY IF EXISTS "Owners can delete their own survey photos" ON storage.objects;
 CREATE POLICY "Owners can delete their own survey photos"
   ON storage.objects FOR DELETE
   TO authenticated
@@ -78,6 +81,7 @@ CREATE POLICY "Staff can read survey photos"
 
 -- Same for project-documents
 DROP POLICY IF EXISTS "Users can upload project documents" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload project documents" ON storage.objects;
 CREATE POLICY "Authenticated users can upload project documents"
   ON storage.objects FOR INSERT
   TO authenticated
@@ -108,6 +112,7 @@ CREATE POLICY "Service role can write touchpoints"
   TO service_role
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Consultants can write touchpoints for assigned leads" ON public.touchpoints;
 CREATE POLICY "Consultants can write touchpoints for assigned leads"
   ON public.touchpoints FOR INSERT
   TO authenticated
@@ -129,6 +134,7 @@ CREATE POLICY "Consultants can write touchpoints for assigned leads"
 -- 4. email_templates SELECT — authenticated only (was: anon, authenticated)
 -- ============================================================================
 DROP POLICY IF EXISTS "Anyone can read active email_templates" ON public.email_templates;
+DROP POLICY IF EXISTS "Authenticated users can read active email_templates" ON public.email_templates;
 CREATE POLICY "Authenticated users can read active email_templates"
   ON public.email_templates FOR SELECT
   TO authenticated
@@ -138,11 +144,13 @@ CREATE POLICY "Authenticated users can read active email_templates"
 -- 5. notifications INSERT — no anon spam
 -- ============================================================================
 DROP POLICY IF EXISTS "Users can create notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Service role can create any notification" ON public.notifications;
 CREATE POLICY "Service role can create any notification"
   ON public.notifications FOR INSERT
   TO service_role
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can create own notifications" ON public.notifications;
 CREATE POLICY "Users can create own notifications"
   ON public.notifications FOR INSERT
   TO authenticated
@@ -153,6 +161,7 @@ CREATE POLICY "Users can create own notifications"
 -- ============================================================================
 -- proposals: was open to any authenticated
 DROP POLICY IF EXISTS "Authenticated users can view proposals" ON public.proposals;
+DROP POLICY IF EXISTS "Staff can view proposals" ON public.proposals;
 CREATE POLICY "Staff can view proposals"
   ON public.proposals FOR SELECT
   TO authenticated
@@ -162,6 +171,7 @@ CREATE POLICY "Staff can view proposals"
 
 -- assignments: same
 DROP POLICY IF EXISTS "Authenticated users can view assignments" ON public.assignments;
+DROP POLICY IF EXISTS "Staff can view assignments" ON public.assignments;
 CREATE POLICY "Staff can view assignments"
   ON public.assignments FOR SELECT
   TO authenticated
@@ -171,6 +181,7 @@ CREATE POLICY "Staff can view assignments"
 
 -- installation_checklists
 DROP POLICY IF EXISTS "Authenticated users can view installation_checklists" ON public.installation_checklists;
+DROP POLICY IF EXISTS "Staff can view installation_checklists" ON public.installation_checklists;
 CREATE POLICY "Staff can view installation_checklists"
   ON public.installation_checklists FOR SELECT
   TO authenticated
@@ -180,6 +191,7 @@ CREATE POLICY "Staff can view installation_checklists"
 
 -- activity_logs (keep customer read for their own leads via portal)
 DROP POLICY IF EXISTS "Authenticated users can view activity logs" ON public.activity_logs;
+DROP POLICY IF EXISTS "Staff can view all activity logs" ON public.activity_logs;
 CREATE POLICY "Staff can view all activity logs"
   ON public.activity_logs FOR SELECT
   TO authenticated
@@ -187,6 +199,7 @@ CREATE POLICY "Staff can view all activity logs"
     EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = auth.uid() AND ur.role IN ('admin','consultant','installer'))
   );
 
+DROP POLICY IF EXISTS "Customers can view activity logs for their own leads" ON public.activity_logs;
 CREATE POLICY "Customers can view activity logs for their own leads"
   ON public.activity_logs FOR SELECT
   TO anon, authenticated
@@ -200,11 +213,13 @@ CREATE POLICY "Customers can view activity logs for their own leads"
 
 -- profiles: was open to any authenticated (staff directory leak)
 DROP POLICY IF EXISTS "Users can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile"
   ON public.profiles FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 CREATE POLICY "Admins can view all profiles"
   ON public.profiles FOR SELECT
   TO authenticated
@@ -214,11 +229,13 @@ CREATE POLICY "Admins can view all profiles"
 
 -- user_roles: was open
 DROP POLICY IF EXISTS "Users can view all user roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Users can view own roles" ON public.user_roles;
 CREATE POLICY "Users can view own roles"
   ON public.user_roles FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Admins can view all user roles" ON public.user_roles;
 CREATE POLICY "Admins can view all user roles"
   ON public.user_roles FOR SELECT
   TO authenticated
@@ -262,6 +279,9 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_lead_id_created ON public.activity_
 CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON public.activity_logs(user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_touchpoints_lead_id_created ON public.touchpoints(lead_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON public.agent_runs(status, created_at DESC) WHERE status IN ('queued', 'running', 'failed');
+ALTER TABLE public.agent_queue
+  ADD COLUMN IF NOT EXISTS failed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS failed_reason text;
 CREATE INDEX IF NOT EXISTS idx_agent_queue_due ON public.agent_queue(run_after, priority) WHERE locked_until IS NULL AND failed_at IS NULL;
 
 -- ============================================================================
@@ -536,20 +556,28 @@ GRANT EXECUTE ON FUNCTION public.fail_agent_job(UUID, TEXT) TO service_role;
 -- ============================================================================
 -- 13. Realtime publication for customer-facing + staff tables
 -- ============================================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.leads;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.proposals;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.invoices;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.contracts;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.site_surveys;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.installation_checklists;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.touchpoints;
-ALTER PUBLICATION supabase_realtime ADD TABLE IF EXISTS public.agent_runs;
+-- Idempotent: `ADD TABLE IF EXISTS` is NOT valid Postgres syntax. Loop + swallow
+-- duplicate_object (already published) and undefined_table (not created yet).
+DO $realtime$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'notifications','leads','proposals','invoices','contracts',
+    'site_surveys','installation_checklists','lead_touchpoints','agent_runs'
+  ] LOOP
+    BEGIN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+      WHEN undefined_table THEN NULL;
+    END;
+  END LOOP;
+END $realtime$;
 
 -- ============================================================================
 -- 14. Retention pg_cron jobs
 -- ============================================================================
-DO $$
+DO $retention$
 BEGIN
   BEGIN
     PERFORM cron.schedule(
@@ -595,7 +623,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Could not schedule agent-queue-stuck-sweeper: %', SQLERRM;
   END;
-END $$;
+END $retention$;
 
 COMMIT;
 

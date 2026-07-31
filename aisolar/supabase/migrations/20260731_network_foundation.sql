@@ -57,3 +57,6 @@ exception when duplicate_object then null; end $$;
 -- WIRING (next, code not schema): ingest-lead resolves x-source-key → stamps
 -- origin_* on the lead; intake card renders "Born: <domain> · <brand>" + the
 -- 21-field bill extract; per-source keys minted in Owner → Settings → Sources.
+
+-- Canonical brand display order (Cal): nationals first, then counties.
+ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS sort_order int NOT NULL DEFAULT 0;
