@@ -7,6 +7,113 @@
 
 ---
 
+## 0 · RECONCILED TO V5 — THE CURRENT MAP (31 Jul 2026) ⭐ READ THIS FIRST
+> §1–8 below are the **coxmtpnq-era** reference (still-good runbook mechanics, DoD ladder,
+> rollback). This section supersedes their DB specifics. Full engineering history:
+> `docs/V5_BUILD_LOG.md`.
+
+### 📊 WHERE WE ARE — **~65% to a live cohort tenant** *(revised down after the SWEEP-8 reconciliation — honest > flattering)*
+```
+Foundation ......... ████████████ 100%   DB · 38 migrations · network · door keys
+Core systems ....... ████████████ 100%   gate_bridge · AIGrids routing · RLS floor · access model · front door
+App wiring ......... █████░░░░░░░  ~45%   read-flip · serverStore align · A1 tenant-onboarding · L2 numbers · notify · home/business fork
+Deploy execution ... ░░░░░░░░░░░░   0%    functions + secrets + Postmark + demo-off  ← YOUR keys
+Smoke + go ......... ░░░░░░░░░░░░   0%    full-spine test, then release
+```
+**Architecture (Foundation + Core) is done + proven — the hard, un-scary part. The honest work left is app wiring (more
+than I'd shown — incl. A1 tenant-onboarding), then execution + your keys, then the smoke test. See the reconciliation below.**
+
+**THE WALL IS GONE.** §1–8's blocker was coxmtpnq unreachable under Lovable. We rebuilt on a
+fresh **AISolar-V5** DB (`ywizcsulurxoqjdgnkvc`) that our token reaches directly. **GATE 0
+(leaked keys) is retired for V5 — fresh keys.** The deploy can proceed, carefully.
+
+### ✅ DONE + VERIFIED (the V5 rebuild already climbed the hardest P0 rungs)
+- ✅ Fresh V5 DB · **all 38 migrations applied** (8 classes of never-tested migration bugs fixed in the files).
+- ✅ Network seeded: 7 brands · boundaries · `kind` (national/county/independent) · **per-door `source_key`s**.
+- ✅ **gate_bridge + AIGrids** (routing) built + proven 8/8 (origin-kind fork · €500 gate national-born only · AIGate gate-call · hash-chained events verify).
+- ✅ **Security floor:** tenant-scoped RLS on `leads` + 19 children (80 policies) · helpers `is_platform_admin`/`has_tenant_access`/`can_see_lead`/`own_lead` · **isolation proven** (a county seat sees only its tenant).
+- ✅ **Access model:** `owner` role wired (AppRole · isOwner · route gates) · platform-admin vs org-owner split · Cal = global admin. tsc clean.
+- ✅ **Multi-tenant secure front door:** `sources` door keys + `resolve_lead_door()` + `ingest-lead` rewritten (tenant + `origin_brand_id` off the key) — **proven end-to-end**.
+- ✅ FK integrity (contracts/invoices/leads→brands) · read path partly wired (`realLeads`, 13 components).
+
+### ⬜ LEFT FOR A CLEAN, SECURE DEPLOY (each with its verify line)
+**P0 — launch-blocking, grouped by WHO MOVES IT:**
+
+🔨 **MY SIDE — build, no keys needed (Claude can knock these out now):**
+- ⬜ **A1 · Auth + tenant onboarding** — installer signup → create tenant + role + first-admin bootstrap. **Launch-critical, not built** (Cal was bootstrapped by hand). *(SWEEP-8 A1 — the miss the reconciliation caught.)*  (verify: a fresh signup lands in its own tenant + scoped cockpit)
+- ⬜ **Home/business fork + estimates** — the door asks "home or business?"; domestic vs commercial KPI/estimate presentation (SWEEP-8 A2 + SWEEP-9 §9.1)  (verify: a domestic and a commercial lead render their own estimate)
+- ⬜ **L2 · Numbers-through-spine** — proposal drafter STORES `computeQuote()` + `selfConsumptionFromOccupancy()` (kill the flat `0.70`)  (verify: stored proposal figures === what the customer is shown)
+- ⬜ **Real-data read-flip** — finish `realLeads` across the workbench + align `serverStore` (dual-write) to V5 tables  (verify: cockpit shows DB leads, not dummy)
+- 🟡 **Wire the hero widget** — ✅ `leadCapture.ts` threads the tenant `source_key` (`?k=` → `x-source-key`; resolved the client-auth "SECURITY NOTE" — the door key is the anon-safe path). tsc clean. **Remaining:** the owner "copy your embed code" panel (installer grabs `<iframe …?k=THEIR-KEY>`) + browser end-to-end proof (needs the function deployed).  (verify: a widget submission lands as an attributed lead)
+- ⬜ **National merge** — RI + SI → **one national account, two brands** + create Cal's **owner login**  (verify: owner cockpit shows RI + SI, nothing from another org)  · *OUR finale — Cal + Claude, saved for last* 🎯
+
+🔑 **YOUR SIDE — keys / accounts, only Cal (Claude preps everything):**
+- ⬜ **Kill the OLD leaked keys** (coxmtpnq · calchessie `vythuqax` · kernel · Maps/Cal.com) + purge git history  (verify: old key → 401)
+- ⬜ **Deploy 16 edge functions** to V5 + set secrets — *Claude preps every function + a secrets manifest; Cal pastes the key values*  (verify: `curl ingest-lead` → 401 without a key)
+- ⬜ **Postmark** token + DNS  (verify: test mail Delivered)
+- ⬜ **Demo OFF** (`unset VITE_ENABLE_DEMO`) + **frontend deploy** (Vercel, V5 env)  (verify: `/owner` redirects when logged-out)
+- ⬜ **Put the door on the LIVE brand sites** — national (RI/SI) + Saunderson / Wide Awake / Solar Roscommon on their **real domains**. Practical field lead-flow **AND the go-live signal itself**.  (verify: a real lead from a live site lands attributed)
+
+🤝 **TOGETHER — the gate between "deployed" and "trusted":**
+- ⬜ **SMOKE TEST** the full spine: door → route → survey → proposal draft → send → deposit → ESB pack. **Every human
+  button is the head of a chain** (stage advance → touchpoint → kernel event → notification → email) — test each one fires
+  the *whole* chain, and once Postmark is live, that **the email actually sends**.  (verify: every DoD rung in §3 · a real email Delivered per button)
+
+*⚠️ Not launch-blocking → **post-launch:** the **AIGate human surface** (national gate-call cockpit) — the first installer cohort never hits it; tracked in `Cals_Growth_Dev`.*
+
+**P1 / with-marketing / post-launch (pulled from the sweeps + build log):**
+- ⬜ **Onboarding demo set** — one curated lead per type (**NC6 · NC7 · commercial · domestic · farm**) so every user + cohort installer practises the full flow before going live · pre-launch training asset
+- ⬜ **CSV bulk import** — fields + upload→map→insert via door key (agent layer later) · onboarding nicety
+- ⬜ **Sweep 7 content/marketing revamp** — per-page meta · surface the widget/coach/agents · replace placeholder stats · blog · *with marketing*
+- ⬜ **Onboarding-flow polish** — first contact logged → notify all parties → email/calendar booking · *with marketing*
+- ⬜ **Sweep 9 hardening** — guardrails · PoV payment lockouts + tier entitlements · code-split (>600kB) · *post-launch*
+- ⬜ **Sweep 10 — final polish + GTM** → **full logic pulled forward in [`SWEEP10_NOTES.md`](SWEEP10_NOTES.md)** (design final pass · GTM set · domestic/commercial fork · founder walkthrough · stragglers · **opens with a full re-check of every sweep + audit round**). The last mile after 8+9 → then Go-Live (Roscommon + Renewably outreach + train the consultant). Absorbs ROUND4's design items so nothing's re-diagnosed.
+- ⬜ **ROUND4 stragglers (read in full 31 Jul)** — **Terms of Service rewrite** (Privacy was rewritten, ToS still old — *pre-launch legal*) · **add `tsc --noEmit` to build/pre-commit** (ROUND4 caught 2 runtime crashes that passed green — cheap guard) · **heatmap/session analytics** → `Cals_Growth_Dev`. *(NC6 automation · installer rewire · AISales identity — all since DONE; ROUND4's #1 BLOCKING "ingest-lead browser auth" — CLOSED tonight via source keys.)*
+- ⬜ **Kernel connection** — bind `gate_bridge` → the inscribed kernel · *Phase 2, post-cohort*
+
+### 🔎 SWEEP-8 / SWEEP-9 RECONCILIATION (added 31 Jul after Cal challenged "did you get everything" — I hadn't)
+My LEFT list compressed SWEEP 8's ~45 items into "read-flip + serverStore." Too coarse. Granular source of truth stays
+`SWEEP8_DB_WIRING.md`; this maps status to V5 so nothing hides.
+
+**✅ Tables that NOW exist on V5** (migrations applied): `installed_equipment` · `esb_submissions` · `products` ·
+`feedback` · `consent_records` · `conversations` · `conversation_messages` · `lead_touchpoints` · `notifications` ·
+`agent_queue/runs/prompts` · `ai_config`. *(The table exists; the app WIRING to it is still open — below.)*
+
+**⬜ Tables SWEEP 8 named that are NOT built** (their migrations were never written) — land with their feature, mostly P1/growth:
+`agent_corrections` (M5, learning loop) · `designs` (M6) · `proposal_versions` (M7) · `installer_vault` (M10) ·
+`staff.home_address`+`depots` (M12) · `agent_route_runs` (M13) · `inventory` (M14) · `referrals`+`tier_entitlements` (M9) · magic-link tokens (M4).
+
+**⬜ LAUNCH-CRITICAL wiring I under-captured — now surfaced:**
+- **A1 · Auth + tenant onboarding** *(my side)* — installer signup → create tenant + role + bootstrap. I bootstrapped
+  Cal by hand; the self-serve flow is **not built**. **No new tenant onboards without it — the biggest miss.**
+- **A2 + 9.1 · Front-door home/business fork** *(my side)* — lead capture is the tenant's own site (the door we fixed);
+  it must ASK "home or business?" and fork domestic (€1,800 grant, 0% VAT, €-savings framing) vs commercial (NDMG, ex-VAT,
+  ACA year-1 write-off, ROI/IRR framing). Engine half-detects it; the ask + the two estimate presentations are open.
+- **L1 · Both-ends notifications** *(my side + deploy)* — every interaction emails customer + consultant (+ magic link).
+  Plumbing exists; completeness = the onboarding-flow polish. *(Was on the list, under-scoped.)*
+- **L2 · Numbers-through-spine (the 0.70 kill)** *(my side)* — the proposal drafter must STORE `computeQuote()` +
+  `selfConsumptionFromOccupancy()`, not the flat `0.70`. Real stored-vs-shown mismatch. `docs/SURVEY_REWRITE_BRIEF.md`.
+- **A3–A7 · per-surface wiring** *(my side + deploy)* — leadflow sends · settings-persist · ai-config · gdpr-consent ·
+  calculator carry-through. Most ride the read-flip + `serverStore` deploy.
+- **Storage-bucket RLS** *(my side)* — photos/signatures/packs: scoped read + signed URLs. My floor covers
+  `leads`+19 children; the storage buckets still need the scoping pass before real customer files.
+
+**SWEEP 9 = post-deploy (mostly P1 already), two flagged UP:**
+- 🔴 **9.0 · AI guardrails (SECURITY-CRITICAL)** — least-privilege LLM context (server-built, never client) + a red-team
+  jailbreak/exfil suite, wired **the same day the LLM goes real** (SWEEP8 X8), not after. Not launch-day IF the LLM stays deterministic.
+- **9.1 · domestic/commercial estimate fork** — see A2 above.
+- 9.2–9.6 (copy/snapshots · UI smoothing · tsc-zero + Sentry · marketing set · founder teaching walkthrough) → `Cals_Growth_Dev` / P1.
+
+**Bottom line:** the spine + security floor + front-door + access model are real + proven; the honest gaps I'd missed are
+**A1 (auth/tenant onboarding)**, **the home/business fork + estimates**, **L2 (the 0.70 store)**, the **unbuilt feature tables**,
+and **storage-bucket RLS** — now on the board, not lurking. **A1 is the one that moves onto the launch-critical line.**
+
+### THE SPLIT — your hands vs mine
+- **You (I cannot touch):** secret **values** (API keys/tokens) · accounts (Vercel, Postmark, DNS) · killing old keys · git-history purge.
+- **Me:** all prep · the DB · function code · this checklist · the national merge · every verification I *can* run.
+
+---
+
 ## 1 · THE DEPENDENCY GRAPH (what can run in parallel)
 
 ```

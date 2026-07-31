@@ -1,5 +1,9 @@
 # Sweep 9 — post-migration/deployment SMOOTHING + HARDENING notes
 
+> ⭐ **RECONCILED 31 Jul → present truth is [`DEPLOYMENT_CALS_LAST_GATE.md`](DEPLOYMENT_CALS_LAST_GATE.md) §0.** Sweep 9
+> is post-deploy polish/harden; §9.0 (AI guardrails — security-critical) and §9.1 (domestic/commercial fork) were
+> flagged UP into the deploy checklist; the rest → P1 / `Cals_Growth_Dev`. **This doc stays the granular source.**
+
 > Cal, 30 Jul: "take note of everything that needs smoothed and hardened for now,
 > AFTER migration and deployment. Sweep 9 notes start now." Sweep 8 = the DB/deploy
 > full-send (`SWEEP8_DB_WIRING.md`). **Sweep 9 = make it sing + make it bulletproof**

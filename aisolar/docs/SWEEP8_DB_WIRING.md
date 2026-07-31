@@ -1,5 +1,9 @@
 # Sweep 8 — Supabase / DB wiring checklist
 
+> ⭐ **RECONCILED 31 Jul → present truth is [`DEPLOYMENT_CALS_LAST_GATE.md`](DEPLOYMENT_CALS_LAST_GATE.md) §0.** The
+> open items (A1 auth/tenant · A2 home-business fork · L1/L2 · unbuilt feature tables · storage-bucket RLS) were pulled
+> into the reconciled checklist there. **This doc stays the granular ~45-item source/history — not the live list.**
+
 > Purpose (Cal, 25 Jul): a living inventory of every frontend action that currently
 > FAKES the backend (toast / local state / setTimeout) and needs REAL Supabase
 > wiring — tables, edge functions, triggers, notifications, magic links, payments,

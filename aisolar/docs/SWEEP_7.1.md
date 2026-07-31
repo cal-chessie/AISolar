@@ -1,5 +1,9 @@
 # SWEEP 7.1 — the notes log (Cal's `.note` destination)
 
+> ⭐ **RECONCILED 31 Jul → present truth is [`DEPLOYMENT_CALS_LAST_GATE.md`](DEPLOYMENT_CALS_LAST_GATE.md) §0.** The
+> visible two-worlds UI pass is DONE; the only open bits (scheduler-v2 deploy · geographic scheduling `staff.home_address`/
+> `depots` M12 · Distance Matrix) live in the deploy checklist / SWEEP-8 reconciliation. **This doc stays the source.**
+
 > Convention (Cal, 28 Jul): when Cal says **".note"**, the item is appended
 > HERE. 7.1 is the pass that walks the whole app after AIField, unifies the two
 > worlds (consultant + installer), and hardens to institutional standard before
