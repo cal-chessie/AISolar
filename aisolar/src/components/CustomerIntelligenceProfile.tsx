@@ -24,16 +24,20 @@ import {
   Bot, Shield, Calendar, PoundSterling,
 } from 'lucide-react';
 import { useState } from 'react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLead } from '@/lib/realLeads';
 import { getStage } from '@/lib/leadIntake';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
 export default function CustomerIntelligenceProfile({ leadId }: { leadId?: string }) {
-  const [lead] = useState<DummyLead>(() => {
-    const leads = generateDummyLeads();
-    return leads.find(l => l.proposal && l.contract) || leads[6];
-  });
+  const { lead, loading } = useLead(leadId);
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  if (!lead) return <div className="p-6 text-sm text-muted-foreground">No customer selected.</div>;
+  return <CustomerIntelligenceProfileInner lead={lead} />;
+}
+
+function CustomerIntelligenceProfileInner({ lead }: { lead: DummyLead }) {
 
   const stage = getStage(lead.workflow_stage);
   const initials = lead.name.split(' ').map(n => n[0]).slice(0, 2).join('');

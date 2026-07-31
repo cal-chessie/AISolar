@@ -31,7 +31,8 @@ import {
   Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
   Send, MessageSquare,
 } from 'lucide-react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLead } from '@/lib/realLeads';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage, annualProduction, selfConsumptionFromOccupancy, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { systemCost, getPricingConfig } from '@/lib/pricing';
@@ -64,17 +65,17 @@ const STEPS: Array<{ id: FlowStep; label: string; icon: typeof MapPin }> = [
 ];
 
 export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
-  const navigate = useNavigate();
   const params = useParams<{ leadId: string }>();
   const routeLeadId = leadIdProp ?? params.leadId;
-  const [lead, setLead] = useState<DummyLead>(() => {
-    const leads = generateDummyLeads();
-    if (routeLeadId) {
-      const found = leads.find(l => l.id === routeLeadId);
-      if (found) return found;
-    }
-    return leads.find(l => l.proposal) || leads[6];
-  });
+  const { lead, loading } = useLead(routeLeadId);
+  if (loading) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Loading lead…</div>;
+  if (!lead) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Lead not found.</div>;
+  return <LeadFlowInner initialLead={lead} />;
+}
+
+function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
+  const navigate = useNavigate();
+  const [lead, setLead] = useState<DummyLead>(initialLead);
   const [step, setStep] = useState<FlowStep>('estimate');
   const [eircode, setEircode] = useState<string>(() => ((lead.intake as Record<string, unknown>)?.extracted_eircode as string) ?? '');
   const [address, setAddress] = useState(lead.address || '');

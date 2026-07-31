@@ -32,7 +32,8 @@ import {
   Users, ChevronRight, ClipboardList, MessageSquare, Play, Phone,
   CalendarClock, X,
 } from 'lucide-react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { getStage } from '@/lib/leadIntake';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
@@ -57,7 +58,7 @@ const DAY_TONE = ['bg-tech', 'bg-doc-deposit', 'bg-doc-proposal', 'bg-pop', 'bg-
 export default function InstallerPortalV5() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
-  const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads, setLeads } = useLeads();
   const [tab, setTab] = useState<TabId>('today');
   // The inbox selection is by id so the thread stays live as touchpoints append.
   const [threadLeadId, setThreadLeadId] = useState<string | null>(null);

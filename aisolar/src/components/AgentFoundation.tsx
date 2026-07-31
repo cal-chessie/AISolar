@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AGENTS, AgentDefinition } from '@/lib/agents';
 import { isDemoMode } from '@/lib/demoMode';
 import { toast } from 'sonner';
-import { generateDummyLeads } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import AgentWindow from '@/components/owner/AgentWindow';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -147,6 +147,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
   const [logAgent, setLogAgent] = useState<AgentDefinition | null>(null);
   const [windowAgent, setWindowAgent] = useState<AgentDefinition | null>(null);
   const demo = isDemoMode();
+  const { leads } = useLeads();
 
   useEffect(() => {
     fetchAgentStatus()
@@ -432,7 +433,7 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       )}
 
       {logAgent && <AgentLogWindow agent={logAgent} onClose={() => setLogAgent(null)} />}
-      {windowAgent && <AgentWindow agent={windowAgent} leads={generateDummyLeads()} onClose={() => setWindowAgent(null)} />}
+      {windowAgent && <AgentWindow agent={windowAgent} leads={leads} onClose={() => setWindowAgent(null)} />}
     </div>
   );
 }
@@ -457,8 +458,9 @@ const AGENT_LOG_MATCH: Record<string, RegExp> = {
 function AgentLogWindow({ agent, onClose }: { agent: AgentDefinition; onClose: () => void }) {
   const [prompt, setPrompt] = useState('');
   const [docs, setDocs] = useState<string[]>([]);
+  const { leads } = useLeads();
 
-  const rows = generateDummyLeads().flatMap(l =>
+  const rows = leads.flatMap(l =>
     l.touchpoints
       .filter(tp => tp.actor === 'agent' && (AGENT_LOG_MATCH[agent.id]?.test(tp.summary ?? '') ?? false))
       .map(tp => ({ at: tp.timestamp, customer: l.name, stage: tp.stage, summary: tp.summary ?? '' })),

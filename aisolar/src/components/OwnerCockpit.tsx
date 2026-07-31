@@ -39,7 +39,8 @@ import {
   Settings, BarChart3, MessageSquare, Home, ChevronLeft, X,
   Search, Calculator, Shield, Landmark, UserPlus,
 } from 'lucide-react';
-import { generateDummyLeads, computePipelineStats, type DummyLead } from '@/lib/dummyData';
+import { computePipelineStats, type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { computeOwnerStats } from '@/lib/ownerStats';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
@@ -100,7 +101,7 @@ export default function OwnerCockpit() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads } = useLeads();
   const [activeView, setActiveView] = useState<SidebarView>('overview');
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   // On mobile: sidebar is a drawer, closed by default. On desktop: collapsible, open by default.

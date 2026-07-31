@@ -18,7 +18,8 @@ import {
   Phone, Video, MapPin, Wrench, FileText, Bot, Plus, X,
   ChevronDown, ChevronUp, Layout, List,
 } from 'lucide-react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { Kpi } from './consultant/cockpitUi';
 
 type ViewMode = 'month' | 'week' | 'day';
@@ -120,8 +121,8 @@ function generateEvents(leads: DummyLead[]): CalEvent[] {
 
 export default function RealCalendar({ onOpenClient }: { onOpenClient?: (leadId: string) => void } = {}) {
   const navigate = useNavigate();
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
-  const [events] = useState<CalEvent[]>(() => generateEvents(leads));
+  const { leads } = useLeads();
+  const events = useMemo(() => generateEvents(leads), [leads]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());

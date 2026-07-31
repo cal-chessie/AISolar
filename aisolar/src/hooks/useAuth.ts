@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-export type AppRole = 'admin' | 'consultant' | 'installer' | 'customer';
+export type AppRole = 'admin' | 'owner' | 'consultant' | 'installer' | 'customer';
 
 interface AuthState {
   user: User | null;
@@ -80,10 +80,12 @@ export function useAuth() {
   };
 
   const isOwner = (): boolean => {
-    // Owner has all roles (consultant + installer + admin)
-    return authState.roles.includes('consultant') && 
-           authState.roles.includes('installer') && 
-           authState.roles.includes('admin');
+    // Owner = the explicit 'owner' role (all views in their org).
+    // Legacy fallback: a solo account holding admin+consultant+installer.
+    return authState.roles.includes('owner') ||
+           (authState.roles.includes('admin') &&
+            authState.roles.includes('consultant') &&
+            authState.roles.includes('installer'));
   };
 
   const isSoloMode = (): boolean => {
@@ -92,6 +94,10 @@ export function useAuth() {
   };
 
   const getDefaultRoute = (): string => {
+    // Owner lands in the owner cockpit (all views)
+    if (authState.roles.includes('owner')) {
+      return '/owner';
+    }
     // If only installer role, go to installer portal
     if (authState.roles.length === 1 && authState.roles.includes('installer')) {
       return '/installer';

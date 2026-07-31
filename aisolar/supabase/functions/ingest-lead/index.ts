@@ -51,24 +51,45 @@ serve(async (req) => {
       return errorResponse(405, "Method not allowed", headers);
     }
 
-    // ─── Shared-secret auth ───
-    const expectedKey = Deno.env.get("INGEST_API_KEY");
-    if (!expectedKey) {
-      log(FN, "error", "INGEST_API_KEY secret not configured");
-      return errorResponse(500, "Ingestion not configured", headers);
-    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    // ─── Tenant binding (kernel FIX 3 philosophy: no tenant → crash, never
-    // silent misfile). Each AISOLAR deployment IS one tenant; the tenant UUID
-    // is deployment config, not caller-claimed. Set via:
-    //   supabase secrets set AISOLAR_TENANT_ID=<this installation's tenant uuid>
-    const tenantId = Deno.env.get("AISOLAR_TENANT_ID");
-    if (!tenantId) {
-      log(FN, "error", "AISOLAR_TENANT_ID not configured — refusing to birth tenantless leads");
-      return errorResponse(500, "Tenant not configured", headers);
-    }
-    if (req.headers.get("x-ingest-key") !== expectedKey) {
-      return errorResponse(401, "Invalid ingest key", headers);
+    // ─── Resolve the door — two paths ───
+    // NEW (multi-tenant, secure): x-source-key → resolve_lead_door() gives the door's
+    // brand + tenant. One deployment serves many tenants; each key is scoped to ONE
+    // brand and revocable (sources.active=false). A leaked key can only inject into
+    // its own brand — never read, never cross into another tenant.
+    // LEGACY (single-tenant national): x-ingest-key + AISOLAR_TENANT_ID deployment config.
+    let tenantId: string | null = null;
+    let originBrandId: string | null = null;
+    let resolvedBrandName: string | null = null;
+
+    const sourceKey = req.headers.get("x-source-key");
+    if (sourceKey) {
+      const { data: door } = await supabase.rpc("resolve_lead_door", { p_source_key: sourceKey });
+      const row = Array.isArray(door) ? door[0] : door;
+      if (!row) return errorResponse(401, "Invalid source key", headers);
+      tenantId = row.tenant_id;
+      originBrandId = row.brand_id;
+      resolvedBrandName = row.brand_name;
+    } else {
+      const expectedKey = Deno.env.get("INGEST_API_KEY");
+      if (!expectedKey) {
+        log(FN, "error", "INGEST_API_KEY secret not configured");
+        return errorResponse(500, "Ingestion not configured", headers);
+      }
+      if (req.headers.get("x-ingest-key") !== expectedKey) {
+        return errorResponse(401, "Invalid ingest key", headers);
+      }
+      // Each AISOLAR deployment IS one tenant; the UUID is deployment config, never
+      // caller-claimed. supabase secrets set AISOLAR_TENANT_ID=<tenant uuid>
+      tenantId = Deno.env.get("AISOLAR_TENANT_ID") ?? null;
+      if (!tenantId) {
+        log(FN, "error", "AISOLAR_TENANT_ID not configured — refusing to birth tenantless leads");
+        return errorResponse(500, "Tenant not configured", headers);
+      }
     }
 
     const body = await req.json();
@@ -102,10 +123,13 @@ serve(async (req) => {
     const annualKwh = Number.isFinite(Number(body.annualKwh)) && Number(body.annualKwh) > 0
       ? Math.round(Number(body.annualKwh)) : null;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    // ─── Legacy path: resolve the body brand slug → brand row for attribution ───
+    // (the source-key path already set originBrandId + tenant.) "solar-ireland" → "Solar Ireland".
+    if (!originBrandId && brand && brand !== "unknown") {
+      const { data: b } = await supabase.from("brands")
+        .select("id, name").ilike("name", brand.replace(/-/g, " ")).limit(1).maybeSingle();
+      if (b) { originBrandId = b.id; resolvedBrandName = b.name; }
+    }
 
     // ─── Dedupe: same email + brand in the last 24h ───
     if (email) {
@@ -113,7 +137,7 @@ serve(async (req) => {
       const { data: existing } = await supabase
         .from("leads")
         .select("id")
-        .eq("brand", brand)
+        .eq("brand", resolvedBrandName ?? brand)
         .ilike("email", email)
         .gte("created_at", since)
         .limit(1);
@@ -149,7 +173,8 @@ serve(async (req) => {
         status: "new",
         workflow_stage: "new",
         tenant_id: tenantId,
-        brand,
+        brand: resolvedBrandName ?? brand,
+        origin_brand_id: originBrandId,
         source,
       })
       .select("id")

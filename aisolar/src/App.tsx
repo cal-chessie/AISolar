@@ -140,19 +140,19 @@ function AppRoutes() {
           <Route path="/demo" element={wrap(<DemoIndex />)} />
 
           {/* Main views — auth-guarded */}
-          <Route path="/owner" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><OwnerCockpit /></ProtectedRoute>)} />
-          <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
-          <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
+          <Route path="/owner" element={wrap(<ProtectedRoute roles={['admin', 'owner']}><OwnerCockpit /></ProtectedRoute>)} />
+          <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
+          <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
           <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
           {/* #6: agent calendar events navigate here — was a 404 stub */}
-          <Route path="/agent-console" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />{/* in-app agent console (was /agents) */}
+          <Route path="/agent-console" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />{/* in-app agent console (was /agents) */}
           <Route path="/p/:leadId" element={wrap(<ProposalPage />)} />
 
           {/* Workflow — auth-guarded (staff-only) */}
-          <Route path="/lead-flow" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
-          <Route path="/lead-flow/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
-          <Route path="/job" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
-          <Route path="/job/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
+          <Route path="/lead-flow" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
+          <Route path="/lead-flow/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><LeadFlow /></ProtectedRoute>)} />
+          <Route path="/job" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
+          <Route path="/job/:leadId" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'installer']}><JobViewV2 /></ProtectedRoute>)} />
 
           {/* Catch-all */}
           <Route path="*" element={wrap(<NotFound />)} />

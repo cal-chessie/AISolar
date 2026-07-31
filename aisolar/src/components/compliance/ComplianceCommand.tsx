@@ -17,7 +17,8 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, ChevronRight, Bot, CheckCircle2, FileText, ExternalLink } from 'lucide-react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { decideCompliance } from '@/lib/complianceDecision';
 import { calculateNDMG, domesticSolarGrant } from '@/lib/seaiPipeline';
 import PaperworkWindow, { buildPack } from '@/components/compliance/PaperworkWindow';
@@ -72,7 +73,7 @@ const FILTERS: Array<{ id: Filter; label: string }> = [
 ];
 
 export default function ComplianceCommand() {
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads } = useLeads();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<DummyLead | null>(null);

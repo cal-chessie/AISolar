@@ -25,14 +25,15 @@ import {
   BarChart3, PieChart, Activity, Flame,
 } from 'lucide-react';
 import { computeOwnerStats } from '@/lib/ownerStats';
-import { generateDummyLeads, computePipelineStats } from '@/lib/dummyData';
+import { computePipelineStats } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { PIPELINE_STAGES, getStage } from '@/lib/leadIntake';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 const num = (n: number) => new Intl.NumberFormat('en-IE').format(n);
 
 export default function AnalyticsDashboard() {
-  const [leads] = useState(() => generateDummyLeads());
+  const { leads } = useLeads();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   const stats = useMemo(() => computePipelineStats(leads), [leads]);

@@ -39,7 +39,8 @@ import {
   Home, Shield, Wifi, FileText, PenLine, Sun, Cloud, CloudRain, Wind, Upload, Download,
   User, ClipboardList, X, Star, Truck, ListChecks, Award, Cpu,
 } from 'lucide-react';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLead } from '@/lib/realLeads';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
 import { downloadSubmissionPack } from '@/lib/pdfFill';
 import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
@@ -171,15 +172,15 @@ const DEFAULT_PHOTOS: Record<TabId, PhotoItem[]> = {
 
 export default function JobViewV2() {
   const { leadId } = useParams();
+  const { lead, loading } = useLead(leadId);
+  if (loading) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Loading job…</div>;
+  if (!lead) return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Job not found.</div>;
+  return <JobViewV2Inner initialLead={lead} />;
+}
+
+function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
   const navigate = useNavigate();
-  const [lead] = useState<DummyLead>(() => {
-    const leads = generateDummyLeads();
-    if (leadId) {
-      const found = leads.find(l => l.id === leadId);
-      if (found) return found;
-    }
-    return leads.find(l => l.proposal && l.assignment) || leads[8];
-  });
+  const [lead] = useState<DummyLead>(initialLead);
   const [jobCompleted, setJobCompleted] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');

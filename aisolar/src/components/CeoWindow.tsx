@@ -21,7 +21,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
 import { computeOwnerStats, WON_STAGES } from '@/lib/ownerStats';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor } from '@/lib/agentAttribution';
 
@@ -56,7 +57,7 @@ type Tab = 'overview' | 'agents' | 'leads' | 'charts';
 
 export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () => void }) {
   const [tab, setTab] = useState<Tab>('overview');
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads } = useLeads();
 
   const d = useMemo(() => {
     // ONE set of owner money definitions (src/lib/ownerStats.ts): pipeline is

@@ -18,7 +18,7 @@ import {
   Send, Award, Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateDummyLeads } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { getStage } from '@/lib/leadIntake';
 import { useFinanceConfig, saveFinanceConfig, stripeMode, maskIban, type FinanceConfig } from '@/lib/financeConfig';
 
@@ -39,7 +39,7 @@ export default function FinanceWindow() {
   const saved = useFinanceConfig();
   const [cfg, setCfg] = useState<FinanceConfig>(saved);
   const [editingBank, setEditingBank] = useState(!saved.bank.iban);
-  const leads = useMemo(() => generateDummyLeads(), []);
+  const { leads } = useLeads();
 
   const m = useMemo(() => {
     const jobs = leads.filter(l => l.proposal).map(l => {

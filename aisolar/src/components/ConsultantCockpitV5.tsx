@@ -38,8 +38,10 @@ import {
   TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Bot,
   Building2, Sun, MapPin, Send, User, Sparkles, X, Award, CalendarClock, UserPlus, Pencil } from 'lucide-react';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
-import LeadFormDialog, { leadFromForm, type LeadFormValues } from '@/components/leads/LeadFormDialog';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import LeadFormDialog, { type LeadFormValues } from '@/components/leads/LeadFormDialog';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
+import { createLead, updateLead, advanceLeadStage as persistLeadStage, addTouchpoint } from '@/lib/leadWrites';
 import DayRoute from '@/components/field/DayRoute';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
@@ -105,23 +107,32 @@ export default function ConsultantCockpitV5() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [leads, setLeads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads, setLeads, refetch } = useLeads();
   // Add/edit lead (Cal: "cant we add a lead too right? and edit a lead?")
   const [leadFormOpen, setLeadFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<DummyLead | null>(null);
-  const saveLeadForm = (v: LeadFormValues) => {
+  const saveLeadForm = async (v: LeadFormValues) => {
+    const patch = { name: v.name, email: v.email, phone: v.phone, address: v.address, monthly_bill: v.monthly_bill, annual_kwh: v.annual_kwh };
     if (editingLead) {
-      const patch = { name: v.name, email: v.email, phone: v.phone, address: v.address, monthly_bill: v.monthly_bill, annual_kwh: v.annual_kwh };
       setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, ...patch } : l));
       setSelectedLead(prev => prev?.id === editingLead.id ? { ...prev, ...patch } : prev);
-      toast.success(`${v.name.split(' ')[0]}'s details updated`);
+      try {
+        await updateLead(editingLead.id, patch);
+        toast.success(`${v.name.split(' ')[0]}'s details updated`);
+      } catch (e) {
+        toast.error(`Couldn't save changes — ${(e as Error).message}`);
+        refetch();
+      }
     } else {
-      const lead = leadFromForm(v);
-      setLeads(prev => [lead, ...prev]);
-      setSelectedLead(lead);
-      toast.success(v.billFile
-        ? `${v.name.split(' ')[0]} added — bill captured, extraction queued`
-        : `${v.name.split(' ')[0]} added to the pipeline`);
+      try {
+        await createLead(patch);
+        await refetch();
+        toast.success(v.billFile
+          ? `${v.name.split(' ')[0]} added — bill captured, extraction queued`
+          : `${v.name.split(' ')[0]} added to the pipeline`);
+      } catch (e) {
+        toast.error(`Couldn't add ${v.name.split(' ')[0]} — ${(e as Error).message}`);
+      }
     }
   };
   const [activeTab, setActiveTab] = useState<TabId>('today');
@@ -218,16 +229,14 @@ export default function ConsultantCockpitV5() {
 
   const handleSendReply = () => {
     if (!replyText.trim() || !selectedLead) return;
-    // Phase 1 fix: optimistic local update so the message appears in the
-    // thread. In production this would also insert into the `touchpoints`
-    // table via Supabase and send via Postmark.
+    const message = replyText;
     const newTouchpoint = {
       id: `tp_${Date.now()}`,
       lead_id: selectedLead.id,
       stage: selectedLead.workflow_stage,
       channel: 'portal' as const,
       direction: 'outbound' as const,
-      summary: replyText,
+      summary: message,
       timestamp: new Date().toISOString(),
       actor: 'consultant' as const,
     };
@@ -240,32 +249,11 @@ export default function ConsultantCockpitV5() {
     ));
     setSelectedLead(updatedLead);
     setReplyText('');
-
-    // Simulate the customer typing back after a brief delay (demo only).
-    // In production this would come from Supabase Realtime presence.
-    setTimeout(() => {
-      setCustomerTyping(true);
-      setTimeout(() => {
-        setCustomerTyping(false);
-        // Append a simulated customer reply
-        const customerReply = {
-          id: `tp_${Date.now()}_c`,
-          lead_id: updatedLead.id,
-          stage: updatedLead.workflow_stage,
-          channel: 'portal' as const,
-          direction: 'inbound' as const,
-          summary: 'Thanks for getting back to me. Let me think about it.',
-          timestamp: new Date().toISOString(),
-          actor: 'customer' as const,
-        };
-        const reUpdated: DummyLead = {
-          ...updatedLead,
-          touchpoints: [...updatedLead.touchpoints, customerReply],
-        };
-        setLeads(prev => prev.map(l => l.id === reUpdated.id ? reUpdated : l));
-        setSelectedLead(reUpdated);
-      }, 2200);
-    }, 800);
+    // Persist the outbound touchpoint. No fake customer auto-reply — a real
+    // reply comes from the customer via the portal, never simulated.
+    addTouchpoint(selectedLead.id, message).catch((e) => {
+      toast.error(`Reply didn't save — ${(e as Error).message}`);
+    });
   };
 
   /** Ask AI to summarize the conversation — Phase 3 feature. */
@@ -288,6 +276,10 @@ export default function ConsultantCockpitV5() {
     if (selectedLead?.id === leadId) {
       setSelectedLead(prev => prev ? { ...prev, workflow_stage: targetStage } : prev);
     }
+    persistLeadStage(leadId, targetStage).catch((e) => {
+      toast.error(`Stage change didn't save — ${(e as Error).message}`);
+      refetch();
+    });
     toast.success(`Moved to ${getStage(targetStage).label}`, {
       description: `${selectedLead?.name || 'Lead'} is now in the ${getStage(targetStage).label} stage.`,
     });

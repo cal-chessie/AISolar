@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
+import { type DummyLead } from '@/lib/dummyData';
+import { useLeads } from '@/lib/realLeads';
 import { PIPELINE_STAGES, STAGE_GROUPS } from '@/lib/leadIntake';
 
 const eur = (n: number) =>
@@ -61,7 +62,7 @@ function Stat({ label, value, sub, icon, tone }: {
 }
 
 export default function InsightsView() {
-  const [leads] = useState<DummyLead[]>(() => generateDummyLeads());
+  const { leads } = useLeads();
   const [showGuide, setShowGuide] = useState(false);
 
   const data = useMemo(() => {
