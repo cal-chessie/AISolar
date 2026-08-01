@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { getProposalTerms, saveProposalTerms, type ProposalTerms } from '@/lib/proposalTerms';
+import { getPricingConfig, savePricingConfig, DEFAULT_PRICING, type PricingConfig } from '@/lib/pricing';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Settings, Mail, MessageSquare, Bot, Database, Shield, CheckCircle2,
@@ -175,7 +176,7 @@ export default function SystemSettingsV2() {
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
           <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
-          <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
+          <TabsTrigger value="terms" className="text-xs sm:text-sm">Pricing &amp; Terms</TabsTrigger>
           <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit Log</TabsTrigger>
           <TabsTrigger value="kernel" className="text-xs sm:text-sm">Kernel</TabsTrigger>
         </TabsList>
@@ -278,6 +279,7 @@ export default function SystemSettingsV2() {
 
         {/* === AUDIT LOG — detailed + filterable === */}
         <TabsContent value="terms" className="space-y-3">
+          <PricingCard />
           <ProposalTermsCard />
         </TabsContent>
 
@@ -766,6 +768,48 @@ function ProposalTermsCard() {
       <Button size="sm" className="h-9 font-semibold bg-tech text-white hover:bg-tech/90" onClick={() => { saveProposalTerms(t); toast.success('Proposal terms saved', { description: 'Every new proposal renders these.' }); }}>
         Save terms
       </Button>
+    </div>
+  );
+}
+
+/* Cal (1 Aug): "the equipment pricing can be set by the user… make sure that's
+   possible for the admin." The ONE cost dial. estimate · design · proposal · AND
+   the drafting agent all resolve cost through getPricingConfig() (the edge mirror
+   reads the same tenant_settings 'pricing'), so a change here moves every quote —
+   shown AND stored. Kills the old three-screens-disagree drift for good. */
+function PricingCard() {
+  const [p, setP] = useState<PricingConfig>(() => getPricingConfig());
+  const [dirty, setDirty] = useState(false);
+  const num = (k: keyof PricingConfig) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setP(s => ({ ...s, [k]: Number(e.target.value) })); setDirty(true);
+  };
+  const invalid = !(p.perKwp > 0) || !(p.batteryPerKwh >= 0) || !(p.panelWatts > 0);
+  const FIELDS: Array<{ k: keyof PricingConfig; label: string; unit: string; hint: string; min: number; step: number }> = [
+    { k: 'perKwp', label: 'System price', unit: '€ / kWp installed', hint: `hardware + standard install, all-in — default €${DEFAULT_PRICING.perKwp}`, min: 1, step: 10 },
+    { k: 'batteryPerKwh', label: 'Battery storage', unit: '€ / kWh', hint: `added per usable kWh of storage — default €${DEFAULT_PRICING.batteryPerKwh}`, min: 0, step: 10 },
+    { k: 'panelWatts', label: 'Panel wattage', unit: 'W', hint: `converts panel count ↔ kWp — default ${DEFAULT_PRICING.panelWatts}W`, min: 1, step: 5 },
+  ];
+  return (
+    <div className="rounded-panel bg-card shadow-card p-5 max-w-2xl">
+      <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-tech/10"><Zap className="h-4 w-4 text-tech" /></span> Equipment pricing</h3>
+      <p className="text-xs text-muted-foreground mb-4">The one cost dial. Every estimate, the design step, the proposal, <strong>and</strong> the drafting agent resolve cost through these — change a rate once and every quote moves together, on screen and in the stored proposal.</p>
+      <div className="grid sm:grid-cols-3 gap-3 mb-4">
+        {FIELDS.map(f => (
+          <div key={f.k}>
+            <Label className="text-xs">{f.label} <span className="font-normal text-muted-foreground">({f.unit})</span></Label>
+            <Input type="number" min={f.min} step={f.step} value={p[f.k]} onChange={num(f.k)} className="mt-1.5 h-9" />
+            <p className="text-2xs text-muted-foreground mt-1">{f.hint}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" className="h-9 font-semibold bg-tech text-white hover:bg-tech/90" disabled={!dirty || invalid}
+          onClick={() => { savePricingConfig(p); setDirty(false); toast.success('Pricing saved', { description: 'Every new estimate and proposal uses these rates now.' }); }}>
+          Save pricing
+        </Button>
+        {invalid && <span className="text-2xs text-doc-proposal">Enter prices greater than zero.</span>}
+        {dirty && !invalid && <span className="text-2xs text-muted-foreground">unsaved changes</span>}
+      </div>
     </div>
   );
 }

@@ -91,6 +91,58 @@ The national gate-call cockpit (send-to-county / keep / pool) + notify + AI-Coac
 first installer cohort never hits it (their leads are county/independent-born, held locally). Build when the global/
 national brand goes live. Pairs with **AI Coach in the loop** prompting the human through each call.
 
+## ⚠️ Quote-engine drift — deep-clean findings (1 Aug, "eyes & ears" pass) — LAUNCH-RELEVANT
+The proposal **DRAFTER** (`agent-drain` edge fn — it *stores* the proposal; the contract + invoice rest on that number)
+carries a hand-copied mirror of the quote math that has **drifted from the corrected frontend engine** (`computeQuote`).
+Deno can't import `src/`, so the mirror was copied by hand and fell behind. **Five drifts, stored ≠ shown:**
+1. **Domestic grant is STALE** — drafter uses **€900/kWp** flat (`min(kwp,2)*900`, cap 1,800); the *verified* rate is
+   **€700 first-2kWp / €200 thereafter, cap €1,800** (`seaiPipeline.domesticSolarGrant`). Drafter over-states the grant on systems < ~4 kWp (e.g. 2 kWp: stores €1,800, real €1,400).
+2. **Commercial VAT (13%) dropped** — drafter `grossCost = systemSize × PER_KWP`, no VAT line; `computeQuote` adds
+   `VAT_COMMERCIAL`. A commercial stored proposal is **missing 13%.**
+3. **Battery cost dropped** — drafter grossCost ignores `batteryKwh × batteryPerKwh`; a battery proposal stores a cost that's **too low.**
+4. **Savings from the EARLY intake estimate** — drafter carries `intake.estimated_annual_savings` (computed at intake via
+   the domestic-only `calculateSystemEstimate`, flat-0.70-ish), NOT recomputed occupancy-aware from the survey. **This IS
+   the L2 "0.70" drift** — stored savings ≠ the occupancy-driven savings the customer is shown.
+5. **`PER_KWP` hardcoded = 1800** in the drafter — not the tenant's pricing (see admin-pricing below).
+
+**Root cause + fix:** the edge-mirror convention (Deno ≠ `src/`) let the drafter's math rot. Fix = **ONE source of truth**
+— an edge `_shared/quote.ts` mirroring `computeQuote` EXACTLY (grant tiers · VAT · battery · occupancy · tenant pricing),
+used by the drafter — OR the drafter stores what the frontend `computeQuote` produced. Institutional rule: *no two places
+computing the same thing.* **Severity: launch-critical** (a signed contract on a wrong grant/VAT/battery figure is a real problem) → also flag on `DEPLOYMENT_CALS_LAST_GATE.md` §0 as the true scope of L2.
+
+## Admin-settable equipment pricing (Cal, 1 Aug — "make it possible for the admin") — ✅ BUILT + verified 1 Aug
+**Done.** The admin sets perKwp / batteryPerKwh / panelWatts in **Settings → Pricing & Terms → Equipment pricing**
+(verified in-browser on the dev preview: edit a rate → Save → persisted to the dial `getPricingConfig` reads). One dial,
+whole system:
+- `getPricingConfig()` (`src/lib/pricing.ts`) reads the saved dial FRESH each call — localStorage today (offline-first,
+  same shape as `financeConfig`/`tenantBrand`), so every estimate · design step · proposal · `computeQuote` moves the
+  instant it's saved. brand.pricing → default remain the fallbacks.
+- `savePricingConfig()` dual-writes localStorage **+** `tenant_settings` key `'pricing'` (via `pushTenantSetting`, which
+  now admits the `'pricing'` key).
+- The **edge drafter** (`agent-drain` → `loadTenantPricing`) reads the same `tenant_settings 'pricing'` for the lead's
+  tenant → feeds `computeQuote({…, pricing})`, so the STORED proposal uses the tenant's rates too. This closes drift #5.
+- ⚠️ **Cutover caveat (honest):** the `tenant_settings` write no-ops until a JWT carries the `tenant_id` claim (**A1**) —
+  exactly like the other four owner settings. Pre-A1 the dial drives the on-screen frontend quote via localStorage while
+  the edge drafter falls back to `DEFAULT_PRICING`; **post-A1 both the shown AND stored quote use the tenant's dial.** So
+  admin-pricing is fully live the moment A1 lands (already launch-critical on the deploy doc).
+
+## ⚠️ Classification schism — the stored≠shown ROOT (1 Aug, "eyes & ears") — FIXED
+Domestic-vs-commercial (which picks the grant + VAT) was split across **two** fields:
+- `property_type` (`residential`/`commercial`) — the survey's "home or business?", written by `SiteSurveyForm`, read
+  by the whole frontend (Estimate · Proposal · Design · LeadFlow · surveyValidation) with fallbacks. **The real one.**
+- `extracted_premises_type` (`domestic`/`commercial`) — added by the paperwork-engine migration, read by the edge
+  **DRAFTER** + `complianceDecision`, **written by NOTHING.** Always null.
+
+The drafter read ONLY the dead field with no fallback → `seaiPropertyType(null)` → `domestic` → **every commercial/farm
+job was STORED as domestic** (lost NDMG + 13% VAT) even though the screen showed it right. That is the true root of
+stored≠shown — deeper than the five quote drifts, because it silently killed the propertyType input they depend on.
+
+**FIX (1 Aug):** unify on `property_type`. The drafter now reads `survey.property_type ?? intake.property_type ??
+lead.property_type` — the frontend's own chain, so stored == shown. `complianceDecision` unified the same way.
+The dead `BillReadPanel.premisesType` prop (which falsely claimed premises type is "read off the bill" — it can't be)
+was removed. `extracted_premises_type` now has **0 code reads**; the COLUMN is inert (kept under the add-only rule —
+drop later via a deliberate migration). This is what actually **finishes** the quote-drift fix.
+
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the
 AIGate human gates all apply automatically. A new channel is a weekend, not a rebuild.

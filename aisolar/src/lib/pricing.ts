@@ -23,6 +23,7 @@
  * a mirrored copy of these defaults, stamped with the same source note.
  */
 import { brand } from '@/config/brand';
+import { pushTenantSetting } from '@/lib/serverStore';
 
 export interface PricingConfig {
   /** € per kWp installed — hardware + standard labour. */
@@ -40,9 +41,34 @@ export const DEFAULT_PRICING: PricingConfig = {
   panelWatts: 435,
 };
 
-/** The active tenant's pricing — brand.pricing with defaults filled in. */
+const PRICING_KEY = 'aisolar.pricing.v1';
+export const PRICING_CHANGED_EVENT = 'pricing-config-changed';
+
+/** The tenant's SAVED equipment pricing (localStorage; dual-written to
+ *  tenant_settings key 'pricing'). Offline-first, exactly like financeConfig /
+ *  tenantBrand — the read-flip to DB-first is the same cutover as the rest. */
+function savedPricing(): Partial<PricingConfig> {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PRICING_KEY) : null;
+    return raw ? (JSON.parse(raw) as Partial<PricingConfig>) : {};
+  } catch { return {}; }
+}
+
+/** The active tenant's pricing — SAVED tenant setting over brand.pricing over
+ *  defaults. Read FRESH each call, so a Settings change lands on the next quote
+ *  (shown AND, via the edge mirror, stored). */
 export function getPricingConfig(): PricingConfig {
-  return { ...DEFAULT_PRICING, ...(brand as { pricing?: Partial<PricingConfig> }).pricing };
+  return { ...DEFAULT_PRICING, ...(brand as { pricing?: Partial<PricingConfig> }).pricing, ...savedPricing() };
+}
+
+/** Admin sets equipment pricing in Settings — ONE dial, whole system. Writes
+ *  localStorage (the read path above) + tenant_settings 'pricing' (durable, and
+ *  what the edge drafter's loadTenantPricing reads), then signals the UI. */
+export function savePricingConfig(cfg: Partial<PricingConfig>): void {
+  const next: PricingConfig = { ...getPricingConfig(), ...cfg };
+  try { localStorage.setItem(PRICING_KEY, JSON.stringify(next)); } catch { /* private mode — the DB write below still fires */ }
+  pushTenantSetting('pricing', next);
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(PRICING_CHANGED_EVENT));
 }
 
 /** Panel count → kWp, using the tenant's panel wattage. */

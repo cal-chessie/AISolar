@@ -11,7 +11,8 @@
  *
  * Table map (migrations 20260727 / 20260730 / 20260801):
  *   tenant_settings(tenant_id, key, value)  ← tenant_brand · proposal_terms ·
- *                                              finance_config · company_compliance
+ *                                              finance_config · company_compliance ·
+ *                                              pricing (admin equipment rates)
  *   consent_records                          ← gdpr banner (append-only)
  *   feedback                                 ← owner-cockpit feedback
  *   installed_equipment                      ← fieldRecord.serials (the gate)
@@ -45,7 +46,7 @@ function quiet(p: Promise<unknown>) {
 
 /** tenant_settings upsert — the server home for the four owner-settings stores. */
 export function pushTenantSetting(
-  key: 'tenant_brand' | 'proposal_terms' | 'finance_config' | 'company_compliance',
+  key: 'tenant_brand' | 'proposal_terms' | 'finance_config' | 'company_compliance' | 'pricing',
   value: unknown,
 ) {
   quiet((async () => {

@@ -14,6 +14,7 @@
  */
 import type { DummyLead } from '@/lib/dummyData';
 import { getFieldRecord } from '@/lib/fieldRecord';
+import { seaiPropertyType } from '@/lib/seaiPipeline';
 
 export type EsbFormChoice = 'NC6' | 'NC7' | 'NC8';
 
@@ -72,7 +73,9 @@ export function decideCompliance(lead: DummyLead): ComplianceDecision {
   const attestedKw = gate?.confirmed ? parseFloat(gate.acRatingKw) : NaN;
   const tiic = Number.isFinite(attestedKw) && attestedKw > 0 ? attestedKw : inverterAcKw(lead);
   const threePhase = /three/i.test(lead.survey?.confirmed_inverter_type ?? '');
-  const commercial = i.extracted_premises_type === 'commercial' || i.property_type === 'commercial';
+  // ONE classification field: property_type. (extracted_premises_type was a dead
+  // duplicate — never written by anything — so it always read null here anyway.)
+  const commercial = seaiPropertyType((lead.survey as Record<string, unknown> | undefined)?.property_type as string ?? i.property_type as string) === 'commercial';
   const esbForm: EsbFormChoice = esbFormForAcKw(tiic, threePhase);
 
   const requiredDocs = [

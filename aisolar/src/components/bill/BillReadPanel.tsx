@@ -15,9 +15,9 @@ import { FileText, BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BillRead {
-  /** domestic | commercial — read off the bill (business tariff, MIC line);
-      decides SEAI scheme + which ESB form the agents prepare */
-  premisesType?: string;
+  // NOTE: premises type (domestic/commercial) is NOT a bill field — a bill can't
+  // reliably state it. It comes from the survey's `property_type` ("home or
+  // business?"), the ONE classification source. Kept out of BillRead on purpose.
   mprn?: string | null;
   monthlyBill?: number | null;
   annualKwh?: number | null;

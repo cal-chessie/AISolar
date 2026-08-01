@@ -66,6 +66,10 @@ Same `computeQuote()` engine, TWO presentations, chosen off the "home or busines
 - **Commercial** — lead with ROI% / IRR / payback, then **NDMG grant** · **ex-VAT price** · **ACA year-1 tax write-off**
   (show the after-tax net) · demand-charge reduction · a carbon/kWh line for ESG. CFO framing; an investment case
   (NPV/IRR). ⚠️ **VERIFY NDMG + ACA figures against the SEAI PDF before quoting.**
+- **STUB (Cal, 1 Aug):** the **pre-survey intake estimate** (`calculateSystemEstimate`) is **domestic-only** — domestic
+  grant + 0% VAT regardless of premises. Fine at intake (no roof/occupancy/premises yet), but in Sweep 10 **branch it on
+  `extracted_premises_type`** so a commercial/agri lead's *first* estimate isn't domestic-shaped. The post-survey
+  proposal is already correct via `computeQuote`.
 
 ## E · FOUNDER TEACHING WALKTHROUGH (Sweep 9.6)
 A guided TEACHING walkthrough of every surface **for Cal (non-dev founder)** — per surface: what it is · what it does ·
@@ -79,6 +83,17 @@ onboarding AND arms Cal to sell.
 - **Heatmap / session analytics** — behind the performance-consent + a Privacy Policy line → `Cals_Growth_Dev`.
 - **`tsc --noEmit` in build/pre-commit** — ROUND4 caught **2 runtime crashes that passed green** (Vite doesn't type-check). Cheap guard.
 - **The 8 baseline tsc errors** (Sweep 9.4) — clean build before cohort.
+
+## G · TYPE + CLASSIFICATION DEBT (1 Aug, from the "eyes & ears" pass)
+- **`LeadIntake` type is v1 (5 of 21 fields)** — `extract-bill-data` persists 21 `extracted_*` fields; `LeadIntake`
+  types only 5 (`monthly_bill`/`annual_kwh`/`mprn`/`account_name`/`address`). The 21 ARE typed in `BillRead` (camelCase,
+  `bill/BillReadPanel`) — the DB-row type just lags, so extra fields ride untyped. **Type all 21 in `LeadIntake`
+  (snake_case)** to match the extractor + the mapper, and kill the Partial loophole.
+- **Drop the inert `extracted_premises_type` column** — after the 1-Aug classification unify it has **0 code reads**
+  (all readers moved to `property_type`). Deliberate destructive migration on Cal's say-so (add-only rule kept it).
+- **Demo cast rebuild** — one flip-on/off dataset across all types (domestic small/large · farm · commercial
+  small/large) via `computeQuote(propertyType)`, writing the unified **`property_type`** (NOT the dead
+  `extracted_premises_type` — an earlier draft did, caught + stopped). Redo on the fixed foundation + the 21-field type.
 
 ## Suggested order (ROUND4 Part 6, still sound)
 1. **Real data first** (the read-flip — §0) · 2. NC6 [done] · 3. Installer rewire [done] · 4. **AISales identity +

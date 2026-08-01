@@ -17,6 +17,7 @@ import { corsHeaders, log, HttpError, errorResponse, requireRole } from "../_sha
 import { callLLM, getActivePrompt, fillTemplate } from "../_shared/llm.ts";
 import { sendEmail, wrapEmailHtml, buildWarrantyEmailHtml } from "../_shared/email.ts";
 import { nextFreeWorkingDay } from "../_shared/scheduling.ts";
+import { computeQuote, ratesFromIntake, seaiPropertyType, DEFAULT_PRICING, type PricingConfig } from "../_shared/quote.ts";
 
 const FN = "agent-drain";
 
@@ -339,6 +340,15 @@ async function handleSurveyScheduler({ supabase, leadId }: AgentRunParams): Prom
   return { success: true, outputs: { surveyDate: slot.toISOString(), emailSent: emailResult.ok } };
 }
 
+/** The tenant's equipment pricing (admin-settable via tenant_settings key 'pricing');
+ *  DEFAULT_PRICING until they set it. One dial → every stored quote. */
+async function loadTenantPricing(supabase: any, tenantId?: string | null): Promise<PricingConfig> {
+  if (!tenantId) return DEFAULT_PRICING;
+  const { data } = await supabase.from("tenant_settings").select("value").eq("tenant_id", tenantId).eq("key", "pricing").maybeSingle();
+  const v = data?.value;
+  return (v && typeof v === "object") ? { ...DEFAULT_PRICING, ...(v as Partial<PricingConfig>) } : DEFAULT_PRICING;
+}
+
 async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams): Promise<AgentRunResult> {
   if (!leadId) return { success: false, error: "No lead_id" };
 
@@ -351,7 +361,7 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
   const { data: existingDraft } = await supabase.from("proposals").select("id").eq("lead_id", leadId).eq("status", "draft").limit(1);
   if (existingDraft && existingDraft.length > 0) return { success: true, outputs: { skipped: "draft exists" } };
 
-  const { data: lead } = await supabase.from("leads").select("assigned_consultant_id, name, address, monthly_bill, annual_kwh").eq("id", leadId).single();
+  const { data: lead } = await supabase.from("leads").select("tenant_id, assigned_consultant_id, name, address, monthly_bill, annual_kwh, property_type").eq("id", leadId).single();
 
   // Source-of-truth order: lead_intake.confirmed_* (written by the
   // survey-handoff trigger) → raw survey columns → intake estimates.
@@ -382,27 +392,33 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
     intake.confirmed_panel_count || survey.recommended_panel_count ||
     Math.ceil((systemSize * 1000) / panelWatts);
   const batteryKwh = intake.confirmed_battery_kwh || survey.recommended_battery_kwh || null;
-  // Pricing mirror of src/lib/pricing.ts (brand.pricing.perKwp) — edge functions
-  // can't import from src/. Keep this rate in step with brand.pricing.perKwp.
-  const PER_KWP = 1800;
-  const grossCost = systemSize * PER_KWP;
-  // Domestic: €900/kWp capped €1,800. Commercial (NDMG): SEAI piecewise
-  // €900→2kWp · €300→20 · €200→200 · €150→1000, cap €162,600 — mirrors
-  // src/lib/seaiPipeline.ts (edge functions cannot import from src/).
-  const premises = (intake.extracted_premises_type || "").toLowerCase();
-  const isCommercial = ["commercial", "farm", "business", "industrial"].some(t => premises.includes(t));
-  const ndmg = (kwp: number) => {
-    let g = Math.min(kwp, 2) * 900;
-    if (kwp > 2) g += (Math.min(kwp, 20) - 2) * 300;
-    if (kwp > 20) g += (Math.min(kwp, 200) - 20) * 200;
-    if (kwp > 200) g += (Math.min(kwp, 1000) - 200) * 150;
-    return Math.min(Math.round(g), 162600);
-  };
-  const seaiGrant = isCommercial ? ndmg(systemSize) : Math.min(1800, Math.min(systemSize, 2) * 900);
-  const netCost = grossCost - seaiGrant;
+  // Money via the SHARED quote engine (_shared/quote.ts) — the single source of
+  // truth, faithful to the frontend computeQuote: tiered domestic grant (€700/€200,
+  // not the old €900 flat) · commercial NDMG + 13% VAT · battery cost · occupancy-
+  // driven savings. Tenant pricing from tenant_settings so an admin price change
+  // flows straight into the STORED proposal (not just the screen).
+  const pricing = await loadTenantPricing(supabase, lead?.tenant_id);
+  const quote = computeQuote({
+    systemSizeKw: systemSize,
+    batteryKwh: batteryKwh ?? 0,
+    roof: { orientation: survey.roof_orientation, pitchDeg: survey.roof_pitch, shading: survey.shading },
+    occupancy: { occupants: survey.household_occupants, homeDuringDay: survey.home_during_day },
+    rates: ratesFromIntake(intake),
+    annualUseKwh: lead?.annual_kwh ?? intake.extracted_annual_kwh ?? null,
+    // ONE classification field: property_type (survey's "home or business?"),
+    // read with the SAME fallback chain the frontend uses (ProposalView /
+    // DesignStudio) — survey wins, then intake, then the lead default. Was
+    // reading extracted_premises_type, which NOTHING writes → every job stored
+    // as domestic. This is what made the stored proposal disagree with the screen.
+    propertyType: seaiPropertyType(survey.property_type ?? intake.property_type ?? lead?.property_type),
+    pricing,
+  });
+  const grossCost = quote.grossCost;
+  const seaiGrant = quote.seaiGrant;
+  const netCost = quote.netCost;
 
   // Phase 4: call LLM to draft a proposal narrative (falls back to deterministic text if LLM unavailable)
-  let narrative = `Your ${systemSize}kWp solar system will generate approximately ${Math.round(systemSize * 950)} kWh per year, saving you ${eur(intake.estimated_annual_savings || 0)} annually. With the SEAI grant of ${eur(seaiGrant)}, your net cost is ${eur(netCost)} — payback in ${intake.estimated_payback_years || 7} years.`;
+  let narrative = `Your ${systemSize}kWp solar system will generate approximately ${quote.productionKwh} kWh per year, saving you ${eur(quote.annualSavings)} annually. With the SEAI grant of ${eur(seaiGrant)}, your net cost is ${eur(netCost)} — payback in ${quote.paybackYears} years.`;
 
   const prompt = await getActivePrompt(supabase, "proposal_drafter");
   if (prompt) {
@@ -419,9 +435,9 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
       gross_cost: grossCost,
       seai_grant: seaiGrant,
       net_cost: netCost,
-      annual_savings: intake.estimated_annual_savings || 0,
-      payback_years: intake.estimated_payback_years || 7,
-      twenty_year_savings: intake.estimated_20yr_savings || 0,
+      annual_savings: quote.annualSavings,
+      payback_years: quote.paybackYears,
+      twenty_year_savings: quote.twentyYearBenefit,
     });
 
     const llmResult = await callLLM({
@@ -450,9 +466,9 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
     panel_model: panelModel, inverter_model: inverterModel,
     battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
     gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
-    annual_savings: intake.estimated_annual_savings,
-    payback_years: intake.estimated_payback_years,
-    twenty_year_savings: intake.estimated_20yr_savings,
+    annual_savings: quote.annualSavings,
+    payback_years: quote.paybackYears,
+    twenty_year_savings: quote.twentyYearBenefit,
     narrative,  // Phase 4: store the LLM-drafted narrative on the proposal
   }).select().single();
 
@@ -466,9 +482,9 @@ async function handleProposalDrafter({ supabase, leadId, runId }: AgentRunParams
         panel_model: panelModel, inverter_model: inverterModel,
         battery_model: batteryKwh ? `${batteryKwh}kWh battery storage` : null,
         gross_cost: grossCost, seai_grant: seaiGrant, net_cost: netCost,
-        annual_savings: intake.estimated_annual_savings,
-        payback_years: intake.estimated_payback_years,
-        twenty_year_savings: intake.estimated_20yr_savings,
+        annual_savings: quote.annualSavings,
+        payback_years: quote.paybackYears,
+        twenty_year_savings: quote.twentyYearBenefit,
       }).select().single();
       if (error2) return { success: false, error: error2.message };
       return finishProposalDrafter(supabase, leadId, lead, intake, systemSize, panelCount, grossCost, seaiGrant, netCost, proposal2, narrative);
