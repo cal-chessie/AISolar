@@ -84,16 +84,24 @@ onboarding AND arms Cal to sell.
 - **`tsc --noEmit` in build/pre-commit** — ROUND4 caught **2 runtime crashes that passed green** (Vite doesn't type-check). Cheap guard.
 - **The 8 baseline tsc errors** (Sweep 9.4) — clean build before cohort.
 
-## G · TYPE + CLASSIFICATION DEBT (1 Aug, from the "eyes & ears" pass)
-- **`LeadIntake` type is v1 (5 of 21 fields)** — `extract-bill-data` persists 21 `extracted_*` fields; `LeadIntake`
-  types only 5 (`monthly_bill`/`annual_kwh`/`mprn`/`account_name`/`address`). The 21 ARE typed in `BillRead` (camelCase,
-  `bill/BillReadPanel`) — the DB-row type just lags, so extra fields ride untyped. **Type all 21 in `LeadIntake`
-  (snake_case)** to match the extractor + the mapper, and kill the Partial loophole.
-- **Drop the inert `extracted_premises_type` column** — after the 1-Aug classification unify it has **0 code reads**
-  (all readers moved to `property_type`). Deliberate destructive migration on Cal's say-so (add-only rule kept it).
+## G · TYPE + CLASSIFICATION + PERSISTENCE (1 Aug, from the "eyes & ears" pass)
+- ✅ **`LeadIntake` typed to the full 21-field extract (1 Aug, DONE)** — was v1 (5 of 21 typed; the other 16 rode
+  untyped on the Partial loophole). Now mirrors the `lead_intake` columns 1:1 (+ `property_type?` carried from the
+  survey). tsc 0. The v1 type is gone — proper code in its place.
+- **Deprecate the inert `extracted_premises_type` column — NON-destructively** (correct dev, not a drop). After the
+  1-Aug classification unify it has **0 code reads** (all readers moved to `property_type`). Right way: a
+  `COMMENT ON COLUMN lead_intake.extracted_premises_type IS 'DEPRECATED 2026-08-01 → use property_type; inert'`
+  migration so nobody re-wires it. Leave the data, don't drop (add-only). Any real removal is a separate reviewed
+  release step, never a casual destructive migration.
+- **Complete the owner-settings STORED path (A1) — the right way** — full spec in `CALS_GROWTH_DEV.md` (admin-pricing).
+  The dial is shown+stored the moment a request carries `tenant_id`: JWT tenant claim (access-token hook) + onboarding
+  membership stamp + the read-flip. Its own workstream — not a single-tenant shortcut.
+- **Pricing dial on the Products page** — later nicety (Cal, 1 Aug: "no, but put it in notes"). Today it's Settings →
+  Pricing & Terms only; a second entry point on the Products page is a small add, not launch.
 - **Demo cast rebuild** — one flip-on/off dataset across all types (domestic small/large · farm · commercial
   small/large) via `computeQuote(propertyType)`, writing the unified **`property_type`** (NOT the dead
-  `extracted_premises_type` — an earlier draft did, caught + stopped). Redo on the fixed foundation + the 21-field type.
+  `extracted_premises_type` — an earlier draft did, caught + stopped). **Not today (Cal, 1 Aug);** redo on the fixed
+  foundation + the now-correct 21-field type.
 
 ## Suggested order (ROUND4 Part 6, still sound)
 1. **Real data first** (the read-flip — §0) · 2. NC6 [done] · 3. Installer rewire [done] · 4. **AISales identity +

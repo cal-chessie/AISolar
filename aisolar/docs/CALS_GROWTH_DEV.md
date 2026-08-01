@@ -126,6 +126,19 @@ whole system:
   the edge drafter falls back to `DEFAULT_PRICING`; **post-A1 both the shown AND stored quote use the tenant's dial.** So
   admin-pricing is fully live the moment A1 lands (already launch-critical on the deploy doc).
 
+**The right way to COMPLETE it (A1 — the proper development, not a shortcut):** the `tenant_settings` write needs the
+request to carry the tenant. Three parts, developed as one workstream:
+1. **JWT tenant claim** — a Supabase **custom access-token hook** injects `tenant_id` into every issued token, derived
+   from the user's membership row. Then `pushTenantSetting` (reads `app_metadata.tenant_id`) writes for every authed
+   owner and tenant-RLS scopes it — no per-call lookup. *(Interim-correct, not a hack: resolve `tenant_id` from the
+   user's profile row on save until the hook lands.)*
+2. **Onboarding stamps the membership** — owner signup / installer invite writes the user↔tenant row (service role) so
+   the hook has something to read. This is the A1 auth/tenant-onboarding item on the deploy doc.
+3. **Read-flip** — once tokens carry `tenant_id` and `tenant_settings` is populated, flip `serverStore` + the getters
+   to read DB-first (localStorage-first by design today). ONE cutover — all five owner settings **and** the pricing
+   dial go shown+stored together. Until then the dial is honest and correct on-screen (localStorage); only the STORED
+   proposal waits on this.
+
 ## ⚠️ Classification schism — the stored≠shown ROOT (1 Aug, "eyes & ears") — FIXED
 Domestic-vs-commercial (which picks the grant + VAT) was split across **two** fields:
 - `property_type` (`residential`/`commercial`) — the survey's "home or business?", written by `SiteSurveyForm`, read
@@ -140,8 +153,9 @@ stored≠shown — deeper than the five quote drifts, because it silently killed
 **FIX (1 Aug):** unify on `property_type`. The drafter now reads `survey.property_type ?? intake.property_type ??
 lead.property_type` — the frontend's own chain, so stored == shown. `complianceDecision` unified the same way.
 The dead `BillReadPanel.premisesType` prop (which falsely claimed premises type is "read off the bill" — it can't be)
-was removed. `extracted_premises_type` now has **0 code reads**; the COLUMN is inert (kept under the add-only rule —
-drop later via a deliberate migration). This is what actually **finishes** the quote-drift fix.
+was removed. `extracted_premises_type` now has **0 code reads**; the COLUMN is inert — **deprecate it in-schema**
+(`COMMENT ON COLUMN … IS 'DEPRECATED → use property_type'`), non-destructive, no drop. This is what actually
+**finishes** the quote-drift fix.
 
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the

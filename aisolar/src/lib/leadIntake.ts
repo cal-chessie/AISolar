@@ -11,11 +11,8 @@
  *     id UUID PK,
  *     lead_id UUID FK -> leads(id),
  *     source TEXT,                    -- 'bill_upload' | 'manual' | 'referral'
- *     extracted_monthly_bill NUMERIC,
- *     extracted_annual_kwh INTEGER,
- *     extracted_mprn TEXT,
- *     extracted_account_name TEXT,
- *     extracted_address TEXT,
+ *     extracted_* ...                 -- the FULL 21-point bill extract; the
+ *       interface below mirrors the columns 1:1 (extract-bill-data persists all 21).
  *     extraction_confidence TEXT,     -- 'high' | 'medium' | 'low'
  *     extraction_raw JSONB,           -- full AI response
  *     estimated_system_size_kw NUMERIC,
@@ -34,14 +31,37 @@ export interface LeadIntake {
   id: string;
   lead_id: string;
   source: 'bill_upload' | 'manual' | 'referral' | 'ai_analyser';
-  // AI-extracted (front-door)
+  // AI-extracted from the bill — the FULL 21-point extract that extract-bill-data
+  // persists to lead_intake. (Was v1: only the 5 core below were typed; the other
+  // 16 rode untyped. This IS the DB shape now, 1:1 — BillReadPanel.billReadFromIntake
+  // maps these snake_case columns into the camelCase BillRead view-model.)
   extracted_monthly_bill: number | null;
   extracted_annual_kwh: number | null;
   extracted_mprn: string | null;
   extracted_account_name: string | null;
   extracted_address: string | null;
+  extracted_eircode: string | null;
+  extracted_provider: string | null;
+  extracted_tariff_name: string | null;
+  extracted_unit_rate: number | null;          // day rate €/kWh
+  extracted_night_rate: number | null;          // night rate €/kWh (day/night meters)
+  extracted_standing_charge: number | null;
+  extracted_standing_charge_unit: string | null;
+  extracted_vat_rate: number | null;            // electricity VAT on the bill (9 / 13.5)
+  extracted_day_night_meter: boolean | null;
+  extracted_billing_period: string | null;
+  extracted_billing_period_kwh: number | null;
+  extracted_day_usage_kwh: number | null;       // the split that argues the battery case
+  extracted_night_usage_kwh: number | null;
+  extracted_estimated_reading: boolean | null;  // E on the bill → caveat the numbers
+  extracted_notes: string | null;
+  bill_extracted_at: string | null;             // when the reader ran (ISO)
   extraction_confidence: 'high' | 'medium' | 'low' | null;
   extraction_raw: Record<string, unknown> | null;
+  // Classification — the survey's "home or business?" (residential/commercial),
+  // carried onto the intake. The ONE domestic/commercial field (picks SEAI scheme
+  // + VAT). NOT bill-derived; optional here because it originates on the survey.
+  property_type?: string | null;
   // AI-estimated (system size, savings, payback)
   estimated_system_size_kw: number | null;
   estimated_annual_savings: number | null;
