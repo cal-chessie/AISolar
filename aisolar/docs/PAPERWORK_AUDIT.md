@@ -47,18 +47,21 @@ ONE PDF the installer takes to the ESB portal: **manifest/checklist cover** · *
 
 ## ⚠️ FINDINGS — the real gaps (no shortcuts)
 
-### 1. `tenant_settings` CHECK rejects `company_compliance` + `pricing` — LAUNCH-RELEVANT BUG (confirmed live)
-- The constraint (paperwork_engine migration) allows only `('proposal_terms','finance_config','tenant_brand')`. But
-  `serverStore.pushTenantSetting` is called with **5** keys — `companyCompliance.ts:56` writes `company_compliance`,
-  `pricing.ts:70` writes `pricing`. Both **violate the CHECK → rejected → silently swallowed** by the fire-and-forget
-  `quiet()` wrapper.
-- **Impact:** `company_compliance` — the RECI/CRO/VAT/address/email **every NC6 + SEAI form needs** — has *never*
-  persisted server-side; and the new `pricing` dial won't either. Works client-side (localStorage) today; **breaks at
-  the read-flip / for the edge drafter**, which read the DB.
-- **Correct development (Cal's call — it's a DB change):** widen the CHECK to the 5 real keys, idempotently and
-  non-destructively (constraint-only, no data touched). SQL ready — see the bottom of this doc. *(Alternative: drop the
-  CHECK and let the `pushTenantSetting` TS union be the single source of allowed keys — kills the duplicate list. The
-  widen keeps a DB guard; recommend the widen.)*
+### 1. `tenant_settings` CHECK rejects `pricing` — LAUNCH-RELEVANT BUG (VERIFIED live V5, 1 Aug)
+- **Verified against the live DB** (read-only `pg_constraint`): the CHECK is `key = ANY('proposal_terms',
+  'finance_config','tenant_brand','company_compliance')` — **4 keys.** `20260727` set 3; **`20260730_esb_submission_pack.sql`
+  widened it** to add `company_compliance`. **CORRECTION to this doc's first draft: `company_compliance` is NOT rejected —
+  it persists.** (I'd only read `20260727`; the live check caught my error. No migration-vs-live drift — live matches the files.)
+- **`pricing` IS rejected.** `pricing.ts:70` calls `pushTenantSetting('pricing', …)` but `'pricing'` is absent from the
+  CHECK → the upsert violates the constraint → silently swallowed by the fire-and-forget `quiet()`. The dial never
+  persists server-side; works client-side (localStorage) today; the **edge drafter (reads DB) never sees a custom price.**
+- **Deeper — tenant resolution is SPLIT** (found inspecting `has_tenant_access`): RLS resolves the user's tenant from the
+  **`user_roles` table** (`is_platform_admin OR exists user_roles(user_id,tenant_id)`); `pushTenantSetting` resolves it
+  from **`app_metadata.tenant_id`** (the JWT claim, absent pre-A1). So even with the CHECK fixed, the write no-ops until
+  either the JWT carries tenant_id (the A1 hook) OR `pushTenantSetting` reads `user_roles` like RLS does — simpler,
+  consistent, and works today. See `CALS_GROWTH_DEV.md` (admin-pricing / A1).
+- **Fix (correct dev, Cal's yes):** one idempotent migration widening the CHECK to add `'pricing'` — the exact pattern
+  `20260730` already used for `company_compliance`. SQL at the bottom of this doc.
 
 ### 2. `doc_type` vocabulary mismatch — latent, bites when persistence wires
 - `decideCompliance.requiredDocs` uses **short** ids: `seai_app`, `dow`, `itc`, `reci`, `ber`, `nc6`, `nc7_01/02`.

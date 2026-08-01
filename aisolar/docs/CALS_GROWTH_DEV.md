@@ -139,12 +139,17 @@ request to carry the tenant. Three parts, developed as one workstream:
    dial go shown+stored together. Until then the dial is honest and correct on-screen (localStorage); only the STORED
    proposal waits on this.
 
-**⚠️ SECOND blocker on the stored path (found 1 Aug, paperwork audit — no shortcuts):** even post-A1, the
-`tenant_settings` CHECK constraint only allows `proposal_terms`/`finance_config`/`tenant_brand` — it **rejects
-`key='pricing'` AND `key='company_compliance'`**, silently (fire-and-forget `quiet()`). So `company_compliance` (the
-RECI/CRO/VAT block every NC6 needs) has *never* persisted server-side, and the pricing dial won't either, until the
-constraint is widened. The pricing stored-path therefore needs **two** things: **A1** (the tenant claim) **and** the
-constraint widen (ready non-destructive SQL in `PAPERWORK_AUDIT.md` §1). Cal's yes ships the migration.
+**⚠️ SECOND blocker on the stored path (found 1 Aug, VERIFIED against live V5):** the `tenant_settings` CHECK allows
+`proposal_terms`/`finance_config`/`tenant_brand`/`company_compliance` (4 keys — `20260730` added company_compliance). It
+**rejects `key='pricing'`** (silently, via fire-and-forget `quiet()`), so the pricing dial never persists server-side.
+*(Correction: an earlier note said company_compliance was rejected too — the live check shows it is allowed.)* The fix is
+one idempotent migration adding `'pricing'` (the pattern `20260730` used) — ready SQL in `PAPERWORK_AUDIT.md` §1; Cal's yes ships it.
+
+**And the tenant-resolution split (the real A1 nuance, verified 1 Aug):** RLS's `has_tenant_access` resolves the user's
+tenant from the **`user_roles` table** (so tenant-scoping works TODAY, no JWT claim needed). But `pushTenantSetting`
+resolves tenant from **`app_metadata.tenant_id`** (the JWT). So the owner-settings DB write no-ops until either the JWT
+carries tenant_id (the A1 hook) **or** `pushTenantSetting` reads `user_roles` like RLS does — the latter is simpler,
+consistent (one tenant source), and works now. Prefer aligning `pushTenantSetting` to `user_roles`.
 
 ## ⚠️ Classification schism — the stored≠shown ROOT (1 Aug, "eyes & ears") — FIXED
 Domestic-vs-commercial (which picks the grant + VAT) was split across **two** fields:
