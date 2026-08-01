@@ -139,6 +139,13 @@ request to carry the tenant. Three parts, developed as one workstream:
    dial go shown+stored together. Until then the dial is honest and correct on-screen (localStorage); only the STORED
    proposal waits on this.
 
+**⚠️ SECOND blocker on the stored path (found 1 Aug, paperwork audit — no shortcuts):** even post-A1, the
+`tenant_settings` CHECK constraint only allows `proposal_terms`/`finance_config`/`tenant_brand` — it **rejects
+`key='pricing'` AND `key='company_compliance'`**, silently (fire-and-forget `quiet()`). So `company_compliance` (the
+RECI/CRO/VAT block every NC6 needs) has *never* persisted server-side, and the pricing dial won't either, until the
+constraint is widened. The pricing stored-path therefore needs **two** things: **A1** (the tenant claim) **and** the
+constraint widen (ready non-destructive SQL in `PAPERWORK_AUDIT.md` §1). Cal's yes ships the migration.
+
 ## ⚠️ Classification schism — the stored≠shown ROOT (1 Aug, "eyes & ears") — FIXED
 Domestic-vs-commercial (which picks the grant + VAT) was split across **two** fields:
 - `property_type` (`residential`/`commercial`) — the survey's "home or business?", written by `SiteSurveyForm`, read
