@@ -10,6 +10,7 @@
  * app can be demoed on fabricated data; production always shows real data.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { generateDummyLeads, type DummyLead } from './dummyData';
 import { isDemoMode } from './demoMode';
@@ -83,6 +84,7 @@ function mapRow(l: Row, rel: Related, installerNames: Record<string, string>): D
     phone: l.phone || '',
     address: l.address || '',
     mprn: l.mprn || '',
+    access_token: l.access_token || undefined,
     monthly_bill: Number(l.monthly_bill) || 0,
     annual_kwh: Number(l.annual_consumption_kwh) || 0,
     workflow_stage: l.workflow_stage || 'new',
@@ -204,6 +206,52 @@ export async function fetchRealLeads(): Promise<DummyLead[]> {
 export async function fetchRealLead(id: string): Promise<DummyLead | null> {
   const all = await fetchRealLeads();
   return all.find((l) => l.id === id) || null;
+}
+
+/**
+ * fetchLeadByToken — the CUSTOMER magic-link read (P0, /customer/:token).
+ *
+ * No session: a dedicated client carries the lead's 64-char access_token as the
+ * `x-access-token` header, and the V5 security floor does the rest — leads_sel
+ * and every child's can_see_lead() admit exactly THIS lead's rows, nothing else
+ * (verified live: the token clause is in the policies). The customer IS the
+ * token; a wrong/revoked token reads zero rows and we return null — the route
+ * shows the honest "link not active" state, never a blank screen.
+ * Same mapRow as staff → the portal renders the identical shape.
+ */
+export async function fetchLeadByToken(token: string): Promise<DummyLead | null> {
+  if (!/^[a-f0-9]{40,64}$/i.test(token || '')) return null; // shape guard — junk never hits the network
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  if (!url || !key) return null;
+  const client = createClient(url, key, {
+    global: { headers: { 'x-access-token': token } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: l } = await client.from('leads').select('*').eq('access_token', token).maybeSingle();
+  if (!l) return null;
+  const [surveys, proposals, contracts, invoices, assignments, notifs] = await Promise.all([
+    client.from('site_surveys').select('*').eq('lead_id', l.id),
+    client.from('proposals').select('*').eq('lead_id', l.id),
+    client.from('contracts').select('*').eq('lead_id', l.id),
+    client.from('invoices').select('*').eq('lead_id', l.id),
+    client.from('assignments').select('*').eq('lead_id', l.id),
+    client.from('notifications').select('*').eq('lead_id', l.id),
+  ]);
+  // installers is staff-only by policy — the customer view degrades gracefully
+  // (assignment carries what the portal shows). Empty name map by design.
+  return mapRow(
+    l as Row,
+    {
+      surveys: surveys.data || [],
+      proposals: proposals.data || [],
+      contracts: contracts.data || [],
+      invoices: invoices.data || [],
+      assignments: assignments.data || [],
+      notifs: notifs.data || [],
+    },
+    {},
+  );
 }
 
 /**

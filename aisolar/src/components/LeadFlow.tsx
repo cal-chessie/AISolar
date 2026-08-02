@@ -26,7 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, ArrowRight, MapPin, Calendar, Sun, Zap, FileText,
-  CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight,
+  CheckCircle2, Flame, Star, Phone, Mail, Navigation, ChevronRight, Link2,
   Euro, Calculator, Sparkles, Bot, Home, Camera, Plus, Minus,
   Shield, Clock, TrendingUp, Award, CreditCard, Percent, Info,
   Send, MessageSquare,
@@ -215,6 +215,16 @@ function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
             <Button variant="ghost" size="sm" className="p-2" asChild>
               <a href={`mailto:${lead.email}`}><Mail className="h-4 w-4" /></a>
             </Button>
+            {/* P0: the customer's magic link — real leads only (demo leads carry no token) */}
+            {lead.access_token && (
+              <Button variant="ghost" size="sm" className="p-2" title="Copy the customer's portal link"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/customer/${lead.access_token}`);
+                  toast.success('Portal link copied', { description: `Send it to ${lead.name.split(' ')[0]} — it opens their project, no login needed.` });
+                }}>
+                <Link2 className="h-4 w-4" />
+              </Button>
+            )}
             <DarkModeToggle />
           </div>
         </div>

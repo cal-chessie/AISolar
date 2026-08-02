@@ -84,7 +84,13 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
   msgs.push({
     id: 'bill_uploaded',
     type: 'system',
-    body: `We received your electricity bill. Our AI analyzed your usage: ${lead.annual_kwh?.toLocaleString()} kWh/year, €${lead.monthly_bill}/month. Recommended system: ${lead.intake.estimated_system_size_kw}kWp.`,
+    // Real leads can predate the bill read — never show "undefinedkWp" or "0 kWh"
+    // to a customer (caught on the live P0 smoke run, 2 Aug).
+    body: [
+      'We received your details.',
+      lead.annual_kwh ? `Our AI analyzed your usage: ${lead.annual_kwh.toLocaleString()} kWh/year, €${lead.monthly_bill}/month.` : lead.monthly_bill ? `Bills around €${lead.monthly_bill}/month.` : '',
+      lead.intake.estimated_system_size_kw ? `Recommended system: ${lead.intake.estimated_system_size_kw}kWp.` : 'Your recommended system lands with your survey.',
+    ].filter(Boolean).join(' '),
     timestamp: lead.touchpoints[0]?.timestamp || new Date(Date.now() - 7 * 86400000).toISOString(),
     actionLabel: 'See your estimate',
     actionIcon: TrendingUp,

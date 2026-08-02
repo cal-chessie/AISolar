@@ -40,6 +40,7 @@ import LeadFlow from "./components/LeadFlow";
 import JobViewV2 from "./components/installer/JobViewV2";
 import InstallerPortalV5 from "./components/installer/InstallerPortalV5";
 import CustomerPortalV2 from "./components/customer/CustomerPortalV2";
+import CustomerPortalTokenRoute from "./components/customer/CustomerPortalTokenRoute";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import DemoBanner from "./components/DemoBanner";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -144,6 +145,9 @@ function AppRoutes() {
           <Route path="/consultant" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><ConsultantCockpitV5 /></ProtectedRoute>)} />
           <Route path="/installer" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'installer']}><InstallerPortalV5 /></ProtectedRoute>)} />
           <Route path="/my-projects" element={wrap(<ProtectedRoute><CustomerPortalV2 /></ProtectedRoute>)} />
+          {/* P0: the customer MAGIC LINK — token IS the auth (RLS can_see_lead);
+              also the Stripe/Coinbase return URL (?payment=success|cancelled). */}
+          <Route path="/customer/:token" element={wrap(<CustomerPortalTokenRoute />)} />
           {/* #6: agent calendar events navigate here — was a 404 stub */}
           <Route path="/agent-console" element={wrap(<ProtectedRoute roles={['admin', 'owner', 'consultant']}><AgentFoundation /></ProtectedRoute>)} />{/* in-app agent console (was /agents) */}
           <Route path="/p/:leadId" element={wrap(<ProposalPage />)} />

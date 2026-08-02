@@ -23,6 +23,9 @@ export interface DummyLead {
   phone: string;
   address: string;
   mprn: string;
+  /** The customer's magic-link token (real leads only; demo leads carry none).
+   *  Staff surfaces build the portal link as `${origin}/customer/${access_token}`. */
+  access_token?: string;
   monthly_bill: number;
   annual_kwh: number;
   workflow_stage: string;

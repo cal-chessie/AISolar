@@ -75,9 +75,12 @@ const DEMO_BANNER_OFFSET = 28;
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-export default function CustomerPortalV2() {
+/** `lead` prop = the REAL record from the magic-link route (/customer/:token).
+ *  Without it (the /my-projects demo path) the portal seeds from demo data. */
+export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead } = {}) {
   const navigate = useNavigate();
   const [lead] = useState<DummyLead>(() => {
+    if (realLead) return realLead;
     const leads = generateDummyLeads();
     // ?stage=early shows the pre-survey journey (photo snaps + survey booking);
     // prefer an intake_complete lead so both cards are in play, not a raw 'new'.
