@@ -1,4 +1,9 @@
-# AISOLAR — installer platform (Vite + React 18 + Supabase `coxmtpnq…`)
+# AISOLAR — installer platform (Vite + React 18 + Supabase V5 `ywizcsulurxoqjdgnkvc`)
+
+> ⚠️ DB TRUTH (2 Aug 2026): the app points at **V5 `ywizcsulurxoqjdgnkvc`** (`.env`). `coxmtpnq` is DEAD; calchessie
+> `vythuqax` + kernel `qolqqgcb` are PAUSED. Current-state audits: `docs/MASTER_AUDIT_1AUG.md` →
+> `docs/DEPLOYMENT_READINESS_2AUG.md`. The "State (2026-07-18)" section below is HISTORY of the old project — read it as
+> a log, not as current.
 
 > **START HERE: read [`docs/THE_ONE_READ.md`](docs/THE_ONE_READ.md) FIRST — every
 > session, before anything.** It is the estate consolidated and corrected: true

@@ -1,12 +1,13 @@
 /**
- * leadWrites — the write path. Persists workbench actions to calchessie:
+ * leadWrites — the write path. Persists workbench actions to the V5 DB:
  * create / update a lead, advance its stage, log a touchpoint. An insert is
- * auto-routed (the `route-lead-on-insert` trigger → kernel.transfer_lead) and
- * bridged to the kernel by DB triggers — the UI just creates the lead.
+ * auto-routed (the route-lead trigger → aigrids.route_lead, recorded via
+ * gate_bridge) — the UI just creates the lead.
  *
- * NOTE (tracked in the RLS task): leads RLS is currently
- * `auth.role() = 'authenticated'` — NOT tenant-scoped — so any signed-in user
- * can read/write any lead. Per-tenant isolation is tightened before go-live.
+ * RLS (verified live on V5, 1–2 Aug): leads is TENANT-SCOPED — 4 policies on
+ * has_tenant_access(auth.uid(), tenant_id), customer read via x-access-token.
+ * (An earlier note here claimed authenticated-any; that was the pre-floor
+ * calchessie state — closed by 20260731_tenant_rls_floor.)
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { DummyLead } from './dummyData';

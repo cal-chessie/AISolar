@@ -103,6 +103,17 @@ onboarding AND arms Cal to sell.
   `extracted_premises_type` — an earlier draft did, caught + stopped). **Not today (Cal, 1 Aug);** redo on the fixed
   foundation + the now-correct 21-field type.
 
+## H · CUSTOMER-STAR + FINAL GATE (2 Aug — designed in `DEPLOYMENT_READINESS_2AUG.md`, execute here)
+Cal's directive: customer = the star, front-middle-end tightened, white-label + one-click everywhere, NC6/NC7 humans
+informed at every touchpoint. The full designs + the ranked 20 live in **`DEPLOYMENT_READINESS_2AUG.md`** (§3–§5):
+- **Portal stage TRACKER** (the Domino's moment — render existing stage+touchpoint data).
+- **White-label DEPTH** — one `tenantBrand` object (logo · accent · from-name/reply-to) themes emails · widget ·
+  proposal PDF · portal · tracker. The customer sees the INSTALLER's brand, never the platform's.
+- **One-click MONEY** — deposit button ON the proposal · Apple/Google Pay via Stripe · final-invoice one-click ·
+  milestone emails (deposit→install window · final→receipt+warranty+BER).
+- **NC6/NC7 human strengthening** — `nc6Completeness()` surfaced at 3 touchpoints (job card pre-visit · consultant lead
+  view · owner settings badge) + the Coach speaks the missing items + `lead_documents` persistence (ONE doc-id vocab).
+
 ## Suggested order (ROUND4 Part 6, still sound)
 1. **Real data first** (the read-flip — §0) · 2. NC6 [done] · 3. Installer rewire [done] · 4. **AISales identity +
 cockpit hierarchy/colour** · 5. **Intelligence hardening** (once real data exists) · 6. **Marketing polish** (AIOS ·

@@ -6,9 +6,10 @@
  * lead is created and one place to change when the backend lands.
  *
  * ── HONEST STATE ─────────────────────────────────────────────────────────────
- * This calls the deployed `ingest-lead` edge function. Until that function is
- * deployed (coxmtpnq / GATE 0) the call FAILS, and it is designed to fail
- * LOUDLY — the caller shows a real error and offers the phone number instead.
+ * This calls the `ingest-lead` edge function on the V5 project. Until the edge
+ * functions are deployed to V5 (Cal's-hands deploy step) the call FAILS, and it
+ * is designed to fail LOUDLY — the caller shows a real error and offers the
+ * phone number instead.
  * It must never pretend to have captured a lead it didn't; a customer who
  * thinks they're on a list and isn't is worse than an honest failure.
  *
