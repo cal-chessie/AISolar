@@ -1,20 +1,32 @@
 /**
- * Dummy data seeder — for demo mode + first-run population.
+ * Dummy data seeder — the DEMO CAST (flip on/off).
  *
- * Seeds realistic Irish solar leads with full pipeline state so the installer,
- * consultant, admin, and owner views all have something to show.
+ * Demo ON (dev / VITE_ENABLE_DEMO, via demoMode.ts) = this cast; demo OFF =
+ * the real DB (realLeads.ts). One lead at every pipeline stage, and every kind
+ * of customer the system serves — the five archetypes Cal named:
+ * domestic small · domestic large + battery · farm (agri) · commercial small ·
+ * commercial large/industrial.
  *
- * All data is fictional. Names are common Irish surnames; addresses are real
- * Dublin suburbs; MPRNs are 11-digit numbers (valid format, not real meters).
+ * INVARIANT-TRUE BY CONSTRUCTION: every lead's money runs through the ONE
+ * engine, `computeQuote()`, with the archetype's real propertyType. Domestic
+ * shows the tiered €700/€200 grant (cap €1,800) at 0% install VAT; farm and
+ * commercial show the NDMG grant at 13% VAT — computed, never hand-typed
+ * (the engine is executed-assertion verified, 27/27). Change the tenant's
+ * pricing dial in Settings and every demo number moves with it. The demo can't
+ * drift from the live maths, because it IS the live maths.
+ *
+ * Classification rides the ONE field — `property_type` on the intake
+ * ('residential' | 'commercial', the survey's "home or business?") — the same
+ * field the drafter, Estimate/Proposal/Design views and compliance all read.
+ * (An earlier draft wrote the dead `extracted_premises_type`; killed.)
+ *
+ * All data is fictional: Irish names + trading names, real-format addresses/
+ * Eircodes/11-digit MPRNs — correct in SHAPE, not lookups of real premises.
  */
 
-import { calculateSystemEstimate, LeadIntake } from './leadIntake';
+import { computeQuote, ratesFromIntake, type LeadIntake } from './leadIntake';
 import { getPricingConfig } from './pricing';
-
-// One battery premium for the demo, from the tenant pricing model — a 13.5kWh
-// Powerwall priced at the configured €/kWh, so demo numbers match live math.
-const DEMO_BATTERY_KWH = 13.5;
-const DEMO_BATTERY_PREMIUM = Math.round(DEMO_BATTERY_KWH * getPricingConfig().batteryPerKwh);
+import type { PropertyType } from './seaiPipeline';
 
 export interface DummyLead {
   id: string;
@@ -116,28 +128,10 @@ const isoFuture = (daysAhead: number, hour = 10) => {
   return d.toISOString();
 };
 
-// Demo addresses carry a real-format Eircode (routing key matches the Dublin
-// area) so the whole record — incl. the NC6 §2 Eircode box — completes. These
-// are demo values in the correct format, not lookups of real premises.
-const DUBLIN_ADDRESSES = [
-  '12 Beech Hill Road, Donnybrook, Dublin 4, D04 K729',
-  '47 Shrewsbury Road, Ballsbridge, Dublin 4, D04 W820',
-  '8 Castle Park Road, Sandymount, Dublin 4, D04 R6H8',
-  '23 Torquay Road, Bray, Co. Wicklow, A98 X4P7',
-  '5 Foxrock Road, Foxrock, Dublin 18, D18 F5T2',
-  '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
-  '34 Seafield Road, Clontarf, Dublin 3, D03 V2N6',
-  '9 Howth Road, Howth, Dublin 13, D13 E8W1',
-  '27 Ranelagh Village, Ranelagh, Dublin 6, D06 P3Y9',
-  '14 Orwell Road, Rathgar, Dublin 6, D06 X5F8',
-  '6 Silchester Road, Glasnevin, Dublin 11, D11 A7C3',
-  '31 Rathmines Road Lower, Rathmines, Dublin 6, D06 T4M2',
-];
-
 const INSTALLERS = [
-  { id: 'ins-001', name: 'Mike Doyle',  skills: ['roof-mount', 'battery', 'commercial'] },
+  { id: 'ins-001', name: 'Mike Doyle',   skills: ['roof-mount', 'battery', 'commercial'] },
   { id: 'ins-002', name: 'Liam Brennan', skills: ['roof-mount', 'inverter'] },
-  { id: 'ins-003', name: 'Cian Murphy',  skills: ['ground-mount', 'battery'] },
+  { id: 'ins-003', name: 'Cian Murphy',  skills: ['ground-mount', 'battery', 'commercial'] },
 ];
 
 const CONSULTANTS = ['Aoife O\'Connor', 'Cian Walsh'];
@@ -146,123 +140,232 @@ function makeMprn(seed: number): string {
   return String(10000000000 + seed * 7919).slice(0, 11);
 }
 
-/** Generate 12 realistic leads spanning every pipeline stage. */
+/**
+ * The five archetypes — "all the types of people in the system" (Cal).
+ * Each carries the facts that DECIDE its economics; computeQuote turns them
+ * into the exact grant, VAT, savings and payback. The invariant is guaranteed
+ * by the engine, not asserted by this file.
+ */
+interface Archetype {
+  label: string;
+  propertyType: PropertyType;                    // domestic | commercial (the engine's fork)
+  /** The survey's "home or business?" answer — the ONE classification field. */
+  propertyTypeField: 'residential' | 'commercial';
+  systemSizeKw: number;
+  batteryKwh: number;
+  monthlyBill: number;
+  annualKwh: number;
+  panelModel: string;
+  inverterModel: string;
+  batteryModel: string | null;
+  provider: string;
+  unitRate: number;
+  nightRate: number | null;
+  dayNightMeter: boolean;
+  /** Electricity VAT on the BILL (9% domestic reduced rate, 13.5% business). */
+  billVatRate: number;
+  roofOrientation: string;
+  roofType: string;
+  roofPitch: number;
+  shading: string;
+  occupants: string;
+  homeDuringDay: string;
+}
+
+type ArchetypeId = 'domestic_small' | 'domestic_large' | 'farm' | 'commercial_small' | 'commercial_large';
+
+const ARCHETYPES: Record<ArchetypeId, Archetype> = {
+  // Domestic · small — 3.5 kWp, no battery. Grant 2×€700 + 1.5×€200 = €1,700
+  // (under the cap — shows the taper), 0% install VAT.
+  domestic_small: {
+    label: 'Domestic · small', propertyType: 'domestic', propertyTypeField: 'residential',
+    systemSizeKw: 3.5, batteryKwh: 0, monthlyBill: 155, annualKwh: 5200,
+    panelModel: 'Longi Hi-MO 6 LR5-435W', inverterModel: 'SolaX X1-Boost 3.6 G4', batteryModel: null,
+    provider: 'Electric Ireland', unitRate: 0.3512, nightRate: null, dayNightMeter: false, billVatRate: 9,
+    roofOrientation: 'south', roofType: 'concrete_tile', roofPitch: 35, shading: 'none',
+    occupants: '2', homeDuringDay: 'out',
+  },
+  // Domestic · large + battery — 6.8 kWp + 13.5 kWh. Grant caps at €1,800,
+  // 0% VAT; battery + day/night meter unlocks night-rate arbitrage.
+  domestic_large: {
+    label: 'Domestic · large + battery', propertyType: 'domestic', propertyTypeField: 'residential',
+    systemSizeKw: 6.8, batteryKwh: 13.5, monthlyBill: 340, annualKwh: 11500,
+    panelModel: 'Longi Hi-MO 6 LR5-435W', inverterModel: 'SolaX X1-Hybrid 5.0 G4', batteryModel: 'Tesla Powerwall 3 (13.5kWh)',
+    provider: 'Energia', unitRate: 0.3390, nightRate: 0.1690, dayNightMeter: true, billVatRate: 9,
+    roofOrientation: 'south_west', roofType: 'slate', roofPitch: 30, shading: 'light',
+    occupants: '4', homeDuringDay: 'usually',
+  },
+  // Farm · agricultural — 14 kWp shed roof. COMMERCIAL pathway: NDMG
+  // (2×€900 + 12×€300 = €5,400) at 13% install VAT. High daytime self-use.
+  farm: {
+    label: 'Farm · agricultural', propertyType: 'commercial', propertyTypeField: 'commercial',
+    systemSizeKw: 14, batteryKwh: 0, monthlyBill: 520, annualKwh: 24000,
+    panelModel: 'JA Solar JAM72D40 575W', inverterModel: 'SolaX X3-PRO 15K G2', batteryModel: null,
+    provider: 'SSE Airtricity', unitRate: 0.3298, nightRate: 0.1721, dayNightMeter: true, billVatRate: 13.5,
+    roofOrientation: 'south', roofType: 'agri_shed_steel', roofPitch: 15, shading: 'none',
+    occupants: '5+', homeDuringDay: 'usually',
+  },
+  // Commercial · small business — 20 kWp. NDMG 2×€900 + 18×€300 = €7,200, 13% VAT.
+  commercial_small: {
+    label: 'Commercial · small business', propertyType: 'commercial', propertyTypeField: 'commercial',
+    systemSizeKw: 20, batteryKwh: 0, monthlyBill: 780, annualKwh: 42000,
+    panelModel: 'JA Solar JAM72D40 575W', inverterModel: 'SolaX X3-PRO 20K G2', batteryModel: null,
+    provider: 'Bord Gáis Energy', unitRate: 0.3611, nightRate: null, dayNightMeter: false, billVatRate: 13.5,
+    roofOrientation: 'south', roofType: 'trapezoidal_steel', roofPitch: 10, shading: 'none',
+    occupants: '5+', homeDuringDay: 'usually',
+  },
+  // Commercial · large / industrial — 75 kWp. NDMG 2×€900 + 18×€300 + 55×€200
+  // = €18,200 at 13% VAT — the headline commercial case.
+  commercial_large: {
+    label: 'Commercial · large / industrial', propertyType: 'commercial', propertyTypeField: 'commercial',
+    systemSizeKw: 75, batteryKwh: 0, monthlyBill: 2900, annualKwh: 175000,
+    panelModel: 'JA Solar JAM72D40 575W', inverterModel: 'Huawei SUN2000-60KTL-M0 ×2', batteryModel: null,
+    provider: 'Pinergy', unitRate: 0.3745, nightRate: null, dayNightMeter: false, billVatRate: 13.5,
+    roofOrientation: 'south', roofType: 'trapezoidal_steel', roofPitch: 10, shading: 'none',
+    occupants: '5+', homeDuringDay: 'usually',
+  },
+};
+
+interface Scenario {
+  archetype: ArchetypeId;
+  name: string;
+  address: string;
+  stage: string;
+  daysAgo: number;
+  routeDate?: number;
+  surveyDate?: string;
+  consultant: string;
+  installer?: typeof INSTALLERS[number];
+  source?: DummyLead['source'];
+  /** Per-lead size override so same-type leads aren't carbon copies. */
+  sizeKw?: number;
+  touchpoints: DummyLead['touchpoints'];
+}
+
+/** One lead at every pipeline stage; every archetype represented. */
 export function generateDummyLeads(): DummyLead[] {
   const leads: DummyLead[] = [];
+  const panelWatts = getPricingConfig().panelWatts;
 
-  const scenarios = [
-    // 1. New lead — bill uploaded 2 hours ago
+  const scenarios: Scenario[] = [
+    // 1. NEW — bill just uploaded (domestic · small)
     {
-      name: 'Mary O\'Brien', stage: 'survey_scheduled', daysAgo: 0, routeDate: 3, bill: 245, kwh: 8400,
-      address: DUBLIN_ADDRESSES[7], consultant: CONSULTANTS[0],
+      archetype: 'domestic_small', name: 'Aoife Nolan', address: '9 Howth Road, Howth, Dublin 13, D13 E8W1',
+      stage: 'new', daysAgo: 0, consultant: CONSULTANTS[0],
       touchpoints: [
         { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded via landing page', timestamp: iso(0, 9), actor: 'customer' },
         { stage: 'new', channel: 'email', direction: 'outbound', summary: 'LeadIntakeAgent sent auto-acknowledge', timestamp: iso(0, 9), actor: 'agent' },
       ],
     },
-    // 2. Intake complete
+    // 2. INTAKE COMPLETE — small business (commercial · small)
     {
-      name: 'Patrick Kelly', stage: 'survey_scheduled', daysAgo: 1, routeDate: 3, bill: 312, kwh: 10800,
-      address: DUBLIN_ADDRESSES[3], consultant: CONSULTANTS[1],
+      archetype: 'commercial_small', name: 'Nolan Motors Ltd', address: 'Unit 4, Liosban Business Park, Tuam Road, Galway, H91 K2XR',
+      stage: 'intake_complete', daysAgo: 1, consultant: CONSULTANTS[1], source: 'referral',
       touchpoints: [
         { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded', timestamp: iso(1, 14), actor: 'customer' },
-        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'AI analysis sent to customer', timestamp: iso(1, 14), actor: 'agent' },
+        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'AI analysis sent — commercial NDMG grant + ex-VAT price', timestamp: iso(1, 14), actor: 'agent' },
       ],
     },
-    // 3. Survey scheduled
+    // 3. SURVEY SCHEDULED — domestic · large + battery
     {
-      name: 'Linda O\'Sullivan', stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, bill: 198, kwh: 6800,
-      address: DUBLIN_ADDRESSES[2], consultant: CONSULTANTS[0], installer: INSTALLERS[1],
+      archetype: 'domestic_large', name: 'Patrick Kelly', address: '5 Foxrock Road, Foxrock, Dublin 18, D18 F5T2',
+      stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       surveyDate: isoFuture(2),
       touchpoints: [
         { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'SurveySchedulerAgent booked Tue 10am', timestamp: iso(2, 11), actor: 'agent' },
         { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Survey confirmation emailed — Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
       ],
     },
-    // 4. Survey complete — proposal not yet drafted
+    // 4. SURVEY COMPLETE — farm (agri)
     {
-      name: 'Tom Brennan', stage: 'survey_complete', daysAgo: 3, routeDate: 3, bill: 278, kwh: 9600,
-      address: DUBLIN_ADDRESSES[3], consultant: CONSULTANTS[1], installer: INSTALLERS[0],
+      archetype: 'farm', name: 'Brennan Dairy Farm', address: 'Corrandulla, Co. Galway, H91 XR68',
+      stage: 'survey_complete', daysAgo: 3, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
-        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + roof data', timestamp: iso(1, 15), actor: 'installer' },
+        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + shed-roof measurements', timestamp: iso(1, 15), actor: 'installer' },
         { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'ProposalDrafter Agent notified consultant', timestamp: iso(1, 15), actor: 'agent' },
       ],
     },
-    // 5. Proposal drafted — awaiting consultant review
+    // 5. PROPOSAL DRAFTED — domestic · large (awaiting review)
     {
-      name: 'Sarah McDonald', stage: 'proposal_drafted', daysAgo: 4, bill: 356, kwh: 12200,
-      address: DUBLIN_ADDRESSES[4], consultant: CONSULTANTS[0], installer: INSTALLERS[2],
+      archetype: 'domestic_large', name: 'Sarah McDonald', address: '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
+      stage: 'proposal_drafted', daysAgo: 4, sizeKw: 7.2, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
-        { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Auto-drafted 6.4kWp system for consultant review', timestamp: iso(2, 9), actor: 'agent' },
+        { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Auto-drafted system for consultant review', timestamp: iso(2, 9), actor: 'agent' },
       ],
     },
-    // 6. Proposal sent — customer opening repeatedly (hot lead)
+    // 6. PROPOSAL SENT — large industrial, opening repeatedly (hot)
     {
-      name: 'James Wilson', stage: 'proposal_sent', daysAgo: 5, bill: 289, kwh: 9900,
-      address: DUBLIN_ADDRESSES[5], consultant: CONSULTANTS[0],
+      archetype: 'commercial_large', name: 'Corrib Logistics', address: 'IDA Business & Technology Park, Athlone, Co. Westmeath, N37 DX59',
+      stage: 'proposal_sent', daysAgo: 5, consultant: CONSULTANTS[0], source: 'referral',
       touchpoints: [
-        { stage: 'proposal_sent', channel: 'email', direction: 'outbound', summary: 'Proposal link emailed to customer', timestamp: iso(3, 11), actor: 'consultant' },
+        { stage: 'proposal_sent', channel: 'email', direction: 'outbound', summary: 'Proposal link emailed to the finance director', timestamp: iso(3, 11), actor: 'consultant' },
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (1st time)', timestamp: iso(2, 19), actor: 'customer' },
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(2, 21), actor: 'customer' },
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time)', timestamp: iso(1, 8), actor: 'customer' },
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (4th time)', timestamp: iso(0, 18), actor: 'customer' },
+        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time) — forwarded to accountant', timestamp: iso(0, 18), actor: 'customer' },
       ],
     },
-    // 7. Approved — contract just signed, invoice auto-created, grant agent starting
+    // 7. APPROVED — contract signed (domestic · small)
     {
-      name: 'Siobhán Murphy', stage: 'approved', daysAgo: 6, bill: 412, kwh: 14100,
-      address: DUBLIN_ADDRESSES[6], consultant: CONSULTANTS[1],
+      archetype: 'domestic_small', name: 'David Walsh', address: '34 Seafield Road, Clontarf, Dublin 3, D03 V2N6',
+      stage: 'approved', daysAgo: 6, sizeKw: 4.0, consultant: CONSULTANTS[1],
       touchpoints: [
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (1st time)', timestamp: iso(2, 20), actor: 'customer' },
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(1, 9), actor: 'customer' },
         { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed contract', timestamp: iso(0, 14), actor: 'customer' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Invoice auto-created + deposit link emailed', timestamp: iso(0, 14), actor: 'agent' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent started SEAI application', timestamp: iso(0, 14), actor: 'agent' },
       ],
     },
-    // 8. Deposit paid — install being scheduled
+    // 8. DEPOSIT PAID — farm, install being scheduled
     {
-      name: 'David Walsh', stage: 'deposit_paid', daysAgo: 7, bill: 234, kwh: 8100,
-      address: DUBLIN_ADDRESSES[7], consultant: CONSULTANTS[0], installer: INSTALLERS[1],
+      archetype: 'farm', name: 'O\'Sullivan Agri', address: 'Ballinlough, Co. Roscommon, F42 YH03',
+      stage: 'deposit_paid', daysAgo: 7, sizeKw: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
-        { stage: 'deposit_paid', channel: 'portal', direction: 'inbound', summary: 'Stripe deposit €2,940 confirmed', timestamp: iso(1, 12), actor: 'customer' },
-        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'InstallCoordinator Agent: scheduling for week of Jul 24', timestamp: iso(1, 12), actor: 'agent' },
+        { stage: 'deposit_paid', channel: 'portal', direction: 'inbound', summary: 'Stripe deposit confirmed', timestamp: iso(1, 12), actor: 'customer' },
+        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'InstallCoordinator Agent: scheduling the fit', timestamp: iso(1, 12), actor: 'agent' },
       ],
     },
-    // 9. Install scheduled
+    // 9. INSTALL SCHEDULED — domestic · large
     {
-      name: 'Anna Kowalski', stage: 'install_scheduled', daysAgo: 8, bill: 198, kwh: 6800,
-      address: DUBLIN_ADDRESSES[8], consultant: CONSULTANTS[1], installer: INSTALLERS[0],
+      archetype: 'domestic_large', name: 'Anna Kowalski', address: '27 Ranelagh Village, Ranelagh, Dublin 6, D06 P3Y9',
+      stage: 'install_scheduled', daysAgo: 8, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       surveyDate: isoFuture(7),
       touchpoints: [
-        { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'Install confirmed for Jul 24, 8am', timestamp: iso(1, 15), actor: 'agent' },
+        { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'Install confirmed, 8am start', timestamp: iso(1, 15), actor: 'agent' },
         { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'T-7 reminder: materials ordered, crew confirmed', timestamp: iso(0, 10), actor: 'agent' },
       ],
     },
-    // 10. Installing — currently on site
+    // 10. INSTALLING — small business, crew on site
     {
-      name: 'John O\'Connor', stage: 'installing', daysAgo: 9, routeDate: 3, bill: 267, kwh: 9200,
-      address: DUBLIN_ADDRESSES[9], consultant: CONSULTANTS[0], installer: INSTALLERS[2],
+      archetype: 'commercial_small', name: 'Ryan\'s SuperValu', address: 'Main Street, Roscommon Town, Co. Roscommon, F42 AK21',
+      stage: 'installing', daysAgo: 9, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
         { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Installer marked "on site" + uploaded 4 progress photos', timestamp: iso(0, 9), actor: 'installer' },
       ],
     },
-    // 11. Installed — awaiting final payment
+    // 11. INSTALLED — domestic · small, awaiting final payment
     {
-      name: 'Emma Ryan', stage: 'installed', daysAgo: 10, routeDate: 3, bill: 245, kwh: 8400,
-      address: DUBLIN_ADDRESSES[10], consultant: CONSULTANTS[1], installer: INSTALLERS[0],
+      archetype: 'domestic_small', name: 'Emma Ryan', address: '6 Silchester Road, Glasnevin, Dublin 11, D11 A7C3',
+      stage: 'installed', daysAgo: 10, routeDate: 3, sizeKw: 3.2, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + final photos', timestamp: iso(1, 16), actor: 'installer' },
         { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'PostInstallAgent: warranty docs + final invoice sent', timestamp: iso(1, 16), actor: 'agent' },
-        { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'Review request scheduled for Jul 24 (7-day rule)', timestamp: iso(1, 16), actor: 'agent' },
       ],
     },
-    // 12. Completed — closed out
+    // 12. FINAL PAID — large industrial, SEAI paperwork in flight
     {
-      name: 'Michael Byrne', stage: 'completed', daysAgo: 30, bill: 312, kwh: 10800,
-      address: DUBLIN_ADDRESSES[11], consultant: CONSULTANTS[0], installer: INSTALLERS[1],
+      archetype: 'commercial_large', name: 'Galway Cold Storage', address: 'Oranmore Business Park, Oranmore, Co. Galway, H91 F8PX',
+      stage: 'final_paid', daysAgo: 20, sizeKw: 60, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
-        { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment €8,460 received', timestamp: iso(7, 14), actor: 'customer' },
+        { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment received', timestamp: iso(3, 14), actor: 'customer' },
+        { stage: 'final_paid', channel: 'email', direction: 'outbound', summary: 'GrantAgent: SEAI NDMG paperwork submitted', timestamp: iso(2, 10), actor: 'agent' },
+      ],
+    },
+    // 13. COMPLETED — domestic · large, closed with a review
+    {
+      archetype: 'domestic_large', name: 'Michael Byrne', address: '31 Rathmines Road Lower, Rathmines, Dublin 6, D06 T4M2',
+      stage: 'completed', daysAgo: 30, sizeKw: 6.5, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
+      touchpoints: [
+        { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment received', timestamp: iso(7, 14), actor: 'customer' },
         { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'GrantAgent: SEAI paperwork submitted', timestamp: iso(6, 10), actor: 'agent' },
         { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'Handover pack + referral request sent', timestamp: iso(5, 11), actor: 'agent' },
         { stage: 'completed', channel: 'email', direction: 'inbound', summary: 'Customer left 5★ review', timestamp: iso(2, 9), actor: 'customer' },
@@ -270,136 +373,172 @@ export function generateDummyLeads(): DummyLead[] {
     },
   ];
 
+  const SURVEY_STAGES = ['survey_scheduled', 'survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'];
+  const SURVEY_DONE_STAGES = SURVEY_STAGES.slice(1);
+  const PROPOSAL_STAGES = SURVEY_STAGES.slice(2);
+  const CONTRACT_STAGES = SURVEY_STAGES.slice(4);
+  const DEPOSIT_STAGES = SURVEY_STAGES.slice(5);
+  const ASSIGN_STAGES = SURVEY_STAGES.slice(6);
+  const FINAL_STAGES = ['final_paid', 'completed'];
+
   scenarios.forEach((s, idx) => {
-    const estimate = calculateSystemEstimate({
-      monthlyBill: s.bill,
-      annualKwh: s.kwh,
+    const a = ARCHETYPES[s.archetype];
+    const systemSizeKw = s.sizeKw ?? a.systemSizeKw;
+    const panelCount = Math.max(1, Math.round((systemSizeKw * 1000) / panelWatts));
+    const isCommercial = a.propertyType === 'commercial';
+
+    // The ONE engine, twice: the pre-survey estimate (no roof/occupancy → flat
+    // yield + fallback self-use) and the post-survey quote (roof + occupancy
+    // known). Both fork on the archetype's propertyType, so grant + VAT are
+    // right at BOTH stages, for every type.
+    const rates = ratesFromIntake({
+      extracted_unit_rate: a.unitRate,
+      extracted_night_rate: a.nightRate,
+      extracted_standing_charge: 0.6027,
+      extracted_day_night_meter: a.dayNightMeter,
+      extracted_provider: a.provider,
     });
+    const roof = { orientation: a.roofOrientation, pitchDeg: a.roofPitch, shading: a.shading };
+    const occupancy = { occupants: a.occupants, homeDuringDay: a.homeDuringDay };
+
+    const preQuote = computeQuote({
+      systemSizeKw, batteryKwh: a.batteryKwh, rates,
+      annualUseKwh: a.annualKwh, propertyType: a.propertyType,
+    });
+    const quote = computeQuote({
+      systemSizeKw, batteryKwh: a.batteryKwh, roof, occupancy, rates,
+      annualUseKwh: a.annualKwh, propertyType: a.propertyType,
+    });
+
+    const periodKwh = Math.round(a.annualKwh / 6); // bi-monthly bill period
+    const dayFrac = a.homeDuringDay === 'usually' ? 0.7 : a.homeDuringDay === 'mixed' ? 0.55 : 0.45;
 
     const lead: DummyLead = {
       id: `lead-${String(idx + 1).padStart(3, '0')}`,
       name: s.name,
-      email: s.name.toLowerCase().replace(/[^a-z]/g, '.').replace(/\.+/g, '.') + '@example.com',
-      phone: `+353 8${idx} 123 4${String(idx).padStart(2, '0')}`,
+      email: isCommercial
+        ? 'accounts@' + s.name.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.ie'
+        : s.name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '') + '@example.com',
+      phone: `+353 8${idx % 8} 1${String(200 + idx).padStart(3, '0')} ${String(4000 + idx).padStart(4, '0')}`,
       address: s.address,
       mprn: makeMprn(idx + 1),
-      monthly_bill: s.bill,
-      annual_kwh: s.kwh,
+      monthly_bill: a.monthlyBill,
+      annual_kwh: a.annualKwh,
       workflow_stage: s.stage,
       status: 'active',
-      source: 'bill_upload',
-      score: 50 + (s.bill > 300 ? 20 : 0) + (s.stage === 'proposal_sent' ? 15 : 0) + (s.stage === 'approved' ? 25 : 0),
+      source: s.source ?? 'bill_upload',
+      score: Math.min(99, 50 + (isCommercial ? 15 : 0) + (a.monthlyBill > 300 ? 15 : 0)
+        + (s.stage === 'proposal_sent' ? 20 : 0) + (s.stage === 'approved' ? 25 : 0)),
       assigned_consultant: s.consultant,
       assigned_installer: s.installer?.name,
       intake: {
-        source: 'bill_upload',
-        extracted_monthly_bill: s.bill,
-        extracted_annual_kwh: s.kwh,
+        source: s.source ?? 'bill_upload',
+        // THE classification field — what the drafter, the views and compliance read.
+        property_type: a.propertyTypeField,
+        extracted_monthly_bill: a.monthlyBill,
+        extracted_annual_kwh: a.annualKwh,
         extracted_mprn: makeMprn(idx + 1),
         extracted_account_name: s.name,
         extracted_address: s.address,
         extraction_confidence: idx % 3 === 0 ? 'high' : idx % 3 === 1 ? 'medium' : 'low',
-        // Full 21-field extract, so the demo shows what the bill reader
-        // actually pulls rather than the five fields a web form collects.
-        // Rates are real Irish domestic ranges (2026): day 0.33-0.38,
-        // night ~0.17, standing charge ~0.60/day, VAT 9% on electricity.
-        extracted_provider: ['Electric Ireland', 'Energia', 'SSE Airtricity', 'Bord Gáis Energy', 'Pinergy'][idx % 5],
-        extracted_tariff_name: idx % 2 === 0 ? 'Home Electric+ Night Boost' : 'Standard 24hr Urban',
-        extracted_unit_rate: [0.3512, 0.3390, 0.3745, 0.3298, 0.3611][idx % 5],
-        extracted_night_rate: idx % 2 === 0 ? [0.1721, 0.1690, 0.1802][idx % 3] : null,
+        // The full 21-point bill read (typed in LeadIntake since 1 Aug), so the
+        // demo shows what the reader actually pulls, per archetype.
+        extracted_provider: a.provider,
+        extracted_tariff_name: a.dayNightMeter ? 'Smart Day/Night' : 'Standard 24hr',
+        extracted_unit_rate: a.unitRate,
+        extracted_night_rate: a.nightRate,
         extracted_standing_charge: 0.6027,
         extracted_standing_charge_unit: 'per day',
-        extracted_vat_rate: 9,
-        extracted_day_night_meter: idx % 2 === 0,
+        extracted_vat_rate: a.billVatRate,
+        extracted_day_night_meter: a.dayNightMeter,
         extracted_billing_period: 'Bi-monthly',
-        extracted_billing_period_kwh: Math.round(s.kwh / 6),
+        extracted_billing_period_kwh: periodKwh,
         extracted_eircode: s.address.match(/[A-Z]\d{2}\s?[A-Z0-9]{4}/)?.[0] ?? null,
-        // The pair that decides the battery case. Split varies by household so
-        // both the night-heavy and day-heavy narratives appear in the demo.
-        extracted_day_usage_kwh: Math.round((s.kwh / 6) * [0.72, 0.55, 0.68, 0.49, 0.77][idx % 5]),
-        extracted_night_usage_kwh: Math.round((s.kwh / 6) * [0.28, 0.45, 0.32, 0.51, 0.23][idx % 5]),
-        // one estimated read in the set, so the caveat path is exercised
-        extracted_estimated_reading: idx % 4 === 3,
-        extracted_notes: idx % 4 === 3 ? 'Reading marked E on the bill; totals may move on next actual read.' : null,
-        estimated_system_size_kw: estimate.systemSizeKw,
-        estimated_annual_savings: estimate.annualSavings,
-        estimated_payback_years: estimate.paybackYears,
-        estimated_20yr_savings: estimate.twentyYearSavings,
-        solar_offset_pct: estimate.solarOffsetPct,
+        extracted_day_usage_kwh: Math.round(periodKwh * dayFrac),
+        extracted_night_usage_kwh: Math.round(periodKwh * (1 - dayFrac)),
+        extracted_estimated_reading: idx % 5 === 4,
+        extracted_notes: idx % 5 === 4 ? 'Reading marked E on the bill; totals may move on next actual read.' : null,
+        estimated_system_size_kw: systemSizeKw,
+        estimated_annual_savings: preQuote.annualSavings,
+        estimated_payback_years: preQuote.paybackYears,
+        estimated_20yr_savings: preQuote.twentyYearBenefit,
+        solar_offset_pct: preQuote.coveragePct,
       },
-      touchpoints: s.touchpoints as DummyLead['touchpoints'],
+      touchpoints: s.touchpoints,
     };
 
-    // Add survey data for stages >= survey_scheduled
-    if (['survey_scheduled', 'survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage)) {
+    // Survey — stages at survey_scheduled and beyond.
+    if (SURVEY_STAGES.includes(s.stage)) {
       lead.survey = {
-        scheduled_date: (s as any).routeDate != null ? isoFuture((s as any).routeDate) : ((s as any).surveyDate || isoFuture(idx)),
-        completed_date: ['survey_complete', 'proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx + 1) : undefined,
+        scheduled_date: s.routeDate != null ? isoFuture(s.routeDate) : (s.surveyDate || isoFuture(idx)),
+        completed_date: SURVEY_DONE_STAGES.includes(s.stage) ? iso(idx + 1) : undefined,
         surveyor: s.installer?.name || 'Unassigned',
-        household_occupants: ['2', '4', '3', '5+'][idx % 4],
-        home_during_day: ['usually', 'out', 'mixed', 'usually'][idx % 4],
-        roof_type: idx % 2 === 0 ? 'concrete_tile' : 'slate',
-        roof_orientation: idx % 2 === 0 ? 'south' : 'south_west',
-        roof_pitch: 30 + (idx % 3) * 5,
-        shading: idx % 4 === 0 ? 'light' : 'none',
-        available_area_m2: 20 + (idx % 4) * 5,
-        confirmed_system_size_kw: estimate.systemSizeKw,
-        confirmed_panel_count: estimate.systemSizeKw * 2,
-        confirmed_battery_kwh: idx % 2 === 0 ? 5 : 0,
-        confirmed_inverter_type: idx % 2 === 0 ? 'hybrid' : 'string',
+        household_occupants: a.occupants,
+        home_during_day: a.homeDuringDay,
+        roof_type: a.roofType,
+        roof_orientation: a.roofOrientation,
+        roof_pitch: a.roofPitch,
+        shading: a.shading,
+        available_area_m2: Math.round(panelCount * 2.1),
+        confirmed_system_size_kw: systemSizeKw,
+        confirmed_panel_count: panelCount,
+        confirmed_battery_kwh: a.batteryKwh,
+        confirmed_inverter_type: a.batteryKwh > 0 ? 'hybrid' : 'string',
         photo_count: 6 + (idx % 4),
       };
     }
 
-    // Add proposal data for stages >= proposal_drafted
-    if (['proposal_drafted', 'proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage)) {
+    // Proposal — stages at proposal_drafted and beyond. Money = the post-survey
+    // quote (correct grant + VAT + battery for THIS type).
+    if (PROPOSAL_STAGES.includes(s.stage)) {
       lead.proposal = {
         id: `prop-${String(idx + 1).padStart(3, '0')}`,
         status: s.stage === 'proposal_drafted' ? 'draft' : s.stage === 'proposal_sent' ? 'presented' : 'approved',
-        system_size_kw: estimate.systemSizeKw,
-        panel_count: estimate.systemSizeKw * 2,
-        panel_model: 'TrinaSolar TSM-440 NEG9RC.28',
-        inverter_model: 'SolaX X1-Hybrid-5.0 G4',
-        battery_model: idx % 2 === 0 ? 'Tesla Powerwall 3 (13.5kWh)' : null,
-        gross_cost: estimate.grossCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0), // battery premium (tenant €/kWh)
-        seai_grant: estimate.seaiGrant,
-        net_cost: estimate.netCost + (idx % 2 === 0 ? DEMO_BATTERY_PREMIUM : 0),
-        annual_savings: estimate.annualSavings,
-        payback_years: estimate.paybackYears,
-        twenty_year_savings: estimate.twentyYearSavings,
+        system_size_kw: systemSizeKw,
+        panel_count: panelCount,
+        panel_model: a.panelModel,
+        inverter_model: a.inverterModel,
+        battery_model: a.batteryModel,
+        gross_cost: quote.grossCost,
+        seai_grant: quote.seaiGrant,
+        net_cost: quote.netCost,
+        annual_savings: quote.annualSavings,
+        payback_years: quote.paybackYears,
+        twenty_year_savings: quote.twentyYearBenefit,
         sent_date: s.stage !== 'proposal_drafted' ? iso(idx + 1) : undefined,
       };
     }
 
-    // Add contract + invoice for stages >= approved
-    if (['approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage)) {
+    // Contract + invoice — stages at approved and beyond.
+    if (CONTRACT_STAGES.includes(s.stage)) {
       lead.contract = {
         id: `con-${String(idx + 1).padStart(3, '0')}`,
         signed_date: iso(idx),
         signed_by: s.name,
       };
       const net = lead.proposal!.net_cost;
+      const deposit = Math.round(net * 0.3);
       lead.invoice = {
         id: `inv-${String(idx + 1).padStart(3, '0')}`,
         invoice_number: `INV-2026-${String(idx + 1).padStart(3, '0')}`,
-        deposit_amount: Math.round(net * 0.3),
-        final_amount: net - Math.round(net * 0.3),
-        deposit_paid: ['deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage),
-        final_paid: ['final_paid', 'completed'].includes(s.stage),
-        deposit_paid_date: ['deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx - 1) : undefined,
-        final_paid_date: ['final_paid', 'completed'].includes(s.stage) ? iso(idx - 5) : undefined,
+        deposit_amount: deposit,
+        final_amount: net - deposit,
+        deposit_paid: DEPOSIT_STAGES.includes(s.stage),
+        final_paid: FINAL_STAGES.includes(s.stage),
+        deposit_paid_date: DEPOSIT_STAGES.includes(s.stage) ? iso(Math.max(0, idx - 1)) : undefined,
+        final_paid_date: FINAL_STAGES.includes(s.stage) ? iso(Math.max(0, idx - 5)) : undefined,
       };
     }
 
-    // Add installer assignment for stages >= install_scheduled
-    if (['install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s.stage) && s.installer) {
+    // Installer assignment — stages at install_scheduled and beyond.
+    if (ASSIGN_STAGES.includes(s.stage) && s.installer) {
       lead.assignment = {
         id: `asg-${String(idx + 1).padStart(3, '0')}`,
         installer_id: s.installer.id,
         installer_name: s.installer.name,
-        status: s.stage === 'installing' ? 'accepted' : s.stage === 'installed' || s.stage === 'final_paid' || s.stage === 'completed' ? 'completed' : 'accepted',
-        scheduled_date: (s as any).routeDate != null ? isoFuture((s as any).routeDate) : ((s as any).surveyDate || isoFuture(idx - 2)),
-        completed_date: ['installed', 'final_paid', 'completed'].includes(s.stage) ? iso(idx - 3) : undefined,
+        status: ['installed', 'final_paid', 'completed'].includes(s.stage) ? 'completed' : 'accepted',
+        scheduled_date: s.routeDate != null ? isoFuture(s.routeDate) : (s.surveyDate || isoFuture(Math.max(1, idx - 2))),
+        completed_date: ['installed', 'final_paid', 'completed'].includes(s.stage) ? iso(Math.max(1, idx - 3)) : undefined,
       };
     }
 
