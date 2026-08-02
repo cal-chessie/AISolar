@@ -49,6 +49,13 @@ The engine is built; the strengthening is **informing every human EARLY**:
 4. **Grant = TRACK not SUBMIT** (truth-pass holds). Tighten grant SUPPORT: SEAI checklist per scheme on the lead + docs pre-bundled from the same field record. "As tight as technically possible" = the pack is perfect and the human files it in minutes.
 5. ❓ **Two ESB policy reads before live** (Cal's yes required): 5.75/11.04 kVA micro-gen bands (code under-files at 5.75–6.0 single-phase) · typed e-sig acceptance (wet-ink fallback stated meanwhile).
 
+## 4b · 🔴 P0 FOUND LATER TONIGHT (2 Aug, Cal's eyes-and-ears round — outranks everything below)
+**The paid-customer 404:** `create-checkout` success/cancel URLs point at `/customer/<access_token>` — **a route that
+does not exist** (and `CustomerPortalV2` reads no token). A customer who just PAID lands on NotFound. Fix = build the
+token-keyed `/customer/:token` portal route (= the magic-link front door, task #8) + point checkout there + "copy portal
+link" on staff views + the link in every customer email. Full triage of Cal's 2-Aug directive (AIField mobile CONFIRMED
+thin · coach depth · notification spine · white-label sing) → **[THE_OPERATING_STACK.md](THE_OPERATING_STACK.md)**.
+
 ## 5 · THE 20 IMPROVEMENTS (ranked; ✍ = fix already written today)
 **Close before cohort (security/correctness):**
 1. ✍ **RLS floor extension** — `20260802_rls_floor_extension.sql` (tenant_settings · conversation_messages · sources · products · feedback). THE bleed.
