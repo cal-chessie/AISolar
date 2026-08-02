@@ -73,5 +73,38 @@ because every offer/project/verify recorded through it is **evidence that outliv
 record the kernel binds to in Phase 2. The handover pack, the review, the referral, the VPP (attested installs as
 provable, tradeable capacity) all stand on THAT chain. It's not plumbing; it's the moat's foundation stone. Protected.
 
+## 9 · CAL'S 3-AUG ADDITIONS (specs, slotted)
+- ✅ **DB fixes LIVE** — the two migrations applied + verified on V5 (3 Aug, via the mgmt channel when the CLI wasn't
+  installed): `pricing` key admitted · the five tables tenant-scoped. **The bleed is closed in production.**
+- ✅ **Demo cast → 10 leads** (key stages, all five archetypes).
+- **7-DAY TRIAL → PAYMENT (the SaaS's own billing)** — slot ④ (with onboarding): Stripe **subscription** Checkout with
+  `trial_period_days: 7`, card captured up-front, `stripe-webhook` (exists) flips `tenants.subscription_status`
+  (trialing → active → past_due); a soft in-app banner at T-2 days; past_due = read-only mode, never data loss. Owner
+  self-serve via Stripe Customer Portal (cancel/card/invoices — zero build). Uses the existing keys/webhook plumbing.
+- **BRANDED OUTBOUND (every email = the TENANT'S brand)** — slot ⑦ (the notification spine): all send-* + agent-drain
+  emails render from `tenant_brand` (logo · accent · from-NAME · reply-to = the tenant). **Launch pattern:** one
+  verified platform domain, per-tenant from-name + reply-to ("Saunderson Solar <hello@notify.aisolar.ie>", replies →
+  the installer). **Per-tenant DKIM domains = post-cohort** (real DNS work per client; the from-name pattern is what
+  every major SaaS ships first).
+- **CLIENT-SIDE AUTONOMOUS** — the sum of ④ (signup→tenant→trial), ② (settings self-serve, now DB-backed), the widget
+  hand-out, and ⑦ (self-running comms). No new slot — it's the definition of done for those.
+- **TRAINING + WALKTHROUGH** — slot ⑧→⑨: the founder teaching walkthrough (SWEEP10 §E) + guided demo off `/demo` on
+  the 10-lead cast + per-surface "what/why/how" — doubles as cohort onboarding. The 5-archetype cast IS the courseware.
+- **OWNER COCKPIT REVAMP** — next session's OPENER: `OWNER_REVAMP_BRIEF.md` (grounded; kills the third lead-surface +
+  twin AgentWindows; Overview = the 30-second morning read).
+
+## 10 · FIRST COHORT — the honest senior list (what 10 clients ACTUALLY need)
+**You're NOT missing (already true):** the pipeline works end-to-end · money in (Stripe hosted) · the NC pack · RLS
+isolation (now incl. settings) · magic links · demo/training data · GDPR floor (consent, erasure, privacy) · agents
+draft-gated · the routing for your exact deployment shape.
+**MISSING and it matters (the build list catches ALL of it):** trial→payment (above) · branded outbound (above) ·
+A1 signup (slot ④) · training (above) · support channel — **a WhatsApp group per cohort client + you; no ticketing
+tool at 10 clients** · Terms of Service rewrite (legal, on the register) · **backups: turn ON Supabase PITR** (one
+switch, your hands) · a **status habit, not a status page** (you message the group if anything blips).
+**Deliberately NOT needed at 10 (don't build):** self-serve everything (concierge onboarding IS best practice at 10 —
+you personally onboarding each client is a feature, not a gap) · dunning automation (Stripe retries + you know all 10
+by name) · seat limits/entitlement enforcement (price it, don't police it yet) · status page · in-app ticketing ·
+SLA docs · SSO. **The trap is building month-6 SaaS before client #1. The list above is client-#1 true.**
+
 — *Docs index (all in `aisolar/docs/`): MASTER_AUDIT_1AUG · DEPLOYMENT_READINESS_2AUG · PAPERWORK_AUDIT ·
-THE_OPERATING_STACK · ONBOARDING_SPEC · SWEEP10_NOTES · CALS_GROWTH_DEV. This doc supersedes their ORDERING; their detail stands.*
+THE_OPERATING_STACK · ONBOARDING_SPEC · OWNER_REVAMP_BRIEF · SWEEP10_NOTES · CALS_GROWTH_DEV. This doc supersedes their ORDERING; their detail stands.*
