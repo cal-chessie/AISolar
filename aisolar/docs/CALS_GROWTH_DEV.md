@@ -169,6 +169,50 @@ was removed. `extracted_premises_type` now has **0 code reads**; the COLUMN is i
 (`COMMENT ON COLUMN … IS 'DEPRECATED → use property_type'`), non-destructive, no drop. This is what actually
 **finishes** the quote-drift fix.
 
+## 📌 THE CONSOLIDATED TODO REGISTER (2 Aug night — every open item, every source, deduped)
+### Cal: "read and find all todo items, make sure nothing's missed." Sources swept: code markers (grep TODO/FIXME/VERIFY —
+### only 2 real code flags remain, both ESB) · GO_LIVE · DEPLOYMENT_READINESS_2AUG · DEPLOYMENT_CALS_LAST_GATE §0 ·
+### PAPERWORK_AUDIT · SWEEP10_NOTES · MASTER_AUDIT_1AUG · THE_OPERATING_STACK · ONBOARDING_SPEC. **Order lives in GO_LIVE.md §1.**
+
+**✅ CLOSED since the §0 checklist was written (don't re-open):**
+L2 numbers-through-spine (drafter stores `computeQuote`; classification unified on `property_type`) · admin pricing dial
+(Settings → Pricing & Terms; edge reads the same key) · 21-field `LeadIntake` type · **P0 customer magic-link portal**
+(`/customer/:token`, checkout redirect fixed, proven end-to-end on live V5) · copy-portal-link (LeadFlow) ·
+"undefinedkWp" customer-copy guard · **onboarding demo set** (the 5-archetype cast, NC6→NC8 spread, `?demo=1/0` toggle) ·
+ingest browser-auth (source keys) · routing verified for the first deployment shape (RI+SI + the client's 3 brands).
+
+**🔨 BUILD (mine — GO_LIVE order):**
+1. **Cutover** — `pushTenantSetting` tenant-align to `user_roles` → read-flip (DB-first settings + data).
+2. **ESB paper trail** — ONE doc-id vocab → `lead_documents` + `esb_submissions` writes (sealed→submitted→REAL ref) ·
+   pack legibility redesign · ⭕ per-customer pack confirmation gate · completeness surfaced at the 3 human touchpoints · Coach speaks the gates.
+3. **Widget (insane) + onboarding** — Flowith pattern on every entry point (ONBOARDING_SPEC; Cal's functions override) ·
+   **the owner "copy your embed code" panel** (the hero widget hand-out).
+4. **AIField** mobile-first + full logic walk · Design Studio once-over.
+5. **Front-end revamp** — hero snapshots from CURRENT UI · copy pass · pricing page rebuild · proposal "fantastic" ·
+   white-label sings per-brand · replace `brand.ts` placeholder stats (truth-pass, code-flagged).
+6. **Coach v1.5** (per-POV + real signals) · **notification spine v1** (bell + branded email, one path).
+7. **Hardening** — ingest rate-limit/honeypot · dead-letter alerting · Stripe idempotency keys · `tsc --noEmit` in the build gate.
+8. **Door fork presentation** — "home or business?" asked at the door + per-type estimate render (engine forks already;
+   the pre-survey intake stub is Sweep 10 §D).
+9. **Redundancy kills** — `touchpoints` vs `lead_touchpoints` (one survives) · retire `AiTeamPage` (old) · resolve the
+   two `AgentWindow`s · sender consolidation (falls out of the spine).
+10. **Cleanups** — delete test user `aios.smoketest@gmail.com` · deprecate `extracted_premises_type` in-schema ·
+    Terms of Service rewrite (pre-launch legal) · CSV bulk import (P1, onboarding nicety).
+11. **A1 auth/tenant onboarding** (the Flowith flow IS its face) → then **the national merge — OUR finale, last.** 🎯
+
+**🔑 CAL'S HANDS:** `supabase db push` (⚠️ TWO migrations waiting: RLS floor extension + pricing key) · old-key rotation
++ git-history purge · deploy 16 edge fns + secrets (I prep the manifest) · Postmark token + DNS · Vercel deploy, demo
+OFF in prod env · doors onto the live brand sites (the go-live signal) · the two ❓ESB policy reads (5.75/11.04 bands ·
+typed e-sig) · paste the auth/onboarding functions (file/RAW).
+
+**🤝 TOGETHER:** the full smoke test (door→route→survey→proposal→deposit→pack; every human button + a real email) ·
+read-flip verification · the client's 3-brands-one-tenant check · per-customer pack confirmation · first cohort tenant
+through the new onboarding.
+
+**⏸ POST-LAUNCH (parked on purpose):** Sweep-9 hardening (tier entitlements · code-split) · AIGate human surface ·
+heatmap/session analytics · the browser `portal_submitter` agent · kernel Phase 2 (bind gate_bridge → inscribed kernel) ·
+THE_OPERATING_STACK §2/§3 (the growth machine + enterprise stack).
+
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the
 AIGate human gates all apply automatically. A new channel is a weekend, not a rebuild.
