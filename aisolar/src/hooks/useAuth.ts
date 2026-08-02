@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { hydrateTenantSettings } from '@/lib/serverStore';
 import { User, Session } from '@supabase/supabase-js';
 
 export type AppRole = 'admin' | 'owner' | 'consultant' | 'installer' | 'customer';
@@ -33,6 +34,7 @@ export function useAuth() {
         if (session?.user) {
           setTimeout(() => {
             fetchRoles(session.user.id);
+            hydrateTenantSettings(); // READ-FLIP: DB settings become truth on sign-in (once per user)
           }, 0);
         } else {
           setAuthState(prev => ({ ...prev, roles: [], loading: false }));
@@ -50,6 +52,7 @@ export function useAuth() {
       
       if (session?.user) {
         fetchRoles(session.user.id);
+        hydrateTenantSettings(); // READ-FLIP on app boot with an existing session
       } else {
         setAuthState(prev => ({ ...prev, loading: false }));
       }

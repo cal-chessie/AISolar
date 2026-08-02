@@ -10,6 +10,7 @@
  * calchessie state — closed by 20260731_tenant_rls_floor.)
  */
 import { supabase } from '@/integrations/supabase/client';
+import { resolveTenantId } from './serverStore';
 import type { DummyLead } from './dummyData';
 
 /** 64-char hex token for the customer magic-link (`leads.access_token`). */
@@ -18,14 +19,11 @@ function token64(): string {
   return (hex() + hex()).slice(0, 64);
 }
 
-/** Resolve the signed-in user's tenant (leads.tenant_id is NOT NULL). */
+/** Resolve the signed-in user's tenant (leads.tenant_id is NOT NULL).
+ *  Delegates to serverStore's resolveTenantId — ONE ladder for the whole app
+ *  (profiles → user_roles real-tenant row → JWT claim), cached per user. */
 export async function getCurrentTenantId(): Promise<string | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const prof = await supabase.from('profiles').select('tenant_id').eq('user_id', user.id).limit(1).maybeSingle();
-  if (prof.data?.tenant_id) return prof.data.tenant_id as string;
-  const role = await supabase.from('user_roles').select('tenant_id').eq('user_id', user.id).limit(1).maybeSingle();
-  return (role.data?.tenant_id as string) ?? null;
+  return resolveTenantId();
 }
 
 export interface NewLeadInput {
