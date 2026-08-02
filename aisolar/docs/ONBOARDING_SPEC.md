@@ -22,7 +22,36 @@ switch anytime" reassurance line · OAuth-first signup (Google + email; referral
    tracker → what happens next. No signup — the token IS the auth.
 4. **Team invite (consultant/installer joining a tenant)** — role pre-set by the invite; two screens max.
 
-## Build notes
+## THE 7-DAY TRIAL USER'S ACTIVATION (Cal, 3 Aug: "email, website, whatever else — to FULL use")
+Day-0, in order, each step ≤5 min, the app walks them through it (checklist UI on first login):
+1. **Sign up** — Flowith flow: email/Google → "who are you" → company name + county → **tenant auto-created, trial
+   starts, card captured** (Stripe subscription, 7-day trial). *(A1 — to build, slot ④.)*
+2. **Your brand (2 min)** — logo + accent + trading name → themes portal/proposal/emails/widget instantly.
+   *(EXISTS — Settings → Brand, now DB-backed by the cutover.)*
+3. **Company & compliance (3 min)** — RECI · CRO · VAT · address → unblocks every NC6/SEAI form. *(EXISTS — the
+   Settings card names exactly what each field unblocks.)*
+4. **EMAIL — zero DNS at trial:** outbound sends as **"Their Company <notify@[platform-domain]>" with reply-to their
+   real address** — branded name, replies land in their normal inbox, nothing to configure. Custom domain/DKIM = a
+   settings upgrade later, never a trial blocker. *(Slot ⑦ pattern.)*
+5. **WEBSITE — the door (2 min):** Settings → "Your lead door" → **copy embed code** (iframe `/embed?k=THEIR-KEY`) →
+   paste into their site or forward to whoever runs it. **No website? The same URL IS a shareable link** (works
+   standalone — WhatsApp it, QR it on the van). *(The embed panel — to build, slot ④; keys + widget EXIST.)*
+6. **Booking** — paste their Cal.com/Calendly link (Settings field) OR use the built-in survey booking (exists).
+7. **Pricing dial** — confirm €/kWp + battery rate (defaults honest). *(EXISTS.)*
+8. **Practice on the cast** — the 10-lead demo: walk one lead bill→proposal→pack. *(EXISTS + training walkthrough slot ⑧.)*
+9. **Payments** — their Stripe keys in Settings → Integrations to take real deposits (or run manual-paid during trial).
+10. **GO LIVE** — widget on their site → first real lead lands attributed → they're operating. Full use, day one.
+
+## THE NATIONAL SITES WIRING (Cal, 3 Aug — SolarIrelandGroup + RenewableIreland repos)
+Recon (3 Aug): both are **Next 16/React 19**; **NEITHER posts to ingest-lead today** (the door gap); RI has
+`roi-calculator` (posts to its own `/api/roi-certificate` — keep the certificate, it's a great hook); SIG has
+`book-survey`. Door keys live for both brands. **The build (next block, per site, design-matched):**
+1. One tiny `lib/aisolarDoor.ts` per site: POST → `ingest-lead` with the brand's `x-source-key` (env var, not hardcoded).
+2. **Calculator = the onboarding tool**: RI's roi-calculator + SIG (add one) capture → estimate reveal (value first)
+   → "book your survey" (Cal.com embed — **NEED Cal's booking link**) → lead POSTs through the door with the calc
+   numbers as bill data → certificate kept as the share/download moment.
+3. Every other form (contact, book-survey, exit-intent) → the same door helper, tagged by `source`.
+4. Deployment: both look Vercel-dashboard-connected (no config files) — env vars set in Vercel, keys never in git.
 - One shared `<OnboardingFlow steps={...}>` component; steps as data (chips · input · oauth · reveal), per-entry-point
   configs. Attribution answers → `lead_touchpoints` / tenant record (real data, not decoration).
 - Estimate reveal uses `computeQuote` LIVE with the tenant dial (the maths is already sound — show it off).
