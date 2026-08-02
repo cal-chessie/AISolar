@@ -85,9 +85,25 @@ thin · coach depth · notification spine · white-label sing) → **[THE_OPERAT
 ## 6 · AUTONOMY-READINESS (Cal: "as full autonomous and agent ready as possible")
 Already true: relay of single-responsibility agents · atomic claim · idempotent handlers · draft-gated risk · honest recording · deterministic fallback · prompts-as-config (`agent_prompts`). To be agent-OPERABLE end-to-end add: #17 alerting (self-reporting failures) · #7 doc-pack persistence (agents can chase paperwork state) · the AIGate human surface when national goes live (already noted post-launch) · owner agent-training UI (noted, post-launch). **Verdict: the runtime is agent-ready; the visibility layer is the missing 10%.**
 
-## 7 · THE READINESS CHECKLIST (current position — read together, tick together)
-**🔨 Mine (build, in order):** ① serverStore tenant-align (#3) → ② read-flip (#4) → ③ doc-vocab + lead_documents (#7) → ④ gate surfacing (#8/#9) → ⑤ tracker + white-label + one-click money (#12–15) → ⑥ ingest hardening (#5) → ⑦ alerting (#17) → ⑧ demo cast (#20).
-**🔑 Yours (hands/decisions):** `supabase db push` the two ✍ migrations (1-2) · the two ESB policy reads (#10) · old-key rotation · edge-fn deploy + secrets · Postmark token + DNS (I prep, you paste) · Vercel domain · doors on the live brand sites · **push the branch** (4→now-more commits sit local).
-**🤝 Together:** the smoke test (every human button fires its full chain + a real email lands) · the read-flip verification · first cohort tenant onboarding.
+## 7 · THE READINESS CHECKLIST — **RE-RANKED 2 Aug night on Cal's corrections** (read together, tick together)
+Cal's re-rank + two new facts: **① ESB killed NC6/NC7 email submission** (portal is the ONLY safe route; post = paper-trail
+risk he cannot afford) — the pack was already portal-first by design, but **nothing writes `esb_submissions`**, so the
+paper trail isn't RECORDED. Wiring it = the protection: sealed pack (SHA-256) → portal submission → REAL ESB ref logged →
+status chain. **② The front end is DATED** — the product outgrew its own marketing (snapshots, copy, pricing page, "no
+page doing the work a front end should") → the revamp is LAUNCH work now, not post-cohort polish. Plus: **the widget =
+the per-tenant setup piece → "insane" bar** and **onboarding = the Flowith pattern across every entry point**
+([ONBOARDING_SPEC.md](ONBOARDING_SPEC.md) — Cal's own auth/onboarding functions to come; they win when they land).
 
-*Everything in §1 marked ✅ is verified, not vibes. Everything ⚠️/🔴 has a written fix or a named owner. Nothing else found hiding — and I looked.*
+**🔨 Mine (build, re-ranked):**
+① **P0 customer portal** `/customer/:token` + checkout redirect + copy-link + links-in-emails (§4b)
+② **serverStore tenant-align + read-flip** (#3–4 — the cutover, still the data spine)
+③ **ESB paper-trail wiring** — ONE doc-id vocab → `lead_documents` + `esb_submissions` writes (sealed→submitted→ref→status) + gate surfacing at the 3 human touchpoints (#7–9)
+④ **The WIDGET, insane** + the onboarding pattern on every entry point (ONBOARDING_SPEC)
+⑤ **AIField mobile-first + logic walk** · Design Studio once-over
+⑥ **FRONT-END REVAMP** — fresh hero snapshots from the CURRENT UI · copy pass every page · pricing page rebuilt · proposal "fantastic" pass · white-label sings (#12–15 fold in here)
+⑦ Coach v1.5 + notification spine v1
+⑧ Ingest hardening (#5) · dead-letter alerting (#17) · demo cast (#20)
+**🔑 Yours (hands/decisions):** `supabase db push` the two ✍ migrations · the two ESB policy reads (#10) · old-key rotation · edge-fn deploy + secrets · Postmark token + DNS (I prep, you paste) · Vercel domain · doors on the live brand sites · **paste your auth/onboarding functions** (to a file/RAW) · **push the branch** (commits sit local).
+**🤝 Together:** the smoke test (every human button fires its full chain + a real email lands) · read-flip verification · first cohort tenant through the new onboarding.
+
+*Everything in §1 marked ✅ is verified, not vibes. Everything ⚠️/🔴 has a written fix or a named owner.*
