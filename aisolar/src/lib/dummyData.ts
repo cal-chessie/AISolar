@@ -242,7 +242,7 @@ interface Scenario {
   touchpoints: DummyLead['touchpoints'];
 }
 
-/** One lead at every pipeline stage; every archetype represented. */
+/** TEN leads — the key pipeline stages, every archetype represented (Cal: 10 not 13). */
 export function generateDummyLeads(): DummyLead[] {
   const leads: DummyLead[] = [];
   const panelWatts = getPricingConfig().panelWatts;
@@ -257,16 +257,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'new', channel: 'email', direction: 'outbound', summary: 'LeadIntakeAgent sent auto-acknowledge', timestamp: iso(0, 9), actor: 'agent' },
       ],
     },
-    // 2. INTAKE COMPLETE — small business (commercial · small)
-    {
-      archetype: 'commercial_small', name: 'Nolan Motors Ltd', address: 'Unit 4, Liosban Business Park, Tuam Road, Galway, H91 K2XR',
-      stage: 'intake_complete', daysAgo: 1, consultant: CONSULTANTS[1], source: 'referral',
-      touchpoints: [
-        { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded', timestamp: iso(1, 14), actor: 'customer' },
-        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'AI analysis sent — commercial NDMG grant + ex-VAT price', timestamp: iso(1, 14), actor: 'agent' },
-      ],
-    },
-    // 3. SURVEY SCHEDULED — domestic · large + battery
+    // 2. SURVEY SCHEDULED — domestic · large + battery
     {
       archetype: 'domestic_large', name: 'Patrick Kelly', address: '5 Foxrock Road, Foxrock, Dublin 18, D18 F5T2',
       stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
@@ -276,7 +267,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Survey confirmation emailed — Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
       ],
     },
-    // 4. SURVEY COMPLETE — farm (agri)
+    // 3. SURVEY COMPLETE — farm (agri)
     {
       archetype: 'farm', name: 'Brennan Dairy Farm', address: 'Corrandulla, Co. Galway, H91 XR68',
       stage: 'survey_complete', daysAgo: 3, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
@@ -285,7 +276,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'ProposalDrafter Agent notified consultant', timestamp: iso(1, 15), actor: 'agent' },
       ],
     },
-    // 5. PROPOSAL DRAFTED — domestic · large (awaiting review)
+    // 4. PROPOSAL DRAFTED — domestic · large (awaiting review)
     {
       archetype: 'domestic_large', name: 'Sarah McDonald', address: '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
       stage: 'proposal_drafted', daysAgo: 4, sizeKw: 7.2, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
@@ -293,7 +284,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Auto-drafted system for consultant review', timestamp: iso(2, 9), actor: 'agent' },
       ],
     },
-    // 6. PROPOSAL SENT — large industrial, opening repeatedly (hot)
+    // 5. PROPOSAL SENT — large industrial, opening repeatedly (hot)
     {
       archetype: 'commercial_large', name: 'Corrib Logistics', address: 'IDA Business & Technology Park, Athlone, Co. Westmeath, N37 DX59',
       stage: 'proposal_sent', daysAgo: 5, consultant: CONSULTANTS[0], source: 'referral',
@@ -304,7 +295,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time) — forwarded to accountant', timestamp: iso(0, 18), actor: 'customer' },
       ],
     },
-    // 7. APPROVED — contract signed (domestic · small)
+    // 6. APPROVED — contract signed (domestic · small)
     {
       archetype: 'domestic_small', name: 'David Walsh', address: '34 Seafield Road, Clontarf, Dublin 3, D03 V2N6',
       stage: 'approved', daysAgo: 6, sizeKw: 4.0, consultant: CONSULTANTS[1],
@@ -315,7 +306,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent started SEAI application', timestamp: iso(0, 14), actor: 'agent' },
       ],
     },
-    // 8. DEPOSIT PAID — farm, install being scheduled
+    // 7. DEPOSIT PAID — farm, install being scheduled
     {
       archetype: 'farm', name: 'O\'Sullivan Agri', address: 'Ballinlough, Co. Roscommon, F42 YH03',
       stage: 'deposit_paid', daysAgo: 7, sizeKw: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
@@ -324,17 +315,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'InstallCoordinator Agent: scheduling the fit', timestamp: iso(1, 12), actor: 'agent' },
       ],
     },
-    // 9. INSTALL SCHEDULED — domestic · large
-    {
-      archetype: 'domestic_large', name: 'Anna Kowalski', address: '27 Ranelagh Village, Ranelagh, Dublin 6, D06 P3Y9',
-      stage: 'install_scheduled', daysAgo: 8, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
-      surveyDate: isoFuture(7),
-      touchpoints: [
-        { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'Install confirmed, 8am start', timestamp: iso(1, 15), actor: 'agent' },
-        { stage: 'install_scheduled', channel: 'email', direction: 'outbound', summary: 'T-7 reminder: materials ordered, crew confirmed', timestamp: iso(0, 10), actor: 'agent' },
-      ],
-    },
-    // 10. INSTALLING — small business, crew on site
+    // 8. INSTALLING — small business, crew on site
     {
       archetype: 'commercial_small', name: 'Ryan\'s SuperValu', address: 'Main Street, Roscommon Town, Co. Roscommon, F42 AK21',
       stage: 'installing', daysAgo: 9, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
@@ -342,7 +323,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Installer marked "on site" + uploaded 4 progress photos', timestamp: iso(0, 9), actor: 'installer' },
       ],
     },
-    // 11. INSTALLED — domestic · small, awaiting final payment
+    // 9. INSTALLED — domestic · small, awaiting final payment
     {
       archetype: 'domestic_small', name: 'Emma Ryan', address: '6 Silchester Road, Glasnevin, Dublin 11, D11 A7C3',
       stage: 'installed', daysAgo: 10, routeDate: 3, sizeKw: 3.2, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
@@ -351,16 +332,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'PostInstallAgent: warranty docs + final invoice sent', timestamp: iso(1, 16), actor: 'agent' },
       ],
     },
-    // 12. FINAL PAID — large industrial, SEAI paperwork in flight
-    {
-      archetype: 'commercial_large', name: 'Galway Cold Storage', address: 'Oranmore Business Park, Oranmore, Co. Galway, H91 F8PX',
-      stage: 'final_paid', daysAgo: 20, sizeKw: 60, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
-      touchpoints: [
-        { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment received', timestamp: iso(3, 14), actor: 'customer' },
-        { stage: 'final_paid', channel: 'email', direction: 'outbound', summary: 'GrantAgent: SEAI NDMG paperwork submitted', timestamp: iso(2, 10), actor: 'agent' },
-      ],
-    },
-    // 13. COMPLETED — domestic · large, closed with a review
+    // 10. COMPLETED — domestic · large, closed with a review
     {
       archetype: 'domestic_large', name: 'Michael Byrne', address: '31 Rathmines Road Lower, Rathmines, Dublin 6, D06 T4M2',
       stage: 'completed', daysAgo: 30, sizeKw: 6.5, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
