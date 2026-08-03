@@ -1,172 +1,287 @@
-# FINAL SPRINT — the scheduled order to deployment (3 Aug 2026)
-### THE one doc for the last mile. Folds in EVERY open item from the weeks of notes — MASTER_TODO · GO_LIVE §1/9/10 · PUNCH_LIST · PAPERWORK_AUDIT · MASTER_AUDIT §4 · SWEEP10 §D/§G · ONBOARDING_SPEC · AI_WORTH_ITS_WEIGHT · DEPLOYMENT_CALS_LAST_GATE §0 — deduped into ONE scheduled order, with the deployment runbook below it. When every box here is ticked, we are live.
-### Voice principle (Cal, 3 Aug): every human interaction is PERSONAL — action + reason, a colleague talking, never a robotic one-liner. dealIntel's `action`/`reason` pairs are the standard; hold it everywhere.
+# FINAL SPRINT — the whole last mile, one doc (v2 · 3 Aug 2026)
+
+> **What this is.** The single ordered runway from HERE to LIVE. Written after a full-estate sweep of every
+> note, audit and sweep doc (source ledger at the bottom). It **supersedes the ORDERING** of every other
+> doc — their detail stands, this is the map and the sequence. When every box is ticked and the smoke test
+> passes, the cohort comes in. Nothing on this list is unowned; nothing open lives anywhere else.
+>
+> **How to read it.** Five build sprints in strict order → Cal's deployment gate → the joint smoke test →
+> live. Each sprint has a **goal** (one sentence), its **items** (each with the why), and a **done-means**
+> line — how we prove it, never "it should work". ⭐ marks the load-bearing item of each sprint.
 
 ---
 
-## ✅ THE FOUNDATION (verified, closed — never re-open)
-Spine: bill→survey→design→ONE quote engine (27/27 executed)→sealed NC pack→routing (8/8)→tenant RLS (live-verified).
-Cutover built · P0 customer portal proven · cockpit sings · Settings truth-passed · roof true-scale · 10-lead cast ·
-family colour across rails/funnel/agents · numbers single-sourced · **AI v1 LANDED (3 Aug): dealIntel (signals · nextMove ·
-aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU · Compliance Vision (verify-artefact edge fn
-+ gate cross-check card)** · both globals live · demo toggle · eircode/MPRN capture.
+## ⚖️ THE WORKING AGREEMENT (how every item gets built — the best-practice floor)
+
+1. **Ground → build → verify → prove.** Read the real code/DB first; build; verify in the browser or by
+   query; state the proof in the commit. Never claim state without tool-proof (pushed = `ls-remote`).
+2. **Truth-pass is law.** Nothing fabricated in-app, ever: no fake statuses, no invented numbers, no
+   claimed channels (SMS/WhatsApp/roof-detection stay unclaimed until real). The AI **flags, drafts and
+   prepares**; a human sends, signs and files. The grant agent TRACKS, never submits.
+3. **One of everything.** One quote engine (`computeQuote`) · one scale (`mppAt`) · one money vocabulary
+   (`computeOwnerStats`) · one lead surface (LeadFlow) · one tenant resolver · one intelligence
+   (`dealIntel`) feeding coach + gates — so no two surfaces can ever disagree.
+4. **Personal voice.** Every human-facing line is action + reason, a colleague talking — dealIntel's
+   `action`/`reason` pairs are the bar. No robotic one-liners.
+5. **Anchored navigation.** Any card that names a problem lands on the EXACT screen that fixes it
+   (`?step=` / `?tab=`, built 3 Aug). Every new surface honours the same contract.
+6. **Migrations idempotent + add-only. Never `--force`. Never `rm`** (dead files → `_TRASH`). Push only on
+   Cal's word. Secrets never in the browser, never in git, never in chat.
+7. **Definition of DONE:** grounded + built + `tsc` 0 + browser-verified (or query-verified) + committed
+   with the why + ticked HERE. A thing missing any of those is NOT done and stays open.
 
 ---
 
-## SPRINT 1 — 🤖 AI GOLDEN (finish the v1 editions; Cal: "knock it out of the park")
-1. **Compliance Vision, whole gate**: extend the cross-check to the **plate photo** (serial+rating vs typed) and the
-   **RECI cert** (number vs Settings) — the fn already takes all three kinds; wire the two buttons. Then the pack
-   cover states "AI cross-checked ✓ (n fields agree)" — honest, never claimed without a run.
-2. **Coach on every POV**: consultant (done via shared feed) · owner (done) · **installer voice** (gate items + route,
-   "you're 2 serials from done") · **customer voice** in the portal ("here's what happens next and why") — the SING.
-3. **Call-prep card** (AI#3): open a lead → 3 sentences — where they are, the objection in their words, the number
-   that answers it. Lives on LeadFlow header. Deterministic from dealSignals + thread; LLM voice when enabled.
-4. **Inbox triage** (AI#4): classify inbound (question·objection·booking·complaint·silence) + drafted reply behind the
-   send gate. Rides the unified inbox.
-5. **Outside touchpoints — agents STRONGER on email (Cal's question, answered)**: every outbound = personal (name,
-   their numbers, their next step) · branded (tenant from-name/reply-to) · signed off by a human gate · logged as a
-   touchpoint the intelligence then READS (opens/replies feed dealSignals — the loop closes) · guardrails: never
-   invent figures (quote engine only), never claim SMS/WhatsApp, deterministic fallback always.
-6. **Survey-photo intelligence** (AI#5) + **voice→field record** (AI#6) — build if sprint time allows, else first
-   post-launch build. **Learning loop** (AI#7) = post-cohort (needs real outcomes).
+## ✅ THE FOUNDATION (verified closed — never re-open, never re-derive)
+Quote engine unified (27/27) · property-type classification · 21-field LeadIntake · gate_bridge + AIGrids
+routing (8/8) · tenant-RLS floor + 5-table bleed fix (**applied live**) · pricing-key migration (**applied
+live**) · one tenant resolver + settings read-flip · `/customer/:token` portal (proven live) · owner
+cockpit NEEDS-YOU-first + one lead surface · Settings truth-passed (honest chips, no connection theatre,
+no fabricated audit) · RoofDesigner true-scale rebuild + clear-all · stage-aware + **anchored** deep links ·
+demo cast (10 leads, 5 archetypes) · global logins (calchessie + cal@renewably.ie = platform-admin) ·
+add-lead Eircode+MPRN end-to-end (**leads.eircode applied live**) · family colour on all three rails +
+funnel + agent tiles · analytics reordered (Charts→Leads→Agents, strip shown once) · Clients pipeline
+full-depth on white · financials/overview money mismatch killed · agent-trio SectionBanner symmetry ·
+AI Config honest 1-2-3 + Emergency-stop card · **dealIntel** (signals → nextMove → aiReports) live on owner
+gates + coach briefing + AI-reports feed · **Compliance Vision v1** (`verify-artefact` edge fn + type-test
+cross-check card at the gate) · A9 auth-bypass split (a PROD build can never skip login) · A10 coach
+fabrication gated (no invented customers, ever) · Sweep-8 codes verified done: A1-scaffold · A2 · A4 · A5 ·
+M1 · M8 · X8 · CLAUDE.md header corrected to V5.
 
-### Also in the AI set (added 3 Aug — missed on the first pass, Cal caught it)
-- **Proposal personalisation from their actual life** — not "a 6kWp system" but "you're out all day, so the battery is
-  what makes this work for you", written from the day/night split we already read. Rides the drafter's LLM call; the
-  numbers stay `computeQuote`'s.
-- **The customer's own view of the money** — grant status, what's paid, what's still due, what happens next, in the
-  `/customer/:token` portal. The portal exists; the money story isn't in it yet.
+---
 
-## SPRINT 2 — 🔴 THE BLOCKERS (the launch spine)
-7. **ESB paper trail**: ONE doc-id vocabulary → wire `lead_documents` + `esb_submissions` writes (sealed→submitted→REAL
-   ref→status) → per-customer pack confirmation gate → gate surfaced at the 3 human touchpoints (+ coach speaks it — done).
-8. **A1 auth + tenant onboarding** — signup→tenant→roles→trial, wearing the Flowith flow (ONBOARDING_SPEC). Includes
-   the 7-day trial→payment (Stripe subscription, webhook flips status, Customer Portal self-serve).
-9. **Estimate §D fork** — pre-survey estimate branches on property_type (commercial/farm never see a domestic-shaped
-   first number); cap by designed system when one exists.
-10. **The WIDGET (insane) + owner embed-code panel** → **sites wiring**: SIG + RI (+ wideawakesolar) — door helper,
-    calculator-first, certificate kept, Cal.com booking (key in `.env.local`). **Designs untouched.**
-11. **Notification spine v1** — one `notify(event)` → bell + branded email, portal link always in; wires the 4 gated
-    toasts to real sends; branded outbound (tenant from-name on one verified domain).
+## SPRINT 1 — 🤖 AI GOLDEN
+**Goal: the AI is the compliance officer and the closer's edge — "worth its weight in gold", provable on screen.**
 
-### ⛏ SWEEP-8 CODES — launch-critical (mined 3 Aug from SWEEP8_DB_WIRING's 71 open markers; each verified vs code)
-- **A10 · dummy-data safety** — ✅ *done 3 Aug*: coachBrain + ProposalPage were reading fabricated leads UNGATED;
-  all reads now demo-gated. Demo data stays as the onboarding feature. Remaining callers correct by design.
-- **A9 · auth bypass** — ✅ *done 3 Aug*: `isAuthBypassAllowed()` split from `isDemoMode()`; a PROD build can never
-  skip login even if `VITE_ENABLE_DEMO` leaks. ⬜ **Still owed: the tested role→route matrix + per-POV RLS proof.**
-- **X1 · Postmark real sends** — every UI-fake send wired for real: proposal · deposit link · photo request ·
-  reschedule · handover pack · referral · team invite. *(This IS the notification spine — same build.)*
-- **L1 · both-ends notify** — every interaction notifies customer AND consultant (email + magic link; no SMS/WA).
-- **D4 · maps-static-proxy** — ⚠️ SECURITY: the Maps key must never ship in the client bundle; proxy it through an
-  edge fn. **D3 buildingInsights-server** (Google Solar off the browser, kills the CORS path) rides with it.
-- **M4 · notifications + magic_link_tokens** — the table behind the both-ends law + the portal links we already mint.
+- ⭐ **Compliance Vision, whole gate.** Extend the cross-check to the **plate photo** (serial + rating vs
+  typed) and the **RECI cert** (number vs Settings) — the fn already accepts all the kinds; wire the two
+  capture surfaces + buttons. Then the pack cover may state "AI cross-checked ✓ (n fields agree)" —
+  honest, never claimed without a run. The AC-band/NC6-vs-NC7 error becomes structurally impossible.
+- ⭐ **Coach sings on every POV** *(Cal's sequencing: MUST land before the finale tour).* Installer voice
+  ("you're 2 serials from done") + customer voice ("here's what happens next and why") move onto
+  `dealIntel`; owner/consultant deepen (thread tone, €-at-stake, days-in-stage everywhere).
+  `consultantIntelligence.leadIntel()`'s 13 hard-coded stage lines get the same treatment
+  (THE_OPERATING_STACK flag). The coach goes **conversational** — it prompts the human at every gate, not
+  only when asked (CALS_GROWTH_DEV: "speed up the human").
+- **Call-prep card.** Open a lead → three sentences: where they are, the objection in their own words from
+  the thread, the number that answers it. Lives on the LeadFlow header. Deterministic from dealSignals;
+  LLM voice when enabled. Zero new plumbing.
+- **Inbox triage.** Every inbound classified (question · objection · booking · complaint · silence) + a
+  drafted reply waiting **behind the human send gate**, in the unified inbox that already exists.
+- **Outside touchpoints — agents STRONGER on email (Cal's question, answered in code):** every outbound is
+  personal (their name, their numbers, their next step) · branded (tenant from-name/reply-to) · human-gated
+  · and **logged as a touchpoint the intelligence then READS** — opens/replies feed dealSignals, so the
+  loop closes and every send makes the next one smarter. Guardrails: never invent figures (quote engine
+  only) · never claim SMS/WhatsApp · deterministic fallback always.
+- **Survey-photo intelligence.** Roof photos → shading/obstruction/orientation sanity-check against the
+  design — catches "designed for a roof that isn't there" before the customer ever sees a proposal.
+- **Voice → field record.** Installer talks; the agent writes the structured note + ticks the checklist.
+  Gloves, ladder, rain — typing is the enemy on site.
+- **Proposal personalisation.** From THEIR day/night split: "you're out all day — the battery is what makes
+  this work for you." The drafter's LLM call carries dealSignals; the numbers stay `computeQuote`'s.
+  *(Caught by Cal on the first pass.)*
+- **Customer's own money view.** Grant status · what's paid · what's still due · what happens next, inside
+  `/customer/:token`. *(Caught by Cal on the first pass.)*
+- **Feed honesty guard.** The AI-reports feed + badge stay truthful at 0 leads (clean empty state, no
+  invented book) — regression-guard on what A10 fixed.
 
-### ⛏ MINED FROM THE REMAINING DOCS (3 Aug — AISOLAR_SAAS_MAP · SWEEP9 · SWEEP10 · SWEEP7.1 · ROUND4 · COMPLIANCE_DATA_CAPTURE · GO_LIVE)
-**Per-surface wiring the SAAS_MAP still lists as ⬜ (these ARE the blockers, stated per screen):**
-- **Consultant** — `handleSendReply` → `touchpoints` + Postmark + Realtime · `advanceLeadStage` → `workflow_stage`
-  (+ `StageTransitioned` kernel event). *(The cockpit looks live; these two make it live.)*
-- **Installer/AIField** — photos → storage + `install_evidence` · serials → `installed_equipment` *(write fn exists)* ·
+**Done-means:** each surface demo'd in the browser on the cast · verify-artefact smoke-tested at deploy
+with a real cert photo · no AI claim anywhere the deterministic floor can't back.
+
+---
+
+## SPRINT 2 — 🔴 THE BLOCKERS (the launch spine — nothing below matters if these don't close)
+
+### 2A · The paper trail (Cal: "worst thing is a mistake in the paper trail")
+- ⭐ **ONE doc-id vocabulary** — reconcile `decideCompliance` short ids vs `lead_documents` CHECK long ids
+  vs `fieldRecord` cert keys. One name per document, everywhere.
+- ⭐ **Wire the writes** — `lead_documents` + `esb_submissions` (sealed → portal-submitted → REAL ESB ref →
+  status). **Nothing writes them today** — the whole "prepare/track/chase" claim rests on this
+  (PAPERWORK_AUDIT §3).
+- **Per-customer pack gate** — every cohort customer's NC pack passes `nc6Completeness` + a human eyeball.
+- **Surface the gate** — missing items at the 3 human touchpoints (job card · consultant lead view · owner
+  badge); the Coach speaks them *(dealIntel already carries packBlockers — finish the surfacing)*.
+- **NC8 decision** — the overlay is EMPTY (>50kW jobs get the data appendix only). Calibrate it, or state
+  "appendix-only for NC8" honestly at launch. Decide, don't drift.
+- **NC6 §3 correspondence** — company landline + email are captured but never wired into the form block.
+
+### 2B · The front door + the fork
+- ⭐ **A1 · Auth + tenant onboarding** — signup → tenant + role + first-admin bootstrap; the Flowith flow is
+  its face (ONBOARDING_SPEC). **Dependency: Cal's own auth/onboarding TS functions — flagged in the spec,
+  never received. Cal: drop them in RAW, or say "build without".**
+- **Ask home-or-business at the door** (SWEEP9 §9.1 — today it *infers*), then the **§D estimate fork**:
+  domestic = €-saving + payback + grant · commercial = ROI/IRR + NDMG + ex-VAT + ACA. One question decides
+  grant + VAT for the whole job.
+- **L2 · Numbers-through-spine** — the proposal drafter STORES `computeQuote()` +
+  `selfConsumptionFromOccupancy()` output; kill the flat `0.70`. *(CALS_GROWTH_DEV quote-drift findings
+  ride here.)*
+- **Read-flip completion** — finish `realLeads` across the workbench; align `serverStore` dual-writes to V5
+  tables. Verify signed in: the cockpit shows DB rows and settings round-trip.
+- **National merge** — RI + SI = one national account, two brands; Cal's owner login sees both.
+
+### 2C · Per-surface wiring (the SAAS_MAP ⬜ list — what makes each cockpit LIVE, not lifelike)
+- **Consultant:** `handleSendReply` → `touchpoints` + Postmark (+ Realtime) · `advanceLeadStage` →
+  `workflow_stage` + kernel `StageTransitioned`.
+- **Installer:** photos → storage + `install_evidence` · serials → `installed_equipment` (write fn exists) ·
   offline sign-off · NC submission record.
-- **Owner/Finance** — FinanceWindow deposit link → `create-checkout` *(the button exists; the charge doesn't)*.
-- **Customer portal** — Ask-AI → **guardrailed** LLM (L4) + persist + notify consultant · callback request → record + notify.
-- **SWEEP9 §9.1 gap** — the intake **never explicitly ASKS home-vs-business**, it infers. Ask it at the door; it decides
-  grant + VAT for the whole job. *(Pairs with the §D estimate fork already in Sprint 2.)*
-- **COMPLIANCE_DATA_CAPTURE** — company landline + email captured but **not wired into the NC6 §3 correspondence block**.
+- **Owner:** FinanceWindow deposit link → `create-checkout` — the button exists, the charge doesn't.
+- **Customer:** Ask-AI → **guardrailed** LLM (L4: refuses anything outside THEIR project) + persist +
+  notify consultant · callback request → record + notify.
 
-## SPRINT 3 — 🟠 CONFORMITY + POLISH (the feel)
-12. **Shared page-header/shell conformity** — consultant + installer adopt the AppShell header pattern; AgentFoundation's
-    residual double-title resolved (banner = SectionBanner everywhere).
-13. **AIField mobile-first** — ClientHub/DayRoute/JobViewV2 phone-真 (375px), thumb-first; full logic walk of the
-    serials→NC6→sign-off chain on a phone.
-14. **Design Studio once-over** — default array snaps to the solar-read roof centroid (off the driveway).
-15. **Front-end revamp** — fresh hero snapshots from the CURRENT UI · copy pass · pricing page rebuild · proposal
-    "fantastic" pass · replace brand.ts placeholder stats (truth-pass) · per-page meta (Sweep 7 debt).
-16. **Per-tab polish** — Clients type-badges · Financials aging · SEAI pack-status chips · demo geography clustered
-    per installer (the route reads true).
+### 2D · Outbound that's real (X1 + L1 + M4 — this IS the notification spine; one build)
+- ⭐ **`notify(event)` spine** — one call → bell + brand-themed email, portal link always in. Wires the 4
+  draft-gated "queued — goes out with your approval" toasts to REAL sends: proposal · deposit link · photo
+  request · reschedule · handover pack · referral · team invite.
+- **Both-ends law (L1)** — every interaction notifies customer AND consultant. Email + magic link only.
+- **Branded outbound** — tenant from-name + reply-to on one verified domain at launch.
+- **M4 tables** — `notifications` + `magic_link_tokens` beneath it all.
 
-### ⛏ SWEEP-8 CODES — polish tier
-- **M6 · designs persistence** — store array geometry/strings; kills the stored-vs-live kWp delta.
-- **M7 · proposal_versions** — append-only versions (the contract rests on a version, not a moving row).
-- **M3 · signature_hash** — signature → storage + sha256 onto the DoW/NC record (kernel append).
-- **M11 · touchpoints.sender + Realtime** — the field team's voice in the one thread. *(Verified NOT wired today.)*
-- **M12 · staff home address + depots** — the scheduler's real inputs (routing quality depends on it).
-- **M13 · agent_route_runs** — chosen order + km/min/€ saved per run: the owner sees WHY the route was picked.
-- **X2 · cal.com real booking** — white-labelled, front + back, wired to the agent scheduler *(key is in `.env.local`)*.
-- **X3 · distance-matrix** — real drive-time instead of haversine×1.3 for scheduling.
-- **X9 · e-sign** — the contract Sign flow (signature capture exists; the contract path doesn't).
-- **L4 · ask-AI guardrail** — the customer's AI refuses anything outside THEIR project. *(Safety, not polish — do it with the portal work.)*
-- **L5 · white-label sweep** — every customer-facing "AISOLAR" → tenant brand (10 files already use it; finish the rest).
-- **A3 · leadflow real sends** · **A6 · consent record honoured server-side** (fn exists; close the loop with `anonymise_lead`).
+### 2E · The go-live signal
+- ⭐ **The WIDGET** — the per-tenant embeddable calculator→lead door + the owner "copy your embed code"
+  panel.
+- **Sites wiring** — SolarIrelandGroup · RenewableIreland · wideawakesolar: door helper + calculator-first +
+  certificate kept + Cal.com booking. **Designs untouched.**
+- **🔐 D4 + D3** — the Maps key OUT of the client bundle (edge proxy) · Google Solar server-side (kills the
+  CORS path). Security, not polish — ships with the widget it serves.
 
-### ⛏ SWEEP-10 / 7.1 / ROUND4 — the polish + truth items
-- **Placeholder marketing stats** (`src/config/brand.ts:72`, TODO in-file) — invented numbers on customer-facing
-  pages. **Truth-pass violation still shipping** → replace with real figures or remove. *(ROUND4 + SWEEP10 both flag it.)*
-- **AIOS page** — cal.com's skeleton with AIOS content; make it an actual AIOS-blue page, show the ten agents, add proof.
-- **Pricing page** — add what you LOSE going down a tier · a pricing FAQ · annual saving in €, not just % · a
-  qualifying signal on the "Custom" tier.
-- **Intelligence depth** — `consultantIntelligence.leadIntel()` = 13 hard-coded stage lines; thin on 200 real leads.
-  *(dealIntel now covers the coach + gates; finish the sweep here.)*
-- **Hero snapshots never refreshed** — reshoot every hero from the CURRENT UI (agent Inside windows · scheduling
-  transparency · AIField rail · unified inbox · approve loop).
-- **Blog + per-page meta** — the deferred Sweep-7 content layer.
-- **SWEEP 7.1** — installer job/survey flow needs a clear click-through · Schedule roster + unscheduled queue ·
-  `PlannableJob.lockedDate` wiring · the Deno edge code written but NOT executed-verified (verifies at deploy).
-- **AIField audit** — "nominally done but thin" (ROUND4 §3.7). Rides the mobile-first pass.
-- **⚠️ Domestic vs commercial presentation fork** (SWEEP10 §D) — homeowner leads with €-saving + payback + grant;
-  commercial leads with ROI/IRR + NDMG + ex-VAT + ACA write-off. **VERIFY NDMG + ACA against the SEAI PDF before quoting.**
-
-## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY (Cal: "final hardening — make it inevitable")
-17. **Security pass**: re-run the live RLS census (every table tenant-scoped, no loose policies — the 2 Aug method) ·
-    verify-artefact + all fns fail-closed re-check · rate-limit + honeypot on ingest-lead · Stripe idempotency keys ·
-    secrets sweep (nothing in bundle/git; SECRETS.md canonical) · GDPR erasure re-run (anonymise_lead covers eircode).
-18. **Bug sweep**: tsc gate into build (`tsc --noEmit` pre-commit) · full click-path walk of all three cockpits +
-    portal at 375/768/1440 · console-clean rule · the touchpoints/lead_touchpoints redundancy (one survives) ·
-    retire AiTeamPage(old) · rename the twin AgentWindows · delete test user aios.smoketest · deprecate
-    extracted_premises_type in-schema · ToS rewrite (legal).
-19. **Dead-letter alerting** — a failed agent run pings (Slack webhook exists) — silence is the only failure mode left.
-
-### ⛏ STATUTORY FLAGS — Cal's call, not mine (AIFIELD_BUILD_PLAN §FLAGS + complianceDecision + pdfFill)
-- **ESB band thresholds** — code uses the 6/11 kW shorthand; micro-gen is **25 A/phase = 5.75 kVA single / 11.04 kVA
-  three**. We **under-file at exactly 5.75–6.0 kW single-phase**. Needs an ESB policy read + your yes — a statutory
-  threshold is sign-off, never a quiet edit.
-- **Typed e-signature acceptance** — confirm ESB accept a typed name on the NC6 vs wet ink. Until confirmed the pack
-  says "print, sign & date by hand".
-- **NDMG + ACA figures** — verify against the SEAI PDF before either appears on a commercial proposal.
-
-## SPRINT 5 — 🎬 THE FINALE (LAST, Cal's order)
-20. **Coach sings on all POVs** (Sprint 1 #2 complete = the gate to this).
-21. **Demo toggle on the owner sidebar** (left column) — flips the 10-archetype cast in; Browse-Views becomes
-    **leads-only**, not a route index.
-22. **The guided tour** — instructional walkthrough following the spine: lead→estimate→survey→design→proposal→send→
-    contract→deposit→install→NC pack→handover, finale agents→products→settings→analytics. Personal voice throughout.
-    Doubles as cohort onboarding + founder walkthrough.
+**Done-means:** a stranger signs up, becomes a tenant, and takes a lead door → proposal → deposit → pack
+with every send real and every document row written — verified as a real signed-in tenant, not in demo.
 
 ---
 
-## 🔑 DEPLOYMENT (below the line — Cal's hands, I prep everything)
-- [ ] `brew install supabase/tap/supabase` + `supabase login`
-- [ ] Old-key rotation + git-history purge (coxmtpnq · vythuqax · kernel · Maps) — GATE 0
-- [ ] Deploy **18 edge functions** (now incl. `verify-artefact`) + secrets manifest (I prep; you paste values)
-- [ ] Postmark token + DNS · Vercel deploy (demo OFF) · **Supabase Auth Site URL = prod domain**
-- [ ] Supabase **PITR backups ON** (one switch) · Better Stack uptime ping on app + ingest-lead
-- [ ] Doors onto the live brand sites — **the go-live signal**
-- [ ] The two ESB policy reads: 5.75/11.04 kW bands · typed e-signature acceptance
+## SPRINT 3 — 🟠 CONFORMITY + POLISH (the feel of one product)
 
-## 🤝 TOGETHER (the proof, then live)
-- [ ] **The full smoke test**: door → route → survey → proposal → deposit → pack — every human button fires its chain,
-      a real email lands, the stored numbers match the screen (the L2 proof), read-flip verified signed-in
-- [ ] Client's 3-brands-one-tenant check · per-customer pack confirmation · first cohort onboarding through the new flow
+- ⭐ **Shared page-header / shell conformity** — consultant + installer adopt the owner's shell header;
+  no stacked titles anywhere *(banner symmetry shipped 3 Aug — this is the page-level half)*.
+- **AIField mobile-first** — ClientHub · DayRoute · JobViewV2 (fixed 288px rail) on a phone, then the
+  **full logic walk**: serials gate → NC6 fields → sign-off chain. *(ROUND4 "AIField is thin" rides here.)*
+- **Design Studio** — the default array snaps to the solar-read roof centroid (it drops on the driveway
+  today).
+- **Sweep-8 polish codes:** M6 designs persistence (kills stored-vs-live kWp drift) · M7 proposal_versions
+  (the contract rests on a version, not a moving row) · M3 signature_hash (sha256 onto the DoW/NC record) ·
+  M11 touchpoints.sender + Realtime (the field team's voice in the one thread) · M12 staff home-address +
+  depots (the scheduler's real inputs) · M13 agent_route_runs (the owner sees WHY the route was picked) ·
+  X2 Cal.com real booking (key in `.env.local`) · X3 distance-matrix (real drive-time; calendar-aware dates
+  kill the naive today+5/today+28) · X9 e-sign contract path · L5 white-label sweep (every customer-facing
+  "AISOLAR" → tenant brand) · A3 leadflow real sends · A6 consent honoured server-side (close the loop with
+  `anonymise_lead`).
+- **Front-end truth + shine:** `brand.ts` placeholder stats **replaced or removed — a truth-pass violation
+  is shipping on customer pages today** · hero snapshots reshot from the CURRENT UI · copy pass every page ·
+  pricing page depth (what you LOSE down-tier · FAQ · € not just % · custom-tier qualifier) · the AIOS page
+  becomes an actual AIOS-blue page (the ten agents + proof) · proposal "fantastic" pass · blog + per-page
+  meta (the deferred Sweep-7 content layer).
+- **Per-tab polish:** Clients type-badges · Financials aging · SEAI pack-status chips · Schedule roster +
+  unscheduled queue + `PlannableJob.lockedDate` (Sweep-7.1).
+- **Demo cast geography** — cluster each installer's jobs so the day-route reads true.
+- **Redundancy kills:** `touchpoints` vs `lead_touchpoints` (one survives) · retire the old `AiTeamPage` ·
+  rename the two `AgentWindow`s (verified different — name collision only).
+- **Cleanups:** delete the `aios.smoketest` user · deprecate `extracted_premises_type` (in-schema note) ·
+  ToS rewrite · CSV bulk import · **doc-ref hygiene:** ~20 docs still cite dead DB refs
+  (`coxmtpnq`/`vythuqax`) — one corrective banner pass; fix the stale `leadWrites.ts` security comment
+  (RLS IS tenant-scoped on V5 — verified live 1 Aug).
 
-## ⏸ POST-COHORT (parked on purpose)
-**⛏ Sweep-8 codes parked here (named so they're never re-derived):** M5/L3 learning loop (agent_corrections → owner
-report → prompt revision → approve → version bump) · M9 feedback + referrals + tier_entitlements · A11 plan/tier
-entitlements · M10 installer_vault (an installer's serials/certs across all jobs) · M14 inventory / depot shelf
-(`computeBOM` aggregation + reorder) · X5 Supabase Realtime · X6 Sentry · X7 uptime `/health` + cron *(Better Stack —
-tooling verdict)* · G1 referral link (money-off + tracked fee) · G2 review → Google Business on completion ·
-G3 growth set · L7 self-heal/report/improve (the 4-layer spec, draft-first) · HK1 commit the Obsidian vault repo ·
-D6 plate-OCR *(largely superseded by Compliance Vision, 3 Aug)*.
-**✅ Sweep-8 codes already CLOSED (verified 3 Aug, do not re-open):** A1 auth scaffolding · A2 front-door lead creation ·
-A4 settings-persist · A5 ai-config · M1 installed_equipment · M8 products · X8 LLM · truth-guard (Settings honesty).
+**Done-means:** a phone-walk of all three cockpits reads as ONE product · every polish code verified with
+its own line · zero invented numbers anywhere customer-facing.
 
-Learning loop · survey-photo + voice capture (if not reached) · AIGate surface · portal_submitter browser agent ·
-per-tenant DKIM · PostHog full · Intercom(~25) · Beehiiv · kernel Phase 2 · THE_OPERATING_STACK §2/§3.
+---
+
+## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY (make it boring; make it inevitable)
+
+- ⭐ **Role→route matrix, tested** — every route × every role (owner / consultant / installer / customer /
+  anonymous), asserted: who gets in, who bounces where. The A9 fix proved the front door; this proves every
+  corridor.
+- ⭐ **RLS proof pass** — per-table, per-role queries against V5. The Saunderson check: the client's
+  3-brands-one-tenant sees ONE book; a second tenant sees NOTHING.
+- **Security checklist:** no secret in the built bundle (grep the build output) · no service key
+  client-side · every edge fn rejects anon where it must (verify-artefact ✓ · extract-bill-data ✓ — sweep
+  the other 16) · consent + GDPR erasure end-to-end (`anonymise_lead` leaves nothing behind) · demo env OFF
+  in prod, verified · rate limits on the public doors (`ingest-lead` dedupe ✓).
+- **Error honesty:** every catch either surfaces to the user or logs with context — no silent swallows on
+  the money paths (checkout · sends · pack seal).
+- **Bug sweep:** the PUNCH_LIST leftovers + a fresh click-through of every cockpit at desktop AND 375px ·
+  re-verify the `ProposalView:424` blank-onClick (retracted once — prove it dead) · console clean on every
+  route.
+- **⚠️ STATUTORY FLAGS — Cal's yes required; never a quiet edit:**
+  1. **ESB micro-gen bands** — the code shorthands 6/11 kW; the rule is 25 A/phase = **5.75 kVA
+     single-phase / 11.04 kVA three-phase**. We under-file at exactly 5.75–6.0 kW single-phase. Policy
+     read + sign-off before live.
+  2. **Typed e-signature** on the NC6 vs wet ink — until ESB confirms, the pack says "print, sign & date by
+     hand".
+  3. **NDMG + ACA figures** — verified against the SEAI PDF before either appears on a commercial proposal.
+
+**Done-means:** the matrix + RLS proofs pasted into this doc as evidence · each statutory flag carries
+Cal's explicit yes/no · a cold adversarial pass finds nothing the checklist missed.
+
+---
+
+## SPRINT 5 — 🎬 THE FINALE (LAST — Cal's explicit order; only after the coach sings)
+
+- **The demo toggle moves to the owner sidebar** (left column). Flipping it populates the **10 archetypes**
+  — the user clicks real work, not a menu. Browse-Views becomes **leads-only**.
+- ⭐ **The guided tour** — instructional, not decorative: it prompts the user through the whole product
+  following the SPINE — lead in → estimate → survey → design → proposal → send → contract → deposit →
+  install → NC6/SEAI pack → handover — **finale: agents → product catalog → settings → analytics.** Each
+  stop says what this screen is FOR, what to click, and what just happened behind it.
+- **It doubles as:** new-tenant onboarding (first-run after signup — every new user gets the cast + the
+  walk, Cal 3 Aug) · cohort training · the founder teaching walk (SWEEP10 §E).
+
+**Done-means:** someone who has never seen AISolar completes the tour unaided, then adds a real lead and
+sends a real proposal without help.
+
+---
+
+## 🔑 DEPLOYMENT — CAL'S GATE (I prep every artefact; you run; every line has a verify)
+1. `brew install supabase/tap/supabase` + `supabase login`.
+2. **Key rotation + git-history purge** (coxmtpnq · vythuqax · kernel · Maps) — **GATE 0**; agents stay
+   undeployed until this closes.
+3. Deploy **18 edge functions** (the 17 + `verify-artefact`) + set secrets — I prep the manifest with a
+   per-fn verify line. verify-artefact's smoke: one real cert photo → a planted mismatch caught.
+4. Postmark server token + DNS (DKIM/return-path) → one real email lands in a real inbox.
+5. Vercel deploy — demo env vars OFF · **Supabase Auth Site URL = prod domain** (kills localhost-in-email —
+   it already bit the global-login signup).
+6. Doors onto the live brand sites (the go-live moment) — designs untouched.
+7. Supabase **PITR backups ON** (one switch).
+8. Any remaining keys → `.env.local`/RAW, never chat (Cal.com ✓ already there).
+9. **Drop your auth/onboarding TS functions** for A1 — or say "build without". *(Sprint 2 dependency.)*
+
+## 🤝 TOGETHER — THE PROOF, THEN LIVE
+The full smoke test on prod: door → route → survey → proposal (open tracked) → deposit (real charge) →
+install → pack sealed → rows in `lead_documents` + `esb_submissions` → handover. Every human button pressed
+once; a real email lands at every send; read-flip verified signed-in; the 3-brands-one-tenant check;
+per-customer pack confirmations; first cohort onboarded on the tour.
+
+---
+
+## ⏸ POST-COHORT (parked ON PURPOSE — build on revenue; named so nothing is re-derived)
+M5/L3 learning loop (agent_corrections → owner report → prompt revision → approve → version bump — the
+"Wrong" buttons already record) · owner agent-training UI (watch it learn) · agent enrichment as real leads
+reveal thin spots · AIGate human surface (the national gate-call cockpit) · browser `portal_submitter`
+(auto-keys the NC into the ESB portal — the human gate stays) · M9 referrals + tier_entitlements · A11 plan
+gating · M10 installer_vault · M14 inventory / depot shelf (`computeBOM` aggregation + reorder) · X5
+Realtime everywhere · X6 Sentry · X7 `/health` + uptime (Better Stack, uptime-only) · G1 referral money-off
+link · G2 review → Google Business on completion · G3 growth set · L7 self-heal/report/improve
+(draft-first) · SMS/WhatsApp as a REAL channel (Twilio wired first, claimed only then) · HK1 vault repo
+commit · Sweep-9 tier entitlements + code-split · per-tenant DKIM · PostHog full · Intercom (~25 clients) ·
+Beehiiv · dunning · kernel Phase 2 (bind gate_bridge → the inscribed kernel) · knowledge-graph · D6
+plate-OCR (superseded by Compliance Vision) · calendar-aware scheduling v2 beyond X3.
+**Tooling verdicts (3 Aug, standing):** keep Postmark · PostHog light · Better Stack uptime-only · SKIP
+Upstash + Trigger.dev · NO Next rewrite of the app · Cloudflare DNS-only.
+
+---
+
+## 📜 SOURCE LEDGER (what fed this doc — the detail lives there; the ORDER lives here)
+MASTER_TODO (3 Aug consolidation) · GO_LIVE · PUNCH_LIST (13 items + verdicts) · MASTER_AUDIT_1AUG (§4 +
+the drift ledger) · DEPLOYMENT_READINESS_2AUG (the squad pass) · DEPLOYMENT_CALS_LAST_GATE (L2 · read-flip
+· national merge) · PAPERWORK_AUDIT (doc-ids · lead_documents · NC8 · the statutory flags) ·
+SWEEP8_DB_WIRING (45 codes — all placed) · SWEEP9_NOTES (§9.1 ask-at-the-door) · SWEEP10_NOTES (§D fork ·
+§E training · brand.ts) · SWEEP_7.1 (schedule roster · lockedDate · unexecuted Deno note) ·
+SWEEP_AUDIT_ROUND4 (AIField thin · placeholder stats) · AISOLAR_SAAS_MAP (the per-surface ⬜ list) ·
+COMPLIANCE_DATA_CAPTURE (NC6 §3) · THE_OPERATING_STACK (coach depth · notifications half-wired) ·
+CALS_GROWTH_DEV (the register · quote-drift · conversational coach) · NOTES + FOUNDER_NOTES (learning loop
+· RECI-persist verify) · ONBOARDING_SPEC (Cal's TS-functions dependency) · AI_WORTH_ITS_WEIGHT (the AI
+ranking) · HANDOVER_ANSWER · THE_ONE_READ.
+
+**Changelog:** v1 (3 Aug AM) — five sprints. +Sweep-8 codes. +remaining-docs mine. **v2 (3 Aug PM) — full
+rewrite: working agreement · done-means per sprint · final-sweep stragglers folded in (L2
+numbers-through-spine · national merge · NC8 decision · Cal's-TS-functions dependency · quote-drift ·
+conversational coach · doc-ref hygiene · outside-touchpoints answer). The complete estate, one order.**
