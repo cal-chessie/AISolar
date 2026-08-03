@@ -229,15 +229,18 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
-                Agent Foundation
+              {/* No page title here — the AppShell header already names the
+                  section ("Agents"). A second big title inside the first card
+                  was the double-header Cal spotted (3 Aug). Keep the honest
+                  demo flag + the one-line what-this-is. */}
+              <div className="flex items-center gap-2">
+                <span className="label-micro">The runtime</span>
                 {demo && (
-                  <Badge variant="outline" className="text-[11px] bg-tech/10 text-tech border-tech/30 ml-2">
+                  <Badge variant="outline" className="text-[11px] bg-tech/10 text-tech border-tech/30">
                     Demo data
                   </Badge>
                 )}
-              </CardTitle>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 {demo
                   ? 'Showing simulated data. In production, these are real agent_runs from Supabase.'

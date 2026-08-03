@@ -38,10 +38,13 @@ export default function ClientHub({ lead, onStart, onMessage, dateLabel }: {
     <div className="space-y-4">
       {/* profile */}
       <div className="rounded-panel bg-card shadow-card p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-11 w-11"><AvatarFallback>{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+        {/* min-w-0 + shrink-0 on the avatar: without it the row refused to
+            shrink and the address/MPRN were CLIPPED off-screen at 375px
+            (found on the 3 Aug mobile pass). */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="h-11 w-11 shrink-0"><AvatarFallback>{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
           <div className="min-w-0 flex-1">
-            <div className="font-bold">{lead.name}</div>
+            <div className="font-bold truncate">{lead.name}</div>
             <div className="text-sm text-muted-foreground truncate flex items-center gap-1"><MapPin className="h-3.5 w-3.5 shrink-0" /> {lead.address}</div>
           </div>
           {dateLabel && <Badge variant="outline" className="shrink-0">{dateLabel}</Badge>}

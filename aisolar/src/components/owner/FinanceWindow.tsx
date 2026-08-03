@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useLeads } from '@/lib/realLeads';
 import { getStage } from '@/lib/leadIntake';
+import { computeOwnerStats } from '@/lib/ownerStats';
 import { useFinanceConfig, saveFinanceConfig, stripeMode, maskIban, type FinanceConfig } from '@/lib/financeConfig';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -40,6 +41,8 @@ export default function FinanceWindow() {
   const [cfg, setCfg] = useState<FinanceConfig>(saved);
   const [editingBank, setEditingBank] = useState(!saved.bank.iban);
   const { leads } = useLeads();
+  // THE one money source — shared with Overview + Analytics (Cal's mismatch).
+  const owner = useMemo(() => computeOwnerStats(leads), [leads]);
 
   const m = useMemo(() => {
     const jobs = leads.filter(l => l.proposal).map(l => {
@@ -77,13 +80,20 @@ export default function FinanceWindow() {
 
   return (
     <div className="space-y-4">
-      {/* 1 — Cash position: the four numbers an owner checks before coffee */}
+      {/* 1 — Cash position: the four numbers an owner checks before coffee.
+             ONE source (computeOwnerStats) — the same figures the Overview and
+             Analytics show, so they can never disagree again. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Collected', value: m.collected, tone: 'text-doc-deposit', icon: Euro },
-          { label: 'Deposits held', value: m.depositsHeld, tone: '', icon: Landmark },
-          { label: 'Outstanding balances', value: m.outstandingAR, tone: '', icon: Clock },
-          { label: 'SEAI grants in flight', value: m.grantsInFlight, tone: 'text-tech', icon: Award },
+          // Cal (3 Aug): "the numbers between financials and overview don't seem
+          // correct and it's not easy to tell why." They DIDN'T agree: Overview
+          // showed ownerStats.revenueBanked (final-paid only) while this card
+          // showed collected = final-paid + deposits. Same word, two meanings.
+          // Now BOTH read computeOwnerStats and each tile says what it counts.
+          { label: 'Banked', value: owner.revenueBanked, sub: 'jobs paid in full', tone: 'text-doc-deposit', icon: Euro },
+          { label: 'Deposits held', value: owner.depositsHeld, sub: 'paid, job not finished', tone: '', icon: Landmark },
+          { label: 'Still to collect', value: owner.contractedBacklog, sub: 'signed work, not yet invoiced out', tone: '', icon: Clock },
+          { label: 'SEAI grants in flight', value: m.grantsInFlight, sub: 'tracked, not yet paid', tone: 'text-tech', icon: Award },
         ].map(k => (
           <div key={k.label} className="rounded-panel bg-card shadow-card p-4">
             <div className="flex items-center justify-between">
@@ -91,6 +101,7 @@ export default function FinanceWindow() {
               <k.icon className={`size-3.5 ${k.tone || 'text-muted-foreground'}`} />
             </div>
             <div className={`mt-1.5 text-2xl font-semibold tabular-nums ${k.tone}`}>{eur(k.value)}</div>
+            <div className="mt-0.5 text-2xs text-muted-foreground">{k.sub}</div>
           </div>
         ))}
       </div>
