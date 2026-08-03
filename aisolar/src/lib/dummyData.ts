@@ -361,6 +361,18 @@ export function generateDummyLeads(): DummyLead[] {
     const panelCount = Math.max(1, Math.round((systemSizeKw * 1000) / panelWatts));
     const isCommercial = a.propertyType === 'commercial';
 
+    // Per-lead usage — was read straight off the archetype, so three
+    // domestic_small homes ALL showed "5,200 kWh/year, €155/month" and three
+    // domestic_large ALL showed "11,500 kWh/year, €340/month" (Cal 4 Aug: "the
+    // same message populates across all"). Now it TRACKS the lead's real system
+    // size and carries a deterministic per-lead variation, so no two homes read
+    // the same and the usage always fits the system. Used everywhere below
+    // (display + extracted + the quote inputs) so it stays consistent.
+    const sizeRatio = systemSizeKw / a.systemSizeKw;
+    const usageFactor = 1 + (((idx * 13) % 17) - 8) / 100; // ±8%, distinct per lead
+    const annualKwh = Math.max(500, Math.round(a.annualKwh * sizeRatio * usageFactor / 50) * 50);
+    const monthlyBill = Math.max(20, Math.round(a.monthlyBill * sizeRatio * usageFactor));
+
     // The ONE engine, twice: the pre-survey estimate (no roof/occupancy → flat
     // yield + fallback self-use) and the post-survey quote (roof + occupancy
     // known). Both fork on the archetype's propertyType, so grant + VAT are
@@ -377,14 +389,14 @@ export function generateDummyLeads(): DummyLead[] {
 
     const preQuote = computeQuote({
       systemSizeKw, batteryKwh: a.batteryKwh, rates,
-      annualUseKwh: a.annualKwh, propertyType: a.propertyType,
+      annualUseKwh: annualKwh, propertyType: a.propertyType,
     });
     const quote = computeQuote({
       systemSizeKw, batteryKwh: a.batteryKwh, roof, occupancy, rates,
-      annualUseKwh: a.annualKwh, propertyType: a.propertyType,
+      annualUseKwh: annualKwh, propertyType: a.propertyType,
     });
 
-    const periodKwh = Math.round(a.annualKwh / 6); // bi-monthly bill period
+    const periodKwh = Math.round(annualKwh / 6); // bi-monthly bill period
     const dayFrac = a.homeDuringDay === 'usually' ? 0.7 : a.homeDuringDay === 'mixed' ? 0.55 : 0.45;
 
     const lead: DummyLead = {
@@ -396,12 +408,12 @@ export function generateDummyLeads(): DummyLead[] {
       phone: `+353 8${idx % 8} 1${String(200 + idx).padStart(3, '0')} ${String(4000 + idx).padStart(4, '0')}`,
       address: s.address,
       mprn: makeMprn(idx + 1),
-      monthly_bill: a.monthlyBill,
-      annual_kwh: a.annualKwh,
+      monthly_bill: monthlyBill,
+      annual_kwh: annualKwh,
       workflow_stage: s.stage,
       status: 'active',
       source: s.source ?? 'bill_upload',
-      score: Math.min(99, 50 + (isCommercial ? 15 : 0) + (a.monthlyBill > 300 ? 15 : 0)
+      score: Math.min(99, 50 + (isCommercial ? 15 : 0) + (monthlyBill > 300 ? 15 : 0)
         + (s.stage === 'proposal_sent' ? 20 : 0) + (s.stage === 'approved' ? 25 : 0)),
       assigned_consultant: s.consultant,
       assigned_installer: s.installer?.name,
@@ -409,8 +421,8 @@ export function generateDummyLeads(): DummyLead[] {
         source: s.source ?? 'bill_upload',
         // THE classification field — what the drafter, the views and compliance read.
         property_type: a.propertyTypeField,
-        extracted_monthly_bill: a.monthlyBill,
-        extracted_annual_kwh: a.annualKwh,
+        extracted_monthly_bill: monthlyBill,
+        extracted_annual_kwh: annualKwh,
         extracted_mprn: makeMprn(idx + 1),
         extracted_account_name: s.name,
         extracted_address: s.address,
