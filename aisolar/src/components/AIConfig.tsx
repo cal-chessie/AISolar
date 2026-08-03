@@ -164,7 +164,7 @@ export default function AIConfig() {
       <SectionBanner
         icon={<Brain />}
         title="AI Configuration"
-        description="The brain behind all ten agents. Three steps, in order: switch AI on, connect an account, then set the spend limit. Off is a valid answer — agents keep working on fixed rules, just without the writing."
+        description="The brain behind all ten agents. Connect an account, pick the model, set the ceiling. Kept deliberately boring — this page should need visiting once."
         stats={<>
           <BannerStat tone={enableLLM ? 'deposit' : 'muted'} icon={<Sparkles />} value={enableLLM ? 'On' : 'Off'} label="AI calls" />
           <BannerStat tone="tech" icon={<Cpu />} value={model.name.split(' ')[0]} label="model" />
@@ -172,40 +172,11 @@ export default function AIConfig() {
         </>}
       />
 
-      {/* ── STEP 1 — the master decision FIRST (Cal 3 Aug: "logic seems to be
-             backwards"). It was buried in card 2 under the model picker: you
-             chose a model and pasted a key before being asked whether agents
-             should use AI at all. First question first. ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">1</span>
-            Use AI at all?
-          </CardTitle>
-          <CardDescription>Everything below only matters if this is on.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between gap-4 p-3 border rounded-control">
-            <div className="min-w-0">
-              <div className="text-sm font-medium flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" /> {enableLLM ? 'Agents write with AI' : 'Agents run on fixed rules'}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5 leading-body">
-                {enableLLM
-                  ? 'Proposals, follow-ups and the coach are drafted by the model below. Every send still waits for a human.'
-                  : 'No LLM cost. Agents still move leads, book surveys and prepare paperwork — they just use fixed wording instead of writing.'}
-              </div>
-            </div>
-            <Switch checked={enableLLM} onCheckedChange={setEnableLLM} />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* LLM Provider */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">2</span>
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">1</span>
             Connect an account + pick the model
           </CardTitle>
           <CardDescription>One OpenRouter account powers all ten agents. Test it before you save.</CardDescription>
@@ -284,7 +255,7 @@ export default function AIConfig() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">3</span>
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">2</span>
             Set the spend limit
           </CardTitle>
           <CardDescription>The ceiling that protects you — agents stop calling the model when it's reached.</CardDescription>
@@ -305,6 +276,37 @@ export default function AIConfig() {
               Agents stop calling the LLM when daily spend exceeds this. Current model ({model.name}) costs ~{model.cost}.
               At ${dailyCostCap}/day you get ~{Math.round(dailyCostCap / (0.30))} calls/day with the cheapest model.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── SAFETY VALVE (Cal, 3 Aug: "a doomsday button is ok but not lies").
+             This is NOT a setup step — AI is what the agents are. It's the
+             switch you hit if a bill runs away or a model misbehaves, and the
+             copy states EXACTLY what survives: the pipeline keeps running on
+             fixed wording, which is worse writing, not a stopped business. ── */}
+      <Card className={enableLLM ? '' : 'border-pop/40 bg-pop/5'}>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className={`h-4 w-4 ${enableLLM ? 'text-muted-foreground' : 'text-pop'}`} />
+            Emergency stop
+          </CardTitle>
+          <CardDescription>
+            {enableLLM
+              ? 'Cuts every LLM call instantly — for a runaway bill or a bad model day.'
+              : 'AI writing is OFF. Your agents are still running the pipeline on fixed wording.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4 p-3 border rounded-control">
+            <div className="min-w-0 text-xs text-muted-foreground leading-body">
+              <p className="text-sm font-medium text-foreground mb-1">
+                {enableLLM ? 'AI writing is on' : 'AI writing is paused'}
+              </p>
+              <p><strong className="text-foreground">Keeps working without AI:</strong> leads route, stages advance, surveys book, the NC6/SEAI pack builds, reminders and invoices fire — all of that is rules, not AI.</p>
+              <p className="mt-1"><strong className="text-foreground">Stops without AI:</strong> written proposal copy, drafted follow-ups, the bill read's smart extraction and the coach's suggestions. Agents fall back to fixed templates — plainer, still correct.</p>
+            </div>
+            <Switch checked={enableLLM} onCheckedChange={setEnableLLM} aria-label="AI writing on or off" />
           </div>
         </CardContent>
       </Card>

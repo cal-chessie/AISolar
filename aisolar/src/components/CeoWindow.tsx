@@ -53,10 +53,10 @@ function downloadCsv(filename: string, header: string[], rows: (string | number)
   URL.revokeObjectURL(a.href);
 }
 
-type Tab = 'overview' | 'agents' | 'leads' | 'charts';
+type Tab = 'charts' | 'leads' | 'agents';
 
 export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () => void }) {
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>('charts');
   const { leads } = useLeads();
 
   const d = useMemo(() => {
@@ -155,11 +155,14 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
     ],
   );
 
-  const TABS: Array<{ id: Tab; label: string; icon: typeof BarChart3 }> = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'agents', label: 'Agents', icon: Bot },
-    { id: 'leads', label: 'Leads', icon: Database },
-    { id: 'charts', label: 'Charts', icon: LineChart },
+  /* Cal (3 Aug): "charts first then leads then agents… analytics overview is
+     redundancy." Overview DELETED — its four KPIs and the two panels that
+     earned their place (where jobs stall · win rate by source) moved into the
+     always-visible strip below, so nothing was lost and nothing is duplicated. */
+  const TABS: Array<{ id: Tab; label: string; icon: typeof BarChart3; tint: string }> = [
+    { id: 'charts', label: 'Charts', icon: LineChart, tint: 'text-doc-proposal' },
+    { id: 'leads', label: 'Leads', icon: Database, tint: 'text-tech' },
+    { id: 'agents', label: 'Agents', icon: Bot, tint: 'text-doc-contract' },
   ];
 
   return (
@@ -176,59 +179,81 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-3 h-9 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.id ? 'border-tech text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
-            <t.icon className="size-3.5" /> {t.label}
+            <t.icon className={`size-3.5 ${t.tint}`} /> {t.label}
           </button>
         ))}
       </div>
 
-      {tab === 'overview' && (
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
-              <Kpi icon={<Euro />} label="Revenue banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} tone="deposit" hero />
-            </button>
-            <Kpi icon={<TrendingDown />} label="Open pipeline" value={eur(d.pipelineValue)} sub={`${d.owner.openDeals} deals in play · ${d.conversion}% proposal → win`} tone="tech" />
-            <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" tone="proposal" />
-            <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} tone="pop" />
-          </div>
+      {/* ── ALWAYS-ON strip (salvaged from the deleted Overview tab) — the
+             four numbers + the two panels that earned their place. Same
+             computeOwnerStats source as the cockpit + Financials. ── */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
+          <Kpi icon={<Euro />} label="Banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} tone="deposit" hero />
+        </button>
+        <Kpi icon={<TrendingDown />} label="Open pipeline" value={eur(d.pipelineValue)} sub={`${d.owner.openDeals} deals in play · ${d.conversion}% proposal → win`} tone="tech" />
+        <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" tone="proposal" />
+        <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} tone="pop" />
+      </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-panel border border-border bg-card p-4">
-              <h3 className="text-sm font-semibold">Where jobs stall</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Biggest drop between phases — fix this before buying more leads.</p>
-              <p className="mt-3 text-xl font-semibold">{d.stall.label} <span className="text-pop text-sm font-medium">−{d.stall.drop}%</span></p>
-            </div>
-            <div className="rounded-panel border border-border bg-card p-4">
-              <h3 className="text-sm font-semibold">Win rate by source</h3>
-              <div className="mt-2 space-y-1.5">
-                {d.sources.map(s => (
-                  <div key={s.source}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
-                      <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
-                    </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-tech" style={{ width: `${Math.max(3, s.rate)}%` }} />
-                    </div>
-                  </div>
-                ))}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-panel border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold">Where jobs stall</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Biggest drop between phases — fix this before buying more leads.</p>
+          <p className="mt-3 text-xl font-semibold">{d.stall.label} <span className="text-pop text-sm font-medium">−{d.stall.drop}%</span></p>
+        </div>
+        <div className="rounded-panel border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold">Win rate by source</h3>
+          <div className="mt-2 space-y-1.5">
+            {d.sources.map(s => (
+              <div key={s.source}>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
+                  <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
+                </div>
+                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-tech" style={{ width: `${Math.max(3, s.rate)}%` }} />
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* financials tab folded into the Financials page — money lives in ONE place (Cal) */}
       {tab === 'agents' && (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {d.agents.map(a => (
-              <div key={a.agent} className="rounded-panel border border-border bg-card p-4">
-                <div className="flex items-center gap-1.5"><Bot className="size-3.5 text-primary" /><span className="label-micro">{a.agent}</span></div>
-                <p className="mt-1.5 text-2xl font-semibold tabular-nums">{a.runs}</p>
-                <p className="text-xs text-muted-foreground">{(a.minutes / 60).toFixed(1)} hrs of manual work</p>
-              </div>
-            ))}
+          {/* Agent breakdown — REVAMPED (Cal 3 Aug). Was five flat tiles with no
+              sense of scale. Now ranked by hours saved, each with a share bar,
+              so "who is actually carrying the load" reads in one glance. The
+              window is stated honestly (it's the collected autolog, not a
+              claimed 30 days). */}
+          <div className="rounded-panel border border-border bg-card overflow-hidden">
+            <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
+              <Bot className="size-4 text-doc-contract" />
+              <h3 className="text-sm font-semibold">Agent breakdown</h3>
+              <span className="text-2xs text-muted-foreground">by hours of manual work saved · {d.autolog.length} actions collected</span>
+            </div>
+            <div className="divide-y divide-border">
+              {[...d.agents].sort((a, b) => b.minutes - a.minutes).map((a, i) => {
+                const top = Math.max(1, ...d.agents.map(x => x.minutes));
+                const hrs = a.minutes / 60;
+                return (
+                  <div key={a.agent} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="w-4 shrink-0 text-2xs tabular-nums text-muted-foreground">{i + 1}</span>
+                    <span className="w-40 shrink-0 text-sm font-medium truncate">{a.agent}</span>
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-doc-contract" style={{ width: `${Math.max(2, (a.minutes / top) * 100)}%` }} />
+                    </div>
+                    <span className="w-16 shrink-0 text-right text-sm font-semibold tabular-nums">{hrs.toFixed(1)} hrs</span>
+                    <span className="w-14 shrink-0 text-right text-2xs tabular-nums text-muted-foreground">{a.runs} runs</span>
+                  </div>
+                );
+              })}
+              {d.agents.length === 0 && (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">No agent actions collected yet — this fills as the runtime works.</p>
+              )}
+            </div>
           </div>
 
           <div className="rounded-panel border border-border bg-card overflow-hidden">

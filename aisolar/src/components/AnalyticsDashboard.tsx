@@ -288,6 +288,12 @@ export default function AnalyticsDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {funnel.map((stage, i) => {
+                  // Family colour walks the journey: enquiry (tech) -> survey ->
+                  // proposal -> contract -> deposit -> install -> paid (deposit
+                  // green). Same tokens as the pipeline bar, so a gate is the
+                  // same colour wherever the owner meets it.
+                  const FAMILY = ['bg-tech', 'bg-tech', 'bg-doc-proposal', 'bg-doc-contract', 'bg-doc-deposit', 'bg-pop', 'bg-doc-deposit'];
+                  const bar = FAMILY[i] ?? 'bg-tech';
                   const prevCount = i > 0 ? funnel[i - 1].count : stage.count;
                   const conversionRate = i > 0 && prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : 100;
                   const pctOfTotal = funnel[0].count > 0 ? (stage.count / funnel[0].count) * 100 : 0;
@@ -296,7 +302,7 @@ export default function AnalyticsDashboard() {
                     <div key={stage.stage} className="flex items-center gap-3">
                       <div className="w-36 shrink-0 text-sm font-medium">{stage.label}</div>
                       <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full bg-tech transition-all" style={{ width: `${Math.max(1.5, pctOfTotal)}%` }} />
+                        <div className={`h-full rounded-full ${bar} transition-all`} style={{ width: `${Math.max(1.5, pctOfTotal)}%` }} />
                       </div>
                       <div className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums">{stage.count}</div>
                       <div className="w-16 shrink-0 text-right">

@@ -81,15 +81,20 @@ const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', c
  */
 type TabId = 'today' | 'inbox' | 'pipeline' | 'calendar' | 'route' | 'products' | 'documents' | 'insights';
 
-const TABS: Array<{ id: TabId; label: string; icon: typeof Users }> = [
-  { id: 'today', label: 'Today', icon: CalendarClock },
-  { id: 'inbox', label: 'Inbox', icon: MessageSquare },
-  { id: 'pipeline', label: 'Pipeline', icon: TrendingUp },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'route', label: 'Route', icon: MapPin },
-  { id: 'products', label: 'Products', icon: Package },
-  { id: 'documents', label: 'Documents', icon: FolderOpen },
-  { id: 'insights', label: 'Insights', icon: BarChart3 },
+/* Family tint on the ICON only — same vocabulary as the owner rail, so the
+   three cockpits read as one product (Cal, 3 Aug: "I need the colour family on
+   the side bar icons on the consultant and installer"). Tints map to MEANING:
+   tech=work/day · pop=calendar/products · doc-proposal=sell/analyse ·
+   doc-deposit=people/money · doc-contract=field/paperwork. */
+const TABS: Array<{ id: TabId; label: string; icon: typeof Users; tint: string }> = [
+  { id: 'today', label: 'Today', icon: CalendarClock, tint: 'text-tech' },
+  { id: 'inbox', label: 'Inbox', icon: MessageSquare, tint: 'text-doc-deposit' },
+  { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, tint: 'text-doc-proposal' },
+  { id: 'calendar', label: 'Calendar', icon: Calendar, tint: 'text-pop' },
+  { id: 'route', label: 'Route', icon: MapPin, tint: 'text-doc-contract' },
+  { id: 'products', label: 'Products', icon: Package, tint: 'text-pop' },
+  { id: 'documents', label: 'Documents', icon: FolderOpen, tint: 'text-doc-contract' },
+  { id: 'insights', label: 'Insights', icon: BarChart3, tint: 'text-doc-proposal' },
 ];
 
 /** Stage filter chips shown inside the Inbox tab. */
@@ -300,7 +305,7 @@ export default function ConsultantCockpitV5() {
   const shellNav: ShellNavItem[] = TABS.map(t => ({
     id: t.id,
     label: t.label,
-    icon: <t.icon />,
+    icon: <t.icon className={t.tint} />,
     onSelect: () => setActiveTab(t.id),
     badge: badgeFor(t.id),
     primary: ['today', 'inbox', 'pipeline', 'calendar'].includes(t.id),

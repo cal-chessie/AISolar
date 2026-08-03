@@ -152,11 +152,12 @@ export default function InstallerPortalV5() {
     appendTouchpoint(lead.id, { actor: 'installer', summary: text });
   };
 
-  const TABS: Array<{ id: TabId; label: string; icon: typeof Sun; count?: number }> = [
-    { id: 'today', label: 'Today', icon: CalendarClock },
-    { id: 'schedule', label: 'Schedule', icon: Calendar, count: displayActive.length },
-    { id: 'routing', label: 'Routing', icon: MapPin },
-    { id: 'inbox', label: 'Inbox', icon: MessageSquare, count: inboxJobs.length },
+  /* Family tint on the icon — same vocabulary as owner + consultant rails. */
+  const TABS: Array<{ id: TabId; label: string; icon: typeof Sun; count?: number; tint: string }> = [
+    { id: 'today', label: 'Today', icon: CalendarClock, tint: 'text-tech' },
+    { id: 'schedule', label: 'Schedule', icon: Calendar, count: displayActive.length, tint: 'text-pop' },
+    { id: 'routing', label: 'Routing', icon: MapPin, tint: 'text-doc-contract' },
+    { id: 'inbox', label: 'Inbox', icon: MessageSquare, count: inboxJobs.length, tint: 'text-doc-deposit' },
   ];
 
   // ── ONE app shell (Cal, 3 Aug: the heart) — same frame as owner + consultant.
@@ -165,7 +166,7 @@ export default function InstallerPortalV5() {
   const shellNav: ShellNavItem[] = TABS.map(t => ({
     id: t.id,
     label: t.label,
-    icon: <t.icon />,
+    icon: <t.icon className={t.tint} />,
     onSelect: () => { setTab(t.id); setThreadLeadId(null); },
     badge: t.count || undefined,
     primary: true, // 4 tabs → all ride the mobile bottom nav
