@@ -90,8 +90,19 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
 - **Proposal personalisation.** From THEIR day/night split: "you're out all day — the battery is what makes
   this work for you." The drafter's LLM call carries dealSignals; the numbers stay `computeQuote`'s.
   *(Caught by Cal on the first pass.)*
-- **Customer's own money view.** Grant status · what's paid · what's still due · what happens next, inside
-  `/customer/:token`. *(Caught by Cal on the first pass.)*
+- ✅ **Customer's own money view.** *(Done 4 Aug — verified live.)* A pinned "Your money" card in the portal:
+  total cost → SEAI grant (honest status: included / we'll file after install / with SEAI) → your price →
+  paid so far → still to pay → one plain "what's next" line. Reads the real proposal + invoice + stage, so it
+  never disagrees with the header. Verified: €7,200 − €1,800 grant = €5,400, €0 paid, €5,400 due.
+- ✅ **INBOX TRUTH-PASS FIX (4 Aug — Cal: "the messages are not accurate, nothing makes sense").** Three
+  real defects fixed in `buildConversation`: (1) a hard-coded *"When will my installation happen?"* was
+  injected into every proposal-stage thread — a message the customer never sent — **removed**; (2) the
+  Welcome/intro was pinned to `touchpoints[0]`, so for mid-journey leads it sorted *below* the proposal —
+  now re-stamped just before the earliest real message so it always opens the thread; (3) a genuine customer
+  message on the email channel silently vanished from the thread (only `portal` rendered) and system events
+  were mis-styled — now customer messages render as their own bubble on any channel, events stay quiet
+  system lines. Also reverted a same-session leadIntel change that let dealIntel's staleness rule override
+  per-stage guidance ("chase them" when the ball was with the surveyor).
 - **Feed honesty guard.** The AI-reports feed + badge stay truthful at 0 leads (clean empty state, no
   invented book) — regression-guard on what A10 fixed.
 

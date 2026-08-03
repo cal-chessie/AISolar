@@ -11,7 +11,6 @@ import type { DummyLead } from './dummyData';
 
 export type WaitingParty = 'customer' | 'consultant' | 'installer' | 'agent' | 'authority';
 
-import { nextMove } from './dealIntel';
 
 export interface LeadIntel {
   stageLabel: string;        // human name for the stage
@@ -165,15 +164,12 @@ export function leadIntel(lead: DummyLead): LeadIntel {
   const oursToMove = meta.waitingOn === 'consultant' || meta.waitingOn === 'agent';
   const isStale = oursToMove && days > 4;
 
-  // SING (3 Aug): where dealIntel has a concrete, ranked move for this lead, let
-  // it speak — it carries the €-and-signal voice (action + reason) that the coach
-  // and the owner gates use, so the consultant's per-lead read can't tell a
-  // different story from the coach. The stage-derived line stays the fallback.
-  const move = nextMove(lead, 'consultant');
-  if (move) {
-    next = move.action;
-    holdup = move.reason;
-  }
+  // NOTE (reverted 4 Aug): an earlier attempt overrode next/holdup with
+  // dealIntel.nextMove here. It made the guidance IRRATIONAL — nextMove's
+  // staleness rule fired "chase them" even when the ball was with the surveyor
+  // or the customer, contradicting this stage's real waitingOn. The careful
+  // per-stage read below is the trustworthy source; dealIntel drives the COACH
+  // + owner gates, not this per-lead document intelligence.
 
   return {
     stageLabel: meta.label,

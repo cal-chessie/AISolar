@@ -72,12 +72,21 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
   const forCustomer = opts.audience === 'customer';
   const isEngagementPing = (s: string) => /\bopened\b.*\bproposal\b|reopened/i.test(s);
 
+  // The intro messages must ALWAYS sort to the very top of the thread. Pinning
+  // them to touchpoints[0] broke that for any lead whose first touchpoint is
+  // already mid-journey (a proposal-stage lead's welcome sorted AFTER its
+  // proposal — "the inbox makes no sense", Cal 4 Aug). Anchor them just before
+  // the earliest real touchpoint instead.
+  const times = lead.touchpoints.map(t => new Date(t.timestamp).getTime()).filter(n => !isNaN(n));
+  const earliest = times.length ? Math.min(...times) : Date.now() - 7 * 86400000;
+  const introAt = (offsetMin: number) => new Date(earliest - offsetMin * 60000).toISOString();
+
   // Welcome
   msgs.push({
     id: 'welcome',
     type: 'system',
     body: `Welcome to ${brand.name}, ${lead.name.split(' ')[0]}! Your solar journey starts here.`,
-    timestamp: lead.touchpoints[0]?.timestamp || new Date(Date.now() - 7 * 86400000).toISOString(),
+    timestamp: introAt(2),
   });
 
   // Bill uploaded
@@ -91,19 +100,26 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
       lead.annual_kwh ? `Our AI analyzed your usage: ${lead.annual_kwh.toLocaleString()} kWh/year, €${lead.monthly_bill}/month.` : lead.monthly_bill ? `Bills around €${lead.monthly_bill}/month.` : '',
       lead.intake.estimated_system_size_kw ? `Recommended system: ${lead.intake.estimated_system_size_kw}kWp.` : 'Your recommended system lands with your survey.',
     ].filter(Boolean).join(' '),
-    timestamp: lead.touchpoints[0]?.timestamp || new Date(Date.now() - 7 * 86400000).toISOString(),
+    timestamp: introAt(1),
     actionLabel: 'See your estimate',
     actionIcon: TrendingUp,
     actionData: 'estimate',
   });
 
+  // A customer touchpoint is either a SYSTEM EVENT (opened proposal, signed,
+  // paid, uploaded, left a review) or a real MESSAGE they wrote. Events render
+  // as a quiet system line; a real message renders as the customer's own bubble
+  // — on ANY channel (email OR portal), so a genuine question/objection can't
+  // silently vanish from the thread (Cal 4 Aug).
+  const isCustomerEvent = (s: string) => /opened proposal|reopened|signed contract|payment received|final payment|deposit confirmed|stripe|uploaded|bill uploaded|left \d★|left \d+ ?star|review|via landing page|checklist/i.test(s);
+
   // Touchpoints as messages
   lead.touchpoints.forEach((tp, i) => {
-    if (tp.actor === 'customer' && tp.channel === 'portal') {
+    if (tp.actor === 'customer') {
       if (forCustomer && isEngagementPing(tp.summary)) return; // hide "opened proposal 4×" from the homeowner
       msgs.push({
         id: `tp_${i}`,
-        type: 'system',
+        type: isCustomerEvent(tp.summary) ? 'system' : 'customer',
         body: tp.summary,
         timestamp: tp.timestamp,
       });
@@ -134,21 +150,12 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
     }
   });
 
-  // AI chat history (for leads with active proposals)
-  if (['proposal_sent', 'approved', 'deposit_paid'].includes(lead.workflow_stage)) {
-    msgs.push({
-      id: 'ai_chat_1',
-      type: 'customer',
-      body: 'When will my installation happen?',
-      timestamp: new Date(Date.now() - 2 * 86400000).toISOString(),
-    });
-    msgs.push({
-      id: 'ai_chat_2',
-      type: 'ai',
-      body: `Your installation is scheduled based on your deposit payment. Once you pay the 30% deposit, the Install Coordinator Agent will book your install within 4-6 weeks, weather permitting. You'll get an email reminder 7 days and 1 day before.`,
-      timestamp: new Date(Date.now() - 2 * 86400000).toISOString(),
-    });
-  }
+  // TRUTH-PASS (4 Aug): a hard-coded "When will my installation happen?" +
+  // canned answer used to be injected here for EVERY proposal-stage lead — so
+  // the thread showed a question the customer never asked, with a floating
+  // (Date.now()-2d) timestamp that landed anywhere (Cal: "the messages are not
+  // accurate"). Removed. Real customer questions come from their touchpoints
+  // and are rendered in the loop above.
 
   // Proposal ready — RENDER AS A RICH CARD
   if (lead.proposal && ['proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(lead.workflow_stage)) {
@@ -251,6 +258,19 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
         ctaData: 'warranty',
       },
     });
+  }
+
+  // Pin the intro messages to just before the EARLIEST message of any kind —
+  // touchpoints, the proposal card, contract, install, etc. Anchoring to the
+  // first touchpoint alone wasn't enough: a proposal card can carry a sent_date
+  // earlier than the lead's first touchpoint, which pushed the welcome below the
+  // proposal ("the inbox makes no sense", Cal 4 Aug). This guarantees the intro
+  // always opens the thread.
+  const realTimes = msgs.filter(m => m.id !== 'welcome' && m.id !== 'bill_uploaded').map(m => new Date(m.timestamp).getTime()).filter(n => !isNaN(n));
+  if (realTimes.length) {
+    const min = Math.min(...realTimes);
+    const w = msgs.find(m => m.id === 'welcome'); if (w) w.timestamp = new Date(min - 2 * 60000).toISOString();
+    const bu = msgs.find(m => m.id === 'bill_uploaded'); if (bu) bu.timestamp = new Date(min - 1 * 60000).toISOString();
   }
 
   // Sort by timestamp

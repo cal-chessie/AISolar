@@ -56,7 +56,7 @@ import {
   Sun, Send, Sparkles, FileText, Calendar, Phone, MapPin,
   CheckCircle2, Clock, Bot, User, ArrowRight, ArrowLeft,
   Download, CreditCard, Award, Zap, TrendingUp, AlertCircle,
-  ChevronDown, ChevronUp, MessageSquare, Star, Shield,
+  ChevronDown, ChevronUp, MessageSquare, Star, Shield, Euro,
 } from 'lucide-react';
 import { generateDummyLeads, type DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
@@ -249,6 +249,12 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
 
       {/* Chat thread — full-width, fills the screen */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 bg-card">
+        {/* YOUR MONEY — the customer's own view of the money (Cal, 3 Aug):
+            what it costs, what the grant covers, what's paid, what's still due,
+            and what happens next. Honest: the grant is TRACKED for them (we do
+            the paperwork), never claimed as submitted-by-them. */}
+        {lead.proposal && <MoneyView lead={lead} />}
+
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
         ))}
@@ -523,5 +529,72 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * MoneyView — the customer's own money story, in plain words. Cal (3 Aug):
+ * "grant status, what's paid, what's next, in their portal." Reads the real
+ * proposal + invoice + stage, so it never disagrees with the header or the
+ * proposal. Truth-pass: the SEAI grant is TRACKED for them (we do the
+ * paperwork) — never claimed as submitted-by-them or already banked.
+ */
+function MoneyView({ lead }: { lead: DummyLead }) {
+  const p = lead.proposal!;
+  const inv = lead.invoice;
+  const stage = lead.workflow_stage;
+
+  const gross = p.net_cost + (p.seai_grant ?? 0);
+  const depositPaid = !!inv?.deposit_paid;
+  const finalPaid = !!inv?.final_paid;
+  const deposit = inv?.deposit_amount ?? Math.round(p.net_cost * 0.3);
+  const paid = (depositPaid ? deposit : 0) + (finalPaid ? (inv?.final_amount ?? (p.net_cost - deposit)) : 0);
+  const due = Math.max(0, p.net_cost - paid);
+
+  // Grant status — honest to where the job actually is.
+  const grantStatus =
+    ['installed', 'final_paid', 'completed'].includes(stage) ? { label: 'Paperwork with SEAI', tone: 'text-tech' }
+    : ['deposit_paid', 'install_scheduled', 'installing'].includes(stage) ? { label: 'We\'ll file it after install', tone: 'text-muted-foreground' }
+    : { label: 'Included in your price', tone: 'text-muted-foreground' };
+
+  // What happens next, money-wise — one honest line off the stage.
+  const nextLine =
+    !depositPaid && ['proposal_sent', 'approved', 'proposal_drafted'].includes(stage) ? 'Your deposit secures the install date — the link is on your proposal.'
+    : depositPaid && !finalPaid ? 'The balance is due once your system is installed and commissioned.'
+    : finalPaid ? 'All paid — your grant paperwork is the last thing we close out for you.'
+    : 'Nothing due right now — we\'ll tell you in good time before anything is.';
+
+  const rows: Array<{ label: string; value: string; sub?: string; tone?: string; icon: typeof Euro }> = [
+    { label: 'Total system cost', value: eur(gross), sub: 'before your grant', icon: TrendingUp },
+    { label: 'SEAI grant', value: `− ${eur(p.seai_grant ?? 0)}`, sub: grantStatus.label, tone: 'text-tech', icon: Award },
+    { label: 'Your price', value: eur(p.net_cost), sub: 'after the grant', tone: 'text-foreground', icon: Euro },
+    { label: 'Paid so far', value: eur(paid), sub: depositPaid ? (finalPaid ? 'paid in full — thank you' : 'deposit received') : 'nothing yet', tone: 'text-doc-deposit', icon: CheckCircle2 },
+    { label: 'Still to pay', value: eur(due), sub: due === 0 ? 'you\'re all square' : 'not due yet', tone: due === 0 ? 'text-doc-deposit' : 'text-foreground', icon: Clock },
+  ];
+
+  return (
+    <div className="rounded-panel border border-border bg-background shadow-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
+        <Euro className="size-4 text-doc-deposit" />
+        <h3 className="text-sm font-semibold">Your money</h3>
+        <span className="ml-auto text-2xs text-muted-foreground">the full picture, no surprises</span>
+      </div>
+      <div className="divide-y divide-border/60">
+        {rows.map(r => (
+          <div key={r.label} className="flex items-center gap-3 px-4 py-2.5">
+            <span className="grid size-6 place-items-center rounded-md bg-muted shrink-0"><r.icon className="size-3.5 text-muted-foreground" /></span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{r.label}</div>
+              {r.sub && <div className="text-2xs text-muted-foreground">{r.sub}</div>}
+            </div>
+            <div className={`text-sm font-semibold tabular-nums shrink-0 ${r.tone ?? 'text-foreground'}`}>{r.value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-2.5 bg-muted/30 border-t border-border">
+        <div className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">What's next</div>
+        <p className="text-xs text-foreground leading-body">{nextLine}</p>
+      </div>
+    </div>
   );
 }
