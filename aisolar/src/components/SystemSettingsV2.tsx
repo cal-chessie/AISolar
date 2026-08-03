@@ -265,7 +265,10 @@ export default function SystemSettingsV2() {
 
         {/* === AUDIT LOG — detailed + filterable === */}
         <TabsContent value="terms" className="grid gap-4 lg:grid-cols-2 items-start">
-          <PricingCard />
+          <div className="space-y-4">
+            <PricingCard />
+            <EstimateBasisCard />
+          </div>
           <ProposalTermsCard />
         </TabsContent>
 
@@ -655,6 +658,80 @@ function MarketingSequencesEditor() {
   );
 }
 
+
+/* Cal (3 Aug): "put the estimate overview below the equipment pricing… with
+   the 21 data points collected and named so user can see what the proposal is
+   then based on." This is the receipt: every field the bill reader captures,
+   in plain English, flagged where it MOVES the money. Read-only by design —
+   these are read off the customer's bill, not typed by the owner. */
+const BILL_POINTS: Array<{ group: string; items: Array<[string, string, boolean]> }> = [
+  { group: 'Who + where', items: [
+    ['Account name', 'the bill holder', false],
+    ['Address', 'site address off the bill', false],
+    ['Eircode', 'pins the roof for the design', true],
+    ['MPRN', 'the meter — required on the ESB NC6', true],
+  ]},
+  { group: 'What they use', items: [
+    ['Monthly bill (€)', 'the headline they recognise', true],
+    ['Annual usage (kWh)', 'sizes the system', true],
+    ['Billing period', 'bi-monthly, monthly…', false],
+    ['Usage this period (kWh)', 'the read behind the annual figure', false],
+    ['Day usage (kWh)', 'the day half of the split', true],
+    ['Night usage (kWh)', 'the night half — argues the battery', true],
+  ]},
+  { group: 'What they pay', items: [
+    ['Supplier', 'sets the export (CEG) rate we credit', true],
+    ['Tariff name', 'the plan they are on', false],
+    ['Day unit rate (€/kWh)', 'what every self-used unit saves', true],
+    ['Night unit rate (€/kWh)', 'battery charging maths', true],
+    ['Standing charge', 'daily fee — never counted as a saving', false],
+    ['Standing charge unit', 'per day / per period', false],
+    ['VAT rate on the bill', '9% domestic · 13.5% business', false],
+    ['Day/night meter', 'unlocks night-rate arbitrage', true],
+  ]},
+  { group: 'How sure we are', items: [
+    ['Estimated reading', 'flags an E-marked bill', false],
+    ['Notes', 'anything odd the reader saw', false],
+    ['Read confidence', 'high · medium · low', false],
+  ]},
+];
+
+function EstimateBasisCard() {
+  const driving = BILL_POINTS.flatMap(g => g.items).filter(([, , d]) => d).length;
+  return (
+    <div className="rounded-panel bg-card shadow-card p-5">
+      <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
+        <span className="p-1.5 rounded-lg bg-doc-proposal/10"><FileText className="h-4 w-4 text-doc-proposal" /></span>
+        What an estimate is built from
+      </h3>
+      <p className="text-xs text-muted-foreground mb-4 leading-body">
+        Every proposal starts with the customer's own bill — <strong className="text-foreground">21 points</strong> read
+        automatically, <strong className="text-foreground">{driving}</strong> of which move the money. Your rates above
+        supply the cost; these supply the savings. Nothing here is typed by you or invented by us.
+      </p>
+      <div className="space-y-3">
+        {BILL_POINTS.map(g => (
+          <div key={g.group}>
+            <div className="label-micro mb-1.5">{g.group}</div>
+            <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+              {g.items.map(([name, why, drives]) => (
+                <div key={name} className="flex items-baseline gap-1.5 text-xs py-0.5">
+                  <span className={`size-1.5 rounded-full shrink-0 translate-y-1 ${drives ? 'bg-doc-deposit' : 'bg-muted-foreground/30'}`} />
+                  <span className="font-medium shrink-0">{name}</span>
+                  <span className="text-muted-foreground truncate">— {why}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-2xs text-muted-foreground mt-4 pt-3 border-t border-border">
+        <span className="inline-block size-1.5 rounded-full bg-doc-deposit align-middle mr-1" />
+        drives the numbers on the proposal · a missing point never blocks an estimate — it widens the caveat.
+      </p>
+    </div>
+  );
+}
 
 /* Cal: "terms of service? that means there needs to be that setup in owners
    settings" — the owner's terms, rendered verbatim on every proposal. */
