@@ -24,7 +24,7 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, AppRole } from '@/hooks/useAuth';
-import { isDemoMode } from '@/lib/demoMode';
+import { isAuthBypassAllowed } from '@/lib/demoMode';
 import { Sun } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -38,7 +38,9 @@ export default function ProtectedRoute({ children, roles }: ProtectedRouteProps)
   const location = useLocation();
 
   // Demo mode bypasses auth (only available in DEV or when explicitly enabled)
-  if (isDemoMode()) {
+  // A9: dev/staging only — a production build NEVER skips login, even if
+  // VITE_ENABLE_DEMO is set. Demo DATA stays available; the door does not open.
+  if (isAuthBypassAllowed()) {
     return <>{children}</>;
   }
 

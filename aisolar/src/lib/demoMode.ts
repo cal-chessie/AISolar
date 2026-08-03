@@ -7,9 +7,24 @@
 
 const DEMO_KEY = 'aisolar_demo_mode';
 
+/* TWO different things were tangled behind one flag (found 3 Aug, A9/A10):
+ *   1. DEMO DATA — the 10 archetypes + the guided tour. Cal WANTS this in
+ *      production: every new user meets the cast and is walked round the spine
+ *      as their onboarding + training. It is a FEATURE, opt-in, per user.
+ *   2. AUTH BYPASS — walking straight into any cockpit with no session. That is
+ *      a dev/staging convenience and must be IMPOSSIBLE in a production build,
+ *      even if VITE_ENABLE_DEMO leaks into the env.
+ * They are now separate switches. Demo data can never let someone skip login. */
 const DEMO_AVAILABLE: boolean =
   (import.meta as any).env?.DEV === true ||
   (import.meta as any).env?.VITE_ENABLE_DEMO === 'true';
+
+/** Auth bypass — DEV builds ONLY. A production bundle can never bypass login,
+ *  whatever the env says. (import.meta.env.PROD is set by Vite at build time.) */
+export function isAuthBypassAllowed(): boolean {
+  if ((import.meta as any).env?.PROD === true) return false;
+  return (import.meta as any).env?.DEV === true && isDemoMode();
+}
 
 export function isDemoMode(): boolean {
   if (!DEMO_AVAILABLE) return false;
@@ -38,6 +53,21 @@ export function enableDemoMode(): void {
 
 export function disableDemoMode(): void {
   try { localStorage.removeItem(DEMO_KEY); } catch { /* ignore */ }
+}
+
+/** THE safe accessor for fabricated leads. Returns [] unless demo is
+ *  deliberately on, so no surface can ever show invented customers by accident
+ *  (the coach was doing exactly that — ungated — before 3 Aug). */
+export async function demoLeads() {
+  if (!isDemoMode()) return [];
+  const { generateDummyLeads } = await import('./dummyData');
+  return generateDummyLeads();
+}
+
+/** Sync variant for pure libs that cannot await (coachBrain). Callers MUST
+ *  handle an empty list — that is the honest state when demo is off. */
+export function demoLeadsSync(gen: () => unknown[]): unknown[] {
+  return isDemoMode() ? gen() : [];
 }
 
 export function isDemoAvailable(): boolean {

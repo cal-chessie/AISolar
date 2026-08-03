@@ -6,12 +6,13 @@ import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import CustomerProposal from '@/components/customer/CustomerProposal';
 import { generateDummyLeads } from '@/lib/dummyData';
+import { isDemoMode } from '@/lib/demoMode';
 import { toast } from 'sonner';
 
 export default function ProposalPage() {
   const { leadId } = useParams();
   const lead = useMemo(() => {
-    const leads = generateDummyLeads();
+    const leads = isDemoMode() ? generateDummyLeads() : [];
     return leads.find(l => l.id === leadId && l.proposal)
       ?? leads.find(l => l.proposal)!;
   }, [leadId]);

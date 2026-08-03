@@ -12,6 +12,13 @@
  * the trustworthy floor.
  */
 import { generateDummyLeads, type DummyLead } from './dummyData';
+import { isDemoMode } from './demoMode';
+
+/* A10 (3 Aug): this file called generateDummyLeads() UNGATED — in production the
+ * coach would answer questions about customers that do not exist. Every read now
+ * goes through this gate; with demo off it returns [] and the coach says so
+ * honestly instead of inventing a book of business. */
+const bookOfBusiness = (): DummyLead[] => (isDemoMode() ? generateDummyLeads() : []);
 import { leadIntel } from './consultantIntelligence';
 import { leadEngagement } from './engagement';
 import { selfConsumptionFromOccupancy, getStage } from './leadIntake';
@@ -44,7 +51,7 @@ export function coachBriefing(role: CoachRole): CoachAnswer {
   if (role !== 'consultant' && role !== 'owner') {
     return { text: 'Ask me anything about your work — I read the live pipeline, so I can point you at exactly what needs you.' };
   }
-  const leads = generateDummyLeads();
+  const leads = bookOfBusiness();
   const active = leads.filter(l => l.proposal || ['new', 'intake_complete', 'survey_scheduled', 'survey_complete', 'proposal_drafted'].includes(l.workflow_stage));
   const hot = leads.filter(l => leadEngagement(l).warmth === 'hot');
   const stale = leads.filter(l => leadIntel(l).isStale);
@@ -67,7 +74,7 @@ export function coachBriefing(role: CoachRole): CoachAnswer {
 /** Answer a free-text question, grounded in the real leads. */
 export function coachAnswer(role: CoachRole, qRaw: string): CoachAnswer {
   const q = qRaw.toLowerCase().trim();
-  const leads = generateDummyLeads();
+  const leads = bookOfBusiness();
 
   // The installer's world is installs, not the pipeline — its own brain.
   if (role === 'installer') return installerAnswer(q, leads);
@@ -215,7 +222,7 @@ function nextInstallOf(scheduled: DummyLead[]): DummyLead | undefined {
 }
 
 function installerBriefing(): CoachAnswer {
-  const leads = generateDummyLeads();
+  const leads = bookOfBusiness();
   const { scheduled, handover, unscheduled } = installerJobs(leads);
   const job = nextInstallOf(scheduled);
   if (!job) {
