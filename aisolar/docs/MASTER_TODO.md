@@ -77,6 +77,40 @@ applied live, end-to-end) · RoofDesigner **Clear-all-panels**.
 
 ---
 
+## 🧾 SWEEP-8 RECONCILIATION (added 3 Aug — Cal: "I don't trust you if you're forgetting items")
+**The gap, honestly:** MASTER_TODO was consolidated from GO_LIVE · PUNCH_LIST · the audits — but I never mined
+`SWEEP8_DB_WIRING.md`'s **45 coded items** (M/D/X/L/G/A series, 71 open markers). Below is that list, each **verified
+against the code today** — not copied blind. Several were already done since 30 Jul; the rest are now owned here.
+
+**✅ VERIFIED DONE since Sweep 8 was written (don't re-open):**
+A2 front-door lead creation (`/start` posts through the door) · A4 settings-persist (6 stores dual-write) ·
+M1 `installed_equipment` (write fn live + table) · A5 ai-config (saves to `ai_config`) · X8 LLM behind the drafter ·
+truth-guard (Settings now says "not configured", 3 Aug) · M8 products (table live) · A6 consent (`pushConsent` exists).
+
+**🔴 STILL OPEN + launch-critical (now on the list):**
+- **A10 · dummy-data purge** — `generateDummyLeads` still reachable in **6 files** (was 18). Prod must have NO dummy
+  path. Pairs with the demo-toggle work.
+- **A9 · POV/role gating proof** — routes gate, but **demo bypasses auth**; needs demo-off in prod + a tested
+  role→route matrix + per-POV RLS proof.
+- **X1 · Postmark sends** — every UI-fake send wired for real (proposal · deposit · photo-request · reschedule ·
+  handover pack · referral · team invite). This IS the notification spine.
+- **L1 · both-ends notify** — every interaction notifies customer AND consultant (email + magic link; no SMS/WA).
+- **D4 · maps-static-proxy** — ⚠️ SECURITY: the Maps key must never ship to the client; proxy it. (D3 buildingInsights
+  server-side rides with it.)
+
+**🟠 OPEN, launch-polish:**
+M3 signature_hash (sha256 on the DoW/NC record) · M4 notifications + magic_link_tokens · M6 designs persistence
+(kills stored-vs-live kWp delta) · M7 proposal_versions (append-only) · M11 `touchpoints.sender` + **Realtime
+(verified NOT wired)** · M12 staff home address + depots (scheduler inputs) · M13 agent_route_runs (owner
+transparency: chosen order + km/min/€ saved) · X2 cal.com real booking · X3 distance-matrix drive-time ·
+X9 e-sign contract flow · L4 ask-AI guardrail (customer AI refuses anything outside THEIR project) ·
+L5 white-label sweep completion (10 files use tenantBrand; finish the rest).
+
+**⏸ POST-COHORT (correctly parked):** M5/L3 learning loop · M9 feedback+referrals+tier_entitlements · A11 entitlements ·
+M10 installer_vault · M14 inventory/depot shelf · D6 plate-OCR *(largely superseded by Compliance Vision, 3 Aug)* ·
+X5 Realtime · X6 Sentry · X7 uptime *(Better Stack — tooling verdict)* · G1 referral link · G2 review→Google Business ·
+HK1 vault commit.
+
 ## 🔑 CAL'S HANDS (deploy — I prep, you run)
 - `brew install supabase/tap/supabase` + `supabase login` (needed for edge deploys).
 - Old-key rotation + git-history purge (coxmtpnq · vythuqax · kernel · Maps).
