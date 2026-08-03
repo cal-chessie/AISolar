@@ -213,6 +213,21 @@ through the new onboarding.
 heatmap/session analytics · the browser `portal_submitter` agent · kernel Phase 2 (bind gate_bridge → inscribed kernel) ·
 THE_OPERATING_STACK §2/§3 (the growth machine + enterprise stack).
 
+## MONTH-6 SaaS — parked on purpose, WITH honest build-times from where we stand (Cal, 3 Aug: "I agree — park them")
+> **The keeper line (Cal asked this recorded):** *at 10 hand-picked clients, concierge onboarding IS best practice —
+> you personally setting up each installer is a feature, not a gap. Don't build month-6 SaaS before client #1. Every
+> "am I missing it?" item is either on the launch list or parked HERE — written down so you stop carrying the fear of it.*
+
+From our current base (Stripe webhook plumbing + Supabase auth + tenant entitlements-ready), none of these are scary:
+- **Dunning automation** — ~2 days. Mostly Stripe CONFIG (Smart Retries + emails) + one webhook branch (`past_due` →
+  read-only banner). Stripe does the heavy lifting.
+- **Seat policing / tier entitlements** — ~1 week. `tenants.plan` + per-plan limits enforced in RLS/UI (ties Sweep-9 A11).
+  Price seats from day one; ENFORCE them here.
+- **SSO (Google) — already have it** (Supabase OAuth). Enterprise SAML/OIDC = ~1 week when a client big enough asks. Never sooner.
+- **Ticketing — never build.** Adopt a tool (Crisp/Plain/Intercom) in an afternoon when WhatsApp stops scaling (~25+ clients).
+- **Per-tenant email domains (DKIM)** — ~3 days engineering + per-client DNS hand-holding. The from-name pattern carries until ~15 clients.
+- **Status page** — an afternoon (hosted tool) when clients are strangers, not friends.
+
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the
 AIGate human gates all apply automatically. A new channel is a weekend, not a rebuild.

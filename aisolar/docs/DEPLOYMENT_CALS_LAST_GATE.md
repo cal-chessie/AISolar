@@ -7,6 +7,15 @@
 
 ---
 
+## 📁 THE DOC MAP (1–3 Aug docs — ALL of them, none loose; Cal: "don't leave loose docs")
+**Order of truth: [`GO_LIVE.md`](GO_LIVE.md) (THE final gate + §9 Cal's adds + §10 first-cohort honest list) →
+the register in [`CALS_GROWTH_DEV.md`](CALS_GROWTH_DEV.md) (every TODO, deduped + month-6 parked w/ build-times).**
+Detail docs: [`MASTER_AUDIT_1AUG.md`](MASTER_AUDIT_1AUG.md) (estate map, live-verified) ·
+[`DEPLOYMENT_READINESS_2AUG.md`](DEPLOYMENT_READINESS_2AUG.md) (squad verdicts + the 20) ·
+[`PAPERWORK_AUDIT.md`](PAPERWORK_AUDIT.md) (NC6/7 engine truth) · [`THE_OPERATING_STACK.md`](THE_OPERATING_STACK.md)
+(the vision, triaged) · [`ONBOARDING_SPEC.md`](ONBOARDING_SPEC.md) (Flowith flow + 7-day ACTIVATION checklist + sites
+wiring plan) · [`OWNER_REVAMP_BRIEF.md`](OWNER_REVAMP_BRIEF.md) (next session's opener — Cal's GO given).
+
 ## 0 · RECONCILED TO V5 — THE CURRENT MAP (31 Jul 2026) ⭐ READ THIS FIRST
 > §1–8 below are the **coxmtpnq-era** reference (still-good runbook mechanics, DoD ladder,
 > rollback). This section supersedes their DB specifics. Full engineering history:

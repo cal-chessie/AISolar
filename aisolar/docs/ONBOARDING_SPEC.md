@@ -56,3 +56,18 @@ Recon (3 Aug): both are **Next 16/React 19**; **NEITHER posts to ingest-lead tod
   configs. Attribution answers → `lead_touchpoints` / tenant record (real data, not decoration).
 - Estimate reveal uses `computeQuote` LIVE with the tenant dial (the maths is already sound — show it off).
 - Truth-pass: no invented social proof in the flow; referral code optional; consent line at signup (GDPR consent_records).
+
+## AI KEYS (Cal, 3 Aug: "don't they need their AI keys as well??") — NO, and that's the product
+Launch answer: **AI is INCLUDED — the platform's LLM key powers every tenant's agents** (bundled in the price; zero
+setup friction; "your agents work the second you sign up" is a selling point, not a cost problem at 10 clients).
+The OpenRouter card in Settings → Integrations ALREADY exists for **bring-your-own-key later** (cost control at
+scale / enterprise preference). Post-cohort: per-tenant usage metering on the platform key.
+
+## SITES BOOKING — the truth (verified 3 Aug)
+- **In-app built-in EXISTS**: `SurveyBooking` — customer picks/counters half-day windows in their portal chat,
+  both-sides-agree, T-1 reminder. This is the booking once a lead is IN the pipeline.
+- **SIG book-survey TODAY**: opens a pre-filled **WhatsApp message to Cal** — works, but creates NO lead (invisible
+  to the pipeline/agents). **RI: no booking surface at all.** The wiring makes the same forms ALSO create the lead
+  through the door (WhatsApp kept as instant-notify if wanted) → then the in-app SurveyBooking takes over.
+- **Cal.com**: Cal says the API key is already in the estate — NOT in aisolar/Renewably .env files (checked); locate
+  in the wiring block (vault/Renewably estate) or Cal points to it. Key stays server-side env, never in git.
