@@ -17,7 +17,7 @@
  * in when the Maps key is live. "Rough layout, confirmed at survey" framing stays.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check, Plus, Minus } from 'lucide-react';
+import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check, Plus, Minus, X } from 'lucide-react';
 import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
 import { mppAt, IMG_LOGICAL_W, type MapView } from '@/lib/roofGeo';
@@ -292,6 +292,12 @@ export default function RoofDesigner({
               <button onClick={() => { setRect(null); setRotation(0); emit(null, 0); setDrawing(true); }}
                 className="inline-flex h-9 items-center gap-1.5 rounded-control bg-background/95 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
                 <RotateCcw className="size-3.5" /> Redraw
+              </button>
+              {/* Cal (3 Aug): "should be able to remove all panels completely" —
+                  Clear empties the array back to zero, no forced redraw. */}
+              <button onClick={() => { setRect(null); setRotation(0); emit(null, 0); setDrawing(false); }}
+                className="inline-flex h-9 items-center gap-1.5 rounded-control bg-background/95 px-3 text-2xs font-semibold shadow-card hover:bg-background transition-colors">
+                <X className="size-3.5" /> Clear
               </button>
             </>
           )}

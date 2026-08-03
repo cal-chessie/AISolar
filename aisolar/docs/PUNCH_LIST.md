@@ -55,7 +55,12 @@ not reproduce it there at either width.
 10. 🔴 **Add-lead captures NO eircode + no MPRN** (`LeadFormDialog`) — eircode drives the roof read + NC6 §2; add both
    (eircode w/ format hint). Blocker: real leads lose the field the whole compliance chain needs.
 11. 🟠 **Design Studio: can't remove ALL panels** — "Redraw" forces back into draw mode; add a clean clear-to-zero.
-12. 🟠 **Agent pages/headers don't conform between views** — `AgentFoundation` mixes CardTitle/h2/h3, consultant uses a
+11b. ✅ **Remove-all-panels** — RoofDesigner "Clear" button (empties to zero, no forced redraw). Done 3 Aug.
+12. 🟠 **Agent pages/headers don't conform between views** — ROOT (diagnosed 3 Aug): owner cockpit uses `AppShell`
+   (clean 48px page header) but `ConsultantCockpitV5` rolls its OWN header + tabs, and `AgentFoundation` stacks its own
+   big `CardTitle` UNDER the shell title = double header, mismatched sizes. FIX = a shared shell/page-header the
+   consultant + installer adopt, and drop AgentFoundation's redundant embedded title. Design-sensitive, browser-live,
+   slot ⑥ (NOT a blind rush). — `AgentFoundation` mixes CardTitle/h2/h3, consultant uses a
    different AgentWindow; no shared header → sizing + family drift. Fix = ONE shared page-header component (slot ⑥).
 13. ℹ️ **"Still Google?" answered** — base map = Esri (keyless, ours); Google Solar = optional Level-2 auto-detect only.
 
