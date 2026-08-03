@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
+import { callPrep } from '@/lib/dealIntel';
 import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
 import { calculateSystemEstimate, PIPELINE_STAGES, getStage, annualProduction, selfConsumptionFromOccupancy, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { systemCost, getPricingConfig } from '@/lib/pricing';
@@ -240,6 +241,27 @@ function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
             <DarkModeToggle />
           </div>
         </div>
+
+        {/* CALL PREP — the 20-seconds-before-the-call read (dealIntel.callPrep):
+            where they are · their words on what's holding them · the number that
+            answers it. Collapsible so it never gets in the way. */}
+        {(() => {
+          const prep = callPrep(lead);
+          return (
+            <details className="px-4 pb-2 group">
+              <summary className="flex items-center gap-1.5 cursor-pointer list-none text-2xs font-semibold text-doc-proposal hover:opacity-80 w-fit">
+                <Sparkles className="h-3 w-3" />
+                Prep the call
+                <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
+              </summary>
+              <div className="mt-1.5 rounded-control border border-border bg-muted/30 p-2.5 space-y-1.5 text-xs max-w-2xl">
+                <div className="flex gap-2"><span className="shrink-0 w-16 text-2xs font-medium text-muted-foreground uppercase tracking-wide pt-0.5">Where</span><span>{prep.where}</span></div>
+                <div className="flex gap-2"><span className="shrink-0 w-16 text-2xs font-medium text-muted-foreground uppercase tracking-wide pt-0.5">{prep.fromTheir ? 'They said' : 'Likely'}</span><span className={prep.fromTheir ? 'italic' : ''}>{prep.objection}</span></div>
+                <div className="flex gap-2"><span className="shrink-0 w-16 text-2xs font-medium text-doc-deposit uppercase tracking-wide pt-0.5">Answer</span><span className="font-medium">{prep.answer}</span></div>
+              </div>
+            </details>
+          );
+        })()}
 
         {/* Progress stepper */}
         <div className="px-4 pb-3">

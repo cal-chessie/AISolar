@@ -160,6 +160,58 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   return null;
 }
 
+/**
+ * callPrep — the 20-seconds-before-the-call read (Cal, 3 Aug / AI_WORTH #3).
+ * Three lines a consultant can glance at as the phone rings: where the deal is,
+ * the customer's own words on what's holding them, and the ONE number that
+ * answers it. Deterministic — mined from the record, LLM only adds polish later.
+ */
+export interface CallPrep {
+  where: string;      // situation, in €-and-days terms
+  objection: string;  // their concern — their words where we have them
+  answer: string;     // the number/fact that meets it
+  fromTheir: boolean; // true = "objection" is the customer's actual message
+}
+
+const OBJECTION_HINTS = /expensive|cost|price|afford|cheaper|think|thinking|wait|unsure|not sure|hold|budget|quote|compare|competitor|another|dear|too much/i;
+
+export function callPrep(lead: DummyLead): CallPrep {
+  const s = dealSignals(lead);
+  const tps = lead.touchpoints ?? [];
+  // Their voice: the most recent inbound message that reads like a concern,
+  // else the most recent inbound at all.
+  const inbound = [...tps].reverse().filter(t => t.direction === 'inbound');
+  const objectionTp = inbound.find(t => OBJECTION_HINTS.test(t.summary ?? '')) ?? inbound[0];
+  const fromTheir = !!objectionTp && OBJECTION_HINTS.test(objectionTp.summary ?? '');
+
+  const where = s.value
+    ? `${s.stageLabel} · ${eur(s.value)} on the table${s.daysInStage != null ? ` · ${s.daysInStage} day${s.daysInStage === 1 ? '' : 's'} here` : ''}${s.proposalOpens ? ` · opened ${s.proposalOpens}×` : ''}.`
+    : `${s.stageLabel}${s.daysInStage != null ? ` · ${s.daysInStage} day${s.daysInStage === 1 ? '' : 's'} here` : ''}.`;
+
+  // Objection: their words if we have them; else the concern this stage usually carries.
+  const STAGE_CONCERN: Record<string, string> = {
+    proposal_sent: 'Price vs payback — is it worth it, and how soon does it pay back?',
+    approved: 'Cold feet after signing — reassure on the install and the grant.',
+    survey_complete: 'Will it actually suit my roof and my usage?',
+    proposal_drafted: 'Wants the numbers before committing any time.',
+  };
+  const objection = fromTheir
+    ? `"${(objectionTp!.summary ?? '').replace(/^[A-Za-z ]+:\s*/, '')}"`
+    : (STAGE_CONCERN[lead.workflow_stage] ?? 'Keep it moving — confirm the next step and a date.');
+
+  // The number that answers it — payback, saving, or grant, whichever lands.
+  const p = lead.proposal;
+  const answer = p
+    ? [
+        p.payback_years ? `${p.payback_years}-yr payback` : null,
+        p.annual_savings ? `${eur(p.annual_savings)}/yr saved` : null,
+        p.seai_grant ? `${eur(p.seai_grant)} SEAI grant already in the price` : null,
+      ].filter(Boolean).slice(0, 2).join(' · ') || 'Their design is priced and grant-inclusive — lead with the net cost.'
+    : 'No design on file yet — the call is to book the survey that makes the numbers real.';
+
+  return { where, objection, answer, fromTheir };
+}
+
 export interface AIReport {
   severity: 'now' | 'today' | 'soon' | 'info';
   text: string;

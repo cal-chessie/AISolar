@@ -32,6 +32,8 @@ export async function verifyArtefact(
   artefact: ArtefactKind,
   imageDataUrl: string,
   serials: Pick<SerialState, 'fittedModel' | 'acRatingKw' | 'ratedCurrentA' | 'typeTestCertRef' | 'serial'>,
+  /** The RECI number from Settings — the RECI-cert check compares against it. */
+  reciNumber?: string,
 ): Promise<ArtefactVerdict> {
   try {
     const { data, error } = await supabase.functions.invoke('verify-artefact', {
@@ -44,6 +46,7 @@ export async function verifyArtefact(
           ratedCurrentA: serials.ratedCurrentA,
           typeTestCertRef: serials.typeTestCertRef,
           serial: serials.serial,
+          reciNumber: reciNumber ?? '',
         },
       },
     });

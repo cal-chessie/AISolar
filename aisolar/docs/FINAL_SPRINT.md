@@ -53,19 +53,22 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
 ## SPRINT 1 — 🤖 AI GOLDEN
 **Goal: the AI is the compliance officer and the closer's edge — "worth its weight in gold", provable on screen.**
 
-- ⭐ **Compliance Vision, whole gate.** Extend the cross-check to the **plate photo** (serial + rating vs
-  typed) and the **RECI cert** (number vs Settings) — the fn already accepts all the kinds; wire the two
-  capture surfaces + buttons. Then the pack cover may state "AI cross-checked ✓ (n fields agree)" —
-  honest, never claimed without a run. The AC-band/NC6-vs-NC7 error becomes structurally impossible.
-- ⭐ **Coach sings on every POV** *(Cal's sequencing: MUST land before the finale tour).* Installer voice
-  ("you're 2 serials from done") + customer voice ("here's what happens next and why") move onto
-  `dealIntel`; owner/consultant deepen (thread tone, €-at-stake, days-in-stage everywhere).
-  `consultantIntelligence.leadIntel()`'s 13 hard-coded stage lines get the same treatment
-  (THE_OPERATING_STACK flag). The coach goes **conversational** — it prompts the human at every gate, not
-  only when asked (CALS_GROWTH_DEV: "speed up the human").
-- **Call-prep card.** Open a lead → three sentences: where they are, the objection in their own words from
-  the thread, the number that answers it. Lives on the LeadFlow header. Deterministic from dealSignals;
-  LLM voice when enabled. Zero new plumbing.
+- ✅ ⭐ **Compliance Vision, whole gate.** *(Done 3 Aug — verified live.)* Reusable `ArtefactCheckCard` now
+  runs three cross-checks on the commissioning gate: the **plate photo** (serial + AC rating + model vs
+  typed), the **type-test cert** (the NC6→NC7 band-error killer), and the **RECI cert** (number vs
+  Settings). Each captures its own photo, flags-not-blocks, and stays honest (no_ai / unreadable never read
+  as a pass). *(Still open: print "AI cross-checked ✓ (n agree)" on the pack cover — rides Sprint 2's pack writes.)*
+- ⭐ **Coach sings on every POV** *(Cal's sequencing: MUST land before the finale tour).*
+  - ✅ **Installer voice** *(Done 3 Aug)* — the briefing now leads with the top `dealIntel` move (the
+    blocking NC6 item: "close out X's gate — serial is still open"), then the day's load.
+  - ✅ **Customer voice** *(Done 3 Aug)* — a real stage-aware briefing: where their project is, what
+    happens next, and what (if anything) we need from them — warm, never over-promising.
+  - ⬜ Owner/consultant deepen further · ⬜ `consultantIntelligence.leadIntel()`'s 13 hard-coded lines onto
+    dealIntel · ⬜ the coach goes **conversational** (prompts at every gate, not only when asked).
+- ✅ **Call-prep card.** *(Done 3 Aug — verified live: "Proposal Sent · €134,350 on the table · 3 days here
+  · opened 3× / Price vs payback — is it worth it? / 6.9-yr payback · €19,526/yr saved".)* `dealIntel.callPrep`
+  → a collapsible three-line strip on the LeadFlow header: where they are · their words (or the likely
+  concern) · the number that answers it. Deterministic; LLM polish when enabled.
 - **Inbox triage.** Every inbound classified (question · objection · booking · complaint · silence) + a
   drafted reply waiting **behind the human send gate**, in the unified inbox that already exists.
 - **Outside touchpoints — agents STRONGER on email (Cal's question, answered in code):** every outbound is

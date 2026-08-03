@@ -42,7 +42,8 @@ import {
 import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
-import { verifyArtefact, FIELD_LABELS, type ArtefactVerdict } from '@/lib/artefactCheck';
+import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
+import { useCompanyCompliance } from '@/lib/companyCompliance';
 import { downloadSubmissionPack } from '@/lib/pdfFill';
 import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
 import { monitoringAppForModel, commissioningSteps, systemLiveEmail } from '@/lib/monitoringHandoff';
@@ -203,27 +204,17 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [serials, setSerials] = useState<SerialState>(DEFAULT_SERIALS);
   const [certs, setCerts] = useState<CertRecord>({});
-  // COMPLIANCE VISION: the model reads the type-test cert and cross-checks it
-  // against what the crew typed. Flags only — never blocks the gate.
-  const [verdict, setVerdict] = useState<ArtefactVerdict | null>(null);
-  const [checking, setChecking] = useState(false);
-  const runArtefactCheck = async () => {
-    const cert = certs.typeTest;
-    if (!cert?.dataUrl || cert.kind !== 'image') return;
-    setChecking(true);
-    const v = await verifyArtefact('type_test', cert.dataUrl, serials);
-    setVerdict(v); setChecking(false);
-    if (v.status === 'mismatch') {
-      toast.error(`${v.mismatches.length} mismatch${v.mismatches.length === 1 ? '' : 'es'} vs the certificate`, {
-        description: 'Look again before this goes on the NC6 — the cert wins.',
-      });
-    } else if (v.status === 'ok') {
-      toast.success('Certificate agrees with what you typed', { description: 'Cross-checked against the type-test document.' });
-    } else if (v.status === 'no_ai') {
-      toast('AI check unavailable', { description: 'No model configured — the gate still works by hand.' });
-    } else {
-      toast('Could not read that image', { description: 'Retake it straighter/brighter, or carry on by hand.' });
-    }
+  // RECI number from Settings — the RECI-cert cross-check compares against it.
+  const compliance = useCompanyCompliance();
+  // COMPLIANCE VISION: capture a plate/cert image and persist it. The check
+  // cards (ArtefactCheckCard) own their own read state; here we only store the
+  // captured image so it also rides into the submission pack.
+  const setCert = (key: keyof CertRecord, file: CertFile) => {
+    setCerts(prev => {
+      const next = { ...prev, [key]: file };
+      persist({ certs: next });
+      return next;
+    });
   };
 
   const storageKey = `jobview_v2_${lead.id}`;
@@ -474,44 +465,37 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
                       }}
                     />
                     {/* ── COMPLIANCE VISION (Cal's #1): the model reads the
-                        type-test certificate and disagrees out loud if the
-                        typed AC rating / cert ref / model don't match. This is
-                        the check that makes an NC6→NC7 band error impossible. ── */}
-                    <div className="rounded-panel border border-border bg-card p-3">
-                      <div className="flex items-center gap-2">
-                        <Shield className="size-4 text-doc-contract shrink-0" />
-                        <span className="text-sm font-semibold">Check against the certificate</span>
-                        {verdict?.status === 'ok' && <span className="ml-auto text-2xs font-semibold rounded-full bg-doc-deposit/10 text-doc-deposit px-2 py-0.5">agrees</span>}
-                        {verdict?.status === 'mismatch' && <span className="ml-auto text-2xs font-semibold rounded-full bg-pop/10 text-pop px-2 py-0.5">{verdict.mismatches.length} to check</span>}
-                      </div>
-                      <p className="mt-1 text-2xs text-muted-foreground leading-body">
-                        {certs.typeTest?.dataUrl
-                          ? 'Reads the type-test cert you attached and compares it with what you typed above. It flags; you decide — the certificate always wins.'
-                          : 'Attach the inverter type-test certificate on Handover first, then this can cross-check it.'}
-                      </p>
-                      <Button size="sm" variant="outline" className="mt-2 h-8 text-xs"
-                        disabled={!certs.typeTest?.dataUrl || certs.typeTest?.kind !== 'image' || checking}
-                        onClick={runArtefactCheck}>
-                        {checking ? <><Loader2 className="size-3.5 mr-1.5 animate-spin" /> Reading the cert…</> : <><Shield className="size-3.5 mr-1.5" /> Cross-check now</>}
-                      </Button>
-                      {verdict?.status === 'mismatch' && (
-                        <div className="mt-2 space-y-1.5">
-                          {verdict.mismatches.map(m => (
-                            <div key={m.field} className="rounded-control border border-pop/40 bg-pop/5 p-2 text-2xs">
-                              <div className="font-semibold text-pop">{FIELD_LABELS[m.field] ?? m.field}</div>
-                              <div className="mt-0.5 text-muted-foreground">
-                                you typed <strong className="text-foreground font-mono">{m.typed}</strong> · the cert reads <strong className="text-foreground font-mono">{m.read}</strong>
-                              </div>
-                            </div>
-                          ))}
-                          <p className="text-2xs text-muted-foreground">Fix the field above, or note why the cert differs — nothing files until you're happy.</p>
-                        </div>
-                      )}
-                      {verdict?.status === 'ok' && Object.keys(verdict.extracted).length > 0 && (
-                        <p className="mt-2 text-2xs text-muted-foreground">
-                          Read from the cert: {Object.entries(verdict.extracted).filter(([, v]) => v && v !== 'unreadable').map(([k, v]) => `${k.replace(/_/g, ' ')} ${v}`).join(' · ')}
-                        </p>
-                      )}
+                        artefacts the crew already handles and disagrees out loud
+                        when they don't match what was typed. Three checks, each
+                        flags-not-blocks: the rating PLATE (serial + AC rating +
+                        model), the type-test CERT (the NC6→NC7 band error killer),
+                        and the RECI cert (its number vs Settings). ── */}
+                    <div className="space-y-2">
+                      <ArtefactCheckCard
+                        kind="plate"
+                        title="Check the rating plate"
+                        blurb="Photograph the inverter's rating/serial plate — reads the serial, AC rating and model and compares them with what you typed above."
+                        cert={certs.plate}
+                        onCapture={(f) => setCert('plate', f)}
+                        serials={serials}
+                      />
+                      <ArtefactCheckCard
+                        kind="type_test"
+                        title="Check the type-test certificate"
+                        blurb="Reads the inverter type-test cert and compares AC rating, rated current, model and cert ref. This is the check that makes an NC6→NC7 band error impossible."
+                        cert={certs.typeTest}
+                        onCapture={(f) => setCert('typeTest', f)}
+                        serials={serials}
+                      />
+                      <ArtefactCheckCard
+                        kind="reci"
+                        title="Check the RECI certificate"
+                        blurb="Reads the Safe Electric (RECI) cert and checks its number against the one in Settings — a wrong RECI number blocks every ESB NC6/NC7."
+                        cert={certs.reci}
+                        onCapture={(f) => setCert('reci', f)}
+                        serials={serials}
+                        reciNumber={compliance.reciNumber}
+                      />
                     </div>
                     {serials.confirmed && <MonitoringHandoff fittedModel={serials.fittedModel} customerName={lead.name} />}
                   </>

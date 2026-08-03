@@ -66,6 +66,9 @@ export interface CertRecord {
   typeTest?: CertFile;
   /** Electrical single-line diagram — ESB require it attached to the NC6. */
   sld?: CertFile;
+  /** Photo of the inverter rating/serial plate — feeds the Compliance Vision
+   *  cross-check of serial + AC rating + model against what the crew typed. */
+  plate?: CertFile;
 }
 
 export interface FieldRecord {

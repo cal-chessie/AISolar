@@ -20,6 +20,7 @@ import { isDemoMode } from './demoMode';
  * honestly instead of inventing a book of business. */
 const bookOfBusiness = (): DummyLead[] => (isDemoMode() ? generateDummyLeads() : []);
 import { leadIntel } from './consultantIntelligence';
+import { nextMove } from './dealIntel';
 import { leadEngagement } from './engagement';
 import { selfConsumptionFromOccupancy, getStage } from './leadIntake';
 import { getProduct } from '@/config/productCatalog';
@@ -48,6 +49,7 @@ export const COACH_PROMPTS: Record<CoachRole, string[]> = {
 /** The live one-line situation — used as the opening line of the coach. */
 export function coachBriefing(role: CoachRole): CoachAnswer {
   if (role === 'installer') return installerBriefing();
+  if (role === 'customer') return customerBriefing();
   if (role !== 'consultant' && role !== 'owner') {
     return { text: 'Ask me anything about your work — I read the live pipeline, so I can point you at exactly what needs you.' };
   }
@@ -230,15 +232,59 @@ function installerBriefing(): CoachAnswer {
   }
   const p = job.proposal;
   const critical = computeBOM(job).filter(b => b.critical).length;
-  const bits = [
-    `**${first(job)}** — ${p?.system_size_kw}kWp (${p?.panel_count} panels${p?.battery_model ? ' + battery' : ''}), ${shortAddr(job)}, ${fmtDay(job.assignment?.scheduled_date)}.`,
-    `**${critical} critical items** to load — open ${first(job)} and tick them onto the van.`,
-  ];
+
+  // SING: lead with the ONE thing closest to done — a job blocked on the NC6
+  // pack outranks the day's loading, because a fitted system that can't file is
+  // money stuck (dealIntel carries the exact blocker).
+  const topMove = leads.map(l => nextMove(l, 'installer')).filter(Boolean)
+    .sort((a, b) => ({ now: 0, today: 1, soon: 2 })[a!.severity] - ({ now: 0, today: 1, soon: 2 })[b!.severity])[0];
+
+  const bits: string[] = [];
+  if (topMove) bits.push(`${topMove.action} ${topMove.reason}`);
+  bits.push(`**${first(job)}** — ${p?.system_size_kw}kWp (${p?.panel_count} panels${p?.battery_model ? ' + battery' : ''}), ${shortAddr(job)}, ${fmtDay(job.assignment?.scheduled_date)}.`);
+  bits.push(`**${critical} critical items** to load — open ${first(job)} and tick them onto the van.`);
   if (handover.length) bits.push(`${handover.length} system${handover.length > 1 ? 's' : ''} fitted and waiting on commissioning serials + handover.`);
   if (unscheduled.length) bits.push(`${unscheduled.length} won job${unscheduled.length > 1 ? 's' : ''} in the unscheduled queue, awaiting a date.`);
   return {
     text: `Here's your day:\n\n${bits.map(b => `• ${b}`).join('\n')}\n\nAsk me what to load, the drive, or which serial to record.`,
-    actions: [{ label: `Open ${first(job)}`, route: '/installer' }],
+    actions: [{ label: topMove ? `Open ${first(leads.find(l => l.id === topMove.leadId)!)}` : `Open ${first(job)}`, route: topMove?.route ?? '/installer' }],
+  };
+}
+
+/** The customer's coach — their ONE project, in plain words: where it is, what
+ *  happens next, and what (if anything) we need from them. Warm, never salesy;
+ *  it reads the real stage, so it can't over-promise. */
+function customerBriefing(): CoachAnswer {
+  const leads = bookOfBusiness();
+  // The customer sees one project — in demo, the furthest-along real job reads
+  // as "theirs"; in production this is scoped to their token'd lead.
+  const order = ['completed', 'final_paid', 'installed', 'installing', 'install_scheduled', 'deposit_paid', 'approved', 'proposal_sent', 'proposal_drafted', 'survey_complete', 'survey_scheduled', 'intake_complete', 'new'];
+  const mine = [...leads].sort((a, b) => order.indexOf(a.workflow_stage) - order.indexOf(b.workflow_stage))[0];
+  if (!mine) {
+    return { text: 'Once your quote is ready I\'ll walk you through it here — what it costs, what the grant covers, and what happens next. Ask me anything in the meantime.' };
+  }
+  const s = mine.workflow_stage;
+  const NEXT: Record<string, { where: string; next: string; need?: string }> = {
+    new:                { where: 'We\'ve got your details and we\'re preparing your estimate.', next: 'We\'ll be in touch to book a quick site survey.' },
+    intake_complete:    { where: 'Your estimate is being put together from your bill.', next: 'Next is a short site survey so the design is exact.' },
+    survey_scheduled:   { where: 'Your site survey is booked.', next: 'After the survey we\'ll design your system and send a proposal.', need: 'Just make sure someone\'s home for the surveyor.' },
+    survey_complete:    { where: 'Survey\'s done — we\'re designing your system now.', next: 'Your proposal, with the exact system and price, is next.' },
+    proposal_drafted:   { where: 'Your proposal is being finalised.', next: 'It\'ll land in your inbox shortly for you to review.' },
+    proposal_sent:      { where: 'Your proposal is ready and waiting for you.', next: 'Have a read — when you\'re happy, you can approve it online.', need: 'Your go-ahead is the next step.' },
+    approved:           { where: 'You\'ve approved — thank you! We\'re getting you booked in.', next: 'A deposit secures your install date.', need: 'The deposit link is on your proposal.' },
+    deposit_paid:       { where: 'Deposit received — you\'re in the diary.', next: 'We\'ll confirm your install date and what to expect on the day.' },
+    install_scheduled:  { where: 'Your install is scheduled.', next: 'Our team arrives on the day — usually fitted in one visit.', need: 'Please keep clear access to the roof and fuse board.' },
+    installing:         { where: 'Your system is being fitted today.', next: 'Once it\'s live we\'ll commission it and hand over the paperwork.' },
+    installed:          { where: 'Your solar is installed.', next: 'We\'re commissioning it and preparing your grant paperwork + certs.' },
+    final_paid:         { where: 'All done and paid — welcome to solar!', next: 'Your certs and grant paperwork are in your portal.' },
+    completed:          { where: 'Your project is complete.', next: 'Everything — certs, grant status, your system — is in your portal.' },
+  };
+  const info = NEXT[s] ?? { where: 'Your project is underway.', next: 'We\'ll keep you posted at every step.' };
+  const bits = [info.where, `**What's next:** ${info.next}`];
+  if (info.need) bits.push(`**From you:** ${info.need}`);
+  if (mine.proposal) bits.push(`Your system: ${mine.proposal.system_size_kw}kWp${mine.proposal.battery_model ? ' + battery' : ''}${mine.proposal.seai_grant ? ` · €${mine.proposal.seai_grant.toLocaleString()} SEAI grant` : ''}.`);
+  return {
+    text: `${bits.join('\n\n')}\n\nAsk me anything about your install, your grant, or what happens next.`,
   };
 }
 
