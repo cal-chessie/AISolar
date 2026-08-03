@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { isDemoMode, isDemoAvailable, disableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
-import { X, Compass, ExternalLink, AlertTriangle, FlaskConical } from 'lucide-react';
+import { isDemoMode, isDemoAvailable, enableDemoMode, disableDemoMode, ALL_ROUTES } from '@/lib/demoMode';
+import { X, Compass, FlaskConical, Play } from 'lucide-react';
 
 /**
- * Floating demo banner + navigation menu.
- * Renders only when demo mode is active (dev/staging builds only).
- * In production builds, this component is a no-op.
+ * Floating demo launcher + all-views navigator (dev/staging only; a no-op in
+ * production builds). Two states:
+ *   demo OFF → a small "Enter demo" pill (so you can always flip it on + browse)
+ *   demo ON  → the STAGING banner + Browse Views drawer (every route, grouped)
+ * Cal (3 Aug): "put demo list toggle somewhere so I can view everything properly."
  */
 export default function DemoBanner() {
   const [active, setActive] = useState(false);
@@ -20,7 +22,6 @@ export default function DemoBanner() {
 
   // In production builds, render nothing.
   if (!isDemoAvailable()) return null;
-  if (!active) return null;
 
   const handleExit = () => {
     disableDemoMode();
@@ -28,6 +29,28 @@ export default function DemoBanner() {
     setMenuOpen(false);
     navigate('/?demo=0');
   };
+
+  const handleEnter = () => {
+    enableDemoMode();
+    setActive(true);
+    // demo mode swaps to the fabricated cast; reload so every mounted view picks it up.
+    navigate(location.pathname + '?demo=1');
+    setTimeout(() => window.location.reload(), 0);
+  };
+
+  // DEMO OFF — a quiet launcher so demo is always one tap away.
+  if (!active) {
+    return (
+      <button
+        onClick={handleEnter}
+        className="fixed bottom-4 right-4 z-[9998] rounded-full border border-border bg-background/95 text-foreground shadow-lg px-3 py-2 flex items-center gap-1.5 text-xs font-semibold transition-all hover:scale-105 hover:bg-muted"
+        aria-label="Enter demo view"
+        title="Load the demo cast + browse every view"
+      >
+        <Play className="h-3.5 w-3.5 text-primary" /> Demo view
+      </button>
+    );
+  }
 
   return (
     <>
