@@ -26,6 +26,16 @@
    connected; else "not configured"); audit log reads `activity_logs` (real table, RLS'd) with an honest empty state;
    the Pricing & Terms tab (revamped 2 Aug) is the design bar for the rest.
 
+## Design Studio — VERDICT after the desktop walk (3 Aug, screenshots both widths)
+The LeadFlow Design step is **SOUND at 711px AND 1440px** — true-scale panels (mppAt %-space), gear rail, real
+computeQuote money incl. the honest self-use-only payback line. The OVERSIZE lives on the **keyless calculator/widget
+path (`RoofDesigner`)**: fixed-pixel panels (9×14px) drawn over a Google *embed* that **picks its own zoom** (the
+`z=20` param isn't honoured reliably) — when the embed zooms out, fixed-px panels read as garden-sized slabs.
+**FIX (slot ⑤, sharpened):** replace the keyless embed layer with SatTiles + mppAt true scale (the studio's own
+system — ONE scale everywhere), and snap the studio's default array to the solar-read roof centroid (it drops on the
+driveway today). ⚠️ Cal: if you saw the oversize on the Design step itself, send one screenshot of your window — I could
+not reproduce it there at either width.
+
 ## Found on the same walk (the "more" Cal asked for)
 5. 🔨 **Estimate step still recommends domestic-shaped systems for every lead** — Sarah (7.2kWp designed) shows
    "12 kWp recommended" from the bill-only stub. The known Sweep-10 §D fork item — surfaces confusingly beside a real
@@ -35,7 +45,10 @@
    or the copy softened until then. One blank onClick in ProposalView:424 to chase.
 7. 🔨 **Demo geography vs installers** (feeds #3): Cian Murphy's "day" = Roscommon + Athlone + Galway. Cluster per
    installer in the cast.
-8. ⚠️ **Confirmation emails point at localhost** until the prod domain lands — Supabase Auth Site URL must be set at
+8. 🔨 **Flow resets to Estimate on reload** — /lead-flow/lead-004 for a PROPOSAL-DRAFTED lead lands on the Estimate
+   step every time (step state is component-local). Deep links + reloads should DEFAULT to the lead's current stage.
+   Small fix, big daily annoyance — slot ⑤.
+9. ⚠️ **Confirmation emails point at localhost** until the prod domain lands — Supabase Auth Site URL must be set at
    Vercel-domain time (already on Cal's-hands list; restated here so it's never missed — it bit the global-login setup).
 
 ## Order of attack

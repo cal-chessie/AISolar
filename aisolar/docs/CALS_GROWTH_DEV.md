@@ -228,6 +228,20 @@ From our current base (Stripe webhook plumbing + Supabase auth + tenant entitlem
 - **Per-tenant email domains (DKIM)** — ~3 days engineering + per-client DNS hand-holding. The from-name pattern carries until ~15 clients.
 - **Status page** — an afternoon (hosted tool) when clients are strangers, not friends.
 
+## PRODUCTION TOOLING VERDICTS (Cal's list, 3 Aug — honest, launch-calibrated)
+| Tool | Verdict | Why |
+|---|---|---|
+| **Resend vs Postmark** | **KEEP POSTMARK** | Best-in-class transactional deliverability + we're already wired (tokens, runbooks, send-* fns). Resend = nice DX but a LATERAL move; switching = rework for zero customer gain. React-Email templates work with Postmark anyway. |
+| **PostHog** | **YES, at launch (light)** | Free tier; answers real questions (widget→lead→deposit funnel). Wire BEHIND the analytics-consent gate we already have. Already on the stack doc. |
+| **Better Stack** | **Uptime ping YES (day 1), rest later** | Free uptime check on the app + ingest-lead = cheap insurance. Status PAGE = skip (status habit, not page, at 10 clients). |
+| **Upstash Redis** | **SKIP** | No problem it solves here: our queue is Postgres (SKIP LOCKED — the law), rate-limit fits in the edge fn/pg. A second datastore = complexity tax with no payer. Revisit at real scale. |
+| **Intercom** | **SKIP until ~25 clients** | WhatsApp group IS the support channel at 10 (already ruled, §first-cohort). Then Crisp/Plain/Intercom in an afternoon. |
+| **Trigger.dev** | **SKIP — protect the law** | Agents run ONLY through agent-drain (queue + pg_cron). A second job runner fragments the runtime the product is built on. Our queue is textbook-verified. |
+| **Beehiiv** | **POST-COHORT** | Newsletter = growth flywheel material (owner nurture + Cal's audience). Not launch plumbing. |
+| **Cloudflare** | **DNS-only fine; nothing more now** | Vercel already gives CDN/edge for the sites. If domains already sit at Cloudflare, keep; don't ADD workers/WAF pre-launch. |
+| **Next.js** | **NO app rewrite** | The APP is Vite+React and launch-ready; a Next rewrite = months for zero customer value. The SITES are already Next 16 — SSR/SEO lives there, which is the right split. |
+**The thread: adopt what watches or measures (uptime, analytics) — skip what duplicates something we built better (queue, cache) — defer what monetises an audience we don't have yet.**
+
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the
 AIGate human gates all apply automatically. A new channel is a weekend, not a rebuild.
