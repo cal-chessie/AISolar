@@ -49,6 +49,18 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
 11. **Notification spine v1** — one `notify(event)` → bell + branded email, portal link always in; wires the 4 gated
     toasts to real sends; branded outbound (tenant from-name on one verified domain).
 
+### ⛏ SWEEP-8 CODES — launch-critical (mined 3 Aug from SWEEP8_DB_WIRING's 71 open markers; each verified vs code)
+- **A10 · dummy-data safety** — ✅ *done 3 Aug*: coachBrain + ProposalPage were reading fabricated leads UNGATED;
+  all reads now demo-gated. Demo data stays as the onboarding feature. Remaining callers correct by design.
+- **A9 · auth bypass** — ✅ *done 3 Aug*: `isAuthBypassAllowed()` split from `isDemoMode()`; a PROD build can never
+  skip login even if `VITE_ENABLE_DEMO` leaks. ⬜ **Still owed: the tested role→route matrix + per-POV RLS proof.**
+- **X1 · Postmark real sends** — every UI-fake send wired for real: proposal · deposit link · photo request ·
+  reschedule · handover pack · referral · team invite. *(This IS the notification spine — same build.)*
+- **L1 · both-ends notify** — every interaction notifies customer AND consultant (email + magic link; no SMS/WA).
+- **D4 · maps-static-proxy** — ⚠️ SECURITY: the Maps key must never ship in the client bundle; proxy it through an
+  edge fn. **D3 buildingInsights-server** (Google Solar off the browser, kills the CORS path) rides with it.
+- **M4 · notifications + magic_link_tokens** — the table behind the both-ends law + the portal links we already mint.
+
 ## SPRINT 3 — 🟠 CONFORMITY + POLISH (the feel)
 12. **Shared page-header/shell conformity** — consultant + installer adopt the AppShell header pattern; AgentFoundation's
     residual double-title resolved (banner = SectionBanner everywhere).
@@ -59,6 +71,20 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
     "fantastic" pass · replace brand.ts placeholder stats (truth-pass) · per-page meta (Sweep 7 debt).
 16. **Per-tab polish** — Clients type-badges · Financials aging · SEAI pack-status chips · demo geography clustered
     per installer (the route reads true).
+
+### ⛏ SWEEP-8 CODES — polish tier
+- **M6 · designs persistence** — store array geometry/strings; kills the stored-vs-live kWp delta.
+- **M7 · proposal_versions** — append-only versions (the contract rests on a version, not a moving row).
+- **M3 · signature_hash** — signature → storage + sha256 onto the DoW/NC record (kernel append).
+- **M11 · touchpoints.sender + Realtime** — the field team's voice in the one thread. *(Verified NOT wired today.)*
+- **M12 · staff home address + depots** — the scheduler's real inputs (routing quality depends on it).
+- **M13 · agent_route_runs** — chosen order + km/min/€ saved per run: the owner sees WHY the route was picked.
+- **X2 · cal.com real booking** — white-labelled, front + back, wired to the agent scheduler *(key is in `.env.local`)*.
+- **X3 · distance-matrix** — real drive-time instead of haversine×1.3 for scheduling.
+- **X9 · e-sign** — the contract Sign flow (signature capture exists; the contract path doesn't).
+- **L4 · ask-AI guardrail** — the customer's AI refuses anything outside THEIR project. *(Safety, not polish — do it with the portal work.)*
+- **L5 · white-label sweep** — every customer-facing "AISOLAR" → tenant brand (10 files already use it; finish the rest).
+- **A3 · leadflow real sends** · **A6 · consent record honoured server-side** (fn exists; close the loop with `anonymise_lead`).
 
 ## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY (Cal: "final hardening — make it inevitable")
 17. **Security pass**: re-run the live RLS census (every table tenant-scoped, no loose policies — the 2 Aug method) ·
@@ -95,5 +121,15 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
 - [ ] Client's 3-brands-one-tenant check · per-customer pack confirmation · first cohort onboarding through the new flow
 
 ## ⏸ POST-COHORT (parked on purpose)
+**⛏ Sweep-8 codes parked here (named so they're never re-derived):** M5/L3 learning loop (agent_corrections → owner
+report → prompt revision → approve → version bump) · M9 feedback + referrals + tier_entitlements · A11 plan/tier
+entitlements · M10 installer_vault (an installer's serials/certs across all jobs) · M14 inventory / depot shelf
+(`computeBOM` aggregation + reorder) · X5 Supabase Realtime · X6 Sentry · X7 uptime `/health` + cron *(Better Stack —
+tooling verdict)* · G1 referral link (money-off + tracked fee) · G2 review → Google Business on completion ·
+G3 growth set · L7 self-heal/report/improve (the 4-layer spec, draft-first) · HK1 commit the Obsidian vault repo ·
+D6 plate-OCR *(largely superseded by Compliance Vision, 3 Aug)*.
+**✅ Sweep-8 codes already CLOSED (verified 3 Aug, do not re-open):** A1 auth scaffolding · A2 front-door lead creation ·
+A4 settings-persist · A5 ai-config · M1 installed_equipment · M8 products · X8 LLM · truth-guard (Settings honesty).
+
 Learning loop · survey-photo + voice capture (if not reached) · AIGate surface · portal_submitter browser agent ·
 per-tenant DKIM · PostHog full · Intercom(~25) · Beehiiv · kernel Phase 2 · THE_OPERATING_STACK §2/§3.
