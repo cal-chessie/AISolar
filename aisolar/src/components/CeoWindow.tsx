@@ -184,76 +184,38 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
         ))}
       </div>
 
-      {/* ── ALWAYS-ON strip (salvaged from the deleted Overview tab) — the
-             four numbers + the two panels that earned their place. Same
-             computeOwnerStats source as the cockpit + Financials. ── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
-          <Kpi icon={<Euro />} label="Banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} tone="deposit" hero />
-        </button>
-        <Kpi icon={<TrendingDown />} label="Open pipeline" value={eur(d.pipelineValue)} sub={`${d.owner.openDeals} deals in play · ${d.conversion}% proposal → win`} tone="tech" />
-        <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" tone="proposal" />
-        <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} tone="pop" />
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-panel border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold">Where jobs stall</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Biggest drop between phases — fix this before buying more leads.</p>
-          <p className="mt-3 text-xl font-semibold">{d.stall.label} <span className="text-pop text-sm font-medium">−{d.stall.drop}%</span></p>
-        </div>
-        <div className="rounded-panel border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold">Win rate by source</h3>
-          <div className="mt-2 space-y-1.5">
-            {d.sources.map(s => (
-              <div key={s.source}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
-                  <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
-                </div>
-                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-tech" style={{ width: `${Math.max(3, s.rate)}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* financials tab folded into the Financials page — money lives in ONE place (Cal) */}
       {tab === 'agents' && (
         <div className="space-y-4">
-          {/* Agent breakdown — REVAMPED (Cal 3 Aug). Was five flat tiles with no
-              sense of scale. Now ranked by hours saved, each with a share bar,
-              so "who is actually carrying the load" reads in one glance. The
-              window is stated honestly (it's the collected autolog, not a
-              claimed 30 days). */}
-          <div className="rounded-panel border border-border bg-card overflow-hidden">
-            <div className="flex items-center gap-2 px-4 h-11 border-b border-border">
-              <Bot className="size-4 text-doc-contract" />
-              <h3 className="text-sm font-semibold">Agent breakdown</h3>
-              <span className="text-2xs text-muted-foreground">by hours of manual work saved · {d.autolog.length} actions collected</span>
-            </div>
-            <div className="divide-y divide-border">
-              {[...d.agents].sort((a, b) => b.minutes - a.minutes).map((a, i) => {
-                const top = Math.max(1, ...d.agents.map(x => x.minutes));
-                const hrs = a.minutes / 60;
-                return (
-                  <div key={a.agent} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="w-4 shrink-0 text-2xs tabular-nums text-muted-foreground">{i + 1}</span>
-                    <span className="w-40 shrink-0 text-sm font-medium truncate">{a.agent}</span>
-                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-doc-contract" style={{ width: `${Math.max(2, (a.minutes / top) * 100)}%` }} />
-                    </div>
-                    <span className="w-16 shrink-0 text-right text-sm font-semibold tabular-nums">{hrs.toFixed(1)} hrs</span>
-                    <span className="w-14 shrink-0 text-right text-2xs tabular-nums text-muted-foreground">{a.runs} runs</span>
+          {/* Agent breakdown — the demo month at a glance. FAMILY COLOUR per
+              tile (Cal 3 Aug: "I was asking for family colour"), cycling the
+              same tokens the rest of the app uses so the agents read as one
+              pack rather than five grey boxes. */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {d.agents.map((a, i) => {
+              const FAMILY = [
+                { text: 'text-tech', bg: 'bg-tech/10', bar: 'bg-tech' },
+                { text: 'text-doc-proposal', bg: 'bg-doc-proposal/10', bar: 'bg-doc-proposal' },
+                { text: 'text-doc-contract', bg: 'bg-doc-contract/10', bar: 'bg-doc-contract' },
+                { text: 'text-doc-deposit', bg: 'bg-doc-deposit/10', bar: 'bg-doc-deposit' },
+                { text: 'text-pop', bg: 'bg-pop/10', bar: 'bg-pop' },
+              ];
+              const c = FAMILY[i % FAMILY.length];
+              const top = Math.max(1, ...d.agents.map(x => x.runs));
+              return (
+                <div key={a.agent} className="rounded-panel border border-border bg-card p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`grid size-5 place-items-center rounded-md ${c.bg}`}><Bot className={`size-3 ${c.text}`} /></span>
+                    <span className="label-micro truncate">{a.agent}</span>
                   </div>
-                );
-              })}
-              {d.agents.length === 0 && (
-                <p className="px-4 py-6 text-center text-sm text-muted-foreground">No agent actions collected yet — this fills as the runtime works.</p>
-              )}
-            </div>
+                  <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${c.text}`}>{a.runs}</p>
+                  <p className="text-xs text-muted-foreground">{(a.minutes / 60).toFixed(1)} hrs of manual work</p>
+                  <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className={`h-full rounded-full ${c.bar}`} style={{ width: `${Math.max(4, (a.runs / top) * 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="rounded-panel border border-border bg-card overflow-hidden">
@@ -326,9 +288,50 @@ export default function CeoWindow({ onOpenFinancials }: { onOpenFinancials?: () 
       )}
 
       {tab === 'charts' && (
-        <Suspense fallback={<CardListSkeleton count={3} />}>
-          <AnalyticsDashboard />
-        </Suspense>
+        <div className="space-y-4">
+              {/* The four numbers + the two analysis panels — salvaged from the
+                  deleted Overview tab and living HERE, on Charts, where analysis
+                  belongs. Shown ONCE (Cal 3 Aug: "you put the overview now on every
+                  tab — that is defo not what I asked"). Leads owns the table;
+                  Agents owns the breakdown. No tab repeats another. */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <button type="button" onClick={onOpenFinancials} className="text-left cursor-pointer group">
+              <Kpi icon={<Euro />} label="Banked" value={eur(d.revenueClosed)} sub={`${eur(d.depositsHeld)} deposits held · open financials →`} tone="deposit" hero />
+            </button>
+            <Kpi icon={<TrendingDown />} label="Open pipeline" value={eur(d.pipelineValue)} sub={`${d.owner.openDeals} deals in play · ${d.conversion}% proposal → win`} tone="tech" />
+            <Kpi icon={<Users />} label="Average job" value={d.avgJob ? eur(d.avgJob) : '—'} sub="won deals only" tone="proposal" />
+            <Kpi icon={<Clock />} label="Hours saved" value={`${Math.round(d.minutesSaved / 60)} hrs`} sub={`${d.autolog.length} agent actions`} tone="pop" />
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-panel border border-border bg-card p-4">
+              <h3 className="text-sm font-semibold">Where jobs stall</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Biggest drop between phases — fix this before buying more leads.</p>
+              <p className="mt-3 text-xl font-semibold">{d.stall.label} <span className="text-pop text-sm font-medium">−{d.stall.drop}%</span></p>
+            </div>
+            <div className="rounded-panel border border-border bg-card p-4">
+              <h3 className="text-sm font-semibold">Win rate by source</h3>
+              <div className="mt-2 space-y-1.5">
+                {d.sources.map(s => (
+                  <div key={s.source}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{s.source.replace(/_/g, ' ')}</span>
+                      <span className="tabular-nums text-muted-foreground">{s.won}/{s.total} · <strong className="text-foreground">{s.rate}%</strong></span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-tech" style={{ width: `${Math.max(3, s.rate)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+
+          <Suspense fallback={<CardListSkeleton count={3} />}>
+            <AnalyticsDashboard />
+          </Suspense>
+        </div>
       )}
 
       {/* Cal: custom windows are part of the AIOS offer — say so where the

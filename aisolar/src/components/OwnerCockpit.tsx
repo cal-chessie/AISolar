@@ -895,69 +895,57 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
           variant="compact"
         />
       ) : (
-        /* TABLE, not a kanban (Cal, 3 Aug: "clients need proper tables like you
-           find in consultant… when there is dozens of leads it should fit on
-           the full screen"). A kanban wastes the width and hides half the list
-           behind horizontal scroll; a dense table shows ~25 rows a screen,
-           sorts by what an owner asks (value, stage, last touch), and every row
-           opens the ONE lead surface (LeadFlow). */
-        <div className="rounded-panel border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-left">
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground">Client</th>
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground hidden md:table-cell">Where</th>
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground">Stage</th>
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground hidden lg:table-cell">System</th>
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground text-right">Value</th>
-                  <th className="px-3 py-2 font-medium text-2xs uppercase tracking-wide text-muted-foreground hidden sm:table-cell text-right">Last touch</th>
-                  <th className="w-8" />
-                </tr>
-              </thead>
-              <tbody>
-                {[...filtered]
-                  .sort((a, b) => (b.proposal?.net_cost ?? 0) - (a.proposal?.net_cost ?? 0))
-                  .map(lead => {
-                    const stage = getStage(lead.workflow_stage);
-                    const last = lead.touchpoints[lead.touchpoints.length - 1];
-                    // clamp: a touchpoint later today would render '-1d' (caught live 3 Aug)
-                    const days = last ? Math.max(0, Math.floor((Date.now() - new Date(last.timestamp).getTime()) / 86400000)) : null;
-                    const stale = days != null && days >= 5 && !['completed', 'final_paid'].includes(lead.workflow_stage);
-                    return (
-                      <tr key={lead.id}
-                        onClick={() => navigate(`/lead-flow/${lead.id}`)}
-                        className="border-b border-border last:border-0 hover:bg-muted/40 cursor-pointer transition-colors">
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Avatar className="h-6 w-6 shrink-0"><AvatarFallback className="text-2xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-                            <span className="font-medium truncate">{lead.name}</span>
-                            {lead.score > 80 && <Flame className="h-3 w-3 text-pop shrink-0" title="Hot" />}
+        /* Kanban, one column per pipeline phase — restored (Cal, 3 Aug:
+           "put it back to pipeline now and make it full depth of page").
+           Changes vs before: the board fills the PAGE DEPTH (h-[calc] +
+           per-column scroll) so dozens of leads use the screen, and the column
+           bodies are WHITE/card — the grey wells hid the cards. */
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 h-[calc(100dvh-16rem)] min-h-[24rem]">
+          {STAGE_GROUPS.map(group => {
+            const colLeads = filtered.filter(l => getStage(l.workflow_stage).group === group.id);
+            const colValue = colLeads.reduce((sum, l) => sum + (l.proposal?.net_cost ?? 0), 0);
+            return (
+              <div key={group.id} className="flex-shrink-0 w-[262px] flex flex-col min-h-0">
+                <div className="flex items-center gap-2 px-1.5 pb-2 shrink-0">
+                  <span className={`size-2 rounded-full ${KANBAN_DOT[group.id]}`} />
+                  <span className="text-xs font-semibold">{group.label}</span>
+                  <span className="ml-auto text-2xs text-muted-foreground tabular-nums">
+                    {colLeads.length}{colValue > 0 && <span className="ml-1.5 text-doc-deposit font-medium">{eur(colValue)}</span>}
+                  </span>
+                </div>
+                {/* white column body + its own scroll: the board never grows the page */}
+                <div className="flex-1 min-h-0 overflow-y-auto scroll-slim space-y-2 rounded-panel bg-card border border-border p-2">
+                  {colLeads.length === 0 ? (
+                    <p className="text-2xs text-muted-foreground text-center py-8">Nobody here</p>
+                  ) : (
+                    colLeads.map(lead => {
+                      const last = lead.touchpoints[lead.touchpoints.length - 1];
+                      const days = last ? Math.max(0, Math.floor((Date.now() - new Date(last.timestamp).getTime()) / 86400000)) : null;
+                      const stale = days != null && days >= 5;
+                      return (
+                        <button key={lead.id} onClick={() => navigate(`/lead-flow/${lead.id}`)}
+                          className="w-full text-left rounded-control bg-background border border-border p-3 hover:border-primary/40 hover:shadow-card transition-all">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7 shrink-0"><AvatarFallback className="text-2xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
+                            <span className="font-medium text-xs truncate flex-1">{lead.name}</span>
+                            {lead.score > 80 && <Flame className="h-3 w-3 text-pop shrink-0" />}
                           </div>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground truncate max-w-[16rem] hidden md:table-cell">{lead.address.split(',').slice(-2).join(',').trim()}</td>
-                        <td className="px-3 py-2">
-                          <span className={`inline-flex items-center gap-1.5 text-2xs font-medium rounded-full px-2 py-0.5 bg-muted`}>
-                            <span className={`size-1.5 rounded-full ${KANBAN_DOT[stage.group] ?? 'bg-muted-foreground/40'}`} />
-                            {stage.label}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground tabular-nums hidden lg:table-cell">{lead.proposal ? `${lead.proposal.system_size_kw} kWp` : '—'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{lead.proposal ? eur(lead.proposal.net_cost) : <span className="text-muted-foreground font-normal">—</span>}</td>
-                        <td className={`px-3 py-2 text-right tabular-nums hidden sm:table-cell ${stale ? 'text-pop font-medium' : 'text-muted-foreground'}`}>
-                          {days == null ? '—' : days === 0 ? 'today' : `${days}d`}
-                        </td>
-                        <td className="px-2 py-2 text-right"><ChevronRight className="h-4 w-4 text-muted-foreground" /></td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-between px-3 py-2 border-t border-border text-2xs text-muted-foreground">
-            <span>{filtered.length} of {leads.length} clients · sorted by value</span>
-            <span className="hidden sm:inline">Click a row to open the lead</span>
-          </div>
+                          <div className="text-2xs text-muted-foreground truncate mt-1.5">{lead.address.split(',').slice(-2).join(',').trim()}</div>
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <span className="text-2xs rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground truncate">{getStage(lead.workflow_stage).label}</span>
+                            <span className="flex items-center gap-1.5 shrink-0">
+                              {days != null && <span className={`text-2xs tabular-nums ${stale ? 'text-pop font-medium' : 'text-muted-foreground'}`}>{days === 0 ? 'today' : `${days}d`}</span>}
+                              {lead.proposal && <span className="text-2xs font-semibold tabular-nums text-doc-deposit">{eur(lead.proposal.net_cost)}</span>}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
