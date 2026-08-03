@@ -2,7 +2,8 @@
  * System Settings V2 — the owner's dials, truth-passed (3 Aug).
  *
  * Tab order = the owner's setup journey: Brand → Pricing & Terms → Integrations
- * → Channels → Audit → Kernel. What's REAL vs reference:
+ * → Sequences → Audit → Kernel. (Channels merged INTO Integrations 3 Aug — each
+ * vendor card now carries who-speaks-on-it; one surface, no duplicate list.) What's REAL vs reference:
  *   - HOOKED (save localStorage + tenant_settings, DB-backed since the cutover):
  *     Brand · Company & Compliance · Pricing dial · Proposal terms.
  *   - REFERENCE (deliberately not inputs): integration KEYS live in deploy
@@ -45,6 +46,9 @@ interface Integration {
   configFields?: Array<{ key: string; label: string; type: string; placeholder: string; value?: string }>;
   testEndpoint?: string;
   docsUrl?: string;
+  /** Who speaks on this channel (merged from the old Channels tab — one surface). */
+  agents?: string[];
+  entry?: string;
 }
 
 const INITIAL_INTEGRATIONS: Integration[] = [
@@ -68,6 +72,8 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   {
     id: 'postmark', name: 'Postmark', description: 'Transactional email delivery',
     icon: Mail, status: 'connected',
+    agents: ['The greeter', 'The chaser', 'The correspondent', 'The closer', 'The bookkeeper'],
+    entry: 'Owner: campaigns + digests · Consultant: proposals + follow-ups',
     configFields: [
       { key: 'server_token', label: 'Server Token', type: 'password', placeholder: '...' },
       { key: 'sender_email', label: 'Sender Email', type: 'email', placeholder: 'hello@aisolar.ie' },
@@ -77,6 +83,8 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   {
     id: 'twilio', name: 'Twilio (SMS)', description: 'SMS reminders — install T-7, T-1',
     icon: Phone, status: 'disconnected',
+    agents: ['The scheduler (T-7 / T-1 reminders)'],
+    entry: 'Install reminders only — opt-in, no marketing',
     configFields: [
       { key: 'account_sid', label: 'Account SID', type: 'text', placeholder: 'AC...' },
       { key: 'auth_token', label: 'Auth Token', type: 'password', placeholder: '...' },
@@ -87,6 +95,8 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   {
     id: 'whatsapp', name: 'WhatsApp Business', description: 'Customer chat, document delivery, reminders',
     icon: MessageSquare, status: 'disconnected',
+    agents: ['The correspondent (phase 2 nudges)'],
+    entry: 'Notification nudge → portal thread. Never a second inbox.',
     configFields: [
       { key: 'phone_number', label: 'Phone Number', type: 'tel', placeholder: '+353...' },
       { key: 'access_token', label: 'Access Token', type: 'password', placeholder: 'EAAG...' },
@@ -145,14 +155,15 @@ export default function SystemSettingsV2() {
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
           <TabsTrigger value="terms" className="text-xs sm:text-sm">Pricing &amp; Terms</TabsTrigger>
           <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
-          <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
+          <TabsTrigger value="channels" className="text-xs sm:text-sm">Sequences</TabsTrigger>
           <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit Log</TabsTrigger>
           <TabsTrigger value="kernel" className="text-xs sm:text-sm">Kernel</TabsTrigger>
         </TabsList>
 
         {/* === INTEGRATIONS === */}
         <TabsContent value="integrations" className="space-y-3">
-          <p className="text-xs text-muted-foreground">Where each service lives. Keys are set at DEPLOY (never in the browser) — a card opens for reference and the fields the launch runbook fills.</p>
+          <p className="text-xs text-muted-foreground">Where each service lives + who speaks on it. Keys are set at DEPLOY (never in the browser) — a card opens for the exact command. Portal chat is built-in — always on, no vendor.</p>
+          <div className="grid gap-3 lg:grid-cols-2 items-start">
           {integrations.map(integration => {
             const Icon = integration.icon;
             const isSelected = selectedIntegration === integration.id;
@@ -190,6 +201,13 @@ export default function SystemSettingsV2() {
                       {integration.status === 'connected' ? 'managed at deploy' : integration.status === 'disconnected' ? 'not configured' : integration.status}
                     </Badge>
                   </div>
+
+                  {integration.agents && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Agents:</span> {integration.agents.join(' · ')}
+                      {integration.entry && <span className="block mt-0.5">{integration.entry}</span>}
+                    </div>
+                  )}
 
                   {/* Expanded config */}
                   {isSelected && (
@@ -231,6 +249,7 @@ export default function SystemSettingsV2() {
               </Card>
             );
           })}
+          </div>
         </TabsContent>
 
         {/* === BRAND — touches all branding touchpoints === */}
@@ -239,8 +258,8 @@ export default function SystemSettingsV2() {
         </TabsContent>
 
         {/* === CHANNELS === */}
+        {/* === SEQUENCES (was Channels — the vendor list merged into Integrations, 3 Aug) === */}
         <TabsContent value="channels" className="space-y-3">
-          <ChannelsAgentWindow integrations={integrations} onConfigure={() => setTab('integrations')} />
           <MarketingSequencesEditor />
         </TabsContent>
 
@@ -548,65 +567,6 @@ function BrandConfigFull() {
 /* ── CHANNELS = the agent window (Cal). One source of truth: connection state
    is PULLED from Integrations — no duplicate config here. Each channel shows
    which agents speak on it and where the owner/consultant entry points are. */
-function ChannelsAgentWindow({ integrations, onConfigure }: {
-  integrations: Integration[];
-  onConfigure: () => void;
-}) {
-  const state = (id: string) => integrations.find(i => i.id === id)?.status ?? 'disconnected';
-  const CHANNELS = [
-    {
-      name: 'Email', integration: 'postmark',
-      agents: ['The greeter', 'The chaser', 'The correspondent', 'The closer', 'The bookkeeper'],
-      entry: 'Owner: campaigns + digests · Consultant: proposals + follow-ups',
-    },
-    {
-      name: 'SMS', integration: 'twilio',
-      agents: ['The scheduler (T-7 / T-1 reminders)'],
-      entry: 'Install reminders only — opt-in, no marketing',
-    },
-    {
-      name: 'WhatsApp Business', integration: 'whatsapp',
-      agents: ['The correspondent (phase 2 nudges)'],
-      entry: 'Notification nudge → portal thread. Never a second inbox.',
-    },
-    {
-      name: 'Portal chat', integration: null,
-      agents: ['AI assistant', 'Consultant replies', 'Installer replies'],
-      entry: 'The customer thread of record — always on',
-    },
-  ];
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Channels — the agent window</CardTitle>
-        <p className="text-xs text-muted-foreground">Who speaks where. Connection keys live in one place — <button className="text-tech hover:underline" onClick={onConfigure}>Integrations</button>.</p>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {CHANNELS.map(ch => {
-          const s = ch.integration ? state(ch.integration) : 'connected';
-          const on = s === 'connected';
-          return (
-            <div key={ch.name} className="p-3 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className={`size-2 rounded-full ${on ? 'bg-doc-deposit' : s === 'error' ? 'bg-pop' : 'bg-muted-foreground/40'}`} />
-                <span className="text-sm font-semibold">{ch.name}</span>
-                <Badge variant="outline" className={`text-[11px] ml-1 ${on ? 'bg-doc-deposit/10 text-doc-deposit border-doc-deposit/30' : 'text-muted-foreground'}`}>
-                  {on ? 'live' : s}
-                </Badge>
-                {ch.integration && !on && (
-                  <Button variant="outline" size="sm" className="ml-auto h-6 text-[11px]" onClick={onConfigure}>Connect</Button>
-                )}
-              </div>
-              <p className="mt-1.5 text-xs text-muted-foreground"><span className="font-medium text-foreground">Agents:</span> {ch.agents.join(' · ')}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{ch.entry}</p>
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
-  );
-}
-
 /* ── Marketing sequences — EDITABLE, all touchpoints in view (Cal). Expand a
    sequence to see every step; edit day + subject inline; add steps; pause. */
 interface SeqStep { day: number; subject: string }
