@@ -1,11 +1,14 @@
 /**
- * System Settings V2 — everything actually works.
+ * System Settings V2 — the owner's dials, truth-passed (3 Aug).
  *
- * Improvements:
- *   - Integrations: connect/disconnect buttons that toggle state, test buttons, real status
- *   - Brand: touches all branding touchpoints (emails, proposals, portal, landing, app)
- *   - Audit Log: detailed, filterable, with metadata, severity, actor, date range
- *   - WhatsApp channel included
+ * Tab order = the owner's setup journey: Brand → Pricing & Terms → Integrations
+ * → Channels → Audit → Kernel. What's REAL vs reference:
+ *   - HOOKED (save localStorage + tenant_settings, DB-backed since the cutover):
+ *     Brand · Company & Compliance · Pricing dial · Proposal terms.
+ *   - REFERENCE (deliberately not inputs): integration KEYS live in deploy
+ *     secrets, never the browser — cards show the exact `supabase secrets set`
+ *     command to copy. No connect/test theatre; no fabricated audit events.
+ *     The audit tab reads empty until it's wired to real activity_logs.
  */
 
 import { useState, useEffect } from 'react';
@@ -121,19 +124,10 @@ type AuditEvent = { time: string; actor: string; action: string; severity: strin
 const AUDIT_EVENTS: AuditEvent[] = [];
 
 export default function SystemSettingsV2() {
-  const [integrations, setIntegrations] = useState<Integration[]>(INITIAL_INTEGRATIONS);
+  const [integrations] = useState<Integration[]>(INITIAL_INTEGRATIONS);
   const [tab, setTab] = useState('brand'); // owner's own things FIRST (Cal: 'settings is a mess')
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [auditFilter, setAuditFilter] = useState({ severity: 'all', actor: 'all', search: '' });
-
-  // TRUTH-PASS (3 Aug): the old handlers SIMULATED connecting (setTimeout ->
-  // 'connected'). Dead. Keys live in deploy secrets; Settings never fakes state.
-  const handleToggleIntegration = (_id: string) => {
-    toast('Service keys are managed at deploy', { description: 'Nothing connects or disconnects from the browser — the launch runbook sets the secrets.' });
-  };
-  const handleTestIntegration = (_id: string) => {
-    toast('Test runs at deploy verification', { description: 'The smoke test proves each service against the REAL keys — no simulated results here.' });
-  };
 
   const filteredAudit = AUDIT_EVENTS.filter(e => {
     if (auditFilter.severity !== 'all' && e.severity !== auditFilter.severity) return false;
@@ -201,30 +195,28 @@ export default function SystemSettingsV2() {
                   {isSelected && (
                     <div className="mt-3 pt-3 border-t space-y-2">
                       {integration.configFields && integration.configFields.length > 0 ? (
-                        integration.configFields.map(field => (
-                          <div key={field.key}>
-                            <Label className="text-xs">{field.label}</Label>
-                            <Input type={field.type} placeholder={field.placeholder} className="mt-1 h-8 text-xs font-mono" />
-                          </div>
-                        ))
+                        <>
+                          <p className="text-2xs text-muted-foreground">Keys are NEVER stored in the browser — each is set once at deploy. Copy the command, paste your real value (canonical names: <code className="font-mono">docs/SECRETS.md</code>).</p>
+                          {integration.configFields.map(field => {
+                            const cmd = `supabase secrets set ${integration.id.toUpperCase()}_${field.key.toUpperCase()}=YOUR-VALUE`;
+                            return (
+                              <div key={field.key} className="flex items-end gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <Label className="text-xs">{field.label}</Label>
+                                  <code className="mt-1 block truncate rounded-control bg-muted/60 px-2 py-1.5 text-2xs font-mono text-muted-foreground">{cmd}</code>
+                                </div>
+                                <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"
+                                  onClick={() => { navigator.clipboard.writeText(cmd); toast.success('Command copied', { description: 'Paste in Terminal with your real value.' }); }}>
+                                  Copy
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </>
                       ) : (
                         <p className="text-xs text-muted-foreground">No configuration needed — uses API key from Vault.</p>
                       )}
                       <div className="flex gap-2 mt-2">
-                        {integration.status === 'connected' ? (
-                          <>
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleTestIntegration(integration.id)}>
-                              <RefreshCw className="h-3 w-3 mr-1" /> Test connection
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 text-xs text-red-600" onClick={() => handleToggleIntegration(integration.id)}>
-                              <Power className="h-3 w-3 mr-1" /> Disconnect
-                            </Button>
-                          </>
-                        ) : (
-                          <Button size="sm" className="h-7 text-xs bg-primary transition-colors hover:bg-primary" onClick={() => handleToggleIntegration(integration.id)}>
-                            {integration.status === 'connecting' ? <><RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Connecting…</> : <><Power className="h-3 w-3 mr-1" /> Connect</>}
-                          </Button>
-                        )}
                         {integration.docsUrl && (
                           <Button size="sm" variant="ghost" className="h-7 text-xs" asChild>
                             <a href={integration.docsUrl} target="_blank" rel="noopener noreferrer">
@@ -253,7 +245,7 @@ export default function SystemSettingsV2() {
         </TabsContent>
 
         {/* === AUDIT LOG — detailed + filterable === */}
-        <TabsContent value="terms" className="space-y-3">
+        <TabsContent value="terms" className="grid gap-4 lg:grid-cols-2 items-start">
           <PricingCard />
           <ProposalTermsCard />
         </TabsContent>
@@ -711,7 +703,7 @@ function ProposalTermsCard() {
   const num = (k: keyof ProposalTerms) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setT(s => ({ ...s, [k]: Number(e.target.value) }));
   return (
-    <div className="rounded-panel bg-card shadow-card p-5 max-w-2xl">
+    <div className="rounded-panel bg-card shadow-card p-5">
       <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-doc-proposal/10"><FileText className="h-4 w-4 text-doc-proposal" /></span> Proposal terms</h3>
       <p className="text-xs text-muted-foreground mb-4">These render on every proposal and its PDF — your words, your terms.</p>
       <div className="grid sm:grid-cols-3 gap-3 mb-4">
@@ -771,7 +763,7 @@ function PricingCard() {
     { k: 'panelWatts', label: 'Panel wattage', unit: 'W', hint: `converts panel count ↔ kWp — default ${DEFAULT_PRICING.panelWatts}W`, min: 1, step: 5 },
   ];
   return (
-    <div className="rounded-panel bg-card shadow-card p-5 max-w-2xl">
+    <div className="rounded-panel bg-card shadow-card p-5">
       <h3 className="text-sm font-semibold mb-1 flex items-center gap-2"><span className="p-1.5 rounded-lg bg-tech/10"><Zap className="h-4 w-4 text-tech" /></span> Equipment pricing</h3>
       <p className="text-xs text-muted-foreground mb-4">The one cost dial. Every estimate, the design step, the proposal, <strong>and</strong> the drafting agent resolve cost through these — change a rate once and every quote moves together, on screen and in the stored proposal.</p>
       <div className="grid sm:grid-cols-3 gap-3 mb-4">
