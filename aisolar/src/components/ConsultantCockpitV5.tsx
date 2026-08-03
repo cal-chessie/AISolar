@@ -46,6 +46,7 @@ import DayRoute from '@/components/field/DayRoute';
 import { getStage, PIPELINE_STAGES, STAGE_GROUPS, calculateSystemEstimate } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
+import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import ConsultantToday from '@/components/consultant/ConsultantToday';
 import ConsultantInsights from '@/components/consultant/ConsultantInsights';
 import { TONE, PHASE_TONE } from '@/components/consultant/cockpitUi';
@@ -287,51 +288,46 @@ export default function ConsultantCockpitV5() {
 
   const isChatView = activeTab === 'inbox';
 
+  // ── ONE app shell (Cal, 3 Aug: "headers aren't conforming — the heart") ──
+  // The 8 tabs become shell nav; live counts ride as badges. Same frame as the
+  // owner cockpit: cal.com sidebar, 48px header, bottom tabs on mobile.
+  const badgeFor = (id: TabId): number | undefined => {
+    if (id === 'inbox') return leads.length || undefined;
+    if (id === 'pipeline') return leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length || undefined;
+    if (id === 'documents') return leads.filter(l => l.proposal || l.contract || l.invoice).length || undefined;
+    return undefined;
+  };
+  const shellNav: ShellNavItem[] = TABS.map(t => ({
+    id: t.id,
+    label: t.label,
+    icon: <t.icon />,
+    onSelect: () => setActiveTab(t.id),
+    badge: badgeFor(t.id),
+    primary: ['today', 'inbox', 'pipeline', 'calendar'].includes(t.id),
+  }));
+
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <AppShell
+      persona="consultant"
+      brandName={tb.name}
+      personaLabel="Consultant"
+      nav={shellNav}
+      activeId={activeTab}
+      title={TABS.find(t => t.id === activeTab)?.label ?? 'Today'}
+      primaryAction={
+        <Button size="sm" className="text-xs h-8" onClick={() => { setEditingLead(null); setLeadFormOpen(true); }}>
+          <UserPlus className="h-3.5 w-3.5 mr-1" /> Add lead
+        </Button>
+      }
+      headerExtra={<>
+        <NotificationsBell role="consultant" />
+        <Button variant="ghost" size="sm" className="p-2 h-8" title="Owner cockpit" aria-label="Switch to owner cockpit" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5" /></Button>
+        <Button variant="ghost" size="sm" className="p-2 h-8" title="Installer view" aria-label="Switch to installer view" onClick={() => navigate('/installer')}><Wrench className="h-3.5 w-3.5" /></Button>
+        <DarkModeToggle />
+      </>}
+      flush
+    >
       <LeadFormDialog open={leadFormOpen} onOpenChange={setLeadFormOpen} initial={editingLead} onSave={saveLeadForm} />
-      {/* Header */}
-      <header className="bg-background border-b flex-shrink-0">
-        <div className="px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AisalesWordmark className="size-9" />
-            <span className="font-bold text-sm">{tb.name}</span>
-            <span className="text-xs text-muted-foreground">Consultant</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button size="sm" className="text-xs h-8 mr-1" onClick={() => { setEditingLead(null); setLeadFormOpen(true); }}>
-              <UserPlus className="h-3.5 w-3.5 mr-1" /> Add lead
-            </Button>
-            <NotificationsBell role="consultant" />
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/installer')}><Wrench className="h-3.5 w-3.5 mr-1" /> Installer</Button>
-            <DarkModeToggle />
-          </div>
-        </div>
-        {/* 6 tabs */}
-        <div className="flex gap-0.5 px-2 pb-1.5 overflow-x-auto">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            const count = tab.id === 'inbox'
-              ? leads.length
-              : tab.id === 'pipeline'
-              ? leads.filter(l => !['completed', 'final_paid'].includes(l.workflow_stage)).length
-              : tab.id === 'documents'
-              ? leads.filter(l => l.proposal || l.contract || l.invoice).length
-              : 0;
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 h-control rounded-control text-[15px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-instant border ${isActive ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
-                <Icon className="size-4" /> {tab.label}
-                {count > 0 && (
-                  <span className={`text-2xs tabular-nums px-1.5 rounded-full ${tab.id === 'inbox' ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{count}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </header>
 
       {/* Main content */}
       {activeTab === 'today' ? (
@@ -712,7 +708,7 @@ export default function ConsultantCockpitV5() {
       </AnimatePresence>
       {/* AI Coach is mounted once globally in App.tsx for these routes — no
           local copy here or it double-mounts (one visible, one swallowing clicks). */}
-    </div>
+    </AppShell>
   );
 }
 

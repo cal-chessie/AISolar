@@ -40,6 +40,9 @@ interface AppShellProps {
   primaryAction?: ReactNode;
   /** Secondary header content (search, toggles) — kept visually subordinate */
   headerExtra?: ReactNode;
+  /** Flush content: no shell padding, children own their scroll (chat/operator
+   *  layouts — the consultant inbox, the installer board). Default = padded page. */
+  flush?: boolean;
   children: ReactNode;
 }
 
@@ -47,7 +50,7 @@ const COLLAPSE_KEY = 'aisolar_shell_collapsed';
 
 export function AppShell({
   persona, brandName, personaLabel, nav, activeId, title,
-  primaryAction, headerExtra, children,
+  primaryAction, headerExtra, flush, children,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(COLLAPSE_KEY) === '1',
@@ -140,8 +143,12 @@ export function AppShell({
           </div>
         </header>
 
-        {/* Content — calm, bordered, breathing room; pb clears mobile bottom nav */}
-        <main className="flex-1 min-w-0 p-4 lg:p-6 pb-24 lg:pb-6">
+        {/* Content — calm, bordered, breathing room; pb clears mobile bottom nav.
+            flush: children own layout + scroll (chat panes, operator boards). */}
+        <main className={cn(
+          'flex-1 min-w-0',
+          flush ? 'flex flex-col overflow-hidden pb-14 lg:pb-0' : 'p-4 lg:p-6 pb-24 lg:pb-6',
+        )}>
           {children}
         </main>
       </div>

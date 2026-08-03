@@ -38,6 +38,7 @@ import { getStage } from '@/lib/leadIntake';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
+import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 
 type TabId = 'today' | 'schedule' | 'routing' | 'inbox';
 
@@ -158,46 +159,35 @@ export default function InstallerPortalV5() {
     { id: 'inbox', label: 'Inbox', icon: MessageSquare, count: inboxJobs.length },
   ];
 
-  return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden" data-density="comfortable">
-      {/* ── header: the SAME app-shell as the consultant cockpit (full-bleed,
-           not a centred column) — matched 28 Jul so both apps read as one. ── */}
-      <header className="bg-background border-b flex-shrink-0">
-        <div className="px-4 py-2 flex items-center gap-2">
-          <AifieldWordmark className="size-9" />
-          <span className="font-bold text-sm">{tb.name}</span>
-          <span className="text-xs text-muted-foreground">Installer</span>
-          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5 mr-1" /> Owner</Button>
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => navigate('/consultant')}><Users className="h-3.5 w-3.5 mr-1" /> Consultant</Button>
-            <NotificationsBell role="installer" />
-            <DarkModeToggle />
-          </div>
-        </div>
-        {/* weather strip — real signal for roof work */}
-        <div className="px-4 pb-2 flex items-center gap-4 text-xs overflow-x-auto scrollbar-hide">
-          <span className="flex items-center gap-1 shrink-0"><Cloud className="h-3 w-3" /> 18°C Dublin</span>
-          <span className="flex items-center gap-1 shrink-0 text-doc-proposal"><CloudRain className="h-3 w-3 text-doc-proposal" /> Yellow rain warning tomorrow</span>
-          <span className="flex items-center gap-1 shrink-0"><Wind className="h-3 w-3" /> 12 km/h SW</span>
-          <span className="flex items-center gap-1 shrink-0"><Sun className="h-3 w-3" /> Sunset 21:47</span>
-        </div>
-        {/* tabs — identical styling to the consultant cockpit */}
-        <div className="flex gap-0.5 px-2 pb-1.5 overflow-x-auto scrollbar-hide">
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => { setTab(t.id); setThreadLeadId(null); }}
-                className={`flex items-center gap-1.5 px-4 h-control rounded-control text-[15px] font-semibold whitespace-nowrap cursor-pointer transition-colors duration-instant border ${active ? 'bg-muted text-foreground border-border' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'}`}>
-                <Icon className="size-4" /> {t.label}
-                {!!t.count && <span className={`text-2xs px-1.5 rounded-full tabular-nums ${t.id === 'today' && isToday && t.count > 0 ? 'bg-pop/10 text-pop font-semibold' : 'bg-muted-foreground/15'}`}>{t.count}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </header>
+  // ── ONE app shell (Cal, 3 Aug: the heart) — same frame as owner + consultant.
+  // Installer keeps data-density="comfortable" via AppShell's persona (44px+
+  // targets: gloves, one hand, outdoors).
+  const shellNav: ShellNavItem[] = TABS.map(t => ({
+    id: t.id,
+    label: t.label,
+    icon: <t.icon />,
+    onSelect: () => { setTab(t.id); setThreadLeadId(null); },
+    badge: t.count || undefined,
+    primary: true, // 4 tabs → all ride the mobile bottom nav
+  }));
 
-      <main className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 pb-24">
+  return (
+    <AppShell
+      persona="installer"
+      brandName={tb.name}
+      personaLabel="Installer"
+      nav={shellNav}
+      activeId={tab}
+      title={TABS.find(t => t.id === tab)?.label ?? 'Today'}
+      headerExtra={<>
+        <NotificationsBell role="installer" />
+        <Button variant="ghost" size="sm" className="p-2 h-8" title="Owner cockpit" aria-label="Switch to owner cockpit" onClick={() => navigate('/owner')}><Building2 className="h-3.5 w-3.5" /></Button>
+        <Button variant="ghost" size="sm" className="p-2 h-8" title="Consultant view" aria-label="Switch to consultant view" onClick={() => navigate('/consultant')}><Users className="h-3.5 w-3.5" /></Button>
+        <DarkModeToggle />
+      </>}
+      flush
+    >
+      <main className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 pb-24 lg:pb-6">
         {/* No AnimatePresence here: its exit got stuck and froze tab content.
             An operator tool switches instantly; the fade earned nothing. */}
         <div key={tab} className="animate-in fade-in duration-150">
@@ -587,7 +577,7 @@ export default function InstallerPortalV5() {
           InstallRunner retired 28 Jul — its moat (serials + triple check)
           lives in JobViewV2's commissioning tab now. */}
       {/* AI Coach mounted once globally in App.tsx — no local copy (double-mount). */}
-    </div>
+    </AppShell>
   );
 }
 
