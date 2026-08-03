@@ -877,10 +877,15 @@ function ClientsView({ leads, navigate }: { leads: DummyLead[]; navigate: (path:
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm text-muted-foreground">{leads.length} clients</span>
-        <div className="relative w-64">
+        <div className="relative w-64 ml-auto">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder="Search name, email, address…" value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
         </div>
+        {/* Cal (3 Aug): "there's no add client from owner cockpit" — there is now.
+            Opens the SAME new-lead flow the consultant uses (one create path). */}
+        <Button size="sm" className="h-8 text-xs shrink-0" onClick={() => navigate('/lead-flow')}>
+          <UserPlus className="h-3.5 w-3.5 mr-1" /> Add client
+        </Button>
       </div>
       {filtered.length === 0 ? (
         <EmptyState
