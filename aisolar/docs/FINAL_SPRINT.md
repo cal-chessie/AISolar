@@ -61,6 +61,18 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
   edge fn. **D3 buildingInsights-server** (Google Solar off the browser, kills the CORS path) rides with it.
 - **M4 · notifications + magic_link_tokens** — the table behind the both-ends law + the portal links we already mint.
 
+### ⛏ MINED FROM THE REMAINING DOCS (3 Aug — AISOLAR_SAAS_MAP · SWEEP9 · SWEEP10 · SWEEP7.1 · ROUND4 · COMPLIANCE_DATA_CAPTURE · GO_LIVE)
+**Per-surface wiring the SAAS_MAP still lists as ⬜ (these ARE the blockers, stated per screen):**
+- **Consultant** — `handleSendReply` → `touchpoints` + Postmark + Realtime · `advanceLeadStage` → `workflow_stage`
+  (+ `StageTransitioned` kernel event). *(The cockpit looks live; these two make it live.)*
+- **Installer/AIField** — photos → storage + `install_evidence` · serials → `installed_equipment` *(write fn exists)* ·
+  offline sign-off · NC submission record.
+- **Owner/Finance** — FinanceWindow deposit link → `create-checkout` *(the button exists; the charge doesn't)*.
+- **Customer portal** — Ask-AI → **guardrailed** LLM (L4) + persist + notify consultant · callback request → record + notify.
+- **SWEEP9 §9.1 gap** — the intake **never explicitly ASKS home-vs-business**, it infers. Ask it at the door; it decides
+  grant + VAT for the whole job. *(Pairs with the §D estimate fork already in Sprint 2.)*
+- **COMPLIANCE_DATA_CAPTURE** — company landline + email captured but **not wired into the NC6 §3 correspondence block**.
+
 ## SPRINT 3 — 🟠 CONFORMITY + POLISH (the feel)
 12. **Shared page-header/shell conformity** — consultant + installer adopt the AppShell header pattern; AgentFoundation's
     residual double-title resolved (banner = SectionBanner everywhere).
@@ -86,6 +98,23 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
 - **L5 · white-label sweep** — every customer-facing "AISOLAR" → tenant brand (10 files already use it; finish the rest).
 - **A3 · leadflow real sends** · **A6 · consent record honoured server-side** (fn exists; close the loop with `anonymise_lead`).
 
+### ⛏ SWEEP-10 / 7.1 / ROUND4 — the polish + truth items
+- **Placeholder marketing stats** (`src/config/brand.ts:72`, TODO in-file) — invented numbers on customer-facing
+  pages. **Truth-pass violation still shipping** → replace with real figures or remove. *(ROUND4 + SWEEP10 both flag it.)*
+- **AIOS page** — cal.com's skeleton with AIOS content; make it an actual AIOS-blue page, show the ten agents, add proof.
+- **Pricing page** — add what you LOSE going down a tier · a pricing FAQ · annual saving in €, not just % · a
+  qualifying signal on the "Custom" tier.
+- **Intelligence depth** — `consultantIntelligence.leadIntel()` = 13 hard-coded stage lines; thin on 200 real leads.
+  *(dealIntel now covers the coach + gates; finish the sweep here.)*
+- **Hero snapshots never refreshed** — reshoot every hero from the CURRENT UI (agent Inside windows · scheduling
+  transparency · AIField rail · unified inbox · approve loop).
+- **Blog + per-page meta** — the deferred Sweep-7 content layer.
+- **SWEEP 7.1** — installer job/survey flow needs a clear click-through · Schedule roster + unscheduled queue ·
+  `PlannableJob.lockedDate` wiring · the Deno edge code written but NOT executed-verified (verifies at deploy).
+- **AIField audit** — "nominally done but thin" (ROUND4 §3.7). Rides the mobile-first pass.
+- **⚠️ Domestic vs commercial presentation fork** (SWEEP10 §D) — homeowner leads with €-saving + payback + grant;
+  commercial leads with ROI/IRR + NDMG + ex-VAT + ACA write-off. **VERIFY NDMG + ACA against the SEAI PDF before quoting.**
+
 ## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY (Cal: "final hardening — make it inevitable")
 17. **Security pass**: re-run the live RLS census (every table tenant-scoped, no loose policies — the 2 Aug method) ·
     verify-artefact + all fns fail-closed re-check · rate-limit + honeypot on ingest-lead · Stripe idempotency keys ·
@@ -95,6 +124,14 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
     retire AiTeamPage(old) · rename the twin AgentWindows · delete test user aios.smoketest · deprecate
     extracted_premises_type in-schema · ToS rewrite (legal).
 19. **Dead-letter alerting** — a failed agent run pings (Slack webhook exists) — silence is the only failure mode left.
+
+### ⛏ STATUTORY FLAGS — Cal's call, not mine (AIFIELD_BUILD_PLAN §FLAGS + complianceDecision + pdfFill)
+- **ESB band thresholds** — code uses the 6/11 kW shorthand; micro-gen is **25 A/phase = 5.75 kVA single / 11.04 kVA
+  three**. We **under-file at exactly 5.75–6.0 kW single-phase**. Needs an ESB policy read + your yes — a statutory
+  threshold is sign-off, never a quiet edit.
+- **Typed e-signature acceptance** — confirm ESB accept a typed name on the NC6 vs wet ink. Until confirmed the pack
+  says "print, sign & date by hand".
+- **NDMG + ACA figures** — verify against the SEAI PDF before either appears on a commercial proposal.
 
 ## SPRINT 5 — 🎬 THE FINALE (LAST, Cal's order)
 20. **Coach sings on all POVs** (Sprint 1 #2 complete = the gate to this).
