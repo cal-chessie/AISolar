@@ -115,49 +115,24 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   },
 ];
 
-const AUDIT_EVENTS = [
-  { time: '2026-07-17 14:23:11', actor: 'system', action: 'Lead Intake Agent normalized bill for lead-006', severity: 'info', meta: { agent: 'lead_intake', lead_id: 'lead-006', duration_ms: 234 } },
-  { time: '2026-07-17 14:21:05', actor: 'consultant@aisolar.ie', action: 'Sent proposal to Sarah McDonald', severity: 'info', meta: { lead_id: 'lead-006', proposal_id: 'prop-006' } },
-  { time: '2026-07-17 14:18:33', actor: 'system', action: 'Proposal Drafter Agent drafted proposal-prop-005', severity: 'info', meta: { agent: 'proposal_drafter', lead_id: 'lead-005', duration_ms: 1240 } },
-  { time: '2026-07-17 14:15:02', actor: 'installer@aisolar.ie', action: 'Marked assignment asg-003 complete', severity: 'info', meta: { assignment_id: 'asg-003', lead_id: 'lead-010' } },
-  { time: '2026-07-17 14:12:48', actor: 'system', action: 'Payment Reminder Agent sent reminder for INV-2026-008', severity: 'info', meta: { agent: 'payment_reminder', invoice_id: 'inv-008' } },
-  { time: '2026-07-17 14:08:19', actor: 'admin@aisolar.ie', action: 'Updated email template: proposal_sent', severity: 'warn', meta: { template_type: 'proposal_sent', version: '1.0' } },
-  { time: '2026-07-17 14:02:55', actor: 'system', action: 'PostInstall Agent failed for lead-011', severity: 'error', meta: { agent: 'post_install', lead_id: 'lead-011', error: 'Postmark 429 rate limit', duration_ms: 5023 } },
-  { time: '2026-07-17 13:58:12', actor: 'customer@example.com', action: 'Opened proposal link (3rd time)', severity: 'info', meta: { lead_id: 'lead-006', view_count: 3 } },
-  { time: '2026-07-17 13:45:33', actor: 'consultant@aisolar.ie', action: 'Created proposal draft for Tom Brennan', severity: 'info', meta: { lead_id: 'lead-004' } },
-  { time: '2026-07-17 13:30:00', actor: 'system', action: 'Stale Lead Escalator flagged 3 leads to Aoife', severity: 'warn', meta: { agent: 'stale_lead_escalator', escalated_count: 3 } },
-  { time: '2026-07-17 12:15:44', actor: 'admin@aisolar.ie', action: 'Changed user role: Cian Walsh → admin', severity: 'warn', meta: { user_id: 'usr-002', old_role: 'consultant', new_role: 'admin' } },
-  { time: '2026-07-17 11:00:00', actor: 'system', action: 'Follow-Up Agent sent 8 emails (daily run)', severity: 'info', meta: { agent: 'follow_up', emails_sent: 8 } },
-  { time: '2026-07-17 10:30:00', actor: 'system', action: 'Customer Digest Agent sent 12 weekly digests', severity: 'info', meta: { agent: 'customer_digest', digests_sent: 12 } },
-  { time: '2026-07-17 09:30:00', actor: 'system', action: 'Payment Reminder Agent sent 3 reminders', severity: 'info', meta: { agent: 'payment_reminder', reminders_sent: 3 } },
-  { time: '2026-07-17 09:00:00', actor: 'system', action: 'Follow-Up Agent daily run completed', severity: 'info', meta: { agent: 'follow_up', duration_ms: 4523 } },
-  { time: '2026-07-17 08:00:00', actor: 'system', action: 'Stale Lead Escalator daily run completed', severity: 'info', meta: { agent: 'stale_lead_escalator', duration_ms: 1234 } },
-];
+type AuditEvent = { time: string; actor: string; action: string; severity: string; meta: Record<string, unknown> };
+// TRUTH-PASS (3 Aug): the synthetic demo feed is DEAD — fabricated events with
+// fake actors were in-app fiction. Empty until this reads real activity_logs.
+const AUDIT_EVENTS: AuditEvent[] = [];
 
 export default function SystemSettingsV2() {
   const [integrations, setIntegrations] = useState<Integration[]>(INITIAL_INTEGRATIONS);
-  const [tab, setTab] = useState('integrations');
+  const [tab, setTab] = useState('brand'); // owner's own things FIRST (Cal: 'settings is a mess')
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [auditFilter, setAuditFilter] = useState({ severity: 'all', actor: 'all', search: '' });
 
-  const handleToggleIntegration = (id: string) => {
-    setIntegrations(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      if (i.status === 'connected') return { ...i, status: 'disconnected' };
-      if (i.status === 'disconnected') return { ...i, status: 'connecting' };
-      return i;
-    }));
-    // Simulate connection
-    setTimeout(() => {
-      setIntegrations(prev => prev.map(i => i.id === id && i.status === 'connecting' ? { ...i, status: 'connected' } : i));
-    }, 1500);
+  // TRUTH-PASS (3 Aug): the old handlers SIMULATED connecting (setTimeout ->
+  // 'connected'). Dead. Keys live in deploy secrets; Settings never fakes state.
+  const handleToggleIntegration = (_id: string) => {
+    toast('Service keys are managed at deploy', { description: 'Nothing connects or disconnects from the browser — the launch runbook sets the secrets.' });
   };
-
-  const handleTestIntegration = (id: string) => {
-    setIntegrations(prev => prev.map(i => i.id === id ? { ...i, status: 'connecting' } : i));
-    setTimeout(() => {
-      setIntegrations(prev => prev.map(i => i.id === id ? { ...i, status: 'connected' } : i));
-    }, 1000);
+  const handleTestIntegration = (_id: string) => {
+    toast('Test runs at deploy verification', { description: 'The smoke test proves each service against the REAL keys — no simulated results here.' });
   };
 
   const filteredAudit = AUDIT_EVENTS.filter(e => {
@@ -173,17 +148,17 @@ export default function SystemSettingsV2() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
-          <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
           <TabsTrigger value="brand" className="text-xs sm:text-sm">Brand</TabsTrigger>
-          <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
           <TabsTrigger value="terms" className="text-xs sm:text-sm">Pricing &amp; Terms</TabsTrigger>
+          <TabsTrigger value="integrations" className="text-xs sm:text-sm">Integrations</TabsTrigger>
+          <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
           <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit Log</TabsTrigger>
           <TabsTrigger value="kernel" className="text-xs sm:text-sm">Kernel</TabsTrigger>
         </TabsList>
 
         {/* === INTEGRATIONS === */}
         <TabsContent value="integrations" className="space-y-3">
-          <p className="text-xs text-muted-foreground">Connect/disconnect third-party services. Click to configure.</p>
+          <p className="text-xs text-muted-foreground">Where each service lives. Keys are set at DEPLOY (never in the browser) — a card opens for reference and the fields the launch runbook fills.</p>
           {integrations.map(integration => {
             const Icon = integration.icon;
             const isSelected = selectedIntegration === integration.id;
@@ -218,7 +193,7 @@ export default function SystemSettingsV2() {
                       'bg-muted text-muted-foreground'
                     }`}>
                       {integration.status === 'connecting' && <RefreshCw className="h-2.5 w-2.5 mr-0.5 animate-spin" />}
-                      {integration.status}
+                      {integration.status === 'connected' ? 'managed at deploy' : integration.status === 'disconnected' ? 'not configured' : integration.status}
                     </Badge>
                   </div>
 
@@ -321,6 +296,12 @@ export default function SystemSettingsV2() {
 
               {/* Event list */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto">
+                {filteredAudit.length === 0 && (
+                  <div className="rounded-panel border border-border bg-muted/20 p-6 text-center">
+                    <p className="text-sm font-medium">The audit trail starts recording at deployment</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Every real action — agent runs, role changes, sends — lands here from <code className="font-mono">activity_logs</code>. Nothing synthetic is ever shown.</p>
+                  </div>
+                )}
                 {filteredAudit.map((event, i) => (
                   <div key={i} className="flex items-start gap-2 p-2 border rounded text-xs transition-colors hover:bg-muted/30">
                     <Badge variant="outline" className={`text-[11px] flex-shrink-0 ${

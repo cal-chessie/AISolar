@@ -76,7 +76,15 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
   const navigate = useNavigate();
   const [lead, setLead] = useState<DummyLead>(initialLead);
-  const [step, setStep] = useState<FlowStep>('estimate');
+  // Open on the step the lead is ACTUALLY at (punch-list #8: reload/deep-link
+  // used to dump every lead back to Estimate regardless of stage).
+  const [step, setStep] = useState<FlowStep>(() => {
+    const s = lead.workflow_stage;
+    if (['survey_scheduled', 'survey_complete'].includes(s)) return 'survey';
+    if (s === 'proposal_drafted') return 'proposal';
+    if (['proposal_sent', 'approved', 'deposit_paid', 'install_scheduled', 'installing', 'installed', 'final_paid', 'completed'].includes(s)) return 'send';
+    return 'estimate';
+  });
   const [eircode, setEircode] = useState<string>(() => ((lead.intake as Record<string, unknown>)?.extracted_eircode as string) ?? '');
   const [address, setAddress] = useState(lead.address || '');
   const [showMap, setShowMap] = useState(false);
