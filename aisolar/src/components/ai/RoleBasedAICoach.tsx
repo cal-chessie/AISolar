@@ -26,6 +26,8 @@ import {
   getCoachSummary, COACH_SYSTEM_PROMPTS, type CoachRole,
 } from '@/lib/aiCoach';
 import { coachAnswer, coachBriefing, COACH_PROMPTS, type CoachAnswer } from '@/lib/coachBrain';
+import { aiReports, nextMove, type CoachPOV } from '@/lib/dealIntel';
+import { useLeads } from '@/lib/realLeads';
 import { isDemoMode } from '@/lib/demoMode';
 
 interface ChatMsg { id: string; from: 'coach' | 'you'; text: string; actions?: CoachAnswer['actions']; }
@@ -81,11 +83,27 @@ export default function RoleBasedAICoach() {
   const summary = getCoachSummary(role);
   const prompts = COACH_PROMPTS[role] ?? COACH_PROMPTS.consultant;
 
+  // THE intelligence: every report is computed from the real book (dealIntel) —
+  // deal value, days-in-stage, opens, tone, NC6 blockers. No vibes.
+  const { leads } = useLeads();
+  const reports = useMemo(() => aiReports(leads, role as CoachPOV), [leads, role]);
+  const topMove = useMemo(() => {
+    const moves = leads.map(l => nextMove(l, role as CoachPOV)).filter(Boolean);
+    const rank = { now: 0, today: 1, soon: 2 } as const;
+    return moves.sort((a, b) => rank[a!.severity] - rank[b!.severity])[0] ?? null;
+  }, [leads, role]);
+
   // Seed the conversation with a live briefing the first time it opens.
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const brief = coachBriefing(role);
-      setMessages([{ id: 'brief', from: 'coach', text: brief.text, actions: brief.actions }]);
+      const briefText = topMove
+        ? `**The one move right now:** ${topMove.action}\n${topMove.reason}\n\n${brief.text}`
+        : brief.text;
+      const briefActions = topMove
+        ? [{ label: `Open ${topMove.leadName.split(' ')[0]}`, route: topMove.route }, ...(brief.actions ?? [])]
+        : brief.actions;
+      setMessages([{ id: 'brief', from: 'coach', text: briefText, actions: briefActions }]);
     }
   }, [isOpen, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -107,8 +125,8 @@ export default function RoleBasedAICoach() {
 
   const runAction = (route: string) => { setIsOpen(false); navigate(route); };
 
-  // High-signal count for the button badge: does the briefing flag anything hot?
-  const highPriorityCount = useMemo(() => (isDemoMode() && (role === 'consultant' || role === 'owner')) ? 1 : 0, [role]);
+  // Badge = REAL count of act-now insights from the book (was a demo-mode hack).
+  const highPriorityCount = useMemo(() => reports.filter(r => r.severity === 'now').length, [reports]);
 
   return (
     <>
@@ -226,6 +244,27 @@ export default function RoleBasedAICoach() {
                     <Send className="size-4" />
                   </Button>
                 </div>
+                {/* AI REPORTS — the live feed (Cal, 3 Aug). Every line is computed
+                    from the book this second: value, days-in-stage, opens, tone,
+                    NC6 blockers. Click a line, land on the deal. */}
+                {reports.length > 0 && (
+                  <div className="rounded-control border border-border bg-muted/20">
+                    <div className="flex items-center gap-1.5 px-2.5 h-8 border-b border-border">
+                      <span className="relative flex size-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-doc-deposit opacity-60" /><span className="relative inline-flex rounded-full size-2 bg-doc-deposit" /></span>
+                      <span className="text-2xs font-semibold">AI reports · live</span>
+                      <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{reports.length}</span>
+                    </div>
+                    <div className="max-h-36 overflow-y-auto scroll-slim divide-y divide-border/60">
+                      {reports.map((r, i) => (
+                        <button key={i} onClick={() => r.route && runAction(r.route)} disabled={!r.route}
+                          className="w-full flex items-start gap-2 px-2.5 py-2 text-left hover:bg-muted/50 transition-colors disabled:cursor-default">
+                          <span className={`mt-1 size-1.5 rounded-full shrink-0 ${r.severity === 'now' ? 'bg-pop' : r.severity === 'today' ? 'bg-doc-proposal' : r.severity === 'soon' ? 'bg-tech' : 'bg-muted-foreground/40'}`} />
+                          <span className="text-2xs leading-snug text-muted-foreground">{r.text}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <details className="group">
                   <summary className="text-2xs text-muted-foreground cursor-pointer hover:underline list-none flex items-center gap-1">
                     <ChevronRight className="size-3 group-open:rotate-90 transition-transform" />

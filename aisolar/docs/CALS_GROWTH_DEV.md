@@ -42,6 +42,32 @@
   *build*, never a thing to *claim* — the same line we hold everywhere.
 - **Britain jurisdiction pack** — the clone test (SEAI→UK grants · Eircode→postcode · ESB→DNO). Expansion once Ireland's proven.
 
+## TEACHING — the AI editions (3 Aug) — how Cal SELLS this (know it inside out)
+**The one-breath story:** *"Most solar software stores your work. Ours watches it. Every deal is read continuously —
+what it's worth, how long it's sat, whether the customer's engaged, what's blocking the paperwork — and the system
+tells each person the ONE thing to do next, with the reason. And before an ESB form ever files, the AI reads the
+actual certificate and argues with the human if they disagree."*
+
+**The three demo moments (show, don't tell):**
+1. **The owner opens the app** → NEEDS YOU says *"Call Corrib now — the proposal's been opened 3× and the last look
+   was today. €134,350 on the table. This is the window."* Not a dashboard — a colleague. (dealIntel: value, opens,
+   recency, tone, ranked.)
+2. **The AI Coach panel** → the live **AI reports** feed at the bottom: every line computed from the book this second,
+   click a line, land on the deal. Ask it anything; the answers cite real numbers.
+3. **The commissioning gate** → attach the type-test cert, hit **Cross-check now**: the model reads the document and
+   says *"you typed 6.0 kW — the cert reads 5.0."* That's the NC6→NC7 band error made impossible. **The line for the
+   pitch: "the AI is our compliance officer, not our copywriter."**
+
+**The honesty architecture (why installers trust it — USE this in marketing):**
+- Rules run the business; AI does the writing and the reading. Kill the AI and leads still route, surveys book,
+  packs build, invoices fire. (The Emergency Stop card SHOWS this — demo it.)
+- The AI flags, the human decides. Nothing sends, signs, or files itself.
+- Every claim cites its source: the coach quotes the deal's own record; the vision check shows what it read.
+- No AI configured → the app says so. It never pretends.
+
+**Why nobody can copy the compliance vision:** it needs the CHAIN — the captured cert, the typed gate values, the
+completeness rules, the sealed pack — all in one system. Competitors have a proposal tool; we have the paper trail.
+
 ## TEACHING — the agent runtime in plain words (Cal: "mark it teaching", for users + marketing)
 How to explain the agents to an owner or a prospect, no jargon:
 - **A relay, not a scrum.** A lead moves through stages; at each stage *one* agent does *one* job and hands off. They

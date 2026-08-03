@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { computePipelineStats, type DummyLead } from '@/lib/dummyData';
 import { useLeads } from '@/lib/realLeads';
+import { nextMove } from '@/lib/dealIntel';
 import { computeOwnerStats } from '@/lib/ownerStats';
 import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
@@ -362,15 +363,28 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
   const hotCount = leads.filter((l: DummyLead) => l.score > 80).length;
   const jobCount = leads.filter((l: DummyLead) => l.assignment).length;
 
-  // THE GATES — everything genuinely waiting on a human, from real data only.
-  const hotFollowUps = leads.filter((l: DummyLead) => l.workflow_stage === 'proposal_sent' && l.score > 80);
+  // THE GATES — now fed by dealIntel (Cal 3 Aug: the AI insight "should be
+  // apparent on the needs-you part"). Each per-deal gate is nextMove()'s top
+  // call WITH its reason — the same intelligence the coach speaks, so the
+  // cockpit and the coach can never tell different stories.
   const draftsWaiting = leads.filter((l: DummyLead) => l.proposal?.status === 'draft');
+  const moveRank = { now: 0, today: 1, soon: 2 } as const;
+  const topMoves = leads
+    .map((l: DummyLead) => nextMove(l, 'owner'))
+    .filter(Boolean)
+    .sort((a: any, b: any) => moveRank[a.severity] - moveRank[b.severity])
+    .slice(0, 3);
   const gates: Array<{ icon: any; title: string; desc: string; cta: string; onClick: () => void }> = [
     ...(data.agentFailures > 0 ? [{ icon: Bot, title: `${data.agentFailures} agent run failed`, desc: 'Postmark rate limit — needs a look', cta: 'Open agents', onClick: () => setActiveView('agents') }] : []),
     ...(draftsWaiting.length > 0 ? [{ icon: FileText, title: `${draftsWaiting.length} proposal draft${draftsWaiting.length === 1 ? '' : 's'} waiting on review`, desc: draftsWaiting.map((l: DummyLead) => l.name.split(' ')[0]).slice(0, 3).join(', '), cta: 'Review', onClick: () => navigate(`/lead-flow/${draftsWaiting[0].id}`) }] : []),
-    ...(hotFollowUps.length > 0 ? [{ icon: Flame, title: `${hotFollowUps.length} hot proposal${hotFollowUps.length === 1 ? '' : 's'} to follow up`, desc: hotFollowUps.map((l: DummyLead) => l.name).slice(0, 2).join(' · '), cta: 'Call now', onClick: () => navigate(`/lead-flow/${hotFollowUps[0].id}`) }] : []),
-    ...(data.staleLeads.length > 0 ? [{ icon: Clock, title: `${data.staleLeads.length} stale lead${data.staleLeads.length === 1 ? '' : 's'}`, desc: '5+ days without contact', cta: 'Review', onClick: () => navigate('/consultant') }] : []),
-  ];
+    ...topMoves.map((m: any) => ({
+      icon: m.severity === 'now' ? Flame : Clock,
+      title: m.action,
+      desc: m.reason,
+      cta: 'Open',
+      onClick: () => navigate(m.route),
+    })),
+  ].slice(0, 4);
 
   return (
     <div className="space-y-4">
