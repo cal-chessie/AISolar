@@ -76,9 +76,13 @@ export default function LeadFlow({ leadId: leadIdProp }: { leadId?: string }) {
 function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
   const navigate = useNavigate();
   const [lead, setLead] = useState<DummyLead>(initialLead);
-  // Open on the step the lead is ACTUALLY at (punch-list #8: reload/deep-link
-  // used to dump every lead back to Estimate regardless of stage).
+  // Open on the step the lead is ACTUALLY at — or the EXACT step an intelligence
+  // gate pointed at (?step=). Cal 3 Aug: "needs you has to go straight to the
+  // issue, the gate, the issue" — a gate about a proposal must land ON the
+  // proposal, not the lead's front door.
   const [step, setStep] = useState<FlowStep>(() => {
+    const wanted = new URLSearchParams(window.location.search).get('step') as FlowStep | null;
+    if (wanted && ['estimate', 'survey', 'design', 'proposal', 'send'].includes(wanted)) return wanted;
     const s = lead.workflow_stage;
     if (['survey_scheduled', 'survey_complete'].includes(s)) return 'survey';
     if (s === 'proposal_drafted') return 'proposal';

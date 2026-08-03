@@ -96,7 +96,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   if (s.packBlockers.length > 0 && role !== 'customer') {
     const item = s.packBlockers[0];
     return {
-      ...base, severity: 'now', route: role === 'installer' ? `/job/${lead.id}` : `/lead-flow/${lead.id}`,
+      // Straight to the commissioning gate — the tab where that field lives.
+      ...base, severity: 'now', route: `/job/${lead.id}?tab=commissioning`,
       action: role === 'installer'
         ? `Close out ${first(lead)}'s NC6 gate — ${item.toLowerCase()} is still open.`
         : `${first(lead)}'s NC6 pack is blocked: ${item.toLowerCase()}.`,
@@ -107,7 +108,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   // 2 · Hot proposal being read RIGHT NOW — strike while they're looking.
   if (lead.workflow_stage === 'proposal_sent' && s.proposalOpens >= 2 && (s.lastTouchDays ?? 99) <= 1) {
     return {
-      ...base, severity: 'now', route: `/lead-flow/${lead.id}`,
+      // Straight to the SEND step — the proposal, its opens, and the call button.
+      ...base, severity: 'now', route: `/lead-flow/${lead.id}?step=send`,
       action: `Call ${first(lead)} now — the proposal's been opened ${s.proposalOpens}× and the last look was ${s.lastTouchDays === 0 ? 'today' : 'yesterday'}.`,
       reason: `${eur(s.value)} on the table and they're actively reading. This is the window.`,
     };
@@ -116,7 +118,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   // 3 · Signed but no deposit — money agreed, not collected.
   if (lead.workflow_stage === 'approved' && (s.daysInStage ?? 0) >= 1) {
     return {
-      ...base, severity: 'today', route: `/lead-flow/${lead.id}`,
+      // Straight to SEND — where the deposit link is issued.
+      ...base, severity: 'today', route: `/lead-flow/${lead.id}?step=send`,
       action: `Send ${first(lead)} the deposit link again — signed ${s.daysInStage} day${s.daysInStage === 1 ? '' : 's'} ago, nothing paid.`,
       reason: `A signed job with no deposit is the easiest ${eur(Math.round(s.value * 0.3))} you'll collect today.`,
     };
@@ -125,7 +128,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   // 4 · Proposal sent, gone quiet — the polite chase.
   if (lead.workflow_stage === 'proposal_sent' && s.tone !== 'engaged' && (s.lastTouchDays ?? 0) >= 3) {
     return {
-      ...base, severity: 'today', route: `/lead-flow/${lead.id}`,
+      // Straight to SEND — the proposal + its engagement record.
+      ...base, severity: 'today', route: `/lead-flow/${lead.id}?step=send`,
       action: `Follow up ${first(lead)} — ${s.lastTouchDays} days of silence on a ${eur(s.value)} proposal.`,
       reason: s.proposalOpens > 0
         ? `They opened it ${s.proposalOpens}× then went quiet — something in it needs talking through.`
@@ -136,7 +140,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   // 5 · Survey never booked on a live lead.
   if (['new', 'intake_complete'].includes(lead.workflow_stage) && (s.daysInStage ?? 0) >= 2) {
     return {
-      ...base, severity: 'today', route: `/lead-flow/${lead.id}`,
+      // Straight to ESTIMATE — where "Book site survey" lives.
+      ...base, severity: 'today', route: `/lead-flow/${lead.id}?step=estimate`,
       action: `Get ${first(lead)}'s survey booked — the lead is ${s.daysInStage} days old and nothing's scheduled.`,
       reason: 'Every day before the survey is a day another installer can knock.',
     };
@@ -145,7 +150,8 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   // 6 · General staleness — keep the book warm.
   if ((s.lastTouchDays ?? 0) >= 5 && !['completed', 'final_paid'].includes(lead.workflow_stage)) {
     return {
-      ...base, severity: 'soon', route: `/lead-flow/${lead.id}`,
+      // Straight to the conversation — a stale lead needs a message, not a form.
+      ...base, severity: 'soon', route: `/consultant?lead=${lead.id}`,
       action: `Touch base with ${first(lead)} — ${s.lastTouchDays} days without contact at ${s.stageLabel}.`,
       reason: 'Five quiet days is where deals start dying politely.',
     };

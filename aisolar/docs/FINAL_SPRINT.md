@@ -30,6 +30,13 @@ aiReports) wired into coach briefing + live AI-reports feed + owner NEEDS-YOU ·
 6. **Survey-photo intelligence** (AI#5) + **voice→field record** (AI#6) — build if sprint time allows, else first
    post-launch build. **Learning loop** (AI#7) = post-cohort (needs real outcomes).
 
+### Also in the AI set (added 3 Aug — missed on the first pass, Cal caught it)
+- **Proposal personalisation from their actual life** — not "a 6kWp system" but "you're out all day, so the battery is
+  what makes this work for you", written from the day/night split we already read. Rides the drafter's LLM call; the
+  numbers stay `computeQuote`'s.
+- **The customer's own view of the money** — grant status, what's paid, what's still due, what happens next, in the
+  `/customer/:token` portal. The portal exists; the money story isn't in it yet.
+
 ## SPRINT 2 — 🔴 THE BLOCKERS (the launch spine)
 7. **ESB paper trail**: ONE doc-id vocabulary → wire `lead_documents` + `esb_submissions` writes (sealed→submitted→REAL
    ref→status) → per-customer pack confirmation gate → gate surfaced at the 3 human touchpoints (+ coach speaks it — done).

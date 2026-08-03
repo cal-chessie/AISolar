@@ -184,7 +184,13 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
   const [lead] = useState<DummyLead>(initialLead);
   const [jobCompleted, setJobCompleted] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  // ?tab= lets an intelligence gate land the installer ON the blocking step
+  // (e.g. the commissioning gate that's holding the NC6) — not the job's front page.
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const wanted = new URLSearchParams(window.location.search).get('tab') as TabId | null;
+    const valid: TabId[] = ['overview', 'pre_install', 'roof', 'electrical', 'commissioning', 'handover'];
+    return wanted && valid.includes(wanted) ? wanted : 'overview';
+  });
 
   // Checklist state — persisted to localStorage
   const [preInstall, setPreInstall] = useState<ToggleItem[]>(DEFAULT_PRE_INSTALL);
