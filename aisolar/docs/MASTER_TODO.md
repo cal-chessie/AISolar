@@ -25,6 +25,16 @@ applied live, end-to-end) · RoofDesigner **Clear-all-panels**.
 
 ---
 
+## 🎬 THE FINALE — guided demo tour (Cal, 3 Aug: "we do this LAST")
+**Order of operations: everything else on this list → then make the AI COACH SING on all POVs → then this.**
+- **Browse Views becomes LEADS-only** — not a route index. The toggle moves to the **owner sidebar (left column)**,
+  and flipping it populates the **10 lead archetypes** so the user is clicking real work, not a menu.
+- **Then the guided tour**: prompts the user through the whole product, following the SPINE in logical order —
+  lead in → estimate → survey → design → proposal → send → contract → deposit → install → NC6/SEAI pack → handover —
+  **finale: agents → product catalog → settings → analytics.**
+- Instructional, not decorative: each stop says what this screen is FOR, what to click, what just happened behind it.
+  Doubles as cohort onboarding + the founder teaching walkthrough (SWEEP10 §E).
+
 ## 🔴 LAUNCH BLOCKERS (before the cohort touches it)
 ### A · The cutover, finished
 - **Verify the read-flip end-to-end** signed in as a real tenant (settings load from DB, save round-trips). *(code done; needs a live authed walk = part of the smoke test)*
@@ -56,7 +66,7 @@ applied live, end-to-end) · RoofDesigner **Clear-all-panels**.
 - **Per-tab polish** — Clients type-badges · Financials aging · SEAI pack-status chips.
 
 ### Behaviour / truth
-- **Coach v1.5** — per-POV voice + real signals (deal value, days-in-stage, the NC6 gate) — the hidden multiplier.
+- **⭐ Coach v1.5 — MUST SING on all POVs before the demo tour (Cal's sequencing)** — per-POV voice + real signals (deal value, days-in-stage, the NC6 gate). Today it's ~13 hard-coded stage lines. See `AI_WORTH_ITS_WEIGHT.md` #2.
 - **Notification spine v1** — one `notify(event)` → bell + brand-themed email, portal link always in. Wires the 4 draft-gated "queued — goes out with approval" toasts to real sends.
 - **Branded outbound** — every email from the tenant's brand (from-name + reply-to on one verified domain at launch).
 - **7-day trial → payment** — Stripe subscription (trial_period_days 7), webhook flips tenant status, Customer Portal for self-serve.
@@ -90,6 +100,12 @@ status page · Intercom (~25 clients) · Beehiiv newsletter · dunning automatio
 **Tooling verdicts (3 Aug):** keep Postmark · PostHog light at launch · Better Stack uptime-only · SKIP Upstash/Trigger.dev · NO Next rewrite of the app.
 
 ---
+
+## 🤖 AI OPPORTUNITY (new doc, 3 Aug)
+`AI_WORTH_ITS_WEIGHT.md` — honest verdict: the SPINE is what's special; the AI is currently a typist, not an expert.
+Top two moves that change that: **compliance vision** (model reads the type-test cert / serial plate / RECI cert and
+catches mismatches before the NC6 is filed — the one nobody can copy) and **the coach that actually knows the deal**.
+Both ride the existing runtime + gates.
 
 ## SOURCE DOCS (where the detail lives)
 [GO_LIVE.md](GO_LIVE.md) (the gate) · [CALS_GROWTH_DEV.md](CALS_GROWTH_DEV.md) (register + growth) ·

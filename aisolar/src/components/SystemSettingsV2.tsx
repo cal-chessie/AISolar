@@ -265,11 +265,12 @@ export default function SystemSettingsV2() {
 
         {/* === AUDIT LOG — detailed + filterable === */}
         <TabsContent value="terms" className="grid gap-4 lg:grid-cols-2 items-start">
+          {/* Cal (3 Aug): terms first, equipment pricing BELOW it. */}
           <div className="space-y-4">
+            <ProposalTermsCard />
             <PricingCard />
-            <EstimateBasisCard />
           </div>
-          <ProposalTermsCard />
+          <EstimateBasisCard />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-3">
@@ -725,10 +726,39 @@ function EstimateBasisCard() {
           </div>
         ))}
       </div>
-      <p className="text-2xs text-muted-foreground mt-4 pt-3 border-t border-border">
-        <span className="inline-block size-1.5 rounded-full bg-doc-deposit align-middle mr-1" />
-        drives the numbers on the proposal · a missing point never blocks an estimate — it widens the caveat.
-      </p>
+      {/* The chain, made explicit: what goes IN, what computes, what lands on
+          the customer's proposal. This is the card's whole job — an owner
+          should never wonder where a number came from. */}
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="label-micro mb-2">How it becomes a proposal</div>
+        <div className="space-y-2 text-xs">
+          <div className="flex items-start gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-2xs font-bold">1</span>
+            <span><strong>The bill</strong> gives usage, rates, the day/night split and the supplier's export rate.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-2xs font-bold">2</span>
+            <span><strong>The survey</strong> confirms roof orientation, pitch, shading and who's home during the day — that's what turns a guess into a number.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-2xs font-bold">3</span>
+            <span><strong>Your rates above</strong> supply the cost; the SEAI grant and VAT are applied by property type — domestic tiers vs the commercial NDMG at 13%.</span>
+          </div>
+        </div>
+        <div className="mt-3 rounded-control bg-muted/40 p-3">
+          <div className="label-micro mb-1.5">What the customer then sees</div>
+          <p className="text-xs text-muted-foreground leading-body">
+            System size · gross cost · <strong className="text-foreground">grant</strong> · net cost ·
+            annual saving (self-use + export + any battery arbitrage) · payback — plus the honest second
+            line: payback on self-use alone, with no export income counted.
+          </p>
+        </div>
+        <p className="text-2xs text-muted-foreground mt-3">
+          <span className="inline-block size-1.5 rounded-full bg-doc-deposit align-middle mr-1" />
+          drives the numbers · one engine computes every screen, so the estimate, the proposal and the
+          stored contract figure can never disagree · a missing point never blocks an estimate — it widens the caveat.
+        </p>
+      </div>
     </div>
   );
 }
