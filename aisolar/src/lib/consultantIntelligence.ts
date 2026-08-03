@@ -11,6 +11,8 @@ import type { DummyLead } from './dummyData';
 
 export type WaitingParty = 'customer' | 'consultant' | 'installer' | 'agent' | 'authority';
 
+import { nextMove } from './dealIntel';
+
 export interface LeadIntel {
   stageLabel: string;        // human name for the stage
   holdup: string;            // what's actually blocking, in plain words
@@ -162,6 +164,16 @@ export function leadIntel(lead: DummyLead): LeadIntel {
   // Stale only counts when the ball is on OUR side of the net.
   const oursToMove = meta.waitingOn === 'consultant' || meta.waitingOn === 'agent';
   const isStale = oursToMove && days > 4;
+
+  // SING (3 Aug): where dealIntel has a concrete, ranked move for this lead, let
+  // it speak — it carries the €-and-signal voice (action + reason) that the coach
+  // and the owner gates use, so the consultant's per-lead read can't tell a
+  // different story from the coach. The stage-derived line stays the fallback.
+  const move = nextMove(lead, 'consultant');
+  if (move) {
+    next = move.action;
+    holdup = move.reason;
+  }
 
   return {
     stageLabel: meta.label,

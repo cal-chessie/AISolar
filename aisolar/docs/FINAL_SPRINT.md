@@ -63,14 +63,21 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
     blocking NC6 item: "close out X's gate — serial is still open"), then the day's load.
   - ✅ **Customer voice** *(Done 3 Aug)* — a real stage-aware briefing: where their project is, what
     happens next, and what (if anything) we need from them — warm, never over-promising.
-  - ⬜ Owner/consultant deepen further · ⬜ `consultantIntelligence.leadIntel()`'s 13 hard-coded lines onto
-    dealIntel · ⬜ the coach goes **conversational** (prompts at every gate, not only when asked).
+  - ✅ **`consultantIntelligence.leadIntel()` onto dealIntel** *(Done 3 Aug)* — where dealIntel has a
+    ranked move, leadIntel now speaks it (action + reason), so the consultant's per-lead read, the coach and
+    the owner gates can't tell different stories. All 3 leadIntel consumers unchanged (stable interface).
+  - ⬜ Owner/consultant deepen further · ⬜ the coach goes **conversational** (prompts at every gate, not
+    only when asked) — deferred: proactive interruption is a UX call, needs Cal's eye.
 - ✅ **Call-prep card.** *(Done 3 Aug — verified live: "Proposal Sent · €134,350 on the table · 3 days here
   · opened 3× / Price vs payback — is it worth it? / 6.9-yr payback · €19,526/yr saved".)* `dealIntel.callPrep`
   → a collapsible three-line strip on the LeadFlow header: where they are · their words (or the likely
   concern) · the number that answers it. Deterministic; LLM polish when enabled.
-- **Inbox triage.** Every inbound classified (question · objection · booking · complaint · silence) + a
-  drafted reply waiting **behind the human send gate**, in the unified inbox that already exists.
+- ✅ **Inbox triage.** *(Done 3 Aug — verified live.)* `inboxTriage` classifies the customer's last real
+  message (question · objection · booking · complaint · silence — system events like opens/signs/payments
+  read as silence, never a false message) and drafts a first reply. Surfaced in BOTH inboxes (consultant
+  cockpit + shared installer inbox): a colour tag per conversation + a "Suggested reply" that only FILLS the
+  box — the human edits and sends. The objection draft pulls the deal's real numbers (verified on Corrib:
+  "6.9-yr payback · €19,526/yr saved"). Two genuine customer messages added to the demo cast so it's visible.
 - **Outside touchpoints — agents STRONGER on email (Cal's question, answered in code):** every outbound is
   personal (their name, their numbers, their next step) · branded (tenant from-name/reply-to) · human-gated
   · and **logged as a touchpoint the intelligence then READS** — opens/replies feed dealSignals, so the

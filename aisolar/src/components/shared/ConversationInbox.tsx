@@ -22,7 +22,18 @@ import { MessageSquare, Send, Search, ArrowLeft } from 'lucide-react';
 import { buildConversation } from '@/lib/conversation';
 import type { DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
+import { triageInbound, triageLabel } from '@/lib/inboxTriage';
+import { Sparkles } from 'lucide-react';
 import MessageBubble from '@/components/shared/MessageBubble';
+
+// Static class strings so Tailwind's purge keeps them (no runtime interpolation).
+const TRIAGE_TAG: Record<string, string> = {
+  tech: 'bg-tech/10 text-tech',
+  pop: 'bg-pop/10 text-pop',
+  'doc-proposal': 'bg-doc-proposal/10 text-doc-proposal',
+  'doc-deposit': 'bg-doc-deposit/10 text-doc-deposit',
+  muted: 'bg-muted text-muted-foreground',
+};
 
 export default function ConversationInbox({
   leads,
@@ -98,6 +109,14 @@ export default function ConversationInbox({
                   <span className="text-2xs text-muted-foreground shrink-0">{getStage(l.workflow_stage)?.label}</span>
                 </div>
                 {last && <p className="mt-1 text-xs text-muted-foreground truncate">{last.body}</p>}
+                {/* Triage tag — what the customer's last message IS, so the
+                    consultant can scan the list and hit the one that needs them
+                    (silence is quiet on purpose — no tag). */}
+                {(() => {
+                  const t = triageInbound(l);
+                  if (t.kind === 'silence') return null;
+                  return <span className={`mt-1.5 inline-block text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${TRIAGE_TAG[t.tone]}`}>{triageLabel(t.kind)}</span>;
+                })()}
               </button>
             );
           })}
@@ -131,6 +150,28 @@ export default function ConversationInbox({
             )}
             <div ref={endRef} />
           </div>
+
+          {/* SUGGESTED REPLY — triage read the customer's last message and
+              drafted a first reply. It only ever FILLS the box; the consultant
+              edits and sends. The human gate is never skipped. */}
+          {(() => {
+            const t = triageInbound(selected);
+            if (reply.trim()) return null; // don't nag once they're typing
+            return (
+              <div className="border-t border-border px-3 pt-2.5 shrink-0">
+                <button
+                  onClick={() => setReply(t.draft)}
+                  className="w-full text-left rounded-control border border-doc-proposal/30 bg-doc-proposal/5 p-2.5 hover:bg-doc-proposal/10 transition-colors">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles className="size-3 text-doc-proposal" />
+                    <span className="text-2xs font-semibold text-doc-proposal">Suggested reply · {triageLabel(t.kind).toLowerCase()}</span>
+                    <span className="ml-auto text-2xs text-muted-foreground">tap to edit + send</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{t.draft}</p>
+                </button>
+              </div>
+            );
+          })()}
 
           <div className="border-t border-border p-3 flex items-center gap-2 shrink-0">
             <input

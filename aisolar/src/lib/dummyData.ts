@@ -274,6 +274,7 @@ export function generateDummyLeads(): DummyLead[] {
       touchpoints: [
         { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + shed-roof measurements', timestamp: iso(1, 15), actor: 'installer' },
         { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'ProposalDrafter Agent notified consultant', timestamp: iso(1, 15), actor: 'agent' },
+        { stage: 'survey_complete', channel: 'email', direction: 'inbound', summary: 'Quick question before the proposal — can the panels go on the east-facing shed roof too, or just the house?', timestamp: iso(0, 10), actor: 'customer' },
       ],
     },
     // 4. PROPOSAL DRAFTED — domestic · large (awaiting review)
@@ -293,6 +294,7 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (1st time)', timestamp: iso(2, 19), actor: 'customer' },
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(2, 21), actor: 'customer' },
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time) — forwarded to accountant', timestamp: iso(0, 18), actor: 'customer' },
+        { stage: 'proposal_sent', channel: 'email', direction: 'inbound', summary: 'Had a proper look through — it\'s a big number vs what we\'d budgeted. Can you talk me through the payback before we commit?', timestamp: iso(0, 16), actor: 'customer' },
       ],
     },
     // 6. APPROVED — contract signed (domestic · small)

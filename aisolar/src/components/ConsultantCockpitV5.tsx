@@ -54,7 +54,17 @@ import EngagementBadge from '@/components/consultant/EngagementBadge';
 import InsightsView from '@/components/InsightsView';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { buildConversation, generateAIResponse, summarizeConversation, type ChatMessage } from '@/lib/conversation';
+import { triageInbound, triageLabel } from '@/lib/inboxTriage';
 import MessageBubble from '@/components/shared/MessageBubble';
+
+// Static class strings so Tailwind's purge keeps them (no runtime interpolation).
+const TRIAGE_TAG: Record<string, string> = {
+  tech: 'bg-tech/10 text-tech',
+  pop: 'bg-pop/10 text-pop',
+  'doc-proposal': 'bg-doc-proposal/10 text-doc-proposal',
+  'doc-deposit': 'bg-doc-deposit/10 text-doc-deposit',
+  muted: 'bg-muted text-muted-foreground',
+};
 
 const EstimateView = lazyWithRetry(() => import('./EstimateView'));
 const ProposalView = lazyWithRetry(() => import('./ProposalView'));
@@ -560,6 +570,24 @@ export default function ConsultantCockpitV5() {
                       <Calculator className="size-3" /> Estimate
                     </button>
                   </div>
+                  {/* SUGGESTED REPLY (inbox triage) — reads the customer's last
+                      message, names it, and drafts a first reply. Fills the box
+                      only; the consultant edits + sends. Human gate intact. */}
+                  {!replyText.trim() && (() => {
+                    const t = triageInbound(selectedLead);
+                    if (t.kind === 'silence') return null;
+                    return (
+                      <button onClick={() => setReplyText(t.draft)}
+                        className="mb-2 w-full text-left rounded-control border border-doc-proposal/30 bg-doc-proposal/5 p-2 hover:bg-doc-proposal/10 transition-colors">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <Sparkles className="size-3 text-doc-proposal" />
+                          <span className="text-2xs font-semibold text-doc-proposal">Suggested reply · {triageLabel(t.kind).toLowerCase()}</span>
+                          <span className="ml-auto text-2xs text-muted-foreground">tap to edit + send</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{t.draft}</p>
+                      </button>
+                    );
+                  })()}
                   <div className="flex gap-2">
                     <Input placeholder="Type a reply…" value={replyText} onChange={e => setReplyText(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(); } }} className="h-9 text-xs" />
@@ -825,6 +853,13 @@ function LeadListContent({
                     })()}
                     {lead.score > 80 && <Flame className="h-2.5 w-2.5 text-pop" />}
                     <EngagementBadge lead={lead} compact />
+                    {(() => {
+                      // Inbox triage tag — what the customer's last message IS,
+                      // so a full list can be scanned for the ones needing a reply.
+                      const tr = triageInbound(lead);
+                      if (tr.kind === 'silence') return null;
+                      return <span className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${TRIAGE_TAG[tr.tone]}`}>{triageLabel(tr.kind)}</span>;
+                    })()}
                   </div>
                 </div>
               </motion.button>
