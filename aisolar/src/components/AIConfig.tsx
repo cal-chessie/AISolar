@@ -26,6 +26,7 @@ import {
   Loader2, Save, Cpu, Globe, DollarSign, Shield, Bot, Sparkles,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SectionBanner, BannerStat } from '@/components/agents/SectionBanner';
 
 const AVAILABLE_MODELS = [
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', cost: '$0.075/1M in · $0.30/1M out', best: 'Cheapest, bill extraction, agent default', context: '1M' },
@@ -159,16 +160,55 @@ export default function AIConfig() {
 
   return (
     <div className="p-3 space-y-3">
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> AI Configuration</h2>
-        <p className="text-sm text-muted-foreground mt-1">The brain behind all 10 agents. Configure your LLM, API keys, and cost limits.</p>
-      </div>
+      {/* Same banner shape as Foundation + Training (SectionBanner) — symmetry. */}
+      <SectionBanner
+        icon={<Brain />}
+        title="AI Configuration"
+        description="The brain behind all ten agents. Three steps, in order: switch AI on, connect an account, then set the spend limit. Off is a valid answer — agents keep working on fixed rules, just without the writing."
+        stats={<>
+          <BannerStat tone={enableLLM ? 'deposit' : 'muted'} icon={<Sparkles />} value={enableLLM ? 'On' : 'Off'} label="AI calls" />
+          <BannerStat tone="tech" icon={<Cpu />} value={model.name.split(' ')[0]} label="model" />
+          <BannerStat tone="proposal" icon={<DollarSign />} value={`$${dailyCostCap}`} label="daily cap" />
+        </>}
+      />
+
+      {/* ── STEP 1 — the master decision FIRST (Cal 3 Aug: "logic seems to be
+             backwards"). It was buried in card 2 under the model picker: you
+             chose a model and pasted a key before being asked whether agents
+             should use AI at all. First question first. ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">1</span>
+            Use AI at all?
+          </CardTitle>
+          <CardDescription>Everything below only matters if this is on.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4 p-3 border rounded-control">
+            <div className="min-w-0">
+              <div className="text-sm font-medium flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> {enableLLM ? 'Agents write with AI' : 'Agents run on fixed rules'}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5 leading-body">
+                {enableLLM
+                  ? 'Proposals, follow-ups and the coach are drafted by the model below. Every send still waits for a human.'
+                  : 'No LLM cost. Agents still move leads, book surveys and prepare paperwork — they just use fixed wording instead of writing.'}
+              </div>
+            </div>
+            <Switch checked={enableLLM} onCheckedChange={setEnableLLM} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* LLM Provider */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4 text-primary" /> LLM Provider</CardTitle>
-          <CardDescription>Connect your OpenRouter account. All agents use this model.</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">2</span>
+            Connect an account + pick the model
+          </CardTitle>
+          <CardDescription>One OpenRouter account powers all ten agents. Test it before you save.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* API Key */}
@@ -243,22 +283,14 @@ export default function AIConfig() {
       {/* Agent Behaviour */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-muted-foreground" /> Agent Behaviour</CardTitle>
-          <CardDescription>Global settings applied to all agents.</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-2xs font-bold">3</span>
+            Set the spend limit
+          </CardTitle>
+          <CardDescription>The ceiling that protects you — agents stop calling the model when it's reached.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* LLM enable switch */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div>
-              <div className="text-xs font-medium flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-primary" /> Enable LLM calls
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                Master switch. When off, agents fall back to deterministic logic (no LLM cost).
-              </div>
-            </div>
-            <Switch checked={enableLLM} onCheckedChange={setEnableLLM} />
-          </div>
+          {/* (the master switch moved to step 1 — it is the first question, not the third) */}
 
           {/* Daily cost cap */}
           <div>
@@ -285,8 +317,8 @@ export default function AIConfig() {
               <Bot className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm">Configuration summary</h3>
-              <p className="text-xs text-muted-foreground">All 10 agents will use these settings.</p>
+              <h3 className="font-semibold text-sm">Review, then save</h3>
+              <p className="text-xs text-muted-foreground">Nothing changes for your agents until you press save.</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">

@@ -9,6 +9,7 @@
 
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { SectionBanner, BannerStat } from '@/components/agents/SectionBanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -225,39 +226,23 @@ export default function AgentFoundation({ compact = false }: { compact?: boolean
       {/* Agents tab */}
       {activeTab === 'agents' && (
         <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              {/* No page title here — the AppShell header already names the
-                  section ("Agents"). A second big title inside the first card
-                  was the double-header Cal spotted (3 Aug). Keep the honest
-                  demo flag + the one-line what-this-is. */}
-              <div className="flex items-center gap-2">
-                <span className="label-micro">The runtime</span>
-                {demo && (
-                  <Badge variant="outline" className="text-[11px] bg-tech/10 text-tech border-tech/30">
-                    Demo data
-                  </Badge>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {demo
-                  ? 'Showing simulated data. In production, these are real agent_runs from Supabase.'
-                  : '10 autonomous agents — real runs, real queue, real execution.'}
-              </p>
-            </div>
-            {!compact && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <Kpi tone="tech" icon={<Zap />} value={String(totalRuns)} label="runs (24h)" />
-                <Kpi tone="proposal" icon={<Clock />} value={String(queuedItems)} label="queued" />
-                <Kpi tone="pop" icon={<AlertCircle />} value={String(failedRuns)} label="failed" />
-                <Kpi tone="deposit" icon={<CheckCircle2 />} value={`${activeAgents}/${AGENTS.length}`} label="active" />
-              </div>
-            )}
-          </div>
-        </CardHeader>
-      </Card>
+      {/* ONE banner shape across the three agent sub-tabs (SectionBanner) —
+          Cal 3 Aug: "the 3 sub tabs need symmetry". This was the good one; the
+          other two now wear it too. */}
+      <SectionBanner
+        icon={<Bot />}
+        title="Agent Foundation"
+        description={demo
+          ? 'What the ten agents did, live. Showing simulated data — in production these are real agent_runs from the queue.'
+          : 'What the ten agents did, live: every run, what is queued, what failed. Agents draft; you decide.'}
+        flag={demo ? 'Demo data' : undefined}
+        stats={!compact ? (<>
+          <BannerStat tone="tech" icon={<Zap />} value={String(totalRuns)} label="runs (24h)" />
+          <BannerStat tone="proposal" icon={<Clock />} value={String(queuedItems)} label="queued" />
+          <BannerStat tone="pop" icon={<AlertCircle />} value={String(failedRuns)} label="failed" />
+          <BannerStat tone="deposit" icon={<CheckCircle2 />} value={`${activeAgents}/${AGENTS.length}`} label="active" />
+        </>) : undefined}
+      />
 
       <div className={compact ? "space-y-2" : "grid gap-3 md:grid-cols-2"}>
         {AGENTS.map((agent) => {

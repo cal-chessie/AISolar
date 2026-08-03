@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { isDemoMode } from '@/lib/demoMode';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SectionBanner, BannerStat } from '@/components/agents/SectionBanner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -276,10 +277,12 @@ export default function AgentTraining() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> Agent Training</h2>
-        <p className="text-sm text-muted-foreground mt-1">Feed prompts to agents to make them smarter. They also learn automatically from system outcomes.</p>
-      </div>
+      {/* Same banner shape as Foundation + AI Config (SectionBanner). */}
+      <SectionBanner
+        icon={<Brain />}
+        title="Agent Training"
+        description="Teach an agent in your own words — how it should sound, what it must never say. It also learns from what actually happens on your jobs. Nothing you write here sends anything: agents draft, you approve."
+      />
 
       {/* Agent picker */}
       <div className="flex flex-wrap gap-1.5">
