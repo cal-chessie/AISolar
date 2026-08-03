@@ -31,6 +31,7 @@ export interface NewLeadInput {
   email?: string;
   phone?: string;
   address?: string;
+  eircode?: string;
   monthly_bill?: number;
   annual_kwh?: number;
   mprn?: string;
@@ -47,6 +48,7 @@ export async function createLead(input: NewLeadInput): Promise<string> {
       email: input.email ?? null,
       phone: input.phone ?? null,
       address: input.address ?? null,
+      eircode: input.eircode ?? null,
       monthly_bill: input.monthly_bill ?? null,
       annual_consumption_kwh: input.annual_kwh ?? null,
       mprn: input.mprn ?? null,
@@ -64,13 +66,14 @@ export async function createLead(input: NewLeadInput): Promise<string> {
 /** Patch a lead's core fields (DummyLead field names → real columns). */
 export async function updateLead(
   id: string,
-  patch: Partial<Pick<DummyLead, 'name' | 'email' | 'phone' | 'address' | 'monthly_bill' | 'annual_kwh' | 'mprn'>>,
+  patch: Partial<Pick<DummyLead, 'name' | 'email' | 'phone' | 'address' | 'monthly_bill' | 'annual_kwh' | 'mprn'>> & { eircode?: string },
 ): Promise<void> {
   const db: Record<string, unknown> = {};
   if (patch.name !== undefined) db.name = patch.name;
   if (patch.email !== undefined) db.email = patch.email;
   if (patch.phone !== undefined) db.phone = patch.phone;
   if (patch.address !== undefined) db.address = patch.address;
+  if (patch.eircode !== undefined) db.eircode = patch.eircode;
   if (patch.monthly_bill !== undefined) db.monthly_bill = patch.monthly_bill;
   if (patch.annual_kwh !== undefined) db.annual_consumption_kwh = patch.annual_kwh;
   if (patch.mprn !== undefined) db.mprn = patch.mprn;

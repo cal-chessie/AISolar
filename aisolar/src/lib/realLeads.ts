@@ -93,7 +93,9 @@ function mapRow(l: Row, rel: Related, installerNames: Record<string, string>): D
     score: Number(l.score) || 0,
     assigned_consultant: '',
     assigned_installer: assignment ? installerNames[assignment.installer_id] : undefined,
-    intake: {},
+    // Surface the lead's own eircode/mprn as intake fields so every reader
+    // (roof geocode, estimate, NC6 §2) sees them before any bill read.
+    intake: { extracted_eircode: l.eircode ?? null, extracted_mprn: l.mprn ?? null },
     survey: survey
       ? {
           scheduled_date: survey.survey_date || survey.created_at || '',

@@ -19,6 +19,8 @@ export interface LeadFormValues {
   email: string;
   phone: string;
   address: string;
+  eircode: string;   // drives the roof read + NC6 §2 (Cal, 3 Aug)
+  mprn: string;      // 11-digit meter — the NC6/ESB key
   monthly_bill: number;
   annual_kwh: number;
   /** Cal: snap the electric bill right on add — a capture event on the lead.
@@ -34,7 +36,7 @@ export function leadFromForm(v: LeadFormValues): DummyLead {
     email: v.email,
     phone: v.phone,
     address: v.address,
-    mprn: '',
+    mprn: v.mprn.trim(),
     monthly_bill: v.monthly_bill,
     annual_kwh: v.annual_kwh,
     workflow_stage: 'new',
@@ -42,7 +44,11 @@ export function leadFromForm(v: LeadFormValues): DummyLead {
     source: v.billFile ? 'bill_upload' : 'manual',
     score: v.billFile ? 60 : 50,
     assigned_consultant: 'You',
-    intake: { extraction_confidence: 'low' } as DummyLead['intake'],
+    intake: {
+      extraction_confidence: 'low',
+      extracted_eircode: v.eircode.trim() || null,
+      extracted_mprn: v.mprn.trim() || null,
+    } as DummyLead['intake'],
     touchpoints: [
       {
         stage: 'new', channel: 'portal', direction: 'outbound',
@@ -64,19 +70,21 @@ export default function LeadFormDialog({ open, onOpenChange, initial, onSave }: 
   onSave: (values: LeadFormValues) => void;
 }) {
   const editing = !!initial;
-  const [v, setV] = useState<LeadFormValues>({ name: '', email: '', phone: '', address: '', monthly_bill: 0, annual_kwh: 0, billFile: null });
+  const empty: LeadFormValues = { name: '', email: '', phone: '', address: '', eircode: '', mprn: '', monthly_bill: 0, annual_kwh: 0, billFile: null };
+  const [v, setV] = useState<LeadFormValues>(empty);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
+      const i = initial as (DummyLead & { intake?: { extracted_eircode?: string } }) | null | undefined;
       setV(initial
-        ? { name: initial.name, email: initial.email, phone: initial.phone, address: initial.address, monthly_bill: initial.monthly_bill, annual_kwh: initial.annual_kwh, billFile: null }
-        : { name: '', email: '', phone: '', address: '', monthly_bill: 0, annual_kwh: 0, billFile: null });
+        ? { name: initial.name, email: initial.email, phone: initial.phone, address: initial.address, eircode: (i?.intake?.extracted_eircode as string) ?? '', mprn: initial.mprn ?? '', monthly_bill: initial.monthly_bill, annual_kwh: initial.annual_kwh, billFile: null }
+        : empty);
     }
-  }, [open, initial]);
+  }, [open, initial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: keyof LeadFormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setV(s => ({ ...s, [k]: k === 'monthly_bill' || k === 'annual_kwh' ? Number(e.target.value) : e.target.value }));
+    setV(s => ({ ...s, [k]: k === 'monthly_bill' || k === 'annual_kwh' ? Number(e.target.value) : k === 'eircode' ? e.target.value.toUpperCase() : e.target.value }));
 
   const valid = v.name.trim().length > 1 && (v.email.includes('@') || v.phone.trim().length > 6);
 
@@ -112,6 +120,18 @@ export default function LeadFormDialog({ open, onOpenChange, initial, onSave }: 
           <div>
             <Label htmlFor="lf-address">Address</Label>
             <Input id="lf-address" value={v.address} onChange={set('address')} placeholder="12 Beech Hill Road, Dublin 4" className="mt-1.5" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="lf-eircode">Eircode</Label>
+              <Input id="lf-eircode" value={v.eircode} onChange={set('eircode')} placeholder="D04 K729" maxLength={8} className="mt-1.5 font-mono uppercase" />
+              <p className="text-2xs text-muted-foreground mt-1">Pins the roof + fills the ESB NC6.</p>
+            </div>
+            <div>
+              <Label htmlFor="lf-mprn">MPRN</Label>
+              <Input id="lf-mprn" value={v.mprn} onChange={set('mprn')} inputMode="numeric" maxLength={11} placeholder="10000031676" className="mt-1.5 font-mono" />
+              <p className="text-2xs text-muted-foreground mt-1">11-digit meter number (top of the bill).</p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

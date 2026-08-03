@@ -112,7 +112,7 @@ export default function ConsultantCockpitV5() {
   const [leadFormOpen, setLeadFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<DummyLead | null>(null);
   const saveLeadForm = async (v: LeadFormValues) => {
-    const patch = { name: v.name, email: v.email, phone: v.phone, address: v.address, monthly_bill: v.monthly_bill, annual_kwh: v.annual_kwh };
+    const patch = { name: v.name, email: v.email, phone: v.phone, address: v.address, eircode: v.eircode, mprn: v.mprn, monthly_bill: v.monthly_bill, annual_kwh: v.annual_kwh };
     if (editingLead) {
       setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, ...patch } : l));
       setSelectedLead(prev => prev?.id === editingLead.id ? { ...prev, ...patch } : prev);
