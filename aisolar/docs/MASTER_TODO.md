@@ -1,0 +1,98 @@
+# MASTER TODO — everything to be done, one view (3 Aug 2026)
+### Cal: "the complete audit and todo across all docs." This is THE consolidation — every open item from GO_LIVE, CALS_GROWTH_DEV, PUNCH_LIST, MASTER_AUDIT §4, PAPERWORK_AUDIT, SWEEP10, deploy doc, deduped + ordered. Detail lives in those docs; this is the map + the order.
+
+> **Legend:** 🔴 launch-blocker · 🟠 launch-polish (should) · 🔑 Cal's hands (deploy) · ⏸ post-cohort · ✅ done.
+> **Order of build:** blockers → polish → deploy(Cal) → together(smoke) → cohort. Post-cohort is parked ON PURPOSE.
+
+---
+
+## ✅ DONE (this session + prior — the closed ledger, don't re-open)
+**Spine + maths:** quote engine unified (computeQuote, 27/27 executed) · classification on `property_type` · 21-field
+LeadIntake type · gate_bridge + AIGrids routing (8/8) · tenant-RLS floor + the 5-table bleed fix (**applied live**) ·
+pricing-key migration (**applied live**).
+**Cutover:** one tenant resolver (user_roles) + settings read-flip on sign-in.
+**Customer:** P0 `/customer/:token` magic-link portal (paying-customer 404 killed, proven live) · copy-portal-link.
+**Owner cockpit:** NEEDS-YOU-first overview · one lead surface (LeadDetailView deleted) · **Add client** button · dead
+imports out.
+**Settings:** Brand-first order · fake "connected" chips → honest deploy-command rows · connection theatre deleted ·
+fabricated audit deleted · Channels merged into Integrations · 2-col desktop grids · Pricing & Terms side-by-side.
+**Design:** RoofDesigner **true-scale rebuild** (oversized panels dead — Esri + roofGeo mppAt, one scale everywhere) ·
+stage-aware deep links.
+**Demo:** 10-lead cast, 5 archetypes, invariant-true · `?demo=1/0` toggle.
+**Global login:** `calchessie@gmail.com` = platform admin (+ `cal@renewably.ie`).
+
+---
+
+## 🔴 LAUNCH BLOCKERS (before the cohort touches it)
+### A · The cutover, finished
+- **Verify the read-flip end-to-end** signed in as a real tenant (settings load from DB, save round-trips). *(code done; needs a live authed walk = part of the smoke test)*
+- **A1 · Auth + tenant onboarding** — signup → create tenant + role + first-admin bootstrap. The Flowith flow IS its face. *(ONBOARDING_SPEC; the 7-day activation checklist is the spec)*
+
+### B · The ESB paper trail (Cal: "worst thing is a mistake in the paper trail")
+- **ONE doc-id vocabulary** — reconcile `decideCompliance` short ids vs `lead_documents` CHECK long ids vs `fieldRecord` cert keys.
+- **Wire the writes** — `lead_documents` + `esb_submissions` (sealed → portal-submitted → REAL ref → status). Nothing writes them today.
+- **Per-customer pack confirmation gate** — every cohort customer's NC pack passes `nc6Completeness` + a human eyeball before launch.
+- **Surface the gate** — missing-items shown at the 3 human touchpoints (job card · consultant lead view · owner badge) + Coach speaks them.
+- ⚠️ **VERIFY-BEFORE-LIVE (Cal's ESB reads):** the 5.75/11.04 kW bands (under-file risk) · typed e-signature acceptance.
+
+### C · Data capture gaps (found 3 Aug — real leads lose data)
+- **Add-lead has NO eircode + no MPRN** (`LeadFormDialog`) — eircode drives the roof read + the NC6 §2 box; add both fields (eircode with the format hint).
+- **Estimate still domestic-shaped for every lead** (Sweep-10 §D fork) — a commercial/farm lead's first estimate is wrong-shaped; branch on `property_type`, cap by designed system when one exists.
+
+### D · The front door (the go-live signal itself)
+- **The WIDGET** — the per-tenant embeddable calculator→lead door + the owner "copy your embed code" panel.
+- **Sites wiring** — SolarIrelandGroup + RenewableIreland (+ wideawakesolar): door helper + calculator-first + certificate kept + Cal.com booking. **Designs untouched.**
+
+---
+
+## 🟠 LAUNCH POLISH (should — the "everything feels broken" list)
+### UI conformity (Cal, 3 Aug: "sizing and family not aligning between views")
+- **Shared page-header component** — every cockpit tab + agent surface uses ONE header (title size, spacing, family accent). Today `AgentFoundation` mixes CardTitle/h2/h3; consultant uses a different AgentWindow → they drift.
+- **AIField mobile-first** — ClientHub (1 breakpoint), DayRoute (desktop-only), JobViewV2 (fixed 288px rail). Installer's on a phone.
+- **AIField full logic walk** — serials gate → NC6 fields → sign-off chain on a phone.
+- **Design Studio once-over** — default array snaps to roof centroid (drops on driveway today); **let the user remove ALL panels** (clear-to-zero, no forced redraw).
+- **Front-end revamp** — fresh hero snapshots from CURRENT UI · copy pass every page · **pricing page rebuild** · proposal "fantastic" pass · replace `brand.ts` placeholder stats (truth-pass).
+- **Per-tab polish** — Clients type-badges · Financials aging · SEAI pack-status chips.
+
+### Behaviour / truth
+- **Coach v1.5** — per-POV voice + real signals (deal value, days-in-stage, the NC6 gate) — the hidden multiplier.
+- **Notification spine v1** — one `notify(event)` → bell + brand-themed email, portal link always in. Wires the 4 draft-gated "queued — goes out with approval" toasts to real sends.
+- **Branded outbound** — every email from the tenant's brand (from-name + reply-to on one verified domain at launch).
+- **7-day trial → payment** — Stripe subscription (trial_period_days 7), webhook flips tenant status, Customer Portal for self-serve.
+- **Training walkthrough** — founder teaching walk + guided `/demo` on the 10-lead cast (doubles as cohort onboarding).
+- **Redundancy kills** — `touchpoints` vs `lead_touchpoints` (one survives) · retire `AiTeamPage` (old) · resolve the two `AgentWindow`s (rename, not merge — verified different).
+- **Cleanups** — delete test user `aios.smoketest@gmail.com` · deprecate `extracted_premises_type` column (in-schema, non-destructive) · **`CLAUDE.md` header** now correct (V5) · Terms of Service rewrite (legal) · CSV bulk import.
+- **Demo geography** — cluster each installer's cast jobs so the day-route reads true (routing algo is sound; geography spans Ireland).
+
+---
+
+## 🔑 CAL'S HANDS (deploy — I prep, you run)
+- `brew install supabase/tap/supabase` + `supabase login` (needed for edge deploys).
+- Old-key rotation + git-history purge (coxmtpnq · vythuqax · kernel · Maps).
+- Deploy 17 edge functions + set secrets (I prep the manifest).
+- Postmark token + DNS · Vercel deploy (demo OFF in prod env) · **Supabase Auth Site URL = prod domain** (fixes the localhost-in-email that bit the global login).
+- Doors onto the live brand sites (the go-live moment).
+- Flip ON Supabase PITR backups (one switch).
+- Paste any remaining keys to a file/RAW (Cal.com is in `.env.local` ✓).
+
+## 🤝 TOGETHER
+The full smoke test (door → route → survey → proposal → deposit → pack; every human button + a real email lands) ·
+read-flip verification · the client's 3-brands-one-tenant check · per-customer pack confirmation · first cohort onboarding.
+
+---
+
+## ⏸ POST-COHORT (parked on purpose — build on revenue)
+Sweep-9 hardening (tier entitlements · code-split) · AIGate human surface (national gate-call cockpit) · browser
+`portal_submitter` agent (auto-keys the NC into the ESB portal) · per-tenant DKIM domains · PostHog full · Better Stack
+status page · Intercom (~25 clients) · Beehiiv newsletter · dunning automation · knowledge-graph / kernel Phase 2
+(bind gate_bridge → inscribed kernel) · the full THE_OPERATING_STACK §2/§3.
+**Tooling verdicts (3 Aug):** keep Postmark · PostHog light at launch · Better Stack uptime-only · SKIP Upstash/Trigger.dev · NO Next rewrite of the app.
+
+---
+
+## SOURCE DOCS (where the detail lives)
+[GO_LIVE.md](GO_LIVE.md) (the gate) · [CALS_GROWTH_DEV.md](CALS_GROWTH_DEV.md) (register + growth) ·
+[PUNCH_LIST.md](PUNCH_LIST.md) (the "nothing works" walk) · [MASTER_AUDIT_1AUG.md](MASTER_AUDIT_1AUG.md) (estate, live-verified) ·
+[PAPERWORK_AUDIT.md](PAPERWORK_AUDIT.md) (NC6/7) · [SWEEP10_NOTES.md](SWEEP10_NOTES.md) (§D fork · §G type debt) ·
+[ONBOARDING_SPEC.md](ONBOARDING_SPEC.md) (Flowith flow + activation) · [OWNER_REVAMP_BRIEF.md](OWNER_REVAMP_BRIEF.md) ·
+[DEPLOYMENT_CALS_LAST_GATE.md](DEPLOYMENT_CALS_LAST_GATE.md) §0.

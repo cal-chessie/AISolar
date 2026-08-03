@@ -51,6 +51,14 @@ not reproduce it there at either width.
 9. ⚠️ **Confirmation emails point at localhost** until the prod domain lands — Supabase Auth Site URL must be set at
    Vercel-domain time (already on Cal's-hands list; restated here so it's never missed — it bit the global-login setup).
 
+## New finds (3 Aug, later walk — Opus)
+10. 🔴 **Add-lead captures NO eircode + no MPRN** (`LeadFormDialog`) — eircode drives the roof read + NC6 §2; add both
+   (eircode w/ format hint). Blocker: real leads lose the field the whole compliance chain needs.
+11. 🟠 **Design Studio: can't remove ALL panels** — "Redraw" forces back into draw mode; add a clean clear-to-zero.
+12. 🟠 **Agent pages/headers don't conform between views** — `AgentFoundation` mixes CardTitle/h2/h3, consultant uses a
+   different AgentWindow; no shared header → sizing + family drift. Fix = ONE shared page-header component (slot ⑥).
+13. ℹ️ **"Still Google?" answered** — base map = Esri (keyless, ours); Google Solar = optional Level-2 auto-detect only.
+
 ## Order of attack
 Quick wins done now (#1). Slot ⑤ opens with Design Studio scale + placement + AIField mobile (#2, #3b).
 Settings truth-wiring joins slot ⑥ front-end revamp (#4). Cast geography with slot ⑧ (#3a, #7). Spine wires the
