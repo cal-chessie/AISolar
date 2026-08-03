@@ -20,6 +20,8 @@ fabricated audit deleted · Channels merged into Integrations · 2-col desktop g
 stage-aware deep links.
 **Demo:** 10-lead cast, 5 archetypes, invariant-true · `?demo=1/0` toggle.
 **Global login:** `calchessie@gmail.com` = platform admin (+ `cal@renewably.ie`).
+**3 Aug PM:** persistent **Demo toggle** (pill off → Browse-Views on) · **add-lead Eircode + MPRN** (leads.eircode
+applied live, end-to-end) · RoofDesigner **Clear-all-panels**.
 
 ---
 
@@ -36,7 +38,6 @@ stage-aware deep links.
 - ⚠️ **VERIFY-BEFORE-LIVE (Cal's ESB reads):** the 5.75/11.04 kW bands (under-file risk) · typed e-signature acceptance.
 
 ### C · Data capture gaps (found 3 Aug — real leads lose data)
-- **Add-lead has NO eircode + no MPRN** (`LeadFormDialog`) — eircode drives the roof read + the NC6 §2 box; add both fields (eircode with the format hint).
 - **Estimate still domestic-shaped for every lead** (Sweep-10 §D fork) — a commercial/farm lead's first estimate is wrong-shaped; branch on `property_type`, cap by designed system when one exists.
 
 ### D · The front door (the go-live signal itself)
@@ -47,7 +48,7 @@ stage-aware deep links.
 
 ## 🟠 LAUNCH POLISH (should — the "everything feels broken" list)
 ### UI conformity (Cal, 3 Aug: "sizing and family not aligning between views")
-- **Shared page-header component** — every cockpit tab + agent surface uses ONE header (title size, spacing, family accent). Today `AgentFoundation` mixes CardTitle/h2/h3; consultant uses a different AgentWindow → they drift.
+- **⭐ NEXT OPENER — shared page-header / shell conformity** — every cockpit tab + agent surface uses ONE header (title size, spacing, family accent). Today `AgentFoundation` mixes CardTitle/h2/h3; consultant uses a different AgentWindow → they drift.
 - **AIField mobile-first** — ClientHub (1 breakpoint), DayRoute (desktop-only), JobViewV2 (fixed 288px rail). Installer's on a phone.
 - **AIField full logic walk** — serials gate → NC6 fields → sign-off chain on a phone.
 - **Design Studio once-over** — default array snaps to roof centroid (drops on driveway today); **let the user remove ALL panels** (clear-to-zero, no forced redraw).
