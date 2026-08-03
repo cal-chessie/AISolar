@@ -1,4 +1,11 @@
 # OWNER COCKPIT REVAMP — the brief (Cal, 3 Aug: "make the whole thing sing")
+> **✅ EXECUTED 3 Aug (phase 1 — the sing):** Overview reordered (NEEDS YOU first w/ REAL gates: failed runs · drafts
+> waiting · hot follow-ups · stale leads; calm all-clear line when empty) · conversion-row + tile mini-bar dupes killed ·
+> activity → 5 + "View all" · **LeadDetailView DELETED** (−6,106 chars; every lead click → LeadFlow, one surface) ·
+> 6 dead imports removed · verified live (narrow-width bottom tabs already work). **Twin AgentWindows = NOT duplicates**
+> (owner console vs consultant inline — different components, name collision only; rename someday, don't merge).
+> Remaining polish (per-tab headers · Clients type-badges · Financials aging · SEAI chips tie-in) = with slot ⑥ front-end revamp.
+
 ### Scope: OwnerCockpit.tsx (1123 lines, 13 tabs). Executes as the OPENER of the next build session — design work runs with the browser live at every step (screenshot-verify per change), full ui-ux-pro-max + design-token discipline (instrument.css: rounded-panel 16 / rounded-control 10 / h-control 40). This brief holds the grounded findings so zero re-derivation.
 
 ## The read (grounded scan, 3 Aug)

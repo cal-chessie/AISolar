@@ -46,7 +46,6 @@ import { PIPELINE_STAGES, STAGE_GROUPS, getStage } from '@/lib/leadIntake';
 import { agentFor, agentsInvolved } from '@/lib/agentAttribution';
 import SchedulingTransparency from '@/components/owner/SchedulingTransparency';
 import { PipelineBar } from '@/components/layout/PipelineBar';
-import InsightsView from '@/components/InsightsView';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
@@ -57,16 +56,14 @@ import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallb
 import { staggerContainer, listItem } from '@/lib/motionPresets';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Lazy-load heavy components only when their sidebar item is clicked
+// Lazy-load heavy components only when their sidebar item is clicked.
+// (3 Aug dedupe: AnalyticsDashboard / CustomerIntelligenceProfile / AgentTraining /
+//  InsightsView / EstimateView / ProposalView imports removed — never rendered here,
+//  or rendered only by the killed LeadDetailView. One lead surface: LeadFlow.)
 const ProfessionalProducts = lazyWithRetry(() => import('./ProfessionalProducts'));
 const SystemSettings = lazyWithRetry(() => import('./SystemSettingsV2'));
 const AgentFoundation = lazyWithRetry(() => import('./AgentFoundation'));
-const AnalyticsDashboard = lazyWithRetry(() => import('./AnalyticsDashboard'));
-const CustomerIntelligenceProfile = lazyWithRetry(() => import('./CustomerIntelligenceProfile'));
 const RealCalendar = lazyWithRetry(() => import('./RealCalendar'));
-const EstimateView = lazyWithRetry(() => import('./EstimateView'));
-const ProposalView = lazyWithRetry(() => import('./ProposalView'));
-const AgentTraining = lazyWithRetry(() => import('./AgentTraining'));
 const ComplianceCommand = lazyWithRetry(() => import('./compliance/ComplianceCommand'));
 const EstimatesView = lazyWithRetry(() => import('./EstimatesView'));
 const CeoWindow = lazyWithRetry(() => import('./CeoWindow'));
@@ -74,7 +71,7 @@ const FinanceWindow = lazyWithRetry(() => import('./owner/FinanceWindow'));
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 
-type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'lead_detail' | 'seai' | 'estimates';
+type SidebarView = 'financials' | 'overview' | 'calendar' | 'consultants' | 'installers' | 'clients' | 'feedback' | 'products' | 'settings' | 'agents' | 'analytics' | 'seai' | 'estimates';
 
 /* Ordered as the owner thinks: run the day -> sell -> the team -> the money
    -> compliance -> the machine -> config. Each domain carries its family
@@ -106,7 +103,6 @@ export default function OwnerCockpit() {
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   // On mobile: sidebar is a drawer, closed by default. On desktop: collapsible, open by default.
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<DummyLead | null>(null);
 
   // On desktop, auto-open the sidebar on first mount
   useEffect(() => {
@@ -258,9 +254,11 @@ export default function OwnerCockpit() {
     >
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
-            <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setSelectedLead={setSelectedLead} setActiveView={setActiveView} />
+            <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setActiveView={setActiveView} />
           )}
-          {activeView === 'calendar' && <RealCalendar onOpenClient={(id) => { const l = leads.find(x => x.id === id); if (l) { setSelectedLead(l); setActiveView('lead_detail'); } }} />}
+          {/* One lead surface (3 Aug): every lead click opens LeadFlow — the real
+              workspace with the portal link, compliance, and the working file. */}
+          {activeView === 'calendar' && <RealCalendar onOpenClient={(id) => navigate(`/lead-flow/${id}`)} />}
           {activeView === 'consultants' && (
             <ConsultantsView consultants={data.consultants} navigate={navigate} />
           )}
@@ -277,10 +275,7 @@ export default function OwnerCockpit() {
           {activeView === 'financials' && <Suspense fallback={<CockpitSkeleton />}><FinanceWindow /></Suspense>}
           {activeView === 'feedback' && <HelpUsImprove />}
           {activeView === 'seai' && <Suspense fallback={<CockpitSkeleton />}><ComplianceCommand /></Suspense>}
-          {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => { setSelectedLead(lead); setActiveView('lead_detail'); }} />}
-          {activeView === 'lead_detail' && selectedLead && (
-            <LeadDetailView lead={selectedLead} onBack={() => { setActiveView('overview'); setSelectedLead(null); }} navigate={navigate} />
-          )}
+          {activeView === 'estimates' && <EstimatesView leads={leads} onSelectLead={(lead) => navigate(`/lead-flow/${lead.id}`)} />}
         </Suspense>
     </AppShell>
   );
@@ -355,14 +350,27 @@ function SidebarContent({
   );
 }
 
-// ============= OVERVIEW (the cockpit) =============
-function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setSelectedLead, setActiveView }: any) {
+// ============= OVERVIEW (the cockpit — the 30-second morning read) =============
+/* 3 Aug revamp order (Cal: "make it sing"): greeting → NEEDS YOU (the human
+   gates, FIRST — the whole point of a morning cockpit) → the four vital cards
+   → the pipeline → today + activity. Duplicates killed: the conversion row
+   (lives on the Pipeline tile + Analytics), the tile mini-bar (the PipelineBar
+   is right below it), the 8-deep activity scroll (5 + "view all"). */
+function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, setActiveView }: any) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const hotCount = leads.filter((l: DummyLead) => l.score > 80).length;
   const jobCount = leads.filter((l: DummyLead) => l.assignment).length;
-  const needsYou = data.staleLeads.length + (data.agentFailures > 0 ? 1 : 0);
-  const maxStage = Math.max(1, ...data.stageCounts.map((s: any) => s.count));
+
+  // THE GATES — everything genuinely waiting on a human, from real data only.
+  const hotFollowUps = leads.filter((l: DummyLead) => l.workflow_stage === 'proposal_sent' && l.score > 80);
+  const draftsWaiting = leads.filter((l: DummyLead) => l.proposal?.status === 'draft');
+  const gates: Array<{ icon: any; title: string; desc: string; cta: string; onClick: () => void }> = [
+    ...(data.agentFailures > 0 ? [{ icon: Bot, title: `${data.agentFailures} agent run failed`, desc: 'Postmark rate limit — needs a look', cta: 'Open agents', onClick: () => setActiveView('agents') }] : []),
+    ...(draftsWaiting.length > 0 ? [{ icon: FileText, title: `${draftsWaiting.length} proposal draft${draftsWaiting.length === 1 ? '' : 's'} waiting on review`, desc: draftsWaiting.map((l: DummyLead) => l.name.split(' ')[0]).slice(0, 3).join(', '), cta: 'Review', onClick: () => navigate(`/lead-flow/${draftsWaiting[0].id}`) }] : []),
+    ...(hotFollowUps.length > 0 ? [{ icon: Flame, title: `${hotFollowUps.length} hot proposal${hotFollowUps.length === 1 ? '' : 's'} to follow up`, desc: hotFollowUps.map((l: DummyLead) => l.name).slice(0, 2).join(' · '), cta: 'Call now', onClick: () => navigate(`/lead-flow/${hotFollowUps[0].id}`) }] : []),
+    ...(data.staleLeads.length > 0 ? [{ icon: Clock, title: `${data.staleLeads.length} stale lead${data.staleLeads.length === 1 ? '' : 's'}`, desc: '5+ days without contact', cta: 'Review', onClick: () => navigate('/consultant') }] : []),
+  ];
 
   return (
     <div className="space-y-4">
@@ -376,9 +384,21 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           <span className="font-semibold text-doc-deposit tabular-nums">{eur(data.revenueClosed)}</span> banked ·{' '}
           <span className="font-medium text-foreground tabular-nums">{eur(data.owner.openPipeline)}</span> open pipeline ·{' '}
           <span className="font-medium text-foreground tabular-nums">{eur(data.owner.contractedBacklog)}</span> signed to collect
-          {needsYou > 0 && <> · <span className="font-medium text-pop">{needsYou} {needsYou === 1 ? 'thing needs' : 'things need'} you</span></>}
         </p>
       </div>
+
+      {/* NEEDS YOU — first, always. The gates are why the owner opened the app;
+          when there are none, one calm line says so (never an empty box). */}
+      {gates.length > 0 ? (
+        <div className="rounded-panel bg-card shadow-card p-4 border-l-2 border-primary">
+          <h3 className="label-micro mb-3 flex items-center gap-1.5"><AlertTriangle className="size-3.5 text-primary" /> Needs you · {gates.length}</h3>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {gates.map((g, i) => <AlertItem key={i} icon={g.icon} title={g.title} desc={g.desc} cta={g.cta} onClick={g.onClick} />)}
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-doc-deposit flex items-center gap-1.5"><CheckCircle2 className="size-4" /> Nothing needs you right now — the agents have it.</p>
+      )}
 
       {/* Vital signs — family cards, one accent each, nothing fake */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -398,12 +418,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           </div>
           <div className="mt-1.5 text-2xl font-semibold tabular-nums">{eur(data.owner.openPipeline)}</div>
           <div className="text-xs text-muted-foreground mt-0.5">{data.owner.openDeals} open deals · {hotCount} hot · {data.owner.conversion}% proposal → win</div>
-          {/* real stage distribution, widths from real counts */}
-          <div className="flex gap-0.5 mt-2 h-1.5">
-            {data.stageCounts.slice(0, 8).map((s: any) => (
-              <div key={s.id} className="rounded-full bg-foreground/70" style={{ flexGrow: Math.max(s.count, 0.15), opacity: s.count ? 1 : 0.15 }} />
-            ))}
-          </div>
+          {/* (mini stage-bar removed 3 Aug — the full PipelineBar sits right below) */}
         </button>
 
         <button onClick={() => navigate('/installer')} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
@@ -453,7 +468,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
               {label} — {leads.filter(inScope).length} leads</div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {leads.filter(inScope).map((lead: DummyLead) => (
-                <button key={lead.id} className="text-left p-3 rounded-panel bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => { setSelectedLead(lead); setActiveView('lead_detail'); }}>
+                <button key={lead.id} className="text-left p-3 rounded-panel bg-muted/30 hover:bg-muted/60 transition-colors" onClick={() => navigate(`/lead-flow/${lead.id}`)}>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px]">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
                     <div className="flex-1 min-w-0">
@@ -477,7 +492,7 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
         })()}
       </div>
 
-      {/* Today beside what needs you */}
+      {/* Today beside the live feed (Needs You moved to the top of the page) */}
       <div className="grid lg:grid-cols-2 gap-3">
         <div className="rounded-panel bg-card shadow-card p-4">
           <h3 className="label-micro mb-3 flex items-center gap-1.5"><Calendar className="size-3.5" /> Today's schedule</h3>
@@ -498,37 +513,31 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
                 </button>
               );
             })}
-            {data.todayEvents.length === 0 && <p className="text-sm text-muted-foreground p-2">Nothing booked today.</p>}
+            {data.todayEvents.length === 0 && <p className="text-sm text-muted-foreground p-2">Nothing booked today — a quiet one.</p>}
           </div>
         </div>
 
         <div className="rounded-panel bg-card shadow-card p-4">
-          <h3 className="label-micro mb-3 flex items-center gap-1.5"><AlertTriangle className="size-3.5" /> Needs you</h3>
+          <h3 className="label-micro mb-3 flex items-center gap-1.5">
+            <Activity className="size-3.5" /> Live activity
+            <button onClick={() => setActiveView('analytics')} className="ml-auto text-2xs font-medium text-muted-foreground hover:text-foreground transition-colors">View all →</button>
+          </h3>
           <div className="space-y-2">
-            {data.staleLeads.length > 0 && <AlertItem icon={Clock} color="pending" title={`${data.staleLeads.length} stale leads`} desc="5+ days no contact" cta="Review" onClick={() => navigate('/consultant')} />}
-            {data.agentFailures > 0 && <AlertItem icon={Bot} color="red" title="Payment Reminder Agent failed" desc="Postmark rate limit" cta="View" onClick={() => setActiveView('agents')} />}
-            <AlertItem icon={TrendingUp} color="blue" title={`Conversion: ${data.conversionRate}%`} desc={data.bottleneck ? `Bottleneck at ${getStage(data.bottleneck.stage).label}` : 'Healthy'} cta="Analytics" onClick={() => setActiveView('analytics')} />
+            {data.activity.slice(0, 5).map((item: any, i: number) => {
+              const isAgent = item.actor === 'agent';
+              const isCustomer = item.actor === 'customer';
+              return (
+                <div key={i} className="flex items-start gap-2.5 text-sm">
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0 mt-0.5 w-11">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className={`p-1 rounded-[6px] shrink-0 ${isAgent ? 'bg-tech-subtle' : 'bg-muted'}`}>
+                    {isAgent ? <Bot className="size-3 text-tech" /> : isCustomer ? <UserCircle className="size-3 text-foreground" /> : <Users className="size-3 text-foreground" />}
+                  </span>
+                  <div className="flex-1 min-w-0 leading-snug"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
+                </div>
+              );
+            })}
+            {data.activity.length === 0 && <p className="text-sm text-muted-foreground p-2">No activity yet today.</p>}
           </div>
-        </div>
-      </div>
-
-      {/* Live activity */}
-      <div className="rounded-panel bg-card shadow-card p-4">
-        <h3 className="label-micro mb-3 flex items-center gap-1.5"><Activity className="size-3.5" /> Live activity</h3>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {data.activity.map((item: any, i: number) => {
-            const isAgent = item.actor === 'agent';
-            const isCustomer = item.actor === 'customer';
-            return (
-              <div key={i} className="flex items-start gap-2.5 text-sm">
-                <span className="text-xs text-muted-foreground tabular-nums shrink-0 mt-0.5 w-11">{new Date(item.timestamp).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</span>
-                <span className={`p-1 rounded-[6px] shrink-0 ${isAgent ? 'bg-tech-subtle' : 'bg-muted'}`}>
-                  {isAgent ? <Bot className="size-3 text-tech" /> : isCustomer ? <UserCircle className="size-3 text-foreground" /> : <Users className="size-3 text-foreground" />}
-                </span>
-                <div className="flex-1 min-w-0 leading-snug"><span className="font-medium">{item.leadName}</span><span className="text-muted-foreground"> — {item.summary}</span></div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>
@@ -942,104 +951,6 @@ function actorName(actor: string | undefined, lead: DummyLead): { name: string; 
   if (actor === 'installer') return { name: lead.assignment?.installer_name || 'Installer', icon: 'installer' };
   if (actor === 'customer') return { name: lead.name.split(' ')[0], icon: 'customer' };
   return { name: actor ?? '—', icon: null };
-}
-
-// ============= LEAD DETAIL (owner walks through pipeline without blocks) =============
-function LeadDetailView({ lead, onBack, navigate }: { lead: DummyLead; onBack: () => void; navigate: (path: string) => void }) {
-  const [tab, setTab] = useState<'estimate' | 'proposal' | 'timeline'>('estimate');
-
-  return (
-    <div className="p-3 space-y-3">
-      {/* Back + header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4 mr-1" /> Back</Button>
-        <Avatar className="h-8 w-8"><AvatarFallback className="text-xs">{lead.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</AvatarFallback></Avatar>
-        <div className="flex-1">
-          <div className="font-bold text-sm">{lead.name}</div>
-          <div className="text-xs text-muted-foreground">{getStage(lead.workflow_stage).label} · {lead.address.split(',').slice(-1)[0]?.trim()}</div>
-        </div>
-      </div>
-
-      {/* Tabs — no blocks, owner can view all */}
-      <div className="flex gap-1 border-b">
-        {/* Compliance tab removed — it rendered a full duplicate ProposalView;
-            the papertrail lives in Proposal (one home per concept) */}
-        {[
-          { id: 'estimate' as const, label: 'Estimate', icon: FileText },
-          { id: 'proposal' as const, label: 'Proposal', icon: FileText },
-          { id: 'timeline' as const, label: 'Timeline', icon: Clock },
-        ].map(t => {
-          const Icon = t.icon;
-          return (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                tab === t.id ? 'border-primary/40 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}>
-              <Icon className="h-3 w-3" /> {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      <Suspense fallback={<CardListSkeleton count={4} />}>
-        {tab === 'estimate' && <EstimateView lead={lead} onOpenProposal={() => setTab('proposal')} />}
-        {tab === 'proposal' && <ProposalView key={lead.id} lead={lead} />}
-        {tab === 'timeline' && (
-          <div className="rounded-panel bg-card shadow-card p-4">
-              {/* Cal: ALL agents involved + ALL touchpoints — the complete log */}
-              {/* The full crew on this client — agents AND the humans (Cal) */}
-              <div className="flex flex-wrap items-center gap-1.5 pb-3 mb-3 border-b border-border">
-                <span className="label-micro mr-1">Who's on this client</span>
-                {agentsInvolved(lead.touchpoints).map(name => (
-                  <span key={name} className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-tech-subtle text-tech px-2 py-0.5">
-                    <Bot className="size-2.5" /> {name}
-                  </span>
-                ))}
-                {lead.assigned_consultant && (
-                  <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
-                    <Users className="size-2.5" /> {lead.assigned_consultant}
-                  </span>
-                )}
-                {lead.assignment?.installer_name && (
-                  <span className="inline-flex items-center gap-1 text-2xs font-medium rounded-full bg-muted text-foreground px-2 py-0.5">
-                    <Wrench className="size-2.5" /> {lead.assignment.installer_name}
-                  </span>
-                )}
-                <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{lead.touchpoints.length} touchpoint{lead.touchpoints.length === 1 ? '' : 's'} · {lead.touchpoints.filter(t => t.actor === 'agent').length} by agents</span>
-              </div>
-              <div className="space-y-1.5 max-h-96 overflow-y-auto">
-                {lead.touchpoints.map((tp, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 rounded-control bg-muted/30 text-xs">
-                    <Badge variant="outline" className="text-[11px] flex-shrink-0">{tp.channel}</Badge>
-                    <span className="text-muted-foreground flex-shrink-0 w-20 tabular-nums">{new Date(tp.timestamp).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })}</span>
-                    <span className="flex-1 truncate">{tp.summary}</span>
-                    {tp.actor === 'agent' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-tech flex-shrink-0"><Bot className="size-3" /> {agentFor(tp.summary ?? '')}</span>
-                    ) : (() => { const a = actorName(tp.actor, lead); return (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground flex-shrink-0">
-                        {a.icon === 'consultant' && <Users className="size-3" />}
-                        {a.icon === 'installer' && <Wrench className="size-3" />}
-                        {a.icon === 'customer' && <UserCircle className="size-3" />}
-                        {a.name}
-                      </span>
-                    ); })()}
-                  </div>
-                ))}
-              </div>
-          </div>
-        )}
-      </Suspense>
-
-      {/* Quick actions — jump to any view */}
-      <div className="flex gap-2 pt-2 border-t">
-        <Button size="sm" variant="outline" onClick={() => navigate(`/lead-flow/${lead.id}`)}><FileText className="h-3 w-3 mr-1" /> Open in LeadFlow</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate(`/consultant?lead=${lead.id}`)}><MessageSquare className="h-3 w-3 mr-1" /> Open chat</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate(`/job/${lead.id}`)}><Wrench className="h-3 w-3 mr-1" /> Open job</Button>
-        <Button size="sm" variant="outline" onClick={() => navigate('/my-projects')}><UserCircle className="h-3 w-3 mr-1" /> Customer portal</Button>
-      </div>
-    </div>
-  );
 }
 
 // ============= SHARED COMPONENTS =============
