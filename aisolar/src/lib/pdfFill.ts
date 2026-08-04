@@ -69,8 +69,8 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // NEW: "Eircode:" x=358 w=39 (ends 397) at y=332.
     { field: 'Eircode', page: 0, x: 402, y: 331, size: 13, bold: true, maxW: 90 },
     // § 3 Installer/Consultant details — same block offset as § 1 (header y=217)
-    { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
-    { field: 'Installer RECI no.', page: 0, x: 112, y: 170, size: 13, bold: true, comb: 13.3 },
+    { field: 'Installer company', page: 0, x: 112, y: 193, size: 13, bold: true, comb: 13.3 },
+    { field: 'Installer RECI no.', page: 0, x: 112, y: 172, size: 13, bold: true, comb: 13.3 },
     // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
     // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
     // from x≈390. Row baselines probed off their labels.
