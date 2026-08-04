@@ -64,6 +64,7 @@ import { brand } from '@/config/brand';
 import { AichatWordmark } from '@/components/brand/AiosMark';
 import PreSurveySnaps from './PreSurveySnaps';
 import SurveyBooking from './SurveyBooking';
+import CustomerGrantCard from './CustomerGrantCard';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 import { isDemoMode, isDemoAvailable } from '@/lib/demoMode';
 import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
@@ -254,6 +255,10 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
             and what happens next. Honest: the grant is TRACKED for them (we do
             the paperwork), never claimed as submitted-by-them. */}
         {lead.proposal && <MoneyView lead={lead} />}
+
+        {/* The customer's live SEAI grant — status + the one thing to do now
+            (apply → book BER → paid). The grant is net + paid to them. */}
+        {lead.proposal && <CustomerGrantCard lead={lead} />}
 
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
