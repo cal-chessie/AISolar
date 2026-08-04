@@ -165,6 +165,34 @@ export function advanceGrant(leadId: string, to: SeaiGrantStage, proof: Partial<
   return saveGrant(leadId, { status: to, ...proof });
 }
 
+const stageOrder = (s: SeaiGrantStatus): number => GRANT_STAGES.find(x => x.id === s)?.order ?? 0;
+
+/**
+ * Reconcile the grant with the commissioning gate — the auto-advance:
+ * once the installer confirms the gate, the grant moves itself to `installed`
+ * (no manual click). Guards keep it truthful:
+ *   - domestic grants only,
+ *   - only forward from `offer_received` — the offer MUST precede the install,
+ *   - if the gate is confirmed but no offer was recorded, DON'T advance and
+ *     return `risk` — installing before the grant offer voids the grant, and the
+ *     tracker surfaces that instead of silently advancing.
+ * Idempotent — safe to call on every render.
+ */
+export function reconcileGrantOnInstall(
+  leadId: string,
+  opts: { isDomestic: boolean; gateConfirmed: boolean },
+): { advanced?: boolean; risk?: boolean } {
+  if (!opts.isDomestic || !opts.gateConfirmed) return {};
+  const rec = getGrant(leadId);
+  if (stageOrder(rec.status) >= stageOrder('installed')) return {}; // already there / past
+  if (rec.status === 'offer_received') {
+    advanceGrant(leadId, 'installed', { installedAt: new Date().toISOString() });
+    return { advanced: true };
+  }
+  if (rec.status === 'not_started' || rec.status === 'offer_applied') return { risk: true };
+  return {};
+}
+
 /** React hook — re-renders when this lead's grant changes here or in another tab. */
 import { useEffect, useState } from 'react';
 export function useGrant(leadId: string): SeaiGrantRecord {

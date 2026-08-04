@@ -4,7 +4,7 @@
  * a real proof. The grant is NET to the customer (SEAI pays them directly), so
  * the copy never implies the owner banks it.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,8 +16,9 @@ import {
 import type { DummyLead } from '@/lib/dummyData';
 import {
   GRANT_STAGES, useGrant, advanceGrant, currentStage, nextStage, grantProgress,
-  offerClock, type GrantStageSpec, type SeaiGrantRecord,
+  offerClock, reconcileGrantOnInstall, type GrantStageSpec, type SeaiGrantRecord,
 } from '@/lib/seaiGrant';
+import { getFieldRecord } from '@/lib/fieldRecord';
 import { calculateSEAI, seaiPropertyType, eur } from '@/lib/seaiPipeline';
 
 const ACTOR_STYLE: Record<string, string> = {
@@ -44,6 +45,16 @@ export default function SeaiGrantTracker({ lead }: { lead: DummyLead }) {
   const next = nextStage(rec);
   const progress = grantProgress(rec);
   const clock = offerClock(rec);
+
+  // Auto-advance off the commissioning gate: once the installer confirms serials,
+  // the grant moves itself to `installed`. Only from offer_received — installing
+  // before the offer is a risk we flag instead of advancing.
+  const gateConfirmed = !!getFieldRecord(lead.id)?.serials.confirmed;
+  useEffect(() => {
+    const r = reconcileGrantOnInstall(lead.id, { isDomestic: true, gateConfirmed });
+    if (r.advanced) toast.success('Grant advanced — installed', { description: 'Commissioning gate confirmed. Prepare the DoW + data sheets next.' });
+  }, [lead.id, gateConfirmed]);
+  const installBeforeOffer = gateConfirmed && (rec.status === 'not_started' || rec.status === 'offer_applied');
 
   const propertyType = seaiPropertyType((lead.intake as Record<string, unknown>)?.property_type as string);
   const grantAmount = rec.grantAmount ?? (lead.proposal?.seai_grant ?? calculateSEAI({
@@ -81,6 +92,15 @@ export default function SeaiGrantTracker({ lead }: { lead: DummyLead }) {
               ? `Grant offer EXPIRED — the 8-month window closed. Re-apply before submitting the claim.`
               : `Grant offer valid — ${clock.daysLeft} days left to install + submit the Declaration of Works.`}
           </span>
+        </div>
+      )}
+
+      {/* Install-before-offer risk — the gate is confirmed but no grant offer
+          was recorded. Installing before the offer voids the grant. */}
+      {installBeforeOffer && (
+        <div className="mt-3 rounded-control border border-pop/40 bg-pop-subtle p-2.5 text-2xs flex items-start gap-2 text-pop">
+          <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+          <span><span className="font-semibold">Installed before the grant offer was recorded.</span> If the offer wasn’t received first, the grant is void — record the offer date now, or confirm with the customer.</span>
         </div>
       )}
 
