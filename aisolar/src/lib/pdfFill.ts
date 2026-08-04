@@ -163,6 +163,9 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // (truth-pass: never guess a regulatory capacity).
     { field: 'MPRN', page: 0, x: 168, y: 210, size: 13, bold: true, comb: 11.7 },
     { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
+    // §5 connection-agreement capacities (over 6kW single / 11kW three-phase).
+    { field: 'NC7 mec', page: 0, x: 435, y: 171, size: 11, bold: true, maxW: 60 },
+    { field: 'NC7 mic', page: 0, x: 435, y: 186, size: 11, bold: true, maxW: 60 },
     { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
     { field: 'NC7 phase three', page: 0, x: 545, y: 144, size: 12, bold: true },
     // ── PAGE 2 (probed 4 Aug): § 6 Mini-Generator Details, "Unit 1" column at
@@ -470,6 +473,9 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm, opts: { ownerC
         'NC7 phase single': dc.threePhase ? '' : 'X',
         'NC7 phase three': dc.threePhase ? 'X' : '',
         'Total installed inverter cap': dc.tiic > 0 ? String(dc.tiic) : '',
+        // NC7 §5 MIC/MEC — captured on the survey (>6kW jobs), blank otherwise.
+        'NC7 mic': lead.survey?.confirmed_mic_kva ? String(lead.survey.confirmed_mic_kva) : '',
+        'NC7 mec': lead.survey?.confirmed_mec_kva ? String(lead.survey.confirmed_mec_kva) : '',
         'NC7 p2 1PH': dc.threePhase ? '' : 'X',
         'NC7 p2 3PH': dc.threePhase ? 'X' : '',
         'NC7 p2 energy': lead.proposal ? 'P' : '',

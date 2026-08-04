@@ -54,6 +54,7 @@ import EircodeAddressLookup from '@/components/address/EircodeAddressLookup';
 import { logActivity } from '@/lib/activityLog';
 import { isDemoMode } from '@/lib/demoMode';
 import { generateDummyLeads } from '@/lib/dummyData';
+import { inverterAcKw } from '@/lib/complianceDecision';
 import { sendStageChangeNotification } from '@/lib/stageNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -93,6 +94,10 @@ const surveySchema = z.object({
   electrical_panel_capacity: z.string().optional(),
   meter_location: z.string().optional(),
   grid_connection_type: z.string().optional(),
+  // NC7 §5 — systems over the NC6 band (6 kW single / 11 kW three-phase) need
+  // the ESB Connection Agreement's Maximum Import / Export Capacity, in kVA.
+  mic_kva: z.string().optional(),
+  mec_kva: z.string().optional(),
   // Gear (panel / inverter / battery / count / size) is NOT captured here.
   // The Design Studio owns it, on the real roof. One source of truth.
   // Installation & logistics (merged)
@@ -346,6 +351,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         electrical_panel_capacity: data.electrical_panel_capacity || null,
         meter_location: data.meter_location || null,
         grid_connection_type: data.grid_connection_type || null,
+        // NC7 §5 connection-agreement capacities (kVA) — only for >6 kW jobs.
+        confirmed_mic_kva: data.mic_kva ? parseFloat(data.mic_kva) : null,
+        confirmed_mec_kva: data.mec_kva ? parseFloat(data.mec_kva) : null,
         installation_notes: data.installation_notes || null,
         special_requirements: data.special_requirements || null,
         status: finalStatus,
@@ -935,6 +943,30 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                   <Input {...register('meter_location')} placeholder="e.g. outside front, utility room, garage" className="w-full mt-1.5 h-control" />
                 </div>
               </div>
+              {(() => {
+                // NC7 territory — over 6 kW single-phase / 11 kW three-phase.
+                // These systems need the ESB Connection Agreement's Maximum
+                // Import / Export Capacity for NC7 §5; domestic NC6 never asks.
+                const gridThree = watch('grid_connection_type') === 'Three phase';
+                const estAcKw = leadData ? inverterAcKw(leadData) : 0;
+                if (estAcKw <= (gridThree ? 11 : 6)) return null;
+                return (
+                  <div className="mt-3 rounded-control border border-tech/30 bg-tech/5 p-3">
+                    <p className="text-xs font-semibold text-tech">Connection Agreement — over {gridThree ? '11' : '6'} kW (NC7)</p>
+                    <p className="mt-0.5 text-2xs text-muted-foreground leading-body">Off the customer's ESB Connection Agreement. Feeds NC7 §5 — leave blank if you don't have it yet.</p>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="mic_kva" className="text-xs">Max Import Capacity — MIC (kVA)</Label>
+                        <Input {...register('mic_kva')} type="number" inputMode="decimal" placeholder="e.g. 29" className="w-full mt-1.5 h-control font-mono" />
+                      </div>
+                      <div>
+                        <Label htmlFor="mec_kva" className="text-xs">Max Export Capacity — MEC (kVA)</Label>
+                        <Input {...register('mec_kva')} type="number" inputMode="decimal" placeholder="e.g. 12" className="w-full mt-1.5 h-control font-mono" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               <p className="mt-3 text-xs text-muted-foreground leading-body">
                 Panels, inverter and battery are chosen in the Design Studio, on the real roof. This step just reads the supply.
               </p>

@@ -115,6 +115,8 @@ const NC7 = [
   { field: 'Installer RECI no.', page: 0, x: 132, y: 291, size: 13, bold: true, comb: 13 },
   { field: 'MPRN', page: 0, x: 168, y: 210, size: 13, bold: true, comb: 11.7 },
   { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
+  { field: 'NC7 mec', page: 0, x: 435, y: 171, size: 11, bold: true, maxW: 60 },
+  { field: 'NC7 mic', page: 0, x: 435, y: 186, size: 11, bold: true, maxW: 60 },
   { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
   { field: 'NC7 p2 1PH', page: 1, x: 351, y: 772, size: 11, bold: true },
   { field: 'NC7 p2 energy', page: 1, x: 350, y: 758, size: 10, bold: true },
@@ -162,6 +164,8 @@ const NC7 = [
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
+SAMPLE['NC7 mic'] = '29';
+SAMPLE['NC7 mec'] = '12';
 SAMPLE['NC7 p2 1PH'] = 'X';
 SAMPLE['NC7 p2 energy'] = 'P';
 SAMPLE['NC7 p2 manufacturer'] = 'SOLAX';

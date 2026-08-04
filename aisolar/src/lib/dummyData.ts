@@ -62,6 +62,11 @@ export interface DummyLead {
     confirmed_panel_count: number;
     confirmed_battery_kwh: number;
     confirmed_inverter_type: string;
+    /** Commercial-connection figures off the ESB Connection Agreement — the
+     *  NC7 §5 Maximum Import / Export Capacity (kVA). Captured on the survey's
+     *  electrical step for commercial / 3-phase sites; undefined for domestic. */
+    confirmed_mic_kva?: number;
+    confirmed_mec_kva?: number;
     photo_count: number;
   };
   proposal?: {
@@ -470,6 +475,13 @@ export function generateDummyLeads(): DummyLead[] {
         confirmed_panel_count: panelCount,
         confirmed_battery_kwh: a.batteryKwh,
         confirmed_inverter_type: a.batteryKwh > 0 ? 'hybrid' : 'string',
+        // NC7 §5 connection-agreement capacities — only for >6 kW jobs (the NC7
+        // path), domestic OR commercial. Domestic large is the residential-yet-
+        // NC7 case; blank on domestic small (NC6).
+        ...(systemSizeKw > 6 ? {
+          confirmed_mic_kva: a.propertyTypeField === 'commercial' ? Math.round(systemSizeKw * 2) : 12,
+          confirmed_mec_kva: Math.round(systemSizeKw),
+        } : {}),
         photo_count: 6 + (idx % 4),
       };
     }
