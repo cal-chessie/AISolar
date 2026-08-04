@@ -119,7 +119,7 @@ const NC7 = [
   { field: 'NC7 p2 1PH', page: 1, x: 351, y: 772, size: 11, bold: true },
   { field: 'NC7 p2 energy', page: 1, x: 350, y: 758, size: 10, bold: true },
   { field: 'NC7 p2 manufacturer', page: 1, x: 350, y: 743, size: 9, bold: true, maxW: 72 },
-  { field: 'NC7 p2 model', page: 1, x: 350, y: 729, size: 9, bold: true, maxW: 72 },
+  { field: 'NC7 p2 model', page: 1, x: 180, y: 729, size: 10, bold: true, maxW: 200 },
   { field: 'NC7 p2 inverter kVA', page: 1, x: 350, y: 715, size: 10, bold: true, maxW: 60 },
   { field: 'NC7 p2 storage kVA', page: 1, x: 350, y: 669, size: 10, bold: true, maxW: 60 },
   { field: 'NC7 p2 settings yes', page: 1, x: 351, y: 648, size: 11, bold: true },
