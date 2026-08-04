@@ -18,7 +18,7 @@ import {
   Calculator, MapPin, Circle, Send, Plus,
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
-import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
+import { calculateSEAI, seaiPropertyType, seaiGrantEligibility } from '@/lib/seaiPipeline';
 import { selfConsumptionFromOccupancy, computeQuote, ratesFromIntake } from '@/lib/leadIntake';
 import { moneyStory } from '@/lib/proposalNarrative';
 import { getProduct } from '@/config/productCatalog';
@@ -110,6 +110,15 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
     annualProductionKwh: quote.productionKwh,
     selfConsumptionPct: quote.selfConsumption,
     netCost: proposal.net_cost,
+  });
+
+  // Grant eligibility — the proposal must not present the SEAI grant as certain
+  // when the home can't claim it (post-2021 build / new build / no MPRN).
+  const grantElig = seaiGrantEligibility({
+    propertyType,
+    installType: 'retrofit',
+    yearBuilt: (lead.intake as Record<string, unknown>)?.year_built as string | number | undefined,
+    mprn: lead.mprn,
   });
 
   const bill = billReadFromIntake(lead.intake as Record<string, unknown>, {
@@ -228,6 +237,12 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
           <div className="flex justify-between"><span className="text-muted-foreground">Deposit (30%)</span><span className="text-doc-deposit font-medium tabular-nums">{eurFmt(proposal.net_cost * 0.3)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Balance (70%)</span><span className="tabular-nums">{eurFmt(proposal.net_cost * 0.7)}</span></div>
         </div>
+        {!grantElig.eligible && (
+          <div className="mt-3 rounded-control border border-doc-proposal/40 bg-doc-proposal/5 p-2.5 text-2xs leading-snug">
+            <span className="font-semibold text-doc-proposal">SEAI grant may not apply — </span>
+            <span className="text-muted-foreground">{grantElig.blockers.join(' · ')}. Net investment above assumes the {eurFmt(proposal.seai_grant)} grant; without it it's <span className="font-semibold text-foreground">{eurFmt(proposal.net_cost + proposal.seai_grant)}</span>. Confirm eligibility before this proposal goes out.</span>
+          </div>
+        )}
 
         {/* The lever — occupancy pre-sets it, the consultant owns it. Simple. */}
         <div className="mt-3 rounded-control border border-border bg-muted/20 p-3">

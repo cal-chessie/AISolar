@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { calculateSystemEstimate, selfConsumptionFromOccupancy } from '@/lib/leadIntake';
-import { calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
+import { calculateSEAI, seaiPropertyType, seaiGrantEligibility } from '@/lib/seaiPipeline';
 import BillReadPanel, { billReadFromIntake } from '@/components/bill/BillReadPanel';
 import DocumentActions from '@/components/consultant/DocumentActions';
 
@@ -40,6 +40,16 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
       hasBattery: !!lead.proposal?.battery_model,
     }),
     netCost: estimate.netCost,
+  });
+
+  // SEAI grant eligibility — don't present €1,800 as certain when we KNOW the
+  // home can't claim it (post-2021 build / new build / no MPRN). Only flags on
+  // positive evidence; unknown year built stays eligible.
+  const grantElig = seaiGrantEligibility({
+    propertyType: seaiPropertyType((lead.intake as Record<string, unknown>)?.property_type as string),
+    installType: 'retrofit',
+    yearBuilt: (lead.intake as Record<string, unknown>)?.year_built as string | number | undefined,
+    mprn: lead.mprn,
   });
 
   const bill = billReadFromIntake(lead.intake as Record<string, unknown>, {
@@ -97,7 +107,7 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
           {[
             { icon: Sun, label: 'System size', value: `${estimate.systemSizeKw} kWp`, tone: '' },
             { icon: TrendingUp, label: 'Annual savings', value: eurFmt(estimate.annualSavings), tone: 'text-doc-deposit' },
-            { icon: Award, label: 'SEAI grant', value: eurFmt(seai.solarElectricityGrant), tone: 'text-tech' },
+            { icon: Award, label: 'SEAI grant', value: grantElig.eligible ? eurFmt(seai.solarElectricityGrant) : 'Check eligibility', tone: grantElig.eligible ? 'text-tech' : 'text-doc-proposal' },
             { icon: Clock, label: 'Payback', value: `${estimate.paybackYears} yrs`, tone: '' },
           ].map(m => (
             <div key={m.label} className="text-center">
@@ -107,6 +117,12 @@ export default function EstimateView({ lead, onOpenProposal }: { lead: DummyLead
             </div>
           ))}
         </div>
+        {!grantElig.eligible && (
+          <div className="mt-3 rounded-control border border-doc-proposal/40 bg-doc-proposal/5 p-2.5 text-2xs leading-snug">
+            <span className="font-semibold text-doc-proposal">SEAI grant may not apply — </span>
+            <span className="text-muted-foreground">{grantElig.blockers.join(' · ')}. The figures below assume the {eurFmt(seai.solarElectricityGrant)} grant; without it the net cost is <span className="font-semibold text-foreground">{eurFmt(estimate.netCost + seai.solarElectricityGrant)}</span>. Confirm eligibility before quoting it.</span>
+          </div>
+        )}
         <div className="mt-3 p-2.5 bg-muted/40 rounded-control text-xs grid grid-cols-2 gap-2">
           <div><span className="text-muted-foreground">Net cost:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.netCost)}</span></div>
           <div><span className="text-muted-foreground">20-year savings:</span> <span className="font-semibold tabular-nums">{eurFmt(estimate.twentyYearSavings)}</span></div>
