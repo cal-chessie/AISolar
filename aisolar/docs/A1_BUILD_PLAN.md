@@ -22,6 +22,34 @@ questions. Never ship the enquiry copy on the installer signup.
 | Customer portal first-open (EXISTS) | A tenant's customer | "Here's where your project lives" |
 | Team invite (BUILD) | Staff joining a tenant | role pre-set by the invite |
 
+## ✅ RESOLVED — the entry model (Cal, 4 Aug discussion)
+It's ONE machine, **fractal**: Renewably captures installers the way an installer
+captures homeowners. The AISolar site opens with **one chip fork** — the first
+screen of the OnboardingFlow:
+
+> **"What brings you here?"** → **[ I'm an installer ]** · **[ Estimate for my property ]**
+
+- **I'm an installer** → the **A1 funnel**: installer-copy chips → sign up →
+  (a) their **own tenant** provisions (they're its admin) AND (b) a **lead lands in
+  Renewably's pipeline** (the SaaS sale — attribution chips feed *Renewably's*
+  marketing). The estimate/OnboardingFlow engine is REUSED, re-copywritten.
+- **Estimate for my property** → the **existing** estimate flow (§D home/business
+  fork → estimate). The lead then **POSTs via `ingest-lead` into Solar Ireland
+  Group's tenant** (SIG source key) → **SIG's national routing** (domestic → county
+  installer · commercial → consultant). Almost all existing rails — this is the
+  "national sites wiring" item pointed at SIG.
+
+**Three flows, but two are the ends of one funnel + one already exists:**
+| # | Flow | Status |
+|---|------|--------|
+| 1 | Homeowner on an installer's widget → the installer's DB → estimate | **DONE** (widget + §D fork) |
+| 2 | Installer → a lead in Renewably's DB (top of A1 funnel) | build (reuse engine, installer copy) |
+| 3 | Installer → their own tenant (A1 conversion) | build (tenant provisioning + trial + first-admin) |
+| — | Property lead on the AISolar site → **Solar Ireland Group** via ingest-lead | mostly existing rails |
+
+So the REAL A1 build = **the door fork + #2 + #3**. The estimate machine is done;
+A1 bolts tenant-creation onto the far end and swaps the words.
+
 ## What A1 actually is (scope — it's the multi-tenant foundation)
 1. A reusable **`<OnboardingFlow steps={…}>`** — one question per full screen,
    big tappable chips (not dropdowns), progress implied, "no pressure, switch
