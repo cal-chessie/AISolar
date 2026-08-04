@@ -203,7 +203,7 @@ const IE_CORP_TAX = 0.125;
 
 /** IRR over `years` for a single upfront outflow + level annual inflow. Bisection;
  *  headline-capped at 100%. Used for the commercial estimate. */
-function irrPercent(initial: number, annual: number, years: number): number {
+export function irrPercent(initial: number, annual: number, years: number): number {
   if (initial <= 0 || annual <= 0) return 0;
   const npv = (r: number) => { let s = -initial; for (let t = 1; t <= years; t++) s += annual / Math.pow(1 + r, t); return s; };
   if (npv(1) > 0) return 100;
@@ -224,12 +224,21 @@ export function calculateSystemEstimate(input: {
    *  (default) → €-saving + SEAI grant + payback; commercial → ex-VAT + VAT
    *  reclaim + NDMG + ACA + ROI/IRR. Commercial fields are undefined for domestic. */
   propertyType?: PropertyType;
+  /** The customer's real unit rate off their bill. When absent (manual path) we
+   *  fall back conservatively — €0.24 commercial / €0.35 domestic — and the
+   *  estimate is flagged indicative until a real bill is read at proposal. */
+  retailRate?: number | null;
 }) {
   const commercial = input.propertyType === 'commercial';
+  // Rate off the bill when we have it; else a conservative default. Commercial
+  // users often buy power cheaper per unit than homes — €0.24 is the floor.
+  const rate = (input.retailRate && input.retailRate > 0.05 && input.retailRate < 1)
+    ? input.retailRate
+    : (commercial ? 0.24 : IE_ENERGY.RETAIL_RATE);
   const monthlyBill = input.monthlyBill ?? 0;
   const annualKwh = input.annualKwh && input.annualKwh > 0
     ? input.annualKwh
-    : (monthlyBill * 12) / IE_ENERGY.RETAIL_RATE;
+    : (monthlyBill * 12) / rate;
 
   // Domestic clamps to the Irish residential band (3–12 kWp); commercial sizes to
   // offset the load, 4–500 kWp (NDMG reaches to 1000). Roof cap wins either way.
@@ -245,7 +254,7 @@ export function calculateSystemEstimate(input: {
     : defaultSelfCon;
   const selfConsumedKwh = annualProduction * selfConsumption;
   const exportedKwh = annualProduction - selfConsumedKwh;
-  const annualSavings = (selfConsumedKwh * IE_ENERGY.RETAIL_RATE) + (exportedKwh * IE_ENERGY.EXPORT_RATE);
+  const annualSavings = (selfConsumedKwh * rate) + (exportedKwh * IE_ENERGY.EXPORT_RATE);
   const solarOffset = annualKwh > 0 ? Math.min(85, Math.round((annualProduction / annualKwh) * 100)) : 0;
 
   // Commercial capital is quoted EX-VAT (they reclaim the 13%); domestic solar is
@@ -288,6 +297,11 @@ export function calculateSystemEstimate(input: {
     paybackYears,
     twentyYearSavings,
     co2TonnesPerYear: Math.round((annualProduction * 0.4) / 1000 * 10) / 10,
+    retailRate: rate,
+    /** true = no real bill rate was supplied, so savings use the conservative
+     *  fallback. The estimate is indicative; the accurate figure is read off a
+     *  real bill at proposal. */
+    rateIndicative: !(input.retailRate && input.retailRate > 0.05 && input.retailRate < 1),
     // commercial-only (undefined for domestic)
     ndmgGrant: commercial ? grant : undefined,
     exVatCost: commercial ? grossCost : undefined,

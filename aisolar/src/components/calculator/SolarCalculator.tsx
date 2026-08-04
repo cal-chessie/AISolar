@@ -9,7 +9,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, ReferenceLine, ReferenceArea, Tooltip } from 'recharts';
 import { Sun, TrendingUp, Zap, ArrowRight, Calculator, BatteryCharging, Leaf, Moon } from 'lucide-react';
-import { calculateSystemEstimate } from '@/lib/leadIntake';
+import { calculateSystemEstimate, irrPercent } from '@/lib/leadIntake';
 import { getPricingConfig } from '@/lib/pricing';
 import { eur } from '@/lib/seaiPipeline';
 import RoofDesigner from '@/components/calculator/RoofDesigner';
@@ -80,6 +80,9 @@ export default function SolarCalculator({
   /** §D fork — 'commercial' runs the NDMG + commercial-sizing path so a business
       never sees the domestic €1,800 grant. Default domestic. */
   propertyType = 'domestic',
+  /** Real unit rate off the bill. Absent (manual path) → conservative fallback
+      (€0.24 commercial / €0.35 domestic) and the estimate is flagged indicative. */
+  unitRate,
 }: {
   showHeader?: boolean;
   initialBill?: number;
@@ -87,6 +90,7 @@ export default function SolarCalculator({
   annualKwh?: number;
   showUploadCta?: boolean;
   propertyType?: 'domestic' | 'commercial';
+  unitRate?: number | null;
 }) {
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
@@ -122,23 +126,35 @@ export default function SolarCalculator({
 
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
-    const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined, propertyType });
+    const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined, propertyType, retailRate: unitRate });
     const orient = orientFactor(faces);
     const baseSavings = Math.round(est.annualSavings * orient);
     const batteryKwh = 10.2;
     const batteryBoost = battery ? Math.round(baseSavings * (0.10 + (nightPct / 100) * 0.30)) : 0;
     const batteryCost = battery ? Math.round(batteryKwh * cfg.batteryPerKwh) : 0;
     const annualSavings = baseSavings + batteryBoost;
-    const netCost = est.netCost + batteryCost;
+    const commercial = propertyType === 'commercial';
+    const grossCost = est.grossCost + batteryCost;        // ex-VAT capital (commercial)
+    const afterGrant = est.netCost + batteryCost;         // net after grant, incl battery
+    // Commercial: fold ACA (100% first-year allowance × 12.5% trading rate on the
+    // grant-net capital) into an EFFECTIVE net; add the reclaimable VAT + ROI/IRR.
+    const acaRelief = commercial ? Math.round(afterGrant * 0.125) : 0;
+    const vatReclaim = commercial ? Math.round(grossCost * 0.13) : 0;
+    const netCost = commercial ? afterGrant - acaRelief : afterGrant;   // effective net
     const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
+    const roi = commercial && netCost > 0 ? Math.round((annualSavings / netCost) * 100) : 0;
+    const irr = commercial ? irrPercent(netCost, annualSavings, 25) : 0;
     const twentyYear = annualSavings * 20 - netCost;
     const curve = Array.from({ length: 21 }, (_, y) => ({ year: y, saved: annualSavings * y - netCost }));
-    return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
+    return { est, batteryKwh, annualSavings, netCost, afterGrant, grossCost, acaRelief, vatReclaim, roi, irr, commercial,
+      paybackYears, twentyYear, batteryCost, curve,
       seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
-      annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear, grossCost: est.grossCost };
-  }, [monthlyBill, nightPct, faces, battery, roofKwp, annualKwh, cfg, propertyType]);
+      annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear,
+      rateIndicative: est.rateIndicative };
+  }, [monthlyBill, nightPct, faces, battery, roofKwp, annualKwh, cfg, propertyType, unitRate]);
 
-  const grantLabel = propertyType === 'commercial' ? 'NDMG grant' : 'SEAI grant';
+  const commercial = propertyType === 'commercial';
+  const grantLabel = commercial ? 'NDMG grant' : 'SEAI grant';
 
   return (
     /* When embedded in a page that already has its own container (the bill
@@ -240,26 +256,57 @@ export default function SolarCalculator({
 
         {/* ── RIGHT · the estimate, in full glory ─────────────────── */}
         <div className="rounded-panel bg-card shadow-card overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-border">
-            <p className="label-micro">Estimated 20-year saving</p>
-            <Money value={r.twentyYear} className="block mt-1 text-3xl sm:text-4xl font-semibold tracking-tight text-doc-deposit tabular-nums" />
-            <p className="mt-2 text-xs text-muted-foreground leading-body">
-              The {grantLabel} takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. {propertyType === 'commercial' ? 'The figure is ex-VAT (you reclaim the VAT); ROI, ACA relief and IRR are on your full estimate.' : 'Everything after that comes off your bills.'}
+          {commercial ? (
+            <>
+              <div className="px-6 pt-5 pb-4 border-b border-border">
+                <p className="label-micro">Return on investment</p>
+                <span className="block mt-1 text-3xl sm:text-4xl font-semibold tracking-tight text-doc-deposit tabular-nums">{r.roi}%<span className="text-lg font-medium text-muted-foreground"> / yr</span></span>
+                <p className="mt-2 text-xs text-muted-foreground leading-body">
+                  <span className="font-semibold text-foreground tabular-nums">{r.irr}% IRR</span> · pays back in <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. Ex-VAT; the {grantLabel} takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off and ACA relief folds into your effective net.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+                <KeyFact label="System" value={`${r.systemSizeKw} kWp`} sub={`${r.panels} panels${battery ? ' + batt' : ''}`} />
+                <KeyFact label="Effective net" valueEl={<Money value={r.netCost} />} sub="after grant + ACA" />
+                <KeyFact label="Payback" value={`${r.paybackYears} yrs`} sub={`${r.irr}% IRR`} />
+              </div>
+              <div className="px-6 py-4 border-b border-border space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">System installed (ex-VAT)</span><span className="tabular-nums"><Money value={r.grossCost} /></span></div>
+                {battery && <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="tabular-nums">{eur(r.batteryCost)}</span></div>}
+                <div className="flex justify-between text-doc-deposit"><span>{grantLabel}</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
+                <div className="flex justify-between text-doc-deposit"><span>ACA tax relief (year 1)</span><span className="tabular-nums">−{eur(r.acaRelief)}</span></div>
+                <div className="flex justify-between font-semibold border-t border-border pt-1.5"><span>Effective net cost</span><span className="tabular-nums"><Money value={r.netCost} /></span></div>
+                <div className="flex justify-between text-2xs text-muted-foreground"><span>+ VAT reclaimed (you pay, then reclaim)</span><span className="tabular-nums">{eur(r.vatReclaim)}</span></div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="px-6 pt-5 pb-4 border-b border-border">
+                <p className="label-micro">Estimated 20-year saving</p>
+                <Money value={r.twentyYear} className="block mt-1 text-3xl sm:text-4xl font-semibold tracking-tight text-doc-deposit tabular-nums" />
+                <p className="mt-2 text-xs text-muted-foreground leading-body">
+                  The {grantLabel} takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. Everything after that comes off your bills.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+                <KeyFact label="System" value={`${r.systemSizeKw} kWp`} sub={`${r.panels} panels${battery ? ' + batt' : ''}`} />
+                <KeyFact label="Net cost" valueEl={<Money value={r.netCost} />} sub="after grant" />
+                <KeyFact label="Payback" value={`${r.paybackYears} yrs`} sub="then it's free" />
+              </div>
+              <div className="px-6 py-4 border-b border-border space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">System installed</span><span className="tabular-nums"><Money value={r.grossCost} /></span></div>
+                {battery && <div className="flex justify-between"><span className="text-muted-foreground">Home battery</span><span className="tabular-nums">{eur(r.batteryCost)}</span></div>}
+                <div className="flex justify-between text-doc-deposit"><span>{grantLabel}</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
+                <div className="flex justify-between font-semibold border-t border-border pt-1.5"><span>Your net cost</span><span className="tabular-nums"><Money value={r.netCost} /></span></div>
+              </div>
+            </>
+          )}
+
+          {r.rateIndicative && (
+            <p className="px-6 pt-3 text-2xs text-muted-foreground leading-snug">
+              Indicative — savings use a conservative {commercial ? '€0.24' : '€0.35'}/kWh rate. Every estimate is confirmed off a real bill at the proposal stage.
             </p>
-          </div>
-
-          <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
-            <KeyFact label="System" value={`${r.systemSizeKw} kWp`} sub={`${r.panels} panels${battery ? ' + batt' : ''}`} />
-            <KeyFact label="Net cost" valueEl={<Money value={r.netCost} />} sub="after grant" />
-            <KeyFact label="Payback" value={`${r.paybackYears} yrs`} sub="then it's free" />
-          </div>
-
-          <div className="px-6 py-4 border-b border-border space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">System installed</span><span className="tabular-nums"><Money value={r.grossCost} /></span></div>
-            {battery && <div className="flex justify-between"><span className="text-muted-foreground">Home battery</span><span className="tabular-nums">{eur(r.batteryCost)}</span></div>}
-            <div className="flex justify-between text-doc-deposit"><span>{grantLabel}</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
-            <div className="flex justify-between font-semibold border-t border-border pt-1.5"><span>Your net cost</span><span className="tabular-nums"><Money value={r.netCost} /></span></div>
-          </div>
+          )}
 
           <div className="px-6 pt-4">
             <div className="flex items-center justify-between mb-1">

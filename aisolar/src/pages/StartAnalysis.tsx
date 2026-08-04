@@ -132,7 +132,7 @@ export default function StartAnalysis() {
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
   const estimate = bill
-    ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh, propertyType })
+    ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh, propertyType, retailRate: bill.unitRate })
     : null;
 
   const nightPct = bill?.dayUsageKwh && bill?.nightUsageKwh
