@@ -220,6 +220,10 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
     { field: 'NC701 signature', page: 3, x: 100, y: 266, size: 11, bold: true, maxW: 250 },
     { field: 'NC701 sig date', page: 3, x: 75, y: 240, size: 11, bold: true, maxW: 120 },
+    // The three OWNER declaration checkboxes (top box). 4th confirm below is ESB's.
+    { field: 'NC701 decl 1', page: 3, x: 43, y: 524, size: 11, bold: true },
+    { field: 'NC701 decl 2', page: 3, x: 43, y: 479, size: 11, bold: true },
+    { field: 'NC701 decl 3', page: 3, x: 43, y: 460, size: 11, bold: true },
   ],
   NC8: [], NC5: [],
 };
@@ -376,7 +380,11 @@ function assertFormIntegrity(form: EsbForm, bytes: ArrayBuffer, doc: PDFDocument
 }
 
 /** Official form(s) + typed data appendix → returns a Blob for download. */
-export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob> {
+/** opts.ownerConfirmed = the owner has confirmed the NC7-01 declarations at
+ *  submission (connected & operational / no changes / accurate). Only then do
+ *  the three owner declaration boxes tick — a preview leaves them blank. The
+ *  4th confirm on that page (ESB Networks Witness Test) is ESB's, never ours. */
+export async function fillEsbForm(lead: DummyLead, form: EsbForm, opts: { ownerConfirmed?: boolean } = {}): Promise<Blob> {
   const [first, ...rest] = FORM_PARTS[form];
   const bytes = await fetch(first).then(r => r.arrayBuffer());
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
@@ -517,6 +525,12 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         'NC701 inst address': cc.registeredAddress || '',
         'NC701 signature': base['Installer signature'] ?? '',
         'NC701 sig date': base['Signature date'] ?? '',
+        // The three OWNER declarations (connected & operational / no changes /
+        // accurate) — ticked only when the owner confirms at submission. The
+        // 4th confirm (ESB Networks Witness Test) is ESB's, left blank.
+        'NC701 decl 1': opts.ownerConfirmed ? 'X' : '',
+        'NC701 decl 2': opts.ownerConfirmed ? 'X' : '',
+        'NC701 decl 3': opts.ownerConfirmed ? 'X' : '',
       });
     }
     const pages = doc.getPages();
@@ -583,8 +597,8 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
   return new Blob([out], { type: 'application/pdf' });
 }
 
-export async function downloadEsbForm(lead: DummyLead, form: EsbForm) {
-  const blob = await fillEsbForm(lead, form);
+export async function downloadEsbForm(lead: DummyLead, form: EsbForm, opts: { ownerConfirmed?: boolean } = {}) {
+  const blob = await fillEsbForm(lead, form, opts);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${form}-${lead.name.replace(/\s+/g, '-')}-prepared.pdf`;

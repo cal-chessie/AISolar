@@ -156,6 +156,9 @@ const NC7 = [
   { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
   { field: 'NC701 signature', page: 3, x: 100, y: 266, size: 11, bold: true, maxW: 250 },
   { field: 'NC701 sig date', page: 3, x: 75, y: 240, size: 11, bold: true, maxW: 120 },
+  { field: 'NC701 decl 1', page: 3, x: 43, y: 524, size: 11, bold: true },
+  { field: 'NC701 decl 2', page: 3, x: 43, y: 479, size: 11, bold: true },
+  { field: 'NC701 decl 3', page: 3, x: 43, y: 460, size: 11, bold: true },
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
@@ -200,6 +203,9 @@ SAMPLE['NC701 inst email'] = 'OFFICE@AISOLAR.IE';
 SAMPLE['NC701 inst address'] = 'UNIT 4, CITYWEST BUSINESS CAMPUS, DUBLIN 24, D24 XYZ1';
 SAMPLE['NC701 signature'] = 'LIAM MURPHY';
 SAMPLE['NC701 sig date'] = '04/08/2026';
+SAMPLE['NC701 decl 1'] = 'X';
+SAMPLE['NC701 decl 2'] = 'X';
+SAMPLE['NC701 decl 3'] = 'X';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';

@@ -140,6 +140,10 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
     : d), [packBase, uploads]);
   const { esbForm } = decideCompliance(lead);
   const [viewing, setViewing] = useState<PackDoc | null>(null);
+  // NC7-01 carries three OWNER declarations (connected & operational / no
+  // changes / accurate) — the authorised signatory confirms them at submission.
+  // Off by default; the boxes stay blank on the form until it's ticked.
+  const [ownerDeclared, setOwnerDeclared] = useState(false);
   const readyCount = pack.filter(d => ['received', 'complete', 'sent'].includes(d.status)).length;
   const allReady = pack.every(d => ['received', 'complete', 'sent'].includes(d.status));
 
@@ -302,8 +306,20 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
                 <div className="rounded-control border border-border p-4">
                   {esbForm === 'NC7' ? <Nc7Template lead={lead} /> : <Nc6Template lead={lead} />}
                 </div>
+                {esbForm === 'NC7' && (
+                  <button type="button" onClick={() => setOwnerDeclared(v => !v)}
+                    className={`w-full flex items-start gap-2.5 rounded-control border p-2.5 text-left text-xs transition-colors ${ownerDeclared ? 'border-doc-deposit/40 bg-doc-deposit/10' : 'border-border hover:bg-muted/50'}`}>
+                    {ownerDeclared
+                      ? <CheckCircle2 className="size-4 text-doc-deposit shrink-0 mt-0.5" />
+                      : <span className="size-4 rounded-full border border-muted-foreground/40 shrink-0 mt-0.5" />}
+                    <span>
+                      <span className={`font-semibold block ${ownerDeclared ? 'text-doc-deposit' : ''}`}>Owner declaration — NC7-01 confirmation cert</span>
+                      <span className="text-muted-foreground">I confirm, as the authorised signatory, that the installation is connected &amp; operational, unchanged from the Connection Agreement, and the information is accurate. Ticks the three owner boxes on the NC7-01. The ESB Networks Witness Test box stays for ESB.</span>
+                    </span>
+                  </button>
+                )}
                 <Button size="sm" className="w-full font-semibold"
-                  onClick={() => downloadEsbForm(lead, esbForm).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
+                  onClick={() => downloadEsbForm(lead, esbForm, { ownerConfirmed: ownerDeclared }).then(() => toast.success(`${esbForm} downloaded — official form + typed data page`, { description: 'Every captured field, from the bill read to the design, on one attached sheet.' }))}>
                   Download {esbForm === 'NC7' ? 'the full NC7 bundle (4 forms + data)' : 'the NC6 + data sheet'} <ArrowRight className="size-4 ml-1" />
                 </Button>
                 <details className="group">
