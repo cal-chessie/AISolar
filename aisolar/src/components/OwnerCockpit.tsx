@@ -111,6 +111,14 @@ export default function OwnerCockpit() {
     else setSidebarOpen(false);
   }, [isMobile]);
 
+  // Deep-link a section via ?view= (e.g. the coach sends the owner to Settings
+  // to fix a company-compliance blocker). Runs on mount + when the param changes.
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('view');
+    const valid: SidebarView[] = ['financials', 'overview', 'calendar', 'consultants', 'installers', 'clients', 'feedback', 'products', 'settings', 'agents', 'analytics', 'seai', 'estimates'];
+    if (v && (valid as string[]).includes(v)) setActiveView(v as SidebarView);
+  }, []);
+
   // Escape closes the mobile drawer
   useEffect(() => {
     if (!sidebarOpen || !isMobile) return;
@@ -369,9 +377,13 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
   // cockpit and the coach can never tell different stories.
   const draftsWaiting = leads.filter((l: DummyLead) => l.proposal?.status === 'draft');
   const moveRank = { now: 0, today: 1, soon: 2 } as const;
+  const seenMove = new Set<string>();
   const topMoves = leads
     .map((l: DummyLead) => nextMove(l, 'owner'))
     .filter(Boolean)
+    // A company-detail blocker (RECI in Settings) is the SAME move on every
+    // affected job — show it once, not once per lead.
+    .filter((m: any) => { if (seenMove.has(m.action)) return false; seenMove.add(m.action); return true; })
     .sort((a: any, b: any) => moveRank[a.severity] - moveRank[b.severity])
     .slice(0, 3);
   const gates: Array<{ icon: any; title: string; desc: string; cta: string; onClick: () => void }> = [
@@ -382,7 +394,9 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
       title: m.action,
       desc: m.reason,
       cta: 'Open',
-      onClick: () => navigate(m.route),
+      // Settings is an internal view, not a URL — open the tab directly so a
+      // company-compliance blocker lands where it's actually fixed.
+      onClick: () => m.route.includes('view=settings') ? setActiveView('settings') : navigate(m.route),
     })),
   ].slice(0, 4);
 
@@ -425,7 +439,9 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
           <div className="text-xs text-muted-foreground mt-0.5">{eur(data.owner.depositsHeld)} deposits held · {eur(data.owner.contractedBacklog)} signed to collect</div>
         </button>
 
-        <button onClick={() => setExpandedStage(null)} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
+        {/* → Analytics (the funnel + pipeline breakdown). Was a no-op
+            (setExpandedStage(null)) — looked clickable, did nothing (Cal 4 Aug). */}
+        <button onClick={() => setActiveView('analytics')} className="text-left rounded-panel bg-card shadow-card p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <span className="label-micro">Pipeline</span>
             <Activity className="size-3.5 text-muted-foreground" />

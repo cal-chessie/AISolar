@@ -93,15 +93,30 @@ export function nextMove(lead: DummyLead, role: CoachPOV): Move | null {
   const base = { leadId: lead.id, leadName: lead.name };
 
   // 1 · A blocked NC pack outranks everything — the paper trail is the business.
+  //     But WHERE it's fixed depends on the blocker: a company detail (RECI no.,
+  //     address, email) is set ONCE in owner Settings and blocks every job — so
+  //     it routes to Settings, not to this one job's commissioning tab (Cal, 4
+  //     Aug: the click-through must land where the fix actually lives).
   if (s.packBlockers.length > 0 && role !== 'customer') {
-    const item = s.packBlockers[0];
+    const settingsItems = s.packBlockers.filter(b => /settings/i.test(b));
+    const jobItems = s.packBlockers.filter(b => !/settings/i.test(b));
+
+    if (jobItems.length === 0 && settingsItems.length) {
+      const label = settingsItems[0].replace(/\s*\(owner\s*->\s*settings\)/i, '').trim();
+      return {
+        ...base, severity: 'now', route: '/owner?view=settings',
+        action: `Set your ${label.toLowerCase()} in Settings — it's missing, and it blocks the NC6 on every job.`,
+        reason: 'A company compliance detail is entered once and reused on every pack — nothing files until it\'s in.',
+      };
+    }
+    const item = jobItems[0] ?? s.packBlockers[0];
     return {
       // Straight to the commissioning gate — the tab where that field lives.
       ...base, severity: 'now', route: `/job/${lead.id}?tab=commissioning`,
       action: role === 'installer'
         ? `Close out ${first(lead)}'s NC6 gate — ${item.toLowerCase()} is still open.`
-        : `${first(lead)}'s NC6 pack is blocked: ${item.toLowerCase()}.`,
-      reason: `${s.packBlockers.length} item${s.packBlockers.length === 1 ? '' : 's'} still block a filable NC6 — nothing submits until they're closed.`,
+        : `${first(lead)}'s NC6 pack: ${item.toLowerCase()} still open.`,
+      reason: `${jobItems.length} job item${jobItems.length === 1 ? ' still blocks' : 's still block'} a filable NC6 — nothing submits until it's closed.`,
     };
   }
 
@@ -253,6 +268,11 @@ export function aiReports(leads: DummyLead[], role: CoachPOV): AIReport[] {
     }
   }
 
+  // Dedupe identical lines — a company-detail blocker (RECI, address) is the
+  // same message on every affected job; show it ONCE, not per lead.
+  const seen = new Set<string>();
+  const unique = reports.filter(r => { if (seen.has(r.text)) return false; seen.add(r.text); return true; });
+
   const rank = { now: 0, today: 1, soon: 2, info: 3 };
-  return reports.sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 12);
+  return unique.sort((a, b) => rank[a.severity] - rank[b.severity]).slice(0, 12);
 }
