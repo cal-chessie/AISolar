@@ -146,6 +146,24 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },     // was 505; comb x=96
     { field: 'Site address 1', page: 0, x: 100, y: 460, size: 12, bold: true, maxW: 440 },     // was 452; comb x=38 w=177
     { field: 'Site address 2', page: 0, x: 100, y: 443, size: 12, bold: true, maxW: 440 },     // was 427 — 15pt out
+    // § 4 INSTALLER / CONSULTANT (probed 4 Aug): header y=382; the name comb row
+    // sits under it (~y=360); Landline y=330 x39, Mobile y=330 x219, Email y=309,
+    // REC Safe Electric ID No y=291 x39 (ends 126). Same source as the NC6 §3
+    // block — the data was always there; the NC7 map just never carried it.
+    { field: 'Installer company', page: 0, x: 100, y: 360, size: 12, bold: true, comb: 13 },
+    { field: 'Installer landline', page: 0, x: 78, y: 330, size: 12, bold: true, comb: 11.4 },
+    { field: 'Installer mobile', page: 0, x: 278, y: 330, size: 12, bold: true, comb: 11.4 },
+    { field: 'Installer email', page: 0, x: 65, y: 309, size: 12, bold: true, maxW: 460 },
+    { field: 'Installer RECI no.', page: 0, x: 132, y: 291, size: 12, bold: true, comb: 13 },
+    // § 5 SITE MINI-GENERATION DATA: MPRN (11 boxes after the label, before "or
+    // Job ID" x=302), phase tick (Single label ends x504 / Three ends x539), and
+    // the Total Installed Inverter Capacity value (the AC rating we hold). MIC/MEC
+    // stay BLANK — those are the connection-agreement figures we don't hold
+    // (truth-pass: never guess a regulatory capacity).
+    { field: 'MPRN', page: 0, x: 172, y: 210, size: 13, bold: true, comb: 11.7 },
+    { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
+    { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
+    { field: 'NC7 phase three', page: 0, x: 545, y: 144, size: 12, bold: true },
   ],
   NC8: [], NC5: [],
 };
@@ -369,6 +387,16 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         '5A single tick': threePhaseT ? '' : 'X',
         '5A three tick': threePhaseT ? 'X' : '',
         ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map(n => [`Protection confirm ${n}`, attested ? 'Y' : ''])),
+      });
+    }
+    if (form === 'NC7') {
+      // §5 phase tick + Total Installed Inverter Capacity (the AC rating we hold,
+      // in kVA ≈ kW at unity PF). §4 installer block + MPRN resolve from `base`.
+      const dc = decideCompliance(lead);
+      Object.assign(data, {
+        'NC7 phase single': dc.threePhase ? '' : 'X',
+        'NC7 phase three': dc.threePhase ? 'X' : '',
+        'Total installed inverter cap': dc.tiic > 0 ? String(dc.tiic) : '',
       });
     }
     const pages = doc.getPages();

@@ -107,7 +107,18 @@ const NC7 = [
   { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },
   { field: 'Site address 1', page: 0, x: 100, y: 460, size: 12, bold: true, maxW: 440 },
   { field: 'Site address 2', page: 0, x: 100, y: 443, size: 12, bold: true, maxW: 440 },
+  // § 4 installer + § 5 site data (probed 4 Aug)
+  { field: 'Installer company', page: 0, x: 100, y: 360, size: 12, bold: true, comb: 13 },
+  { field: 'Installer landline', page: 0, x: 78, y: 330, size: 12, bold: true, comb: 11.4 },
+  { field: 'Installer mobile', page: 0, x: 278, y: 330, size: 12, bold: true, comb: 11.4 },
+  { field: 'Installer email', page: 0, x: 65, y: 309, size: 12, bold: true, maxW: 460 },
+  { field: 'Installer RECI no.', page: 0, x: 132, y: 291, size: 12, bold: true, comb: 13 },
+  { field: 'MPRN', page: 0, x: 172, y: 210, size: 13, bold: true, comb: 11.7 },
+  { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
+  { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
 ];
+SAMPLE['Total installed inverter cap'] = '20';
+SAMPLE['NC7 phase single'] = 'X';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';
@@ -166,7 +177,9 @@ for (const pageNo of PAGES) {
     // NC7 page 1 is a COMB form: rows of empty character boxes drawn as
     // "I I I I". Landing on those is the POINT — they are the field, not a
     // collision. Only real ESB wording counts as a clash.
-    const isComb = (s) => /^[I|i\s]+$/.test(s);
+    // Comb cells ("I I I") AND empty checkbox glyphs (□ ☐ ▢) are FORM boxes —
+    // landing a value/tick in them is the point, not a collision with ESB text.
+    const isComb = (s) => /^[I|i\s□☐▢❑❏]+$/.test(s);
     const clash = items.find(i =>
       i !== mine &&
       !isComb(i.s) &&
