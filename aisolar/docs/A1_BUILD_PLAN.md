@@ -87,23 +87,25 @@ A1 bolts tenant-creation onto the far end and swaps the words.
 5. **Re-point the other entry points** at `<OnboardingFlow>` with their own steps
    (widget = enquiry copy [exists, refit] · customer first-open · team invite).
 
-## Open decisions — FOR THE DISCUSSION (before any build)
-1. **Tenant model:** `user_roles.tenant_id` (one tenant per user, simplest) vs a
-   `tenant_members(user_id, tenant_id, role)` join (a user in multiple tenants —
-   needed for the National merge: RI + SI under one owner login). The National
-   merge item wants multi-tenant-per-user → lean to the join. Confirm.
-2. **First-admin:** auto-grant admin+consultant+installer to the tenant creator
-   (kills the manual bootstrap SQL) — safe because they created the tenant. OK?
-3. **Trial billing:** card captured at signup (Stripe 7-day) vs trial-with-no-card
-   (lower friction, card at go-live). Spec says card captured; confirm the friction
-   trade.
-4. **His TS functions:** build fully now, reconcile if/when they arrive? (Your
-   call was build-without.)
-5. **GATE 0:** the 3 leaked Supabase keys + Maps key must be rotated + history
-   purged before ANY live signup. A1 can be BUILT + tested now; going live is
-   gated on GATE 0. Just flag it stays true.
-6. **OAuth:** Google + email at launch, or email-only for the cohort (Google
-   needs OAuth app config)?
+## Decisions — LOCKED (Cal, 4 Aug)
+1. ✅ **Tenant model:** `user_roles.tenant_id` — **one tenant per user, simplest.**
+   (Not the join. National merge is a later problem; keep it simple for the cohort.)
+2. ✅ **First-admin = whoever enters the card.** The person who puts their card
+   details in on signup gets `admin` on the new tenant (they're the billing owner).
+   Kills the manual bootstrap SQL. Team members added later get their role, not admin.
+3. ✅ **Trial billing:** card captured at signup (Stripe 7-day trial).
+4. ✅ **His TS functions:** build without; reconcile if they arrive.
+5. 📌 **SEAT BILLING (Cal — note now, don't defer the design):** when the admin adds
+   an installer or consultant on a **different email**, that's **another billable
+   seat** on the Stripe subscription. Same email (the owner wearing multiple hats) =
+   no extra seat. Wire the subscription as **per-seat** so this holds from day one;
+   the enforcement/proration polish can follow, but the model is seat-based now.
+
+## Still open
+- **GATE 0:** the 3 leaked Supabase keys + Maps key must be rotated + history purged
+  before ANY live signup. A1 can be BUILT + tested now; **going live is gated on GATE 0.**
+- **OAuth:** Google + email at launch, or email-only for the cohort (Google needs an
+  OAuth app configured)? — gates the signup UI slice, not the DB foundation.
 
 ## Done-means
 A stranger hits the installer signup → answers installer-copy chips → a tenant is
