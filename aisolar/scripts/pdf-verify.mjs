@@ -128,6 +128,25 @@ const NC7 = [
   { field: 'NC7 p2 signatory name', page: 1, x: 368, y: 576, size: 11, bold: true, maxW: 190 },
   { field: 'NC7 p2 position', page: 1, x: 96, y: 561, size: 11, bold: true, maxW: 300 },
   { field: 'NC7 p2 date', page: 1, x: 430, y: 561, size: 11, bold: true, maxW: 110 },
+  { field: 'NC701 customer', page: 2, x: 245, y: 634, size: 11, bold: true, maxW: 300 },
+  { field: 'NC701 mprn', page: 2, x: 82, y: 615, size: 12, bold: true, comb: 11.7 },
+  { field: 'NC701 eircode', page: 2, x: 432, y: 615, size: 12, bold: true, comb: 9.6 },
+  { field: 'NC701 manufacturer', page: 2, x: 162, y: 574, size: 11, bold: true, comb: 11 },
+  { field: 'NC701 make', page: 2, x: 430, y: 574, size: 11, bold: true, comb: 11 },
+  { field: 'NC701 model', page: 2, x: 96, y: 555, size: 11, bold: true, comb: 11 },
+  { field: 'NC701 single tick', page: 2, x: 491, y: 555, size: 12, bold: true },
+  { field: 'NC701 cert ref', page: 2, x: 42, y: 518, size: 11, bold: true, comb: 11 },
+  { field: 'NC701 total kva', page: 2, x: 190, y: 488, size: 11, bold: true, maxW: 120 },
+  { field: 'NC701 confirm 1', page: 2, x: 448, y: 390, size: 12, bold: true },
+  { field: 'NC701 confirm 2', page: 2, x: 448, y: 362, size: 12, bold: true },
+  { field: 'NC701 confirm 3', page: 2, x: 448, y: 319, size: 12, bold: true },
+  { field: 'NC701 confirm 4', page: 2, x: 448, y: 293, size: 12, bold: true },
+  { field: 'NC701 confirm 5', page: 2, x: 448, y: 250, size: 12, bold: true },
+  { field: 'NC701 confirm 6', page: 2, x: 448, y: 223, size: 12, bold: true },
+  { field: 'NC701 confirm 7', page: 2, x: 448, y: 177, size: 12, bold: true },
+  { field: 'NC701 confirm 8', page: 2, x: 448, y: 147, size: 12, bold: true },
+  { field: 'NC701 confirm 9', page: 2, x: 448, y: 121, size: 12, bold: true },
+  { field: 'NC701 confirm 10', page: 2, x: 448, y: 101, size: 12, bold: true },
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
@@ -143,6 +162,26 @@ SAMPLE['NC7 p2 signed'] = 'CAL CHESTERS';
 SAMPLE['NC7 p2 signatory name'] = 'CAL CHESTERS';
 SAMPLE['NC7 p2 position'] = 'DIRECTOR';
 SAMPLE['NC7 p2 date'] = '04/08/2026';
+SAMPLE['NC701 customer'] = 'JAMES WILSON';
+SAMPLE['NC701 mprn'] = '10000047514';
+SAMPLE['NC701 eircode'] = 'D16 X4F7';
+SAMPLE['NC701 manufacturer'] = 'SOLAX';
+SAMPLE['NC701 make'] = 'SOLAX';
+SAMPLE['NC701 model'] = 'X1-HYBRID-5.0';
+SAMPLE['NC701 single tick'] = 'X';
+SAMPLE['NC701 cert ref'] = 'TUV-2318-EN50549';
+SAMPLE['NC701 total kva'] = '20';
+SAMPLE['NC701 confirm 1'] = 'Y';
+SAMPLE['NC701 confirm 2'] = 'Y';
+SAMPLE['NC701 confirm 3'] = 'Y';
+SAMPLE['NC701 confirm 4'] = 'Y';
+SAMPLE['NC701 confirm 5'] = 'Y';
+SAMPLE['NC701 confirm 6'] = 'Y';
+SAMPLE['NC701 confirm 7'] = 'Y';
+SAMPLE['NC701 confirm 8'] = 'Y';
+SAMPLE['NC701 confirm 9'] = 'Y';
+// Vector Shift ("Not Allowed") is never auto-confirmed — see pdfFill.ts note.
+SAMPLE['NC701 confirm 10'] = '';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';
@@ -151,10 +190,15 @@ Object.assign(SAMPLE, SAMPLE_EXTRA);
 
 const FORM = process.argv[2] === 'nc7' ? 'nc7' : 'nc6';
 const MAP = FORM === 'nc7' ? NC7 : NC6;
-const PAGES = FORM === 'nc7' ? [1, 2] : [1, 2, 3];
+// nc7 bundles the main form (2p) + the nc7-01 confirmation cert (3p) → pages 3-5
+const PAGES = FORM === 'nc7' ? [1, 2, 3, 4, 5] : [1, 2, 3];
 
-const src = fs.readFileSync(`public/forms/esbn-form-${FORM}.pdf`);
-const doc = await PDFDocument.load(src, { ignoreEncryption: true });
+const doc = await PDFDocument.load(fs.readFileSync(`public/forms/esbn-form-${FORM}.pdf`), { ignoreEncryption: true });
+if (FORM === 'nc7') {
+  const cert = await PDFDocument.load(fs.readFileSync('public/forms/esbn-nc7-01-installation-confirmation.pdf'), { ignoreEncryption: true });
+  const copied = await doc.copyPages(cert, cert.getPageIndices());
+  copied.forEach(p => doc.addPage(p));
+}
 const font = await doc.embedFont(StandardFonts.Helvetica);
 const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 const pages = doc.getPages();

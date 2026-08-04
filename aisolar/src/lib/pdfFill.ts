@@ -184,6 +184,29 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'NC7 p2 signatory name', page: 1, x: 368, y: 576, size: 11, bold: true, maxW: 190 },
     { field: 'NC7 p2 position', page: 1, x: 96, y: 561, size: 11, bold: true, maxW: 300 },
     { field: 'NC7 p2 date', page: 1, x: 430, y: 561, size: 11, bold: true, maxW: 110 },
+    // ── NC7-01 CONFIRMATION CERT page 1 (bundle page index 2, probed 4 Aug) ──
+    { field: 'NC701 customer', page: 2, x: 245, y: 634, size: 11, bold: true, maxW: 300 },
+    { field: 'NC701 mprn', page: 2, x: 82, y: 615, size: 12, bold: true, comb: 11.7 },
+    { field: 'NC701 eircode', page: 2, x: 432, y: 615, size: 12, bold: true, comb: 9.6 },
+    { field: 'NC701 manufacturer', page: 2, x: 162, y: 574, size: 11, bold: true, comb: 11 },
+    { field: 'NC701 make', page: 2, x: 430, y: 574, size: 11, bold: true, comb: 11 },
+    { field: 'NC701 model', page: 2, x: 96, y: 555, size: 11, bold: true, comb: 11 },
+    { field: 'NC701 single tick', page: 2, x: 491, y: 555, size: 12, bold: true },
+    { field: 'NC701 three tick', page: 2, x: 546, y: 555, size: 12, bold: true },
+    { field: 'NC701 cert ref', page: 2, x: 42, y: 518, size: 11, bold: true, comb: 11 },
+    { field: 'NC701 total kva', page: 2, x: 190, y: 488, size: 11, bold: true, maxW: 120 },
+    // Protection table 'Confirm Setting Applied (Y/N)' — the 10 rows, all-or-
+    // nothing off the installer's commissioning attestation (same gate as NC6).
+    { field: 'NC701 confirm 1', page: 2, x: 448, y: 390, size: 12, bold: true },
+    { field: 'NC701 confirm 2', page: 2, x: 448, y: 362, size: 12, bold: true },
+    { field: 'NC701 confirm 3', page: 2, x: 448, y: 319, size: 12, bold: true },
+    { field: 'NC701 confirm 4', page: 2, x: 448, y: 293, size: 12, bold: true },
+    { field: 'NC701 confirm 5', page: 2, x: 448, y: 250, size: 12, bold: true },
+    { field: 'NC701 confirm 6', page: 2, x: 448, y: 223, size: 12, bold: true },
+    { field: 'NC701 confirm 7', page: 2, x: 448, y: 177, size: 12, bold: true },
+    { field: 'NC701 confirm 8', page: 2, x: 448, y: 147, size: 12, bold: true },
+    { field: 'NC701 confirm 9', page: 2, x: 448, y: 121, size: 12, bold: true },
+    { field: 'NC701 confirm 10', page: 2, x: 448, y: 101, size: 12, bold: true },
   ],
   NC8: [], NC5: [],
 };
@@ -441,6 +464,34 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         'NC7 p2 signatory name': cc.authorisedSignatory || '( Owner -> Settings -> authorised signatory )',
         'NC7 p2 position': cc.signatoryPosition || '',
         'NC7 p2 date': cc.authorisedSignatory ? new Date().toLocaleDateString('en-IE') : '',
+        // NC7-01 header — the confirmation cert repeats the customer + as-fitted
+        // generator identity; same sources as the main form + gate.
+        'NC701 customer': base['Customer name'] ?? '',
+        'NC701 mprn': base['MPRN'] ?? '',
+        'NC701 eircode': base['Eircode'] ?? '',
+        'NC701 manufacturer': makerN,
+        'NC701 make': makerN,
+        'NC701 model': gateN?.fittedModel || lead.proposal?.inverter_model || '',
+        'NC701 single tick': dc.threePhase ? '' : 'X',
+        'NC701 three tick': dc.threePhase ? 'X' : '',
+        'NC701 cert ref': gateN?.typeTestCertRef || '',
+        'NC701 total kva': dc.tiic > 0 ? String(dc.tiic) : '',
+        // every protection row confirmed Y only when the crew attested the
+        // EN 50549-1 settings at the gate — never pre-ticked.
+        'NC701 confirm 1': attestedN ? 'Y' : '',
+        'NC701 confirm 2': attestedN ? 'Y' : '',
+        'NC701 confirm 3': attestedN ? 'Y' : '',
+        'NC701 confirm 4': attestedN ? 'Y' : '',
+        'NC701 confirm 5': attestedN ? 'Y' : '',
+        'NC701 confirm 6': attestedN ? 'Y' : '',
+        'NC701 confirm 7': attestedN ? 'Y' : '',
+        'NC701 confirm 8': attestedN ? 'Y' : '',
+        'NC701 confirm 9': attestedN ? 'Y' : '',
+        // Vector Shift row is "Not Allowed" under EN 50549-1 — the function must
+        // be DISABLED, so there is no setting to apply. We never auto-mark this
+        // "Setting Applied = Y" (that would read as a prohibited trip being
+        // enabled); the installer completes this row by hand if ESB require it.
+        'NC701 confirm 10': '',
       });
     }
     const pages = doc.getPages();
