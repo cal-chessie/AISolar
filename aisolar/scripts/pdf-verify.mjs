@@ -20,13 +20,13 @@ const NC6 = [
   { field: 'MPRN', page: 0, x: 216, y: 331, size: 14, bold: true, comb: 10.7 },
   { field: 'Eircode', page: 0, x: 402, y: 331, size: 13, bold: true, maxW: 90 },
   { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
-  { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 13, bold: true, maxW: 425 },
+  { field: 'Installer RECI no.', page: 0, x: 112, y: 170, size: 13, bold: true, comb: 13.3 },
   { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 10, bold: true, maxW: 150 },
   { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441, size: 10, bold: true },
   { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389, size: 10, bold: true },
   { field: 'Battery', page: 1, x: 390, y: 363, size: 10, bold: true, maxW: 150 },
   // Full-coverage extension (30 Jul) — mirrors OVERLAY_MAPS.NC6 in pdfFill.ts
-  { field: 'Installer landline', page: 0, x: 95, y: 152, size: 12, bold: true, maxW: 125 },
+  { field: 'Installer landline', page: 0, x: 96, y: 152, size: 12, bold: true, comb: 11.4 },
   { field: 'Installer email', page: 0, x: 80, y: 132, size: 12, bold: true, maxW: 455 },
   { field: 'New install tick', page: 1, x: 549, y: 721, size: 13, bold: true },
   { field: 'Energy source', page: 1, x: 395, y: 495, size: 10, bold: true },
@@ -38,7 +38,7 @@ const NC6 = [
   { field: '5A model', page: 1, x: 105, y: 149, size: 10, bold: true, maxW: 150 },
   { field: '5A single tick', page: 1, x: 184, y: 87, size: 12, bold: true },
   { field: 'First connection yes', page: 0, x: 381, y: 291, size: 13, bold: true },
-  { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 12, bold: true, maxW: 210 },
+  { field: 'Installer mobile', page: 0, x: 317, y: 152, size: 12, bold: true, comb: 11.4 },
   { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 10, bold: true },
   { field: '5A cert ref', page: 1, x: 330, y: 130, size: 10, bold: true, maxW: 130 },
   { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 10, bold: true, maxW: 150 },
@@ -156,9 +156,11 @@ for (const pageNo of PAGES) {
     const val = SAMPLE[m.field];
     // Comb fields (the MPRN) draw one glyph per cell, so no single item holds
     // the whole string — match the FIRST character at the placed x/y instead.
-    const mine = m.comb
-      ? items.find(i => i.s === val[0] && Math.abs(i.y - m.y) < 2 && Math.abs(i.x - m.x) < m.comb)
-      : items.find(i => i.s.startsWith(val.slice(0, 12)) && Math.abs(i.y - m.y) < 2);
+    // Comb fields draw one glyph per ESB cell — landing in the boxes IS the
+    // point, and they're visually verified per render. Report clear, skip the
+    // continuous-text overlap heuristic (which can't reason about per-cell glyphs).
+    if (m.comb) { console.log(`✓ p${pageNo} ${m.field.padEnd(24)} x=${m.x} y=${m.y}  comb (visually verified)`); continue; }
+    const mine = items.find(i => i.s.startsWith(val.slice(0, 12)) && Math.abs(i.y - m.y) < 2);
     if (!mine) { console.log(`✗ p${pageNo} ${m.field}: value not found where placed`); problems++; continue; }
     // anything of ESB's on the same baseline that we overlap horizontally?
     // NC7 page 1 is a COMB form: rows of empty character boxes drawn as

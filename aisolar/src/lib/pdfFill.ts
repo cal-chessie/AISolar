@@ -70,7 +70,7 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Eircode', page: 0, x: 402, y: 331, size: 13, bold: true, maxW: 90 },
     // § 3 Installer/Consultant details — same block offset as § 1 (header y=217)
     { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
-    { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 13, bold: true, maxW: 425 },
+    { field: 'Installer RECI no.', page: 0, x: 112, y: 170, size: 13, bold: true, comb: 13.3 },
     // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
     // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
     // from x≈390. Row baselines probed off their labels.
@@ -89,8 +89,8 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'First connection yes', page: 0, x: 381, y: 291, size: 13, bold: true },
     { field: 'First connection no', page: 0, x: 421, y: 291, size: 13, bold: true },
     // § 3 correspondence (page 1): Landline x40, Mobile x235, Email x40 (y131)
-    { field: 'Installer landline', page: 0, x: 95, y: 152, size: 12, bold: true, maxW: 125 },
-    { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 12, bold: true, maxW: 210 },
+    { field: 'Installer landline', page: 0, x: 96, y: 152, size: 12, bold: true, comb: 11.4 },
+    { field: 'Installer mobile', page: 0, x: 317, y: 152, size: 12, bold: true, comb: 11.4 },
     { field: 'Installer email', page: 0, x: 80, y: 132, size: 12, bold: true, maxW: 455 },
     // § 4 (page 2): route boxes at right margin x≈552 — NC6 here is always the
     // NEW-microgen notification (option A). B/C are legacy — never ticked.
