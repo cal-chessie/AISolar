@@ -141,9 +141,12 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
 - ⭐ **A1 · Auth + tenant onboarding** — signup → tenant + role + first-admin bootstrap; the Flowith flow is
   its face (ONBOARDING_SPEC). **Dependency: Cal's own auth/onboarding TS functions — flagged in the spec,
   never received. Cal: drop them in RAW, or say "build without".**
-- **Ask home-or-business at the door** (SWEEP9 §9.1 — today it *infers*), then the **§D estimate fork**:
-  domestic = €-saving + payback + grant · commercial = ROI/IRR + NDMG + ex-VAT + ACA. One question decides
-  grant + VAT for the whole job.
+- ✅ **Ask home-or-business at the door + the §D estimate fork** *(Done 4 Aug — verified live)*. The door
+  ASKS now (was inferred). `calculateSystemEstimate` forks on `propertyType`: domestic = €-saving + payback
+  + SEAI grant (unchanged); commercial = ex-VAT + VAT reclaim + NDMG + ACA (100% first-yr allowance × 12.5%)
+  + ROI + IRR (25-yr). Door toggle + preview + estimate step all fork; SolarCalculator numbers are
+  commercial-correct (NDMG). *(Open: the full ROI/ACA/IRR re-skin of the SolarCalculator/widget rides with
+  2E's widget.)*
 - **L2 · Numbers-through-spine** — the proposal drafter STORES `computeQuote()` +
   `selfConsumptionFromOccupancy()` output; kill the flat `0.70`. *(CALS_GROWTH_DEV quote-drift findings
   ride here.)*
