@@ -8,9 +8,11 @@
  * only for the customer (RLS: token access sees status, staff advance stages);
  * customer-driven steps are guidance, confirmed back through their installer.
  */
-import { Award, ExternalLink, AlertTriangle, CheckCircle2, FileText, Clock } from 'lucide-react';
+import { Award, ExternalLink, AlertTriangle, CheckCircle2, FileText, Clock, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { DummyLead } from '@/lib/dummyData';
 import { useGrant, grantProgress, offerClock, type SeaiGrantStatus } from '@/lib/seaiGrant';
+import { downloadSeaiDocs } from '@/lib/seaiDocs';
 import { getCompanyCompliance } from '@/lib/companyCompliance';
 import { getTenantBrand } from '@/lib/tenantBrand';
 import { eur, calculateSEAI, seaiPropertyType } from '@/lib/seaiPipeline';
@@ -112,7 +114,9 @@ export default function CustomerGrantCard({ lead }: { lead: DummyLead }) {
           <p className="font-semibold flex items-center gap-1.5"><FileText className="size-3.5 text-tech" /> For your BER assessor</p>
           <p className="mt-0.5 text-muted-foreground leading-snug">Forward these to the registered BER assessor you book — they need them for your post-works BER.</p>
           {rec.docsSharedAt
-            ? <p className="mt-1.5 text-2xs text-doc-deposit flex items-center gap-1"><CheckCircle2 className="size-3" /> Declaration of Works + data sheets ready in your Documents.</p>
+            ? <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" onClick={() => downloadSeaiDocs(lead)}>
+                <Download className="size-3.5 mr-1" /> Download DoW + data sheets
+              </Button>
             : <p className="mt-1.5 text-2xs text-muted-foreground">Your installer is preparing them now.</p>}
         </div>
       )}

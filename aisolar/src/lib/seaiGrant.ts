@@ -184,9 +184,13 @@ export function reconcileGrantOnInstall(
 ): { advanced?: boolean; risk?: boolean } {
   if (!opts.isDomestic || !opts.gateConfirmed) return {};
   const rec = getGrant(leadId);
-  if (stageOrder(rec.status) >= stageOrder('installed')) return {}; // already there / past
+  if (stageOrder(rec.status) >= stageOrder('docs_shared')) return {}; // already there / past
   if (rec.status === 'offer_received') {
-    advanceGrant(leadId, 'installed', { installedAt: new Date().toISOString() });
+    // Install confirmed → carry straight through to docs_shared: the DoW + data
+    // sheets generate on-demand from the record (seaiDocs.ts), so they're
+    // available to the customer the moment the install lands.
+    const now = new Date().toISOString();
+    advanceGrant(leadId, 'docs_shared', { installedAt: now, docsSharedAt: now });
     return { advanced: true };
   }
   if (rec.status === 'not_started' || rec.status === 'offer_applied') return { risk: true };

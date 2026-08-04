@@ -20,6 +20,7 @@ import {
 } from '@/lib/seaiGrant';
 import { getFieldRecord } from '@/lib/fieldRecord';
 import { calculateSEAI, seaiPropertyType, eur } from '@/lib/seaiPipeline';
+import { downloadSeaiDocs } from '@/lib/seaiDocs';
 
 const ACTOR_STYLE: Record<string, string> = {
   customer: 'bg-doc-proposal/10 text-doc-proposal border-doc-proposal/30',
@@ -52,7 +53,7 @@ export default function SeaiGrantTracker({ lead }: { lead: DummyLead }) {
   const gateConfirmed = !!getFieldRecord(lead.id)?.serials.confirmed;
   useEffect(() => {
     const r = reconcileGrantOnInstall(lead.id, { isDomestic: true, gateConfirmed });
-    if (r.advanced) toast.success('Grant advanced — installed', { description: 'Commissioning gate confirmed. Prepare the DoW + data sheets next.' });
+    if (r.advanced) toast.success('Installed — DoW & data sheets ready', { description: 'Auto-prepared from the record. Share them to the customer for their BER assessor.' });
   }, [lead.id, gateConfirmed]);
   const installBeforeOffer = gateConfirmed && (rec.status === 'not_started' || rec.status === 'offer_applied');
 
@@ -127,6 +128,19 @@ export default function SeaiGrantTracker({ lead }: { lead: DummyLead }) {
         })}
       </ol>
 
+      {/* DoW & data sheets — available once install lands (auto-prepared from
+          the record). Owner can download to review/share; the customer gets
+          them on their portal to forward to the BER assessor. */}
+      {rec.docsSharedAt && (
+        <div className="mt-3 rounded-control border border-border bg-muted/30 p-2.5 flex items-center gap-2 flex-wrap">
+          <ClipboardCheck className="size-4 text-tech shrink-0" />
+          <span className="text-2xs text-muted-foreground">DoW + data sheets ready — shared to the customer for their BER assessor.</span>
+          <Button size="sm" variant="outline" className="ml-auto h-7 text-2xs" onClick={() => downloadSeaiDocs(lead)}>
+            <FileText className="size-3 mr-1" /> Download
+          </Button>
+        </div>
+      )}
+
       {/* The next action — the one thing to do now */}
       {next && rec.status !== 'ineligible' && (
         <NextAction lead={lead} next={next} rec={rec} />
@@ -184,9 +198,10 @@ function NextAction({ lead, next, rec }: { lead: DummyLead; next: GrantStageSpec
       onCommit = () => commit({ installedAt: new Date().toISOString() });
       break;
     case 'docs_shared':
-      // The real generation + portal share lands in the next build step; this
-      // records the milestone. (DoW & data sheets → customer for the BER guys.)
-      onCommit = () => commit({ docsSharedAt: new Date().toISOString() });
+      // Generate the DoW + data-sheet pack and mark it shared to the customer
+      // (for their BER assessor). Auto-advance usually reaches this off the
+      // gate; this is the manual path.
+      onCommit = () => { void downloadSeaiDocs(lead); commit({ docsSharedAt: new Date().toISOString() }); };
       break;
     case 'ber_booked':
       ready = !!f.berAssessor?.trim();
