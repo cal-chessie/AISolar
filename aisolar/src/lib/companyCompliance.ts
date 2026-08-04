@@ -28,6 +28,10 @@ export interface CompanyCompliance {
   companyMobile: string;
   companyEmail: string;
   registeredAddress: string;
+  /** The owner / authorised signatory who signs applications on the customer's
+   *  behalf (NC7 §7). Name + their role in the business. */
+  authorisedSignatory: string;
+  signatoryPosition: string;
 }
 
 const DEFAULTS: CompanyCompliance = {
@@ -39,6 +43,8 @@ const DEFAULTS: CompanyCompliance = {
   companyMobile: '',
   companyEmail: brand.contact?.email ?? '',
   registeredAddress: brand.legal?.registeredAddress ?? '',
+  authorisedSignatory: '',
+  signatoryPosition: '',
 };
 
 export function getCompanyCompliance(): CompanyCompliance {

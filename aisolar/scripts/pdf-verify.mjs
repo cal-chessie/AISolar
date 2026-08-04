@@ -124,7 +124,10 @@ const NC7 = [
   { field: 'NC7 p2 storage kVA', page: 1, x: 350, y: 669, size: 10, bold: true, maxW: 60 },
   { field: 'NC7 p2 settings yes', page: 1, x: 351, y: 648, size: 11, bold: true },
   { field: 'NC7 p2 typetest yes', page: 1, x: 351, y: 622, size: 11, bold: true },
-  { field: 'NC7 p2 applicant name', page: 1, x: 370, y: 576, size: 11, bold: true, maxW: 180 },
+  { field: 'NC7 p2 signed', page: 1, x: 72, y: 576, size: 11, bold: true, maxW: 175 },
+  { field: 'NC7 p2 signatory name', page: 1, x: 368, y: 576, size: 11, bold: true, maxW: 190 },
+  { field: 'NC7 p2 position', page: 1, x: 96, y: 561, size: 11, bold: true, maxW: 300 },
+  { field: 'NC7 p2 date', page: 1, x: 430, y: 561, size: 11, bold: true, maxW: 110 },
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
@@ -136,7 +139,10 @@ SAMPLE['NC7 p2 inverter kVA'] = '20';
 SAMPLE['NC7 p2 storage kVA'] = '13.5';
 SAMPLE['NC7 p2 settings yes'] = 'X';
 SAMPLE['NC7 p2 typetest yes'] = 'X';
-SAMPLE['NC7 p2 applicant name'] = 'JAMES WILSON';
+SAMPLE['NC7 p2 signed'] = 'CAL CHESTERS';
+SAMPLE['NC7 p2 signatory name'] = 'CAL CHESTERS';
+SAMPLE['NC7 p2 position'] = 'DIRECTOR';
+SAMPLE['NC7 p2 date'] = '04/08/2026';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';

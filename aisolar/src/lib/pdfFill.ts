@@ -176,7 +176,14 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'NC7 p2 storage kVA', page: 1, x: 350, y: 669, size: 10, bold: true, maxW: 60 },
     { field: 'NC7 p2 settings yes', page: 1, x: 351, y: 648, size: 11, bold: true },
     { field: 'NC7 p2 typetest yes', page: 1, x: 351, y: 622, size: 11, bold: true },
-    { field: 'NC7 p2 applicant name', page: 1, x: 370, y: 576, size: 11, bold: true, maxW: 180 },
+    // § 7 Signature of Applicant / Authorised Signatory (probed 4 Aug): Signed
+    // x=39, Full Name x=251, Position Held x=39 (y561), Date x=407 (y561). The
+    // OWNER signs on the customer's behalf (Cal) — from Settings (authorised
+    // signatory); the typed name is an eIDAS simple e-signature.
+    { field: 'NC7 p2 signed', page: 1, x: 72, y: 576, size: 11, bold: true, maxW: 175 },
+    { field: 'NC7 p2 signatory name', page: 1, x: 368, y: 576, size: 11, bold: true, maxW: 190 },
+    { field: 'NC7 p2 position', page: 1, x: 96, y: 561, size: 11, bold: true, maxW: 300 },
+    { field: 'NC7 p2 date', page: 1, x: 430, y: 561, size: 11, bold: true, maxW: 110 },
   ],
   NC8: [], NC5: [],
 };
@@ -409,6 +416,7 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
       // Page-2 §6 "Unit 1" column — same source as the NC6 §5 unit: the design +
       // the commissioning gate. Ticks that ATTEST (settings / type-test) are
       // drawn ONLY from the installer's on-site confirmation.
+      const cc = getCompanyCompliance();
       const frN = getFieldRecord(lead.id);
       const gateN = frN?.serials.confirmed ? frN.serials : null;
       const attestedN = !!gateN?.protectionConfirmed;
@@ -427,7 +435,12 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         'NC7 p2 storage kVA': battKwh ? String(battKwh) : '',
         'NC7 p2 settings yes': attestedN ? 'X' : '',
         'NC7 p2 typetest yes': attestedN ? 'X' : '',
-        'NC7 p2 applicant name': base['Customer name'] ?? '',
+        // § 7 — the OWNER / authorised signatory (Settings). '(' guard keeps a
+        // blank name from being drawn; date only when there's a signatory.
+        'NC7 p2 signed': cc.authorisedSignatory || '( set the authorised signatory in Settings )',
+        'NC7 p2 signatory name': cc.authorisedSignatory || '( Owner -> Settings -> authorised signatory )',
+        'NC7 p2 position': cc.signatoryPosition || '',
+        'NC7 p2 date': cc.authorisedSignatory ? new Date().toLocaleDateString('en-IE') : '',
       });
     }
     const pages = doc.getPages();

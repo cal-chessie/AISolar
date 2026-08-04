@@ -881,6 +881,8 @@ function CompanyComplianceCard() {
     { k: 'vatNumber', label: 'VAT number', unblocks: 'invoices', placeholder: 'e.g. IE1234567X' },
     { k: 'companyLandline', label: 'Company phone', unblocks: 'NC6 §3 installer correspondence', placeholder: '01 234 5678' },
     { k: 'companyEmail', label: 'Company email', unblocks: 'NC6 §3 installer correspondence', placeholder: 'hello@…' },
+    { k: 'authorisedSignatory', label: 'Authorised signatory', unblocks: 'NC7 §7 — who signs applications for the customer', placeholder: 'e.g. Cal Chesters' },
+    { k: 'signatoryPosition', label: 'Signatory position', unblocks: 'NC7 §7 position held', placeholder: 'e.g. Director' },
     { k: 'registeredAddress', label: 'Registered address', unblocks: 'all statutory forms', placeholder: 'Dublin, Ireland' },
   ];
 
