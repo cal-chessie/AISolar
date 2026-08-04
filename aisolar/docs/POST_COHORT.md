@@ -20,6 +20,16 @@ the DoW + data-sheet artifact are DONE (see docs/SEAI_GRANT_WORKFLOW.md). Deferr
    - Hook point: `src/lib/seaiGrant.ts` (`offerClock` already computes days-left);
      fire through the existing notify spine on stage/day thresholds.
 
+## Installer routing — auto by area + distance (cohort ships owner-choice)
+The cohort routes a deposit-paid job to an installer by the **owner's manual choice + a gate**
+(see FINAL_SPRINT 2C). Post-cohort, automate it:
+- Each installer has an **area covered** (counties / eircode routing-keys / a service radius).
+- On deposit-paid, **rank installers by area match then distance** to the site (eircode → lat/long),
+  respecting capacity/availability; surface the top pick to the owner (still one-click to confirm, or
+  auto-assign under a threshold).
+- Needs: geocoding of the site + installer bases, an `installer_areas` table, a distance/rank function.
+  Builds ON the cohort's `installer_id` assignment — same seam, smarter selection.
+
 2. **Owner "grants at risk" radar** — one portfolio view across all jobs: offers
    expiring soon, BERs overdue, claims unsubmitted, payments outstanding. The
    owner's money-radar. Reads every lead's `seai_grants` record; surfaces on the

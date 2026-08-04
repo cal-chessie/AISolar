@@ -159,6 +159,13 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
   `workflow_stage` + kernel `StageTransitioned`.
 - **Installer:** photos → storage + `install_evidence` · serials → `installed_equipment` (write fn exists) ·
   offline sign-off · NC submission record.
+- ⭐ **Deposit → installer routing (multi-installer).** When a deposit is paid the job must be routable to
+  ONE OF SEVERAL installers, not the single assigned name. **Cohort = owner's choice + gate:** on
+  deposit-paid the owner picks the installer from their roster (the roster already exists — Owner → Settings →
+  Installers) and confirms; the assignment writes `assignment.installer_id` + notifies that installer. A GATE
+  stops the job progressing until an installer is assigned. Deterministic, no geo data needed. *(Post-cohort:
+  auto-route by area covered + distance — see POST_COHORT.md.)* Needs: `installer_id` on the assignment +
+  an area/roster field per installer; migration add-only.
 - **Owner:** FinanceWindow deposit link → `create-checkout` — the button exists, the charge doesn't.
 - **Customer:** Ask-AI → **guardrailed** LLM (L4: refuses anything outside THEIR project) + persist +
   notify consultant · callback request → record + notify.
