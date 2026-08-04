@@ -33,6 +33,7 @@ import { decideCompliance } from '@/lib/complianceDecision';
 import { DowTemplate, LoaTemplate, Nc6Template, Nc7Template } from '@/components/compliance/docTemplates';
 import BlockDiagram from '@/components/compliance/BlockDiagram';
 import { downloadEsbForm } from '@/lib/pdfFill';
+import SeaiGrantTracker from '@/components/compliance/SeaiGrantTracker';
 import { getProduct } from '@/config/productCatalog';
 
 const eur = (n: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
@@ -208,6 +209,10 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
           </div>
         );
       })()}
+
+      {/* SEAI grant lifecycle — the spine: offer → install → DoW & data sheets
+          → BER → submit → paid. Domestic grant only; commercial NDMG differs. */}
+      {decideCompliance(lead).seaiScheme === 'domestic-grant' && <SeaiGrantTracker lead={lead} />}
 
       {/* NC6 clock — the rule made visible */}
       {nc6.status !== 'sent' && (
