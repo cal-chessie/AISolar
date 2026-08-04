@@ -83,8 +83,11 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
   · and **logged as a touchpoint the intelligence then READS** — opens/replies feed dealSignals, so the
   loop closes and every send makes the next one smarter. Guardrails: never invent figures (quote engine
   only) · never claim SMS/WhatsApp · deterministic fallback always.
-- **Survey-photo intelligence.** Roof photos → shading/obstruction/orientation sanity-check against the
-  design — catches "designed for a roof that isn't there" before the customer ever sees a proposal.
+- ✅ **Survey-photo intelligence.** *(Done 4 Aug — card verified rendering.)* New `analyse-roof-photo` edge
+  fn (vision, mirrors verify-artefact's honest pattern) + `roofRead` + a `RoofPhotoRead` card at the top of
+  the survey's Roof step: the surveyor snaps the roof, the model reads orientation, pitch, shading and
+  obstructions, and "Use these" fills the form fields (they confirm + adjust). no_ai / unreadable never fill
+  a confident wrong value. Vision itself verifies at deploy with the AI key (like Compliance Vision).
 - **Voice → field record.** Installer talks; the agent writes the structured note + ticks the checklist.
   Gloves, ladder, rain — typing is the enemy on site.
 - **Proposal personalisation.** From THEIR day/night split: "you're out all day — the battery is what makes

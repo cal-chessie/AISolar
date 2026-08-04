@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import RoofPhotoRead from '@/components/survey/RoofPhotoRead';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -800,6 +801,14 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
       case 4: // Roof + shading — "looking at the house". Roof + environmental merged.
         return (
           <div className="space-y-3">
+            {/* SURVEY-PHOTO INTELLIGENCE — read the roof from a photo and fill
+                the fields below; the surveyor confirms. (analyse-roof-photo) */}
+            <RoofPhotoRead onApply={(f) => {
+              if (f.orientation) setValue('roof_orientation', f.orientation);
+              if (f.pitch) setValue('roof_pitch', f.pitch);
+              if (f.shading) setValue('shading_analysis', f.shading);
+              if (f.obstructions) setValue('nearby_obstructions', f.obstructions);
+            }} />
             <SurveySection tone="tech" icon={<Home />} title="The roof">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
