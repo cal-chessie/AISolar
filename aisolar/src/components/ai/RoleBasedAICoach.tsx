@@ -246,14 +246,16 @@ export default function RoleBasedAICoach() {
                 </div>
                 {/* AI REPORTS — the live feed (Cal, 3 Aug). Every line is computed
                     from the book this second: value, days-in-stage, opens, tone,
-                    NC6 blockers. Click a line, land on the deal. */}
-                {reports.length > 0 && (
-                  <div className="rounded-control border border-border bg-muted/20">
-                    <div className="flex items-center gap-1.5 px-2.5 h-8 border-b border-border">
-                      <span className="relative flex size-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-doc-deposit opacity-60" /><span className="relative inline-flex rounded-full size-2 bg-doc-deposit" /></span>
-                      <span className="text-2xs font-semibold">AI reports · live</span>
-                      <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{reports.length}</span>
-                    </div>
+                    NC6 blockers. Click a line, land on the deal. Honesty guard
+                    (Cal 4 Aug): with nothing to flag it shows a calm all-clear —
+                    never invents a report, never just vanishes. */}
+                <div className="rounded-control border border-border bg-muted/20">
+                  <div className="flex items-center gap-1.5 px-2.5 h-8 border-b border-border">
+                    <span className="relative flex size-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-doc-deposit opacity-60" /><span className="relative inline-flex rounded-full size-2 bg-doc-deposit" /></span>
+                    <span className="text-2xs font-semibold">AI reports · live</span>
+                    <span className="ml-auto text-2xs text-muted-foreground tabular-nums">{reports.length}</span>
+                  </div>
+                  {reports.length > 0 ? (
                     <div className="max-h-36 overflow-y-auto scroll-slim divide-y divide-border/60">
                       {reports.map((r, i) => (
                         <button key={i} onClick={() => r.route && runAction(r.route)} disabled={!r.route}
@@ -263,8 +265,12 @@ export default function RoleBasedAICoach() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="px-2.5 py-2.5 text-2xs text-muted-foreground leading-snug">
+                      Nothing needs you right now — I'm watching the book and I'll flag anything the moment it does.
+                    </p>
+                  )}
+                </div>
                 <details className="group">
                   <summary className="text-2xs text-muted-foreground cursor-pointer hover:underline list-none flex items-center gap-1">
                     <ChevronRight className="size-3 group-open:rotate-90 transition-transform" />

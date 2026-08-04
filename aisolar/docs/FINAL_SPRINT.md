@@ -88,11 +88,12 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
   the survey's Roof step: the surveyor snaps the roof, the model reads orientation, pitch, shading and
   obstructions, and "Use these" fills the form fields (they confirm + adjust). no_ai / unreadable never fill
   a confident wrong value. Vision itself verifies at deploy with the AI key (like Compliance Vision).
-- **Voice → field record.** Installer talks; the agent writes the structured note + ticks the checklist.
-  Gloves, ladder, rain — typing is the enemy on site.
-- **Proposal personalisation.** From THEIR day/night split: "you're out all day — the battery is what makes
-  this work for you." The drafter's LLM call carries dealSignals; the numbers stay `computeQuote`'s.
-  *(Caught by Cal on the first pass.)*
+- ❌ **Voice → field record.** *(CUT 4 Aug — Cal: "not needed".)* Installer voice-to-note was an on-site
+  nicety, not a launch multiplier. Dropped; revisit post-cohort only if the field team asks.
+- ➡️ **Proposal personalisation → moved to SPRINT 2.** *(Cal 4 Aug: "move it into sprint 2 for when we do
+  get to test it".)* It lives in the deployed `agent-drain` edge function (the drafter's LLM call carries
+  dealSignals — "you're out all day, so the battery is what makes this work" — numbers stay computeQuote's),
+  so it's built + tested with the AI key at deploy, alongside 2D's outbound. See Sprint 2D.
 - ✅ **Customer's own money view.** *(Done 4 Aug — verified live.)* A pinned "Your money" card in the portal:
   total cost → SEAI grant (honest status: included / we'll file after install / with SEAI) → your price →
   paid so far → still to pay → one plain "what's next" line. Reads the real proposal + invoice + stage, so it
@@ -106,8 +107,9 @@ M1 · M8 · X8 · CLAUDE.md header corrected to V5.
   were mis-styled — now customer messages render as their own bubble on any channel, events stay quiet
   system lines. Also reverted a same-session leadIntel change that let dealIntel's staleness rule override
   per-stage guidance ("chase them" when the ball was with the surveyor).
-- **Feed honesty guard.** The AI-reports feed + badge stay truthful at 0 leads (clean empty state, no
-  invented book) — regression-guard on what A10 fixed.
+- ✅ **Feed honesty guard.** *(Done 4 Aug.)* The AI-reports feed now always renders with its live count and
+  shows a calm all-clear ("Nothing needs you right now — I'm watching the book") when there's nothing to
+  flag, instead of vanishing. Never invents a report (A10 already gates the read to []). Verified live.
 
 **Done-means:** each surface demo'd in the browser on the cast · verify-artefact smoke-tested at deploy
 with a real cert photo · no AI claim anywhere the deterministic floor can't back.
@@ -159,6 +161,10 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
 - **Both-ends law (L1)** — every interaction notifies customer AND consultant. Email + magic link only.
 - **Branded outbound** — tenant from-name + reply-to on one verified domain at launch.
 - **M4 tables** — `notifications` + `magic_link_tokens` beneath it all.
+- **⬅️ Proposal personalisation (moved from Sprint 1).** The drafter's LLM call carries dealSignals so the
+  proposal narrative speaks to THEIR life ("you're out all day, so the battery is what makes this work") —
+  the numbers stay `computeQuote`'s, never the model's. Built + tested here because it's in the deployed
+  `agent-drain` edge fn and needs the AI key on.
 
 ### 2E · The go-live signal
 - ⭐ **The WIDGET** — the per-tenant embeddable calculator→lead door + the owner "copy your embed code"
