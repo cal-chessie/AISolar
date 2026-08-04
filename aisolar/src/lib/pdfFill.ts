@@ -36,6 +36,7 @@ import { getCompanyCompliance } from '@/lib/companyCompliance';
 import { brand } from '@/config/brand';
 import { decideCompliance } from '@/lib/complianceDecision';
 import { sealSubmission, recordDocument } from '@/lib/paperTrail';
+import { findInstallerCert } from '@/lib/installerRoster';
 
 type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 
@@ -213,6 +214,7 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'NC701 decl mprn', page: 3, x: 405, y: 705, size: 10, bold: true, maxW: 145 },
     { field: 'NC701 inst name', page: 3, x: 125, y: 422, size: 11, bold: true, maxW: 260 },
     { field: 'NC701 inst reci', page: 3, x: 175, y: 396, size: 11, bold: true, maxW: 200 },
+    { field: 'NC701 safe cert', page: 3, x: 182, y: 370, size: 11, bold: true, maxW: 200 },
     { field: 'NC701 inst mobile', page: 3, x: 148, y: 344, size: 11, bold: true, maxW: 200 },
     { field: 'NC701 inst email', page: 3, x: 123, y: 318, size: 11, bold: true, maxW: 300 },
     { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
@@ -508,6 +510,8 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         'NC701 decl mprn': base['MPRN'] ?? '',
         'NC701 inst name': base['Installer name'] ?? '',
         'NC701 inst reci': cc.reciNumber || '',
+        // per-installer, from Owner -> Settings -> Installers (assigned installer)
+        'NC701 safe cert': findInstallerCert(base['Installer name'] as string) || '',
         'NC701 inst mobile': cc.companyMobile || '',
         'NC701 inst email': cc.companyEmail || '',
         'NC701 inst address': cc.registeredAddress || '',

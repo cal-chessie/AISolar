@@ -29,10 +29,12 @@ import {
   AlertCircle, AlertTriangle, Save, Zap, Cloud, Phone, Lock, Key,
   Activity, Cpu, Server, Globe, Bell, Palette, FileText, Users,
   TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink, ArrowRight, XCircle,
+  HardHat, Plus, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { brand } from '@/config/brand';
 import { useCompanyCompliance, saveCompanyCompliance, complianceGaps, type CompanyCompliance } from '@/lib/companyCompliance';
+import { useInstallers, saveInstallers, type Installer } from '@/lib/installerRoster';
 import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
@@ -461,6 +463,11 @@ function BrandConfigFull() {
             meant the RECI number silently blocked EVERY NC6. Set once here and
             every form, on every job, fills itself. */}
         <CompanyComplianceCard />
+
+        {/* ── INSTALLERS ──────────────────────────────────────────────────────
+            Per-installer facts that aren't company-wide — today just the Safe
+            Electric Cert Number the NC7-01 wants for whoever signed the job. */}
+        <InstallerRosterCard />
 
         {/* Basic brand */}
         <div className="grid sm:grid-cols-2 gap-3">
@@ -927,6 +934,79 @@ function CompanyComplianceCard() {
       <div className="mt-3 flex items-center gap-2">
         <Button size="sm" className="h-8 text-xs" disabled={!dirty}
           onClick={() => { saveCompanyCompliance(form); setDirty(false); toast.success('Company details saved', { description: 'Every open form just picked these up.' }); }}>
+          Save
+        </Button>
+        {dirty && <span className="text-2xs text-muted-foreground">unsaved changes</span>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * InstallerRosterCard — the named installers the owner works with. The one
+ * per-installer fact a statutory form needs is the Safe Electric Cert Number
+ * (the certifier/completion-cert number of the electrician who signs off),
+ * which differs per installer, unlike the company's single RECI registration.
+ * Captured here once, read onto the NC7-01 for whoever the job is assigned to.
+ */
+function InstallerRosterCard() {
+  const saved = useInstallers();
+  const [rows, setRows] = useState<Installer[]>(saved);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => { setRows(saved); setDirty(false); }, [saved]);
+
+  const set = (id: string, k: keyof Installer) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRows(rs => rs.map(r => r.id === id ? { ...r, [k]: e.target.value } : r)); setDirty(true);
+  };
+  const add = () => {
+    setRows(rs => [...rs, { id: crypto.randomUUID(), name: '', safeElectricCert: '' }]); setDirty(true);
+  };
+  const remove = (id: string) => { setRows(rs => rs.filter(r => r.id !== id)); setDirty(true); };
+
+  return (
+    <div className="rounded-panel border border-border bg-card p-4">
+      <div className="flex items-start gap-2 flex-wrap">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <HardHat className="size-4 text-tech shrink-0" /> Installers
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Each installer's Safe Electric Cert Number rides onto the NC7-01 for the jobs they're assigned.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" className="ml-auto h-8 text-xs shrink-0" onClick={add}>
+          <Plus className="size-3.5 mr-1" /> Add installer
+        </Button>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mt-3 rounded-control border border-dashed border-border p-3 text-2xs text-muted-foreground text-center">
+          No installers yet. Add the electricians who sign off your jobs.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {rows.map(r => (
+            <div key={r.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+              <div>
+                <Label className="text-2xs text-muted-foreground">Installer name</Label>
+                <Input value={r.name} onChange={set(r.id, 'name')} placeholder="e.g. Liam Murphy" className="mt-1 h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-2xs text-muted-foreground">Safe Electric Cert Number</Label>
+                <Input value={r.safeElectricCert} onChange={set(r.id, 'safeElectricCert')} placeholder="e.g. SEC-004821" className="mt-1 h-8 text-sm font-mono" />
+              </div>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-pop shrink-0" onClick={() => remove(r.id)} aria-label={`Remove ${r.name || 'installer'}`}>
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center gap-2">
+        <Button size="sm" className="h-8 text-xs" disabled={!dirty}
+          onClick={() => { const clean = saveInstallers(rows); setRows(clean); setDirty(false); toast.success('Installers saved', { description: 'Their cert numbers now fill the NC7-01 on assigned jobs.' }); }}>
           Save
         </Button>
         {dirty && <span className="text-2xs text-muted-foreground">unsaved changes</span>}

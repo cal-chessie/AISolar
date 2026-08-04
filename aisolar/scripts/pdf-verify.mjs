@@ -150,6 +150,7 @@ const NC7 = [
   { field: 'NC701 decl mprn', page: 3, x: 405, y: 705, size: 10, bold: true, maxW: 145 },
   { field: 'NC701 inst name', page: 3, x: 125, y: 422, size: 11, bold: true, maxW: 260 },
   { field: 'NC701 inst reci', page: 3, x: 175, y: 396, size: 11, bold: true, maxW: 200 },
+  { field: 'NC701 safe cert', page: 3, x: 182, y: 370, size: 11, bold: true, maxW: 200 },
   { field: 'NC701 inst mobile', page: 3, x: 148, y: 344, size: 11, bold: true, maxW: 200 },
   { field: 'NC701 inst email', page: 3, x: 123, y: 318, size: 11, bold: true, maxW: 300 },
   { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
@@ -193,6 +194,7 @@ SAMPLE['NC701 confirm 10'] = '';
 SAMPLE['NC701 decl mprn'] = '10000047514';
 SAMPLE['NC701 inst name'] = 'LIAM MURPHY';
 SAMPLE['NC701 inst reci'] = 'RECI-30821';
+SAMPLE['NC701 safe cert'] = 'SEC-004821';
 SAMPLE['NC701 inst mobile'] = '086 555 0182';
 SAMPLE['NC701 inst email'] = 'OFFICE@AISOLAR.IE';
 SAMPLE['NC701 inst address'] = 'UNIT 4, CITYWEST BUSINESS CAMPUS, DUBLIN 24, D24 XYZ1';
