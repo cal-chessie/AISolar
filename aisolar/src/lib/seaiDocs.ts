@@ -71,6 +71,13 @@ function gather(lead: DummyLead) {
     propertyType,
     grant,
     installedAt: fr?.serials.confirmed ? new Date().toLocaleDateString('en-IE') : undefined,
+    // Handover sign-off (eIDAS simple signatures) — printed as the DoW signatures.
+    installerSig: fr?.handover?.installerName,
+    homeownerSig: fr?.handover?.homeownerName,
+    signedDate: fr?.handover?.signedAt ? new Date(fr.handover.signedAt).toLocaleDateString('en-IE') : undefined,
+    // Manufacturer datasheets (BER assessor input) — bundled when we hold them.
+    panelDatasheet: lead.proposal ? getProduct(lead.proposal.panel_model, 'panel')?.datasheet : undefined,
+    inverterDatasheet: lead.proposal ? getProduct(lead.proposal.inverter_model, 'inverter')?.datasheet : undefined,
   };
 }
 
@@ -105,8 +112,12 @@ function pen(page: PDFPage, f: Fonts) {
       const lines = wrap(text, f.font, size, W);
       lines.forEach(ln => { page.drawText(ln, { x: M, y, size, font: f.font, color: MUTE }); y -= size + 3.5; });
     },
-    sigLine(who: string) {
-      y -= 12;
+    sigLine(who: string, name?: string, date?: string) {
+      y -= 6;
+      // eIDAS simple signature — the typed name printed as the signature.
+      if (name) page.drawText(name, { x: M + 2, y, size: 13, font: f.bold, color: INK });
+      if (name && date) page.drawText(date, { x: M + 302, y, size: 10, font: f.bold, color: INK });
+      y -= 6;
       page.drawLine({ start: { x: M, y }, end: { x: M + 240, y }, thickness: 0.8, color: RULE });
       page.drawLine({ start: { x: M + 300, y }, end: { x: M + W, y }, thickness: 0.8, color: RULE });
       y -= 11;
@@ -163,10 +174,10 @@ export async function buildSeaiDocsPdf(lead: DummyLead): Promise<Blob> {
   p1.row('Battery energy storage', d.battery ? val(d.battery) : 'None');
   p1.heading('Installer declaration');
   p1.para('Installed and commissioned at the above address, compliant with the SEAI Domestic Solar PV Code of Practice. Electrical works to I.S. 10101 with a Safe Electric (RECI) certificate issued by a Registered Electrical Contractor. Inspection, Test & Commissioning Report completed and given to the homeowner. Only a registered installer to the Solar PV Scheme may sign this declaration.');
-  p1.sigLine('registered installer');
+  p1.sigLine('registered installer', d.installerSig, d.signedDate);
   p1.heading('Homeowner declaration');
   p1.para('I am the owner of this dwelling; the works are complete to my satisfaction; I have paid the contractor or entered an agreed payment schedule; I understand SEAI may inspect the works, and that SEAI pays the grant to my nominated bank account.');
-  p1.sigLine(val(d.name));
+  p1.sigLine(val(d.name), d.homeownerSig, d.signedDate);
 
   // ── Page 2 — System Data Sheet (for the BER assessor / DEAP) ──
   const p2 = pen(doc.addPage([595, 842]), f);
@@ -197,6 +208,24 @@ export async function buildSeaiDocsPdf(lead: DummyLead): Promise<Blob> {
   p2.row('Registered company', val(d.company));
   p2.row('Safe Electric / RECI', val(d.reci));
   p2.row('Inverter serial (as fitted)', val(d.serial));
+  p2.gap(8);
+  const haveDs = !!(d.panelDatasheet || d.inverterDatasheet);
+  p2.para(haveDs
+    ? 'Manufacturer datasheet(s) for the panel and/or inverter are attached to this pack — the BER assessor needs them.'
+    : 'Attach the panel + inverter manufacturer datasheets before sending this to the BER assessor.', 8);
+
+  // Bundle the actual equipment datasheets (BER assessor input) when we hold
+  // them — best-effort; a missing/unfetchable sheet never blocks the pack.
+  for (const ds of [d.panelDatasheet, d.inverterDatasheet]) {
+    if (!ds) continue;
+    try {
+      const res = await fetch(ds);
+      if (!res.ok) continue;
+      const src = await PDFDocument.load(await res.arrayBuffer(), { ignoreEncryption: true });
+      const pages = await doc.copyPages(src, src.getPageIndices());
+      pages.forEach(p => doc.addPage(p));
+    } catch { /* datasheet unavailable — skip */ }
+  }
 
   return new Blob([await doc.save()], { type: 'application/pdf' });
 }

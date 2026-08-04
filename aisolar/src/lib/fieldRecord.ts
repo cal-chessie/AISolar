@@ -71,10 +71,35 @@ export interface CertRecord {
   plate?: CertFile;
 }
 
+/** Handover sign-off — BOTH parties, captured at the handover stage. eIDAS
+ *  "simple electronic signature": the typed name IS the signature, backed by the
+ *  handover event (who/when). Printed on the Declaration of Works + kept as the
+ *  proof of handover. Same legal basis as the NC6/NC7 signatures. */
+export interface HandoverSignoff {
+  installerName?: string;   // the registered installer signing off
+  homeownerName?: string;   // the homeowner accepting the works
+  signedAt?: string;        // when both signed
+}
+
 export interface FieldRecord {
   serials: SerialState;
-  signature: string | null; // dataURL today; storage URL + hash at Sweep 8
+  signature: string | null; // the drawn pad (customer) — kept alongside the names
+  handover?: HandoverSignoff;
   certs: CertRecord;
+}
+
+/** Record a handover sign-off name (eIDAS simple signature) into the same
+ *  offline-first store JobViewV2 uses. Self-contained so the handover UI can
+ *  write without threading state through the whole job view. */
+export function setHandoverSignoff(leadId: string, patch: Partial<HandoverSignoff>): void {
+  try {
+    const key = `jobview_v2_${leadId}`;
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : {};
+    data.handover = { ...(data.handover ?? {}), ...patch };
+    localStorage.setItem(key, JSON.stringify(data));
+    window.dispatchEvent(new CustomEvent('field-record-changed', { detail: { leadId } }));
+  } catch { /* ignore */ }
 }
 
 /** Read a job's field record. Null when the crew hasn't started that job on
@@ -88,6 +113,7 @@ export function getFieldRecord(leadId: string): FieldRecord | null {
     return {
       serials: { ...DEFAULT_SERIALS, ...(data.serials ?? {}) },
       signature: data.signature ?? null,
+      handover: data.handover ?? undefined,
       certs: (data.certs ?? {}) as CertRecord,
     };
   } catch {

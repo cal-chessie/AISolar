@@ -42,6 +42,7 @@ import {
 import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
+import HandoverSignoff from '@/components/installer/HandoverSignoff';
 import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
 import { recordCert } from '@/lib/paperTrail';
 import { useCompanyCompliance } from '@/lib/companyCompliance';
@@ -1183,6 +1184,9 @@ function HandoverTab({ items, photos, signature, certs, onCert, onToggle, onPhot
           </div>
         </CardContent>
       </Card>
+
+      {/* Both parties sign off — eIDAS names print onto the Declaration of Works */}
+      <HandoverSignoff lead={lead} />
 
       {/* Photos */}
       <Card>
