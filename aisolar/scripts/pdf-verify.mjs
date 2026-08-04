@@ -116,9 +116,27 @@ const NC7 = [
   { field: 'MPRN', page: 0, x: 168, y: 210, size: 13, bold: true, comb: 11.7 },
   { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
   { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
+  { field: 'NC7 p2 1PH', page: 1, x: 351, y: 772, size: 11, bold: true },
+  { field: 'NC7 p2 energy', page: 1, x: 350, y: 758, size: 10, bold: true },
+  { field: 'NC7 p2 manufacturer', page: 1, x: 350, y: 743, size: 9, bold: true, maxW: 72 },
+  { field: 'NC7 p2 model', page: 1, x: 350, y: 729, size: 9, bold: true, maxW: 72 },
+  { field: 'NC7 p2 inverter kVA', page: 1, x: 350, y: 715, size: 10, bold: true, maxW: 60 },
+  { field: 'NC7 p2 storage kVA', page: 1, x: 350, y: 669, size: 10, bold: true, maxW: 60 },
+  { field: 'NC7 p2 settings yes', page: 1, x: 351, y: 648, size: 11, bold: true },
+  { field: 'NC7 p2 typetest yes', page: 1, x: 351, y: 622, size: 11, bold: true },
+  { field: 'NC7 p2 applicant name', page: 1, x: 370, y: 576, size: 11, bold: true, maxW: 180 },
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
+SAMPLE['NC7 p2 1PH'] = 'X';
+SAMPLE['NC7 p2 energy'] = 'P';
+SAMPLE['NC7 p2 manufacturer'] = 'SOLAX';
+SAMPLE['NC7 p2 model'] = 'SOLAX X1-HYBRID-5.0 G4';
+SAMPLE['NC7 p2 inverter kVA'] = '20';
+SAMPLE['NC7 p2 storage kVA'] = '13.5';
+SAMPLE['NC7 p2 settings yes'] = 'X';
+SAMPLE['NC7 p2 typetest yes'] = 'X';
+SAMPLE['NC7 p2 applicant name'] = 'JAMES WILSON';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';
@@ -127,7 +145,7 @@ Object.assign(SAMPLE, SAMPLE_EXTRA);
 
 const FORM = process.argv[2] === 'nc7' ? 'nc7' : 'nc6';
 const MAP = FORM === 'nc7' ? NC7 : NC6;
-const PAGES = FORM === 'nc7' ? [1] : [1, 2, 3];
+const PAGES = FORM === 'nc7' ? [1, 2] : [1, 2, 3];
 
 const src = fs.readFileSync(`public/forms/esbn-form-${FORM}.pdf`);
 const doc = await PDFDocument.load(src, { ignoreEncryption: true });
@@ -177,9 +195,10 @@ for (const pageNo of PAGES) {
     // NC7 page 1 is a COMB form: rows of empty character boxes drawn as
     // "I I I I". Landing on those is the POINT — they are the field, not a
     // collision. Only real ESB wording counts as a clash.
-    // Comb cells ("I I I") AND empty checkbox glyphs (□ ☐ ▢) are FORM boxes —
-    // landing a value/tick in them is the point, not a collision with ESB text.
-    const isComb = (s) => /^[I|i\s□☐▢❑❏]+$/.test(s);
+    // Comb cells ("I I I"), empty checkbox glyphs (□ ☐ ▢) AND fill-in underlines
+    // ("______") are all FORM boxes — landing a value/tick on them is the point,
+    // not a collision with ESB's printed text.
+    const isComb = (s) => /^[I|i\s□☐▢❑❏_]+$/.test(s);
     const clash = items.find(i =>
       i !== mine &&
       !isComb(i.s) &&

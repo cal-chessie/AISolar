@@ -164,6 +164,19 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
     { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
     { field: 'NC7 phase three', page: 0, x: 545, y: 144, size: 12, bold: true },
+    // ── PAGE 2 (probed 4 Aug): § 6 Mini-Generator Details, "Unit 1" column at
+    //    x≈350; § 7 applicant name. The Unit-1 column mirrors the NC6 §5 unit —
+    //    same source (design + commissioning gate). Attested-only ticks.
+    { field: 'NC7 p2 1PH', page: 1, x: 351, y: 772, size: 11, bold: true },
+    { field: 'NC7 p2 3PH', page: 1, x: 386, y: 772, size: 11, bold: true },
+    { field: 'NC7 p2 energy', page: 1, x: 350, y: 758, size: 10, bold: true },
+    { field: 'NC7 p2 manufacturer', page: 1, x: 350, y: 743, size: 9, bold: true, maxW: 72 },
+    { field: 'NC7 p2 model', page: 1, x: 350, y: 729, size: 9, bold: true, maxW: 72 },
+    { field: 'NC7 p2 inverter kVA', page: 1, x: 350, y: 715, size: 10, bold: true, maxW: 60 },
+    { field: 'NC7 p2 storage kVA', page: 1, x: 350, y: 669, size: 10, bold: true, maxW: 60 },
+    { field: 'NC7 p2 settings yes', page: 1, x: 351, y: 648, size: 11, bold: true },
+    { field: 'NC7 p2 typetest yes', page: 1, x: 351, y: 622, size: 11, bold: true },
+    { field: 'NC7 p2 applicant name', page: 1, x: 370, y: 576, size: 11, bold: true, maxW: 180 },
   ],
   NC8: [], NC5: [],
 };
@@ -393,10 +406,28 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
       // §5 phase tick + Total Installed Inverter Capacity (the AC rating we hold,
       // in kVA ≈ kW at unity PF). §4 installer block + MPRN resolve from `base`.
       const dc = decideCompliance(lead);
+      // Page-2 §6 "Unit 1" column — same source as the NC6 §5 unit: the design +
+      // the commissioning gate. Ticks that ATTEST (settings / type-test) are
+      // drawn ONLY from the installer's on-site confirmation.
+      const frN = getFieldRecord(lead.id);
+      const gateN = frN?.serials.confirmed ? frN.serials : null;
+      const attestedN = !!gateN?.protectionConfirmed;
+      const makerN = ((gateN?.fittedModel || lead.proposal?.inverter_model || '').split(' ')[0] || '').trim();
+      const battKwh = (lead.survey as Record<string, unknown> | undefined)?.confirmed_battery_kwh as number | undefined;
       Object.assign(data, {
         'NC7 phase single': dc.threePhase ? '' : 'X',
         'NC7 phase three': dc.threePhase ? 'X' : '',
         'Total installed inverter cap': dc.tiic > 0 ? String(dc.tiic) : '',
+        'NC7 p2 1PH': dc.threePhase ? '' : 'X',
+        'NC7 p2 3PH': dc.threePhase ? 'X' : '',
+        'NC7 p2 energy': lead.proposal ? 'P' : '',
+        'NC7 p2 manufacturer': makerN,
+        'NC7 p2 model': gateN?.fittedModel || lead.proposal?.inverter_model || '',
+        'NC7 p2 inverter kVA': dc.tiic > 0 ? String(dc.tiic) : '',
+        'NC7 p2 storage kVA': battKwh ? String(battKwh) : '',
+        'NC7 p2 settings yes': attestedN ? 'X' : '',
+        'NC7 p2 typetest yes': attestedN ? 'X' : '',
+        'NC7 p2 applicant name': base['Customer name'] ?? '',
       });
     }
     const pages = doc.getPages();
