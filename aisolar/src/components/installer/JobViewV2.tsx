@@ -408,9 +408,10 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
           </nav>
 
           <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 pb-24">
-            {/* readable measure for checklists; the rail fills the left so the
-                page reads full-bleed, not a floating centred card */}
-            <div key={activeTab} className="max-w-3xl">
+            {/* Readable measure on tablet/laptop; opens up on large desktops
+                (xl+) where the tabs go two-column so the width is used, not left
+                as a narrow tablet column beside dead space. */}
+            <div key={activeTab} className="max-w-3xl xl:max-w-6xl">
             {activeTab === 'overview' && (
               <OverviewTab lead={lead} overallComplete={overallComplete} onBegin={() => setActiveTab('pre_install')} />
             )}
@@ -811,6 +812,9 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
         </div>
       )}
 
+      {/* Checklist + photos sit side-by-side on large desktops (xl+), stacked
+          below. items-start so unequal-height cards don't stretch. */}
+      <div className={photos.length > 0 ? 'grid xl:grid-cols-2 gap-4 items-start' : ''}>
       {/* Toggle checklist */}
       <Card>
         <CardContent className="p-0">
@@ -883,6 +887,7 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
           </CardContent>
         </Card>
       )}
+      </div>
 
       {/* Phase-specific section (commissioning: the serial triple check) */}
       {extra}
@@ -1149,6 +1154,10 @@ function HandoverTab({ items, photos, signature, certs, onCert, onToggle, onPhot
         <p className="text-sm text-muted-foreground mt-1">Walk customer through the system, get their signature, take final photos.</p>
       </div>
 
+      {/* Two columns on desktop: checklist + sign-off (left), photos + certs
+          (right). Stacks below xl. Completion banner stays full-width below. */}
+      <div className="grid xl:grid-cols-2 gap-4 items-start">
+      <div className="space-y-4">
       {/* Checklist */}
       <Card>
         <CardContent className="p-0">
@@ -1187,7 +1196,9 @@ function HandoverTab({ items, photos, signature, certs, onCert, onToggle, onPhot
 
       {/* Both parties sign off — eIDAS names print onto the Declaration of Works */}
       <HandoverSignoff lead={lead} />
+      </div>
 
+      <div className="space-y-4">
       {/* Photos */}
       <Card>
         <CardContent className="p-0">
@@ -1257,6 +1268,8 @@ function HandoverTab({ items, photos, signature, certs, onCert, onToggle, onPhot
           </Button>
         </CardContent>
       </Card>
+      </div>
+      </div>
 
       {/* Completion status */}
       {overallComplete && certsDone ? (
