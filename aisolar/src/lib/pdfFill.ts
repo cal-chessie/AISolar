@@ -49,7 +49,7 @@ type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
  * Values sit on the SAME baseline as their label, starting just right of where
  * the label ends (label x + width + a few pt of gap).
  */
-const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number; bold?: boolean; maxW?: number }>> = {
+const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number; bold?: boolean; maxW?: number; comb?: number }>> = {
   // NC6 — 595x842pt, 6 pages. Page 1 sections 1–3, page 2 section 5 table.
   // Re-verified 25 Jul 2026 against probed label positions; two coordinates
   // from the first pass were wrong and are corrected below.
@@ -57,7 +57,7 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // § 1 Customer's full name and site address (free block, y 460–515)
     // comb pitch = the box cell width; size bumped so the letters fill the cells.
     { field: 'Customer name', page: 0, x: 110, y: 494, size: 12, bold: true, maxW: 425 },
-    { field: 'Installation address', page: 0, x: 110, y: 471, size: 12, bold: true, maxW: 425 },
+    { field: 'Installation address', page: 0, x: 110, y: 474, size: 13, bold: true, maxW: 425 },
     // FIX: was x=492,y=442 — nowhere near the label. "Mobile number:" sits at
     // x=235 w=73 (ends 308) on baseline y=454, so the value goes at x=315.
     { field: 'Phone', page: 0, x: 315, y: 454, size: 12, bold: true, maxW: 130 },
@@ -65,19 +65,19 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Email', page: 0, x: 75, y: 416, size: 12, bold: true, maxW: 460 },
     // FIX: was x=350,y=336 — that lands on top of the "Eircode:" label (x=358).
     // "Please provide 11 digit MPRN no:" is x=40 w=167 (ends 207) at y=332.
-    { field: 'MPRN', page: 0, x: 215, y: 331, size: 13, bold: true, maxW: 110 },
+    { field: 'MPRN', page: 0, x: 216, y: 331, size: 14, bold: true, comb: 10.7 },
     // NEW: "Eircode:" x=358 w=39 (ends 397) at y=332.
     { field: 'Eircode', page: 0, x: 402, y: 331, size: 13, bold: true, maxW: 90 },
     // § 3 Installer/Consultant details — same block offset as § 1 (header y=217)
     { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
-    { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 12, bold: true, maxW: 425 },
+    { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 13, bold: true, maxW: 425 },
     // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
     // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
     // from x≈390. Row baselines probed off their labels.
-    { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 7 },
-    { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
-    { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
-    { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
+    { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 10, bold: true, maxW: 150 },
+    { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441, size: 10, bold: true },
+    { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389, size: 10, bold: true },
+    { field: 'Battery', page: 1, x: 390, y: 363, size: 10, bold: true, maxW: 150 },
     // ── FULL-COVERAGE EXTENSION (30 Jul) — pages 1–3 of 6. Probed via
     //    scripts/pdf-probe.mjs + the §4 box column pixel-scanned at x≈552;
     //    every placement gated by scripts/pdf-verify.mjs (overlap-fail) and a
@@ -96,17 +96,17 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // NEW-microgen notification (option A). B/C are legacy — never ticked.
     { field: 'New install tick', page: 1, x: 549, y: 721, size: 13, bold: true },
     // § 5 "New Installation / Unit 1" column
-    { field: 'Energy source', page: 1, x: 395, y: 495 },
-    { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
-    { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 8 },
+    { field: 'Energy source', page: 1, x: 395, y: 495, size: 10, bold: true },
+    { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 10, bold: true, maxW: 150 },
+    { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 10, bold: true },
     { field: '1PH tick', page: 1, x: 416, y: 523, size: 12, bold: true },
     { field: '3PH tick', page: 1, x: 459, y: 523, size: 12, bold: true },
     { field: 'Type test yes tick', page: 1, x: 418, y: 317, size: 12, bold: true },
     { field: 'Settings yes tick', page: 1, x: 418, y: 270, size: 12, bold: true },
     // § 5A (page 2, bottom) — comb rows + cert ref + phase tick
-    { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 9 },
-    { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
-    { field: '5A cert ref', page: 1, x: 330, y: 130, size: 8 },
+    { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 10, bold: true, maxW: 125 },
+    { field: '5A model', page: 1, x: 105, y: 149, size: 10, bold: true, maxW: 150 },
+    { field: '5A cert ref', page: 1, x: 330, y: 130, size: 10, bold: true, maxW: 130 },
     { field: '5A single tick', page: 1, x: 184, y: 87, size: 12, bold: true },
     { field: '5A three tick', page: 1, x: 240, y: 87, size: 12, bold: true },
     // Page 3 — TABLE 1 "Confirm Settings Applied (Y/N)" column + Installer
@@ -123,13 +123,13 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Protection confirm 5', page: 2, x: 505, y: 663, size: 11, bold: true },
     { field: 'Protection confirm 6', page: 2, x: 505, y: 648, size: 11, bold: true },
     { field: 'Protection confirm 7', page: 2, x: 505, y: 596, size: 11, bold: true },
-    { field: 'Installer name', page: 2, x: 118, y: 288, size: 9 },
-    { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 288, size: 9 },
-    { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 9 },
-    { field: 'Installer email', page: 2, x: 372, y: 273, size: 8 },
-    { field: 'Installer address', page: 2, x: 192, y: 257, size: 7 },
-    { field: 'Installer signature', page: 2, x: 118, y: 221, size: 10 },
-    { field: 'Signature date', page: 2, x: 88, y: 205, size: 9 },
+    { field: 'Installer name', page: 2, x: 118, y: 288, size: 10, bold: true, maxW: 180 },
+    { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 289, size: 12, bold: true, maxW: 100 },
+    { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 10, bold: true, maxW: 150 },
+    { field: 'Installer email', page: 2, x: 372, y: 273, size: 10, bold: true, maxW: 165 },
+    { field: 'Installer address', page: 2, x: 192, y: 257, size: 10, bold: true, maxW: 350 },
+    { field: 'Installer signature', page: 2, x: 118, y: 221, size: 10, bold: true, maxW: 200 },
+    { field: 'Signature date', page: 2, x: 88, y: 205, size: 10, bold: true },
   ],
   // NC7 — 595x842pt. Page 1 is a COMB form: each field is a row of individual
   // character boxes, so the value must sit ON the row's baseline or it reads
@@ -137,15 +137,15 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
   // pass was 2–15pt high on several rows (Site address 2 was 15pt out).
   // ESB want BLOCK CAPITALS — values are uppercased at draw time.
   NC7: [
-    { field: 'Customer name', page: 0, x: 100, y: 633 },      // comb row x=38 w=522
-    { field: 'Installation address', page: 0, x: 100, y: 605 },
-    { field: 'Address line 2', page: 0, x: 100, y: 588 },     // was 590
-    { field: 'Eircode', page: 0, x: 468, y: 588 },            // NEW — comb x=464 w=97
-    { field: 'Phone', page: 0, x: 132, y: 554 },              // was 555; comb x=95 w=131
-    { field: 'Email', page: 0, x: 140, y: 536 },              // was 540; comb x=63
-    { field: 'Contact person', page: 0, x: 138, y: 500 },     // was 505; comb x=96
-    { field: 'Site address 1', page: 0, x: 100, y: 459 },     // was 452; comb x=38 w=177
-    { field: 'Site address 2', page: 0, x: 100, y: 442 },     // was 427 — 15pt out
+    { field: 'Customer name', page: 0, x: 100, y: 634, size: 12, bold: true, maxW: 510 },      // comb row x=38 w=522
+    { field: 'Installation address', page: 0, x: 100, y: 606, size: 12, bold: true, maxW: 510 },
+    { field: 'Address line 2', page: 0, x: 100, y: 589, size: 12, bold: true, maxW: 340 },     // was 590
+    { field: 'Eircode', page: 0, x: 468, y: 588, size: 13, bold: true, maxW: 95 },            // NEW — comb x=464 w=97
+    { field: 'Phone', page: 0, x: 132, y: 555, size: 12, bold: true, maxW: 200 },              // was 555; comb x=95 w=131
+    { field: 'Email', page: 0, x: 140, y: 537, size: 12, bold: true, maxW: 400 },              // was 540; comb x=63
+    { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },     // was 505; comb x=96
+    { field: 'Site address 1', page: 0, x: 100, y: 460, size: 12, bold: true, maxW: 440 },     // was 452; comb x=38 w=177
+    { field: 'Site address 2', page: 0, x: 100, y: 443, size: 12, bold: true, maxW: 440 },     // was 427 — 15pt out
   ],
   NC8: [], NC5: [],
 };
@@ -392,7 +392,18 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         const w = useFont.widthOfTextAtSize(text, sz);
         if (w > m.maxW) sz = Math.max(7, sz * (m.maxW / w));
       }
-      pg.drawText(text, { x: m.x, y: m.y, size: sz, font: useFont });
+      if (m.comb) {
+        // COMB — one glyph per cell, centred. Used ONLY for short fixed-cell
+        // fields (the 11-digit MPRN), where the cell count is known and drift is
+        // negligible — not the long free-text rows (those flow as bold text).
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          const w = useFont.widthOfTextAtSize(ch, sz);
+          pg.drawText(ch, { x: m.x + i * m.comb + (m.comb - w) / 2, y: m.y, size: sz, font: useFont });
+        }
+      } else {
+        pg.drawText(text, { x: m.x, y: m.y, size: sz, font: useFont });
+      }
     }
   }
 

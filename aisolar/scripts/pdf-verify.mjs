@@ -14,36 +14,36 @@ import fs from 'fs';
 // Mirrors OVERLAY_MAPS.NC6 in src/lib/pdfFill.ts
 const NC6 = [
   { field: 'Customer name', page: 0, x: 110, y: 494, size: 12, bold: true, maxW: 425 },
-  { field: 'Installation address', page: 0, x: 110, y: 471, size: 12, bold: true, maxW: 425 },
+  { field: 'Installation address', page: 0, x: 110, y: 474, size: 13, bold: true, maxW: 425 },
   { field: 'Phone', page: 0, x: 315, y: 454, size: 12, bold: true, maxW: 130 },
   { field: 'Email', page: 0, x: 75, y: 416, size: 12, bold: true, maxW: 460 },
-  { field: 'MPRN', page: 0, x: 215, y: 331, size: 13, bold: true, maxW: 110 },
+  { field: 'MPRN', page: 0, x: 216, y: 331, size: 14, bold: true, comb: 10.7 },
   { field: 'Eircode', page: 0, x: 402, y: 331, size: 13, bold: true, maxW: 90 },
   { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
-  { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 12, bold: true, maxW: 425 },
-  { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 7 },
-  { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
-  { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
-  { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
+  { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 13, bold: true, maxW: 425 },
+  { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 10, bold: true, maxW: 150 },
+  { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441, size: 10, bold: true },
+  { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389, size: 10, bold: true },
+  { field: 'Battery', page: 1, x: 390, y: 363, size: 10, bold: true, maxW: 150 },
   // Full-coverage extension (30 Jul) — mirrors OVERLAY_MAPS.NC6 in pdfFill.ts
   { field: 'Installer landline', page: 0, x: 95, y: 152, size: 12, bold: true, maxW: 125 },
   { field: 'Installer email', page: 0, x: 80, y: 132, size: 12, bold: true, maxW: 455 },
   { field: 'New install tick', page: 1, x: 549, y: 721, size: 13, bold: true },
-  { field: 'Energy source', page: 1, x: 395, y: 495 },
-  { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
+  { field: 'Energy source', page: 1, x: 395, y: 495, size: 10, bold: true },
+  { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 10, bold: true, maxW: 150 },
   { field: '1PH tick', page: 1, x: 416, y: 523, size: 12, bold: true },
   { field: 'Type test yes tick', page: 1, x: 418, y: 317, size: 12, bold: true },
   { field: 'Settings yes tick', page: 1, x: 418, y: 270, size: 12, bold: true },
-  { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 9 },
-  { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
+  { field: '5A manufacturer', page: 1, x: 200, y: 168, size: 10, bold: true, maxW: 125 },
+  { field: '5A model', page: 1, x: 105, y: 149, size: 10, bold: true, maxW: 150 },
   { field: '5A single tick', page: 1, x: 184, y: 87, size: 12, bold: true },
   { field: 'First connection yes', page: 0, x: 381, y: 291, size: 13, bold: true },
   { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 12, bold: true, maxW: 210 },
-  { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 8 },
-  { field: '5A cert ref', page: 1, x: 330, y: 130, size: 8 },
-  { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 9 },
-  { field: 'Installer signature', page: 2, x: 118, y: 221, size: 10 },
-  { field: 'Signature date', page: 2, x: 88, y: 205, size: 9 },
+  { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 10, bold: true },
+  { field: '5A cert ref', page: 1, x: 330, y: 130, size: 10, bold: true, maxW: 130 },
+  { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 10, bold: true, maxW: 150 },
+  { field: 'Installer signature', page: 2, x: 118, y: 221, size: 10, bold: true, maxW: 200 },
+  { field: 'Signature date', page: 2, x: 88, y: 205, size: 10, bold: true },
   { field: 'Protection confirm 1', page: 2, x: 505, y: 724, size: 11, bold: true },
   { field: 'Protection confirm 2', page: 2, x: 505, y: 709, size: 11, bold: true },
   { field: 'Protection confirm 3', page: 2, x: 505, y: 694, size: 11, bold: true },
@@ -51,10 +51,10 @@ const NC6 = [
   { field: 'Protection confirm 5', page: 2, x: 505, y: 663, size: 11, bold: true },
   { field: 'Protection confirm 6', page: 2, x: 505, y: 648, size: 11, bold: true },
   { field: 'Protection confirm 7', page: 2, x: 505, y: 596, size: 11, bold: true },
-  { field: 'Installer name', page: 2, x: 118, y: 288, size: 9 },
-  { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 288, size: 9 },
-  { field: 'Installer email', page: 2, x: 372, y: 273, size: 8 },
-  { field: 'Installer address', page: 2, x: 192, y: 257, size: 7 },
+  { field: 'Installer name', page: 2, x: 118, y: 288, size: 10, bold: true, maxW: 180 },
+  { field: 'Installer SafeElectric no.', page: 2, x: 437, y: 289, size: 12, bold: true, maxW: 100 },
+  { field: 'Installer email', page: 2, x: 372, y: 273, size: 10, bold: true, maxW: 165 },
+  { field: 'Installer address', page: 2, x: 192, y: 257, size: 10, bold: true, maxW: 350 },
 ];
 const SAMPLE_EXTRA = {
   'Installer landline': '01 555 0182',
@@ -98,15 +98,15 @@ const SAMPLE = {
 };
 
 const NC7 = [
-  { field: 'Customer name', page: 0, x: 100, y: 633 },
-  { field: 'Installation address', page: 0, x: 100, y: 605 },
-  { field: 'Address line 2', page: 0, x: 100, y: 588 },
-  { field: 'Eircode', page: 0, x: 468, y: 588 },
-  { field: 'Phone', page: 0, x: 132, y: 554 },
-  { field: 'Email', page: 0, x: 140, y: 536 },
-  { field: 'Contact person', page: 0, x: 138, y: 500 },
-  { field: 'Site address 1', page: 0, x: 100, y: 459 },
-  { field: 'Site address 2', page: 0, x: 100, y: 442 },
+  { field: 'Customer name', page: 0, x: 100, y: 634, size: 12, bold: true, maxW: 510 },
+  { field: 'Installation address', page: 0, x: 100, y: 606, size: 12, bold: true, maxW: 510 },
+  { field: 'Address line 2', page: 0, x: 100, y: 589, size: 12, bold: true, maxW: 340 },
+  { field: 'Eircode', page: 0, x: 468, y: 588, size: 13, bold: true, maxW: 95 },
+  { field: 'Phone', page: 0, x: 132, y: 555, size: 12, bold: true, maxW: 200 },
+  { field: 'Email', page: 0, x: 140, y: 537, size: 12, bold: true, maxW: 400 },
+  { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },
+  { field: 'Site address 1', page: 0, x: 100, y: 460, size: 12, bold: true, maxW: 440 },
+  { field: 'Site address 2', page: 0, x: 100, y: 443, size: 12, bold: true, maxW: 440 },
 ];
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
@@ -132,7 +132,11 @@ for (const m of MAP) {
   const useFont = m.bold ? bold : font;
   let sz = size;
   if (m.maxW) { const w = useFont.widthOfTextAtSize(v, sz); if (w > m.maxW) sz = Math.max(7, sz * (m.maxW / w)); }
-  pg.drawText(v, { x: m.x, y: m.y, size: sz, font: useFont, color: rgb(0, 0, 0.85) });
+  if (m.comb) {
+    for (let i = 0; i < v.length; i++) { const w = useFont.widthOfTextAtSize(v[i], sz); pg.drawText(v[i], { x: m.x + i * m.comb + (m.comb - w) / 2, y: m.y, size: sz, font: useFont, color: rgb(0, 0, 0.85) }); }
+  } else {
+    pg.drawText(v, { x: m.x, y: m.y, size: sz, font: useFont, color: rgb(0, 0, 0.85) });
+  }
 }
 const out = await doc.save();
 fs.writeFileSync(`/tmp/${FORM}-filled.pdf`, out);
@@ -150,7 +154,11 @@ for (const pageNo of PAGES) {
 
   for (const m of MAP.filter(m => m.page === pageNo - 1)) {
     const val = SAMPLE[m.field];
-    const mine = items.find(i => i.s.startsWith(val.slice(0, 12)) && Math.abs(i.y - m.y) < 2);
+    // Comb fields (the MPRN) draw one glyph per cell, so no single item holds
+    // the whole string — match the FIRST character at the placed x/y instead.
+    const mine = m.comb
+      ? items.find(i => i.s === val[0] && Math.abs(i.y - m.y) < 2 && Math.abs(i.x - m.x) < m.comb)
+      : items.find(i => i.s.startsWith(val.slice(0, 12)) && Math.abs(i.y - m.y) < 2);
     if (!mine) { console.log(`✗ p${pageNo} ${m.field}: value not found where placed`); problems++; continue; }
     // anything of ESB's on the same baseline that we overlap horizontally?
     // NC7 page 1 is a COMB form: rows of empty character boxes drawn as
