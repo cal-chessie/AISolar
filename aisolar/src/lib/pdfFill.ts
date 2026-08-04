@@ -60,9 +60,9 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Installation address', page: 0, x: 110, y: 471, size: 11, bold: true, maxW: 425 },
     // FIX: was x=492,y=442 — nowhere near the label. "Mobile number:" sits at
     // x=235 w=73 (ends 308) on baseline y=454, so the value goes at x=315.
-    { field: 'Phone', page: 0, x: 315, y: 454 },
+    { field: 'Phone', page: 0, x: 315, y: 454, size: 12, bold: true, maxW: 130 },
     // "Email:" is x=40 w=28 (ends 68) on baseline y=414.
-    { field: 'Email', page: 0, x: 75, y: 413, size: 11, bold: true, maxW: 460 },
+    { field: 'Email', page: 0, x: 75, y: 416, size: 12, bold: true, maxW: 460 },
     // FIX: was x=350,y=336 — that lands on top of the "Eircode:" label (x=358).
     // "Please provide 11 digit MPRN no:" is x=40 w=167 (ends 207) at y=332.
     { field: 'MPRN', page: 0, x: 215, y: 331, size: 12, bold: true, maxW: 110 },
@@ -89,9 +89,9 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'First connection yes', page: 0, x: 381, y: 291, size: 11 },
     { field: 'First connection no', page: 0, x: 421, y: 291, size: 11 },
     // § 3 correspondence (page 1): Landline x40, Mobile x235, Email x40 (y131)
-    { field: 'Installer landline', page: 0, x: 95, y: 152, size: 11, bold: true, maxW: 125 },
-    { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 11, bold: true, maxW: 210 },
-    { field: 'Installer email', page: 0, x: 80, y: 130, size: 10, bold: true, maxW: 455 },
+    { field: 'Installer landline', page: 0, x: 95, y: 152, size: 12, bold: true, maxW: 125 },
+    { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 12, bold: true, maxW: 210 },
+    { field: 'Installer email', page: 0, x: 80, y: 132, size: 12, bold: true, maxW: 455 },
     // § 4 (page 2): route boxes at right margin x≈552 — NC6 here is always the
     // NEW-microgen notification (option A). B/C are legacy — never ticked.
     { field: 'New install tick', page: 1, x: 549, y: 721, size: 11 },
