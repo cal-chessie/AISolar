@@ -101,7 +101,7 @@ const NC7 = [
   { field: 'Customer name', page: 0, x: 100, y: 634, size: 12, bold: true, maxW: 510 },
   { field: 'Installation address', page: 0, x: 100, y: 606, size: 12, bold: true, maxW: 510 },
   { field: 'Address line 2', page: 0, x: 100, y: 589, size: 12, bold: true, maxW: 340 },
-  { field: 'Eircode', page: 0, x: 468, y: 590, size: 13, bold: true, comb: 12 },
+  { field: 'Eircode', page: 0, x: 468, y: 590, size: 13, bold: true, comb: 9.6 },
   { field: 'Phone', page: 0, x: 132, y: 555, size: 12, bold: true, maxW: 200 },
   { field: 'Email', page: 0, x: 140, y: 537, size: 12, bold: true, maxW: 400 },
   { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },
@@ -113,7 +113,7 @@ const NC7 = [
   { field: 'Installer mobile', page: 0, x: 274, y: 330, size: 12, bold: true, comb: 11.4 },
   { field: 'Installer email', page: 0, x: 65, y: 309, size: 13, bold: true, maxW: 460 },
   { field: 'Installer RECI no.', page: 0, x: 132, y: 291, size: 12, bold: true, comb: 13 },
-  { field: 'MPRN', page: 0, x: 172, y: 210, size: 13, bold: true, comb: 11.7 },
+  { field: 'MPRN', page: 0, x: 168, y: 210, size: 13, bold: true, comb: 11.7 },
   { field: 'Total installed inverter cap', page: 0, x: 430, y: 159, size: 11, bold: true, maxW: 55 },
   { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
 ];
