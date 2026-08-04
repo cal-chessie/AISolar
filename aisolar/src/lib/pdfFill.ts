@@ -207,6 +207,17 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'NC701 confirm 8', page: 2, x: 448, y: 147, size: 12, bold: true },
     { field: 'NC701 confirm 9', page: 2, x: 448, y: 121, size: 12, bold: true },
     { field: 'NC701 confirm 10', page: 2, x: 448, y: 101, size: 12, bold: true },
+    // ── NC7-01 page 2 (bundle index 3) — declaration + installer sign-off.
+    //    The ESB Networks Witness Test section below is ESB's to complete —
+    //    we never touch it. Signature + date are eIDAS-gated via base[].
+    { field: 'NC701 decl mprn', page: 3, x: 405, y: 705, size: 10, bold: true, maxW: 145 },
+    { field: 'NC701 inst name', page: 3, x: 125, y: 422, size: 11, bold: true, maxW: 260 },
+    { field: 'NC701 inst reci', page: 3, x: 175, y: 396, size: 11, bold: true, maxW: 200 },
+    { field: 'NC701 inst mobile', page: 3, x: 148, y: 344, size: 11, bold: true, maxW: 200 },
+    { field: 'NC701 inst email', page: 3, x: 123, y: 318, size: 11, bold: true, maxW: 300 },
+    { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
+    { field: 'NC701 signature', page: 3, x: 100, y: 266, size: 11, bold: true, maxW: 250 },
+    { field: 'NC701 sig date', page: 3, x: 75, y: 240, size: 11, bold: true, maxW: 120 },
   ],
   NC8: [], NC5: [],
 };
@@ -492,6 +503,16 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
         // "Setting Applied = Y" (that would read as a prohibited trip being
         // enabled); the installer completes this row by hand if ESB require it.
         'NC701 confirm 10': '',
+        // NC7-01 page 2 — installer declaration + sign-off. Company details from
+        // cc (never the settings-prompt placeholder); signature/date eIDAS-gated.
+        'NC701 decl mprn': base['MPRN'] ?? '',
+        'NC701 inst name': base['Installer name'] ?? '',
+        'NC701 inst reci': cc.reciNumber || '',
+        'NC701 inst mobile': cc.companyMobile || '',
+        'NC701 inst email': cc.companyEmail || '',
+        'NC701 inst address': cc.registeredAddress || '',
+        'NC701 signature': base['Installer signature'] ?? '',
+        'NC701 sig date': base['Signature date'] ?? '',
       });
     }
     const pages = doc.getPages();

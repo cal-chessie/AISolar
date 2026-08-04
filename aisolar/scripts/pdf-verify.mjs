@@ -147,6 +147,14 @@ const NC7 = [
   { field: 'NC701 confirm 8', page: 2, x: 448, y: 147, size: 12, bold: true },
   { field: 'NC701 confirm 9', page: 2, x: 448, y: 121, size: 12, bold: true },
   { field: 'NC701 confirm 10', page: 2, x: 448, y: 101, size: 12, bold: true },
+  { field: 'NC701 decl mprn', page: 3, x: 405, y: 705, size: 10, bold: true, maxW: 145 },
+  { field: 'NC701 inst name', page: 3, x: 125, y: 422, size: 11, bold: true, maxW: 260 },
+  { field: 'NC701 inst reci', page: 3, x: 175, y: 396, size: 11, bold: true, maxW: 200 },
+  { field: 'NC701 inst mobile', page: 3, x: 148, y: 344, size: 11, bold: true, maxW: 200 },
+  { field: 'NC701 inst email', page: 3, x: 123, y: 318, size: 11, bold: true, maxW: 300 },
+  { field: 'NC701 inst address', page: 3, x: 200, y: 292, size: 10, bold: true, maxW: 340 },
+  { field: 'NC701 signature', page: 3, x: 100, y: 266, size: 11, bold: true, maxW: 250 },
+  { field: 'NC701 sig date', page: 3, x: 75, y: 240, size: 11, bold: true, maxW: 120 },
 ];
 SAMPLE['Total installed inverter cap'] = '20';
 SAMPLE['NC7 phase single'] = 'X';
@@ -182,6 +190,14 @@ SAMPLE['NC701 confirm 8'] = 'Y';
 SAMPLE['NC701 confirm 9'] = 'Y';
 // Vector Shift ("Not Allowed") is never auto-confirmed — see pdfFill.ts note.
 SAMPLE['NC701 confirm 10'] = '';
+SAMPLE['NC701 decl mprn'] = '10000047514';
+SAMPLE['NC701 inst name'] = 'LIAM MURPHY';
+SAMPLE['NC701 inst reci'] = 'RECI-30821';
+SAMPLE['NC701 inst mobile'] = '086 555 0182';
+SAMPLE['NC701 inst email'] = 'OFFICE@AISOLAR.IE';
+SAMPLE['NC701 inst address'] = 'UNIT 4, CITYWEST BUSINESS CAMPUS, DUBLIN 24, D24 XYZ1';
+SAMPLE['NC701 signature'] = 'LIAM MURPHY';
+SAMPLE['NC701 sig date'] = '04/08/2026';
 SAMPLE['Address line 2'] = 'DUNDRUM, DUBLIN 16';
 SAMPLE['Contact person'] = 'JAMES WILSON';
 SAMPLE['Site address 1'] = '18 MULBERRY LANE';
