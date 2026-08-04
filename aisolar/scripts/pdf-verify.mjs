@@ -13,21 +13,21 @@ import fs from 'fs';
 
 // Mirrors OVERLAY_MAPS.NC6 in src/lib/pdfFill.ts
 const NC6 = [
-  { field: 'Customer name', page: 0, x: 110, y: 495 },
-  { field: 'Installation address', page: 0, x: 110, y: 472 },
+  { field: 'Customer name', page: 0, x: 110, y: 494, size: 12, bold: true, maxW: 425 },
+  { field: 'Installation address', page: 0, x: 110, y: 471, size: 11, bold: true, maxW: 425 },
   { field: 'Phone', page: 0, x: 315, y: 454 },
-  { field: 'Email', page: 0, x: 75, y: 414 },
-  { field: 'MPRN', page: 0, x: 215, y: 332 },
+  { field: 'Email', page: 0, x: 75, y: 413, size: 11, bold: true, maxW: 460 },
+  { field: 'MPRN', page: 0, x: 215, y: 331, size: 12, bold: true, maxW: 110 },
   { field: 'Eircode', page: 0, x: 402, y: 332 },
-  { field: 'Installer company', page: 0, x: 110, y: 194 },
-  { field: 'Installer RECI no.', page: 0, x: 110, y: 171 },
+  { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
+  { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 12, bold: true, maxW: 425 },
   { field: 'Inverter make/model', page: 1, x: 390, y: 457, size: 7 },
   { field: 'Inverter rating (kW)', page: 1, x: 390, y: 441 },
   { field: 'Total DC capacity (kWp)', page: 1, x: 390, y: 389 },
   { field: 'Battery', page: 1, x: 390, y: 363, size: 8 },
   // Full-coverage extension (30 Jul) — mirrors OVERLAY_MAPS.NC6 in pdfFill.ts
-  { field: 'Installer landline', page: 0, x: 95, y: 153 },
-  { field: 'Installer email', page: 0, x: 80, y: 131, size: 9 },
+  { field: 'Installer landline', page: 0, x: 95, y: 152, size: 11, bold: true, maxW: 125 },
+  { field: 'Installer email', page: 0, x: 80, y: 130, size: 10, bold: true, maxW: 455 },
   { field: 'New install tick', page: 1, x: 549, y: 721, size: 11 },
   { field: 'Energy source', page: 1, x: 395, y: 495 },
   { field: 'Manufacturer', page: 1, x: 390, y: 472, size: 8 },
@@ -38,7 +38,7 @@ const NC6 = [
   { field: '5A model', page: 1, x: 105, y: 149, size: 7 },
   { field: '5A single tick', page: 1, x: 184, y: 87 },
   { field: 'First connection yes', page: 0, x: 381, y: 291, size: 11 },
-  { field: 'Installer mobile', page: 0, x: 315, y: 153 },
+  { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 11, bold: true, maxW: 210 },
   { field: 'Rated current (A)', page: 1, x: 390, y: 420, size: 8 },
   { field: '5A cert ref', page: 1, x: 330, y: 130, size: 8 },
   { field: 'Installer mobile', page: 2, x: 135, y: 273, size: 9 },
@@ -121,12 +121,18 @@ const PAGES = FORM === 'nc7' ? [1] : [1, 2, 3];
 const src = fs.readFileSync(`public/forms/esbn-form-${FORM}.pdf`);
 const doc = await PDFDocument.load(src, { ignoreEncryption: true });
 const font = await doc.embedFont(StandardFonts.Helvetica);
+const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 const pages = doc.getPages();
 
 for (const m of MAP) {
   const v = SAMPLE[m.field];
   if (!v) continue;
-  pages[m.page]?.drawText(v, { x: m.x, y: m.y, size: m.size ?? 10, font, color: rgb(0, 0, 0.85) });
+  const pg = pages[m.page]; if (!pg) continue;
+  const size = m.size ?? 10;
+  const useFont = m.bold ? bold : font;
+  let sz = size;
+  if (m.maxW) { const w = useFont.widthOfTextAtSize(v, sz); if (w > m.maxW) sz = Math.max(7, sz * (m.maxW / w)); }
+  pg.drawText(v, { x: m.x, y: m.y, size: sz, font: useFont, color: rgb(0, 0, 0.85) });
 }
 const out = await doc.save();
 fs.writeFileSync(`/tmp/${FORM}-filled.pdf`, out);

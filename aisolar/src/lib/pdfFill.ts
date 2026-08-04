@@ -49,27 +49,28 @@ type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
  * Values sit on the SAME baseline as their label, starting just right of where
  * the label ends (label x + width + a few pt of gap).
  */
-const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number }>> = {
+const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: number; y: number; size?: number; bold?: boolean; maxW?: number }>> = {
   // NC6 — 595x842pt, 6 pages. Page 1 sections 1–3, page 2 section 5 table.
   // Re-verified 25 Jul 2026 against probed label positions; two coordinates
   // from the first pass were wrong and are corrected below.
   NC6: [
     // § 1 Customer's full name and site address (free block, y 460–515)
-    { field: 'Customer name', page: 0, x: 110, y: 495 },
-    { field: 'Installation address', page: 0, x: 110, y: 472 },
+    // comb pitch = the box cell width; size bumped so the letters fill the cells.
+    { field: 'Customer name', page: 0, x: 110, y: 494, size: 12, bold: true, maxW: 425 },
+    { field: 'Installation address', page: 0, x: 110, y: 471, size: 11, bold: true, maxW: 425 },
     // FIX: was x=492,y=442 — nowhere near the label. "Mobile number:" sits at
     // x=235 w=73 (ends 308) on baseline y=454, so the value goes at x=315.
     { field: 'Phone', page: 0, x: 315, y: 454 },
     // "Email:" is x=40 w=28 (ends 68) on baseline y=414.
-    { field: 'Email', page: 0, x: 75, y: 414 },
+    { field: 'Email', page: 0, x: 75, y: 413, size: 11, bold: true, maxW: 460 },
     // FIX: was x=350,y=336 — that lands on top of the "Eircode:" label (x=358).
     // "Please provide 11 digit MPRN no:" is x=40 w=167 (ends 207) at y=332.
-    { field: 'MPRN', page: 0, x: 215, y: 332 },
+    { field: 'MPRN', page: 0, x: 215, y: 331, size: 12, bold: true, maxW: 110 },
     // NEW: "Eircode:" x=358 w=39 (ends 397) at y=332.
     { field: 'Eircode', page: 0, x: 402, y: 332 },
     // § 3 Installer/Consultant details — same block offset as § 1 (header y=217)
-    { field: 'Installer company', page: 0, x: 110, y: 194 },
-    { field: 'Installer RECI no.', page: 0, x: 110, y: 171 },
+    { field: 'Installer company', page: 0, x: 110, y: 193, size: 12, bold: true, maxW: 425 },
+    { field: 'Installer RECI no.', page: 0, x: 110, y: 170, size: 12, bold: true, maxW: 425 },
     // § 5 Microgeneration details, page 2. "New Installation" Unit 1 column:
     // the 1PH/3PH pair for new-unit-1 sits at x=390/433, so the column reads
     // from x≈390. Row baselines probed off their labels.
@@ -88,9 +89,9 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'First connection yes', page: 0, x: 381, y: 291, size: 11 },
     { field: 'First connection no', page: 0, x: 421, y: 291, size: 11 },
     // § 3 correspondence (page 1): Landline x40, Mobile x235, Email x40 (y131)
-    { field: 'Installer landline', page: 0, x: 95, y: 153 },
-    { field: 'Installer mobile', page: 0, x: 315, y: 153 },
-    { field: 'Installer email', page: 0, x: 80, y: 131, size: 9 },
+    { field: 'Installer landline', page: 0, x: 95, y: 152, size: 11, bold: true, maxW: 125 },
+    { field: 'Installer mobile', page: 0, x: 315, y: 152, size: 11, bold: true, maxW: 210 },
+    { field: 'Installer email', page: 0, x: 80, y: 130, size: 10, bold: true, maxW: 455 },
     // § 4 (page 2): route boxes at right margin x≈552 — NC6 here is always the
     // NEW-microgen notification (option A). B/C are legacy — never ticked.
     { field: 'New install tick', page: 1, x: 549, y: 721, size: 11 },
@@ -376,7 +377,22 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm): Promise<Blob>
       // Never draw a placeholder OR a designed-fallback into a statutory box —
       // the official page carries only captured/attested values; anything
       // provisional lives on the appendix, labelled. (Any '(' marks it.)
-      if (v && !v.includes('(')) pages[m.page]?.drawText(v.toUpperCase(), { x: m.x, y: m.y, size: m.size ?? 10, font });
+      if (!v || v.includes('(')) continue;
+      const pg = pages[m.page];
+      if (!pg) continue;
+      const text = v.toUpperCase();
+      const size = m.size ?? 10;
+      // The §1/§3 free-text rows read weak in thin small Helvetica (Cal 4 Aug:
+      // "hard to read… numbers too small"). Bold + a bump makes them legible and
+      // clearly in the box row, without the per-cell drift a guessed comb pitch
+      // caused. `maxW` shrinks a long value (a full address) to stay in the row.
+      const useFont = m.bold ? bold : font;
+      let sz = size;
+      if (m.maxW) {
+        const w = useFont.widthOfTextAtSize(text, sz);
+        if (w > m.maxW) sz = Math.max(7, sz * (m.maxW / w));
+      }
+      pg.drawText(text, { x: m.x, y: m.y, size: sz, font: useFont });
     }
   }
 
