@@ -141,7 +141,7 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Installation address', page: 0, x: 100, y: 606, size: 12, bold: true, maxW: 510 },
     { field: 'Address line 2', page: 0, x: 100, y: 589, size: 12, bold: true, maxW: 340 },     // was 590
     { field: 'Eircode', page: 0, x: 468, y: 590, size: 13, bold: true, comb: 9.6 },            // NEW — comb x=464 w=97
-    { field: 'Phone', page: 0, x: 132, y: 555, size: 12, bold: true, maxW: 200 },              // was 555; comb x=95 w=131
+    { field: 'Phone', page: 0, x: 133, y: 555, size: 13, bold: true, comb: 11.2 },              // was 555; comb x=95 w=131
     { field: 'Email', page: 0, x: 140, y: 537, size: 12, bold: true, maxW: 400 },              // was 540; comb x=63
     { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },     // was 505; comb x=96
     { field: 'Site address 1', page: 0, x: 100, y: 460, size: 12, bold: true, maxW: 440 },     // was 452; comb x=38 w=177
