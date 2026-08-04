@@ -140,7 +140,7 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     { field: 'Customer name', page: 0, x: 100, y: 634, size: 12, bold: true, maxW: 510 },      // comb row x=38 w=522
     { field: 'Installation address', page: 0, x: 100, y: 606, size: 12, bold: true, maxW: 510 },
     { field: 'Address line 2', page: 0, x: 100, y: 589, size: 12, bold: true, maxW: 340 },     // was 590
-    { field: 'Eircode', page: 0, x: 468, y: 588, size: 13, bold: true, maxW: 95 },            // NEW — comb x=464 w=97
+    { field: 'Eircode', page: 0, x: 468, y: 590, size: 13, bold: true, comb: 12 },            // NEW — comb x=464 w=97
     { field: 'Phone', page: 0, x: 132, y: 555, size: 12, bold: true, maxW: 200 },              // was 555; comb x=95 w=131
     { field: 'Email', page: 0, x: 140, y: 537, size: 12, bold: true, maxW: 400 },              // was 540; comb x=63
     { field: 'Contact person', page: 0, x: 138, y: 501, size: 12, bold: true, maxW: 400 },     // was 505; comb x=96
@@ -150,10 +150,10 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // sits under it (~y=360); Landline y=330 x39, Mobile y=330 x219, Email y=309,
     // REC Safe Electric ID No y=291 x39 (ends 126). Same source as the NC6 §3
     // block — the data was always there; the NC7 map just never carried it.
-    { field: 'Installer company', page: 0, x: 100, y: 360, size: 12, bold: true, comb: 13 },
-    { field: 'Installer landline', page: 0, x: 78, y: 330, size: 12, bold: true, comb: 11.4 },
-    { field: 'Installer mobile', page: 0, x: 278, y: 330, size: 12, bold: true, comb: 11.4 },
-    { field: 'Installer email', page: 0, x: 65, y: 309, size: 12, bold: true, maxW: 460 },
+    { field: 'Installer company', page: 0, x: 100, y: 363, size: 12, bold: true, comb: 13 },
+    { field: 'Installer landline', page: 0, x: 74, y: 330, size: 12, bold: true, comb: 11.4 },
+    { field: 'Installer mobile', page: 0, x: 274, y: 330, size: 12, bold: true, comb: 11.4 },
+    { field: 'Installer email', page: 0, x: 65, y: 309, size: 13, bold: true, maxW: 460 },
     { field: 'Installer RECI no.', page: 0, x: 132, y: 291, size: 12, bold: true, comb: 13 },
     // § 5 SITE MINI-GENERATION DATA: MPRN (11 boxes after the label, before "or
     // Job ID" x=302), phase tick (Single label ends x504 / Three ends x539), and
