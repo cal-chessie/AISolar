@@ -98,6 +98,10 @@ const surveySchema = z.object({
   // the ESB Connection Agreement's Maximum Import / Export Capacity, in kVA.
   mic_kva: z.string().optional(),
   mec_kva: z.string().optional(),
+  // NC7 §5 assessment questions (applicant decisions), 'yes' | 'no'.
+  nc7_mec_assess: z.string().optional(),
+  nc7_els_intend: z.string().optional(),
+  nc7_els_assess: z.string().optional(),
   // Gear (panel / inverter / battery / count / size) is NOT captured here.
   // The Design Studio owns it, on the real roof. One source of truth.
   // Installation & logistics (merged)
@@ -354,6 +358,9 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
         // NC7 §5 connection-agreement capacities (kVA) — only for >6 kW jobs.
         confirmed_mic_kva: data.mic_kva ? parseFloat(data.mic_kva) : null,
         confirmed_mec_kva: data.mec_kva ? parseFloat(data.mec_kva) : null,
+        confirmed_nc7_mec_assess: data.nc7_mec_assess || null,
+        confirmed_nc7_els_intend: data.nc7_els_intend || null,
+        confirmed_nc7_els_assess: data.nc7_els_assess || null,
         installation_notes: data.installation_notes || null,
         special_requirements: data.special_requirements || null,
         status: finalStatus,
@@ -963,6 +970,29 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                         <Label htmlFor="mec_kva" className="text-xs">Max Export Capacity — MEC (kVA)</Label>
                         <Input {...register('mec_kva')} type="number" inputMode="decimal" placeholder="e.g. 12" className="w-full mt-1.5 h-control font-mono" />
                       </div>
+                    </div>
+                    {/* §5 assessment questions — applicant decisions ESB need on
+                        the NC7. Q2a only matters if the customer intends an ELS. */}
+                    <div className="mt-3 space-y-2 border-t border-tech/20 pt-3">
+                      {([
+                        { k: 'nc7_mec_assess', q: 'Assess nearest MEC level at no reinforcement cost? (else the proposed MEC is assessed + a reinforcement quote issued)' },
+                        { k: 'nc7_els_intend', q: 'Does the customer intend to install an Export Limitation Scheme (ELS)? (needed where inverter capacity exceeds the MEC)' },
+                        ...(watch('nc7_els_intend') === 'yes'
+                          ? [{ k: 'nc7_els_assess', q: 'Assess nearest ELS level at no reinforcement cost? (else the proposed capacity is set as the ELS level + a reinforcement quote issued)' }]
+                          : []),
+                      ] as const).map(({ k, q }) => (
+                        <div key={k} className="flex items-start justify-between gap-3">
+                          <p className="text-2xs text-muted-foreground leading-body flex-1">{q}</p>
+                          <div className="flex gap-1 shrink-0">
+                            {(['yes', 'no'] as const).map(opt => (
+                              <button key={opt} type="button" onClick={() => setValue(k, opt)}
+                                className={`h-7 px-3 rounded-control border text-2xs font-medium capitalize transition-colors ${watch(k) === opt ? 'border-tech bg-tech/10 text-tech' : 'border-border hover:bg-muted text-muted-foreground'}`}>
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );

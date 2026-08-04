@@ -166,6 +166,13 @@ const OVERLAY_MAPS: Record<EsbForm, Array<{ field: string; page: number; x: numb
     // §5 connection-agreement capacities (over 6kW single / 11kW three-phase).
     { field: 'NC7 mec', page: 0, x: 435, y: 171, size: 11, bold: true, maxW: 60 },
     { field: 'NC7 mic', page: 0, x: 435, y: 186, size: 11, bold: true, maxW: 60 },
+    // §5 assessment questions — Yes/No per row (Q1 y=118, Q2 y=87, Q2a y=53).
+    { field: 'NC7 q1 yes', page: 0, x: 508, y: 116, size: 11, bold: true },
+    { field: 'NC7 q1 no', page: 0, x: 537, y: 116, size: 11, bold: true },
+    { field: 'NC7 q2 yes', page: 0, x: 508, y: 85, size: 11, bold: true },
+    { field: 'NC7 q2 no', page: 0, x: 537, y: 85, size: 11, bold: true },
+    { field: 'NC7 q2a yes', page: 0, x: 508, y: 51, size: 11, bold: true },
+    { field: 'NC7 q2a no', page: 0, x: 537, y: 51, size: 11, bold: true },
     { field: 'NC7 phase single', page: 0, x: 508, y: 144, size: 12, bold: true },
     { field: 'NC7 phase three', page: 0, x: 545, y: 144, size: 12, bold: true },
     // ── PAGE 2 (probed 4 Aug): § 6 Mini-Generator Details, "Unit 1" column at
@@ -475,6 +482,13 @@ export async function fillEsbForm(lead: DummyLead, form: EsbForm, opts: { ownerC
         'Total installed inverter cap': dc.tiic > 0 ? String(dc.tiic) : '',
         // NC7 §5 MIC/MEC — captured on the survey (>6kW jobs), blank otherwise.
         'NC7 mic': lead.survey?.confirmed_mic_kva ? String(lead.survey.confirmed_mic_kva) : '',
+        // §5 assessment ticks — the applicant's answers, blank until set.
+        'NC7 q1 yes': lead.survey?.confirmed_nc7_mec_assess === 'yes' ? 'X' : '',
+        'NC7 q1 no': lead.survey?.confirmed_nc7_mec_assess === 'no' ? 'X' : '',
+        'NC7 q2 yes': lead.survey?.confirmed_nc7_els_intend === 'yes' ? 'X' : '',
+        'NC7 q2 no': lead.survey?.confirmed_nc7_els_intend === 'no' ? 'X' : '',
+        'NC7 q2a yes': lead.survey?.confirmed_nc7_els_assess === 'yes' ? 'X' : '',
+        'NC7 q2a no': lead.survey?.confirmed_nc7_els_assess === 'no' ? 'X' : '',
         'NC7 mec': lead.survey?.confirmed_mec_kva ? String(lead.survey.confirmed_mec_kva) : '',
         'NC7 p2 1PH': dc.threePhase ? '' : 'X',
         'NC7 p2 3PH': dc.threePhase ? 'X' : '',

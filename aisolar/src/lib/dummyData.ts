@@ -67,6 +67,12 @@ export interface DummyLead {
      *  electrical step for commercial / 3-phase sites; undefined for domestic. */
     confirmed_mic_kva?: number;
     confirmed_mec_kva?: number;
+    /** NC7 §5 assessment questions (applicant decisions). Q1: assess nearest MEC
+     *  level at no reinforcement cost. Q2: customer intends an Export Limitation
+     *  Scheme. Q2a: assess nearest ELS level at no reinforcement cost. */
+    confirmed_nc7_mec_assess?: 'yes' | 'no';
+    confirmed_nc7_els_intend?: 'yes' | 'no';
+    confirmed_nc7_els_assess?: 'yes' | 'no';
     photo_count: number;
   };
   proposal?: {
@@ -481,6 +487,11 @@ export function generateDummyLeads(): DummyLead[] {
         ...(systemSizeKw > 6 ? {
           confirmed_mic_kva: a.propertyTypeField === 'commercial' ? Math.round(systemSizeKw * 2) : 12,
           confirmed_mec_kva: Math.round(systemSizeKw),
+          // §5 assessments: standard low-cost choice is to assess the nearest
+          // no-reinforcement level (Q1 Yes). Export limitation (ELS) only when
+          // the design exports more than the MEC — none of the demo types do.
+          confirmed_nc7_mec_assess: 'yes' as const,
+          confirmed_nc7_els_intend: 'no' as const,
         } : {}),
         photo_count: 6 + (idx % 4),
       };
