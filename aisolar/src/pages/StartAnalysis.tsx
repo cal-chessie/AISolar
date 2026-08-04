@@ -24,6 +24,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Upload, Pencil, FileText, Loader2, Check,
   Sun, Battery, Euro, TrendingDown, CalendarClock, ShieldCheck, Award, Mail,
+  Home, Building2, LineChart,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateSystemEstimate } from '@/lib/leadIntake';
@@ -112,6 +113,9 @@ export default function StartAnalysis() {
   const carried = (useLocation().state as { calc?: CarriedCalc } | null)?.calc ?? null;
 
   const [step, setStep] = useState<Step>(carried ? 'estimate' : 'choose');
+  // §D fork — ONE question at the door decides grant + VAT + the whole estimate.
+  // Home = domestic (€-saving + SEAI grant); Business = commercial (ROI + NDMG + ex-VAT).
+  const [propertyType, setPropertyType] = useState<'domestic' | 'commercial'>('domestic');
   const [bill, setBill] = useState<BillData | null>(() => carried ? billFromCarried(carried) : null);
   const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
@@ -128,7 +132,7 @@ export default function StartAnalysis() {
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
   const estimate = bill
-    ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh })
+    ? calculateSystemEstimate({ monthlyBill: bill.monthlyBill, annualKwh: bill.annualKwh, propertyType })
     : null;
 
   const nightPct = bill?.dayUsageKwh && bill?.nightUsageKwh
@@ -224,7 +228,25 @@ export default function StartAnalysis() {
               </p>
             </div>
 
-            <div className="mt-8 grid gap-3 max-w-xl mx-auto">
+            {/* THE DOOR QUESTION — home or business decides grant + VAT + the
+                whole estimate (§D fork). Asked, never inferred. */}
+            <div className="mt-8 max-w-xl mx-auto">
+              <div className="grid grid-cols-2 gap-2 rounded-panel border border-border bg-card p-1 shadow-card">
+                {([['domestic', Home, 'My home'], ['commercial', Building2, 'My business']] as const).map(([pt, Icon, label]) => (
+                  <button key={pt} type="button" onClick={() => setPropertyType(pt)}
+                    className={`h-11 rounded-control text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${propertyType === pt ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted'}`}>
+                    <Icon className="size-4" /> {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-center text-2xs text-muted-foreground">
+                {propertyType === 'commercial'
+                  ? 'Business — ROI & payback, the NDMG grant, VAT reclaim and ACA tax relief.'
+                  : 'Home — the SEAI grant, your annual saving and payback year.'}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3 max-w-xl mx-auto">
               <button onClick={() => { setStep('upload'); }}
                 className="group rounded-panel border border-border bg-card shadow-card p-5 text-left flex items-center gap-4 hover:border-primary/40 transition-colors">
                 <span className="size-11 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0"><Upload className="size-5" /></span>
@@ -276,13 +298,20 @@ export default function StartAnalysis() {
               </p>
             </section>
 
-            {/* what you actually walk away with */}
+            {/* what you actually walk away with — forks with the door question */}
             <section className="mt-4 grid sm:grid-cols-3 gap-3 min-w-0">
-              {[
-                { icon: Sun, t: 'Your system size', s: 'In kWp and panel count, sized to your usage — not an average home.' },
-                { icon: Award, t: 'Your SEAI grant', s: 'The exact figure you qualify for, and what you actually pay after it.' },
-                { icon: TrendingDown, t: 'Your payback year', s: 'When it stops costing and starts paying, on your numbers.' },
-              ].map(({ icon: I, t, s }) => (
+              {(propertyType === 'commercial'
+                ? [
+                    { icon: Sun, t: 'Your system size', s: 'Sized to offset your business load — kWp and panel count, not a domestic average.' },
+                    { icon: Award, t: 'Your NDMG grant', s: 'The Non-Domestic Microgen figure you qualify for, plus VAT reclaim and ACA tax relief.' },
+                    { icon: LineChart, t: 'Your ROI & payback', s: 'Return on investment, IRR and the year it turns a profit — on your numbers.' },
+                  ]
+                : [
+                    { icon: Sun, t: 'Your system size', s: 'In kWp and panel count, sized to your usage — not an average home.' },
+                    { icon: Award, t: 'Your SEAI grant', s: 'The exact figure you qualify for, and what you actually pay after it.' },
+                    { icon: TrendingDown, t: 'Your payback year', s: 'When it stops costing and starts paying, on your numbers.' },
+                  ]
+              ).map(({ icon: I, t, s }) => (
                 <div key={t} className="rounded-panel bg-card shadow-card p-4 min-w-0">
                   <I className="size-4 text-brand-aisolar" />
                   <p className="mt-2 text-sm font-semibold">{t}</p>
@@ -394,7 +423,7 @@ export default function StartAnalysis() {
             </div>
 
             <div className="mt-6">
-              <SolarCalculator showHeader={false} showUploadCta={false} />
+              <SolarCalculator showHeader={false} showUploadCta={false} propertyType={propertyType} />
             </div>
 
             {/* the ask, same as the estimate step */}
@@ -474,10 +503,21 @@ export default function StartAnalysis() {
                 who DON'T have their bill to hand; here we already read it, so
                 showing a guessing tool would undercut the whole point. */}
             <div className="mt-8 grid sm:grid-cols-2 gap-3">
-              <Metric icon={<Sun className="size-4" />} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} sub={`covers ~${estimate.solarOffsetPct}% of your usage`} hero />
-              <Metric icon={<Euro className="size-4" />} label="You pay after SEAI grant" value={eur(estimate.netCost)} sub={`${eur(estimate.grossCost)} − ${eur(estimate.seaiGrant)} grant`} />
-              <Metric icon={<TrendingDown className="size-4" />} label="Saved every year" value={eur(estimate.annualSavings)} sub={`${estimate.paybackYears} yr payback`} />
-              <Metric icon={<Battery className="size-4" />} label="20-year saving" value={eur(estimate.twentyYearSavings)} sub={`${estimate.co2TonnesPerYear} t CO₂ cut / yr`} />
+              {estimate.commercial ? (
+                <>
+                  <Metric icon={<Sun className="size-4" />} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} sub={`covers ~${estimate.solarOffsetPct}% of your load`} hero />
+                  <Metric icon={<Euro className="size-4" />} label="You pay (ex-VAT, after grant + ACA)" value={eur(estimate.netCostAfterAca ?? estimate.netCost)} sub={`${eur(estimate.exVatCost ?? estimate.grossCost)} ex-VAT − ${eur(estimate.ndmgGrant ?? 0)} NDMG − ${eur(estimate.acaRelief ?? 0)} ACA`} />
+                  <Metric icon={<LineChart className="size-4" />} label="Return on investment" value={`${estimate.roiPct ?? 0}% / yr`} sub={`${estimate.paybackYears} yr payback · ${estimate.irrPct ?? 0}% IRR`} />
+                  <Metric icon={<Battery className="size-4" />} label="25-year net gain" value={eur(estimate.twentyFiveYearNet ?? estimate.twentyYearSavings)} sub={`+ ${eur(estimate.vatReclaim ?? 0)} VAT reclaimed · ${estimate.co2TonnesPerYear} t CO₂ / yr`} />
+                </>
+              ) : (
+                <>
+                  <Metric icon={<Sun className="size-4" />} label="Recommended system" value={`${estimate.systemSizeKw} kWp`} sub={`covers ~${estimate.solarOffsetPct}% of your usage`} hero />
+                  <Metric icon={<Euro className="size-4" />} label="You pay after SEAI grant" value={eur(estimate.netCost)} sub={`${eur(estimate.grossCost)} − ${eur(estimate.seaiGrant)} grant`} />
+                  <Metric icon={<TrendingDown className="size-4" />} label="Saved every year" value={eur(estimate.annualSavings)} sub={`${estimate.paybackYears} yr payback`} />
+                  <Metric icon={<Battery className="size-4" />} label="20-year saving" value={eur(estimate.twentyYearSavings)} sub={`${estimate.co2TonnesPerYear} t CO₂ cut / yr`} />
+                </>
+              )}
             </div>
 
             {/* day/night split — the moat, if we have it */}

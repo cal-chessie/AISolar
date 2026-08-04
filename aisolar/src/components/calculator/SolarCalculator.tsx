@@ -77,12 +77,16 @@ export default function SolarCalculator({
   /** Hide the built-in "upload your bill" CTA when we're already past that
       (the bill analyser embeds this after the read). */
   showUploadCta = true,
+  /** §D fork — 'commercial' runs the NDMG + commercial-sizing path so a business
+      never sees the domestic €1,800 grant. Default domestic. */
+  propertyType = 'domestic',
 }: {
   showHeader?: boolean;
   initialBill?: number;
   initialNightPct?: number;
   annualKwh?: number;
   showUploadCta?: boolean;
+  propertyType?: 'domestic' | 'commercial';
 }) {
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
@@ -118,7 +122,7 @@ export default function SolarCalculator({
 
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
-    const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined });
+    const est = calculateSystemEstimate({ monthlyBill, annualKwh, roofCapKwp: roofKwp || undefined, propertyType });
     const orient = orientFactor(faces);
     const baseSavings = Math.round(est.annualSavings * orient);
     const batteryKwh = 10.2;
@@ -132,7 +136,9 @@ export default function SolarCalculator({
     return { est, batteryKwh, annualSavings, netCost, paybackYears, twentyYear, batteryCost, curve,
       seaiGrant: est.seaiGrant, systemSizeKw: est.systemSizeKw, panels: Math.round((est.systemSizeKw * 1000) / cfg.panelWatts),
       annualProduction: est.annualProductionKwh, co2: est.co2TonnesPerYear, grossCost: est.grossCost };
-  }, [monthlyBill, nightPct, faces, battery, roofKwp, annualKwh, cfg]);
+  }, [monthlyBill, nightPct, faces, battery, roofKwp, annualKwh, cfg, propertyType]);
+
+  const grantLabel = propertyType === 'commercial' ? 'NDMG grant' : 'SEAI grant';
 
   return (
     /* When embedded in a page that already has its own container (the bill
@@ -238,7 +244,7 @@ export default function SolarCalculator({
             <p className="label-micro">Estimated 20-year saving</p>
             <Money value={r.twentyYear} className="block mt-1 text-3xl sm:text-4xl font-semibold tracking-tight text-doc-deposit tabular-nums" />
             <p className="mt-2 text-xs text-muted-foreground leading-body">
-              The SEAI grant takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. Everything after that comes off your bills.
+              The {grantLabel} takes <span className="font-semibold text-foreground tabular-nums">{eur(r.seaiGrant)}</span> off the price, and the system pays for itself in about <span className="font-semibold text-foreground tabular-nums">{r.paybackYears} years</span>. {propertyType === 'commercial' ? 'The figure is ex-VAT (you reclaim the VAT); ROI, ACA relief and IRR are on your full estimate.' : 'Everything after that comes off your bills.'}
             </p>
           </div>
 
@@ -251,7 +257,7 @@ export default function SolarCalculator({
           <div className="px-6 py-4 border-b border-border space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">System installed</span><span className="tabular-nums"><Money value={r.grossCost} /></span></div>
             {battery && <div className="flex justify-between"><span className="text-muted-foreground">Home battery</span><span className="tabular-nums">{eur(r.batteryCost)}</span></div>}
-            <div className="flex justify-between text-doc-deposit"><span>SEAI grant</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
+            <div className="flex justify-between text-doc-deposit"><span>{grantLabel}</span><span className="tabular-nums">−{eur(r.seaiGrant)}</span></div>
             <div className="flex justify-between font-semibold border-t border-border pt-1.5"><span>Your net cost</span><span className="tabular-nums"><Money value={r.netCost} /></span></div>
           </div>
 

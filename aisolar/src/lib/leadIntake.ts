@@ -198,6 +198,20 @@ export const IE_ENERGY = {
  * Single source of truth — used by AIBillAnalyser (front door), ProposalDraftAgent,
  * and the proposal editor. Eliminates the "two parallel grant calculation paths" bug.
  */
+/** Irish trading-income corporation-tax rate — the value of a capital allowance. */
+const IE_CORP_TAX = 0.125;
+
+/** IRR over `years` for a single upfront outflow + level annual inflow. Bisection;
+ *  headline-capped at 100%. Used for the commercial estimate. */
+function irrPercent(initial: number, annual: number, years: number): number {
+  if (initial <= 0 || annual <= 0) return 0;
+  const npv = (r: number) => { let s = -initial; for (let t = 1; t <= years; t++) s += annual / Math.pow(1 + r, t); return s; };
+  if (npv(1) > 0) return 100;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (npv(mid) > 0) lo = mid; else hi = mid; }
+  return Math.round(((lo + hi) / 2) * 1000) / 10;
+}
+
 export function calculateSystemEstimate(input: {
   monthlyBill?: number | null;
   annualKwh?: number | null;
@@ -206,43 +220,83 @@ export function calculateSystemEstimate(input: {
    *  callers with occupancy data pass an occupancy-driven % (see
    *  selfConsumptionFromOccupancy) so the savings reflect the real home. */
   selfConsumptionPct?: number | null;
+  /** THE §D FORK — one question at the door decides the whole job. domestic
+   *  (default) → €-saving + SEAI grant + payback; commercial → ex-VAT + VAT
+   *  reclaim + NDMG + ACA + ROI/IRR. Commercial fields are undefined for domestic. */
+  propertyType?: PropertyType;
 }) {
+  const commercial = input.propertyType === 'commercial';
   const monthlyBill = input.monthlyBill ?? 0;
   const annualKwh = input.annualKwh && input.annualKwh > 0
     ? input.annualKwh
     : (monthlyBill * 12) / IE_ENERGY.RETAIL_RATE;
 
-  // Clamp system size to Irish residential range (3-12 kWp) unless survey override
-  const calcSize = Math.max(3, Math.min(12, Math.round(annualKwh / IE_ENERGY.YIELD_PER_KWP)));
+  // Domestic clamps to the Irish residential band (3–12 kWp); commercial sizes to
+  // offset the load, 4–500 kWp (NDMG reaches to 1000). Roof cap wins either way.
+  const rawSize = Math.round(annualKwh / IE_ENERGY.YIELD_PER_KWP);
+  const calcSize = commercial ? Math.max(4, Math.min(500, rawSize)) : Math.max(3, Math.min(12, rawSize));
   const systemSize = input.roofCapKwp ? Math.min(input.roofCapKwp, calcSize) : calcSize;
 
   const annualProduction = systemSize * IE_ENERGY.YIELD_PER_KWP;
+  // Businesses run their load in daylight → higher self-consumption than a home.
+  const defaultSelfCon = commercial ? 0.80 : IE_ENERGY.SELF_CONSUMPTION_PCT;
   const selfConsumption = (input.selfConsumptionPct != null && input.selfConsumptionPct > 0)
     ? Math.min(0.95, Math.max(0.2, input.selfConsumptionPct))
-    : IE_ENERGY.SELF_CONSUMPTION_PCT;
+    : defaultSelfCon;
   const selfConsumedKwh = annualProduction * selfConsumption;
   const exportedKwh = annualProduction - selfConsumedKwh;
   const annualSavings = (selfConsumedKwh * IE_ENERGY.RETAIL_RATE) + (exportedKwh * IE_ENERGY.EXPORT_RATE);
   const solarOffset = annualKwh > 0 ? Math.min(85, Math.round((annualProduction / annualKwh) * 100)) : 0;
 
+  // Commercial capital is quoted EX-VAT (they reclaim the 13%); domestic solar is
+  // 0% VAT, so gross = ex. Grant forks: domestic tiers vs the NDMG formula.
   const grossCost = systemCost({ systemSizeKw: systemSize });
-  const seaiGrant = domesticSolarGrant(systemSize);   // verified tiered €700/€200 (was flat €900/kWp)
-  const netCost = grossCost - seaiGrant;
-  const paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
-  const twentyYearSavings = annualSavings * 20 - netCost;
+  const grant = commercial ? calculateNDMG(systemSize) : domesticSolarGrant(systemSize);
+  const netCost = grossCost - grant;   // after grant (both) — same meaning across the fork
+
+  let paybackYears: number, twentyYearSavings: number;
+  let vatReclaim: number | undefined, acaRelief: number | undefined, netCostAfterAca: number | undefined;
+  let roiPct: number | undefined, irrPct: number | undefined, twentyFiveYearNet: number | undefined;
+
+  if (commercial) {
+    // VAT they get back; ACA = 100% first-year capital allowance on the grant-net
+    // capital, worth the 12.5% trading rate in year one; ROI/IRR off the true net.
+    vatReclaim = Math.round(grossCost * VAT_COMMERCIAL);
+    acaRelief = Math.round(netCost * IE_CORP_TAX);
+    netCostAfterAca = netCost - acaRelief;
+    paybackYears = annualSavings > 0 ? Math.round((netCostAfterAca / annualSavings) * 10) / 10 : 0;
+    roiPct = netCostAfterAca > 0 ? Math.round((annualSavings / netCostAfterAca) * 100) : 0;
+    irrPct = irrPercent(netCostAfterAca, annualSavings, 25);
+    twentyFiveYearNet = Math.round(annualSavings * 25 - netCostAfterAca);
+    twentyYearSavings = Math.round(annualSavings * 20 - netCostAfterAca);
+  } else {
+    paybackYears = annualSavings > 0 ? Math.round((netCost / annualSavings) * 10) / 10 : 0;
+    twentyYearSavings = Math.round(annualSavings * 20 - netCost);
+  }
 
   return {
+    propertyType: (input.propertyType ?? 'domestic') as PropertyType,
+    commercial,
     annualKwh: Math.round(annualKwh),
     systemSizeKw: systemSize,
     annualProductionKwh: Math.round(annualProduction),
     annualSavings: Math.round(annualSavings),
     solarOffsetPct: solarOffset,
     grossCost,
-    seaiGrant,
+    seaiGrant: grant,   // domestic grant OR NDMG — existing callers keep working
     netCost,
     paybackYears,
-    twentyYearSavings: Math.round(twentyYearSavings),
+    twentyYearSavings,
     co2TonnesPerYear: Math.round((annualProduction * 0.4) / 1000 * 10) / 10,
+    // commercial-only (undefined for domestic)
+    ndmgGrant: commercial ? grant : undefined,
+    exVatCost: commercial ? grossCost : undefined,
+    vatReclaim,
+    acaRelief,
+    netCostAfterAca,
+    roiPct,
+    irrPct,
+    twentyFiveYearNet,
   };
 }
 
