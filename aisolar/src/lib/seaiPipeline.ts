@@ -9,9 +9,11 @@
  *   - SEAI Grant Agent (compiles submission pack from this data)
  *
  * Sources:
- *   - SEAI Solar Electricity Grant (residential): €900/kWp, max €1,800 (2kWp+)
+ *   - SEAI Solar Electricity Grant (domestic): €700/kWp for the first 2 kWp,
+ *     then €200/kWp to 4 kWp — max €1,800 (unchanged for 2026, confirmed seai.ie)
  *   - Microgen Export Plan (export tariff): €0.14/kWh (2026 rate, ESB Networks)
- *   - BER uplift: €300 if post-works BER ≥ B3
+ *   - Post-works BER: a CONDITION of the domestic grant (SEAI won't pay until
+ *     it's published) — NOT a €300 uplift; no such bonus exists
  *   - Home Energy Upgrade Loan (HEUL): low-interest loan via SBCI/credit unions
  *
  * For commercial: SEAI Non-Domestic Microgen Grant (NDMG) — different tiers.
@@ -148,6 +150,61 @@ export function seaiPropertyType(raw?: string | null): PropertyType {
   return /commercial|industrial|farm|non.?domestic|business/i.test(raw ?? '') ? 'commercial' : 'domestic';
 }
 
+export interface SEAIGrantEligibility {
+  /** false = a hard disqualifier is present (grant cannot be claimed). */
+  eligible: boolean;
+  /** Hard disqualifiers — the customer is NOT eligible while any of these hold. */
+  blockers: string[];
+  /** Conditions still to satisfy before payment (not disqualifiers). */
+  conditions: string[];
+}
+
+/**
+ * SEAI DOMESTIC Solar Electricity Grant eligibility (seai.ie, 2026):
+ *   • home built AND occupied BEFORE 2021 (new builds meet solar via building
+ *     regs, not this grant),
+ *   • the property has an MPRN,
+ *   • no previous SEAI solar PV funding at that MPRN.
+ * Commercial NDMG is a different scheme with its own rules — not gated here.
+ *
+ * Standalone on purpose: any surface (proposal, DoW, grant agent) can call it
+ * with the facts it holds without threading new fields through calculateSEAI.
+ * The grant is never promised as certain while `eligible` is false.
+ */
+export function seaiGrantEligibility(args: {
+  propertyType: PropertyType;
+  installType?: InstallType;
+  yearBuilt?: number | string | null;
+  mprn?: string | null;
+}): SEAIGrantEligibility {
+  if (args.propertyType !== 'domestic') {
+    return {
+      eligible: true,
+      blockers: [],
+      conditions: ['Commercial NDMG — eligibility per the Non-Domestic Microgen scheme, not the domestic gate'],
+    };
+  }
+  const blockers: string[] = [];
+  const year = typeof args.yearBuilt === 'string' ? parseInt(args.yearBuilt, 10) : args.yearBuilt;
+  if (args.installType === 'new_build') {
+    blockers.push('New build — the grant is for homes built & occupied before 2021 (new builds meet solar via building regs, not this grant)');
+  }
+  if (typeof year === 'number' && Number.isFinite(year) && year >= 2021) {
+    blockers.push(`Built ${year} — the home must have been built & occupied before 2021`);
+  }
+  if (!args.mprn || !String(args.mprn).trim()) {
+    blockers.push('No MPRN on file — the meter point must exist to claim');
+  }
+  return {
+    eligible: blockers.length === 0,
+    blockers,
+    conditions: [
+      'Post-works BER published by a registered assessor (SEAI pays only after this)',
+      'No previous SEAI solar PV funding claimed at this MPRN',
+    ],
+  };
+}
+
 export function domesticSolarGrant(kwp: number): number {
   const g = Math.min(kwp, 2) * 700 + Math.max(0, Math.min(kwp, 4) - 2) * 200;
   return Math.min(Math.round(g), 1800);
@@ -221,15 +278,22 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
     {
       id: 'ber_cert',
       label: 'BER Certificate (post-works)',
-      description: 'Building Energy Rating certificate showing B3 or better (for €300 uplift)',
-      required: berUplift > 0,
+      // A post-works BER by a registered assessor is a hard CONDITION of the
+      // domestic grant — SEAI won't pay until it's published. It is NOT a €300
+      // uplift (no such uplift exists). Not part of the commercial NDMG scheme.
+      description: 'Post-works BER by a registered assessor — SEAI pays the grant only once it is published',
+      required: input.propertyType === 'domestic',
       status: 'missing',
       source: 'site_surveys.ber_rating',
     },
     {
       id: 'invoice',
       label: 'Final tax invoice',
-      description: 'VAT-compliant invoice from installer (13% VAT on solar)',
+      // Domestic solar is 0% VAT (since 1 May 2023); commercial is the 13%
+      // reduced rate. Never tell a homeowner they were charged 13%.
+      description: input.propertyType === 'domestic'
+        ? 'VAT-compliant final invoice from the installer (domestic solar is 0% VAT)'
+        : 'VAT-compliant final invoice from the installer (commercial solar at 13% VAT)',
       required: true,
       status: 'pending',
       source: 'invoices.invoice_number',
@@ -253,7 +317,11 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
     {
       id: 'esb_connection',
       label: 'ESB Networks connection agreement',
-      description: 'NC6 form confirmation (microgen export setup)',
+      // NC6 is a NOTIFICATION (≤6kW single / ≤11kW three-phase); above that it's
+      // an NC7 APPLICATION energised only after ESB's offer. Don't hardcode NC6.
+      description: input.systemSizeKw > 6
+        ? 'ESB microgen connection — NC7 application (over 6kW single / 11kW three-phase) or NC6 if within band'
+        : 'ESB microgen connection — NC6 notification (microgen export setup)',
       required: true,
       status: 'missing',
       source: 'esb_connection',
@@ -261,8 +329,14 @@ export function calculateSEAI(input: SEAIInput): SEAIOutput {
     {
       id: 'planning_exemption',
       label: 'Planning exemption confirmation',
-      description: 'Confirmation that install qualifies for exempted development (≤12 kWp domestic, rear roof, etc.)',
-      required: input.systemSizeKw > 6,
+      // Domestic rooftop solar is EXEMPT regardless of size since Oct 2022
+      // (SI 493/2022) — the old 12 m² / 50%-roof caps are gone. Only caveats:
+      // the 15cm projection + ridge-line limits, and Solar Safeguarding Zones
+      // near airports. Non-domestic still has area limits, so it can need it.
+      description: input.propertyType === 'domestic'
+        ? 'Domestic rooftop is exempt regardless of size (SI 493/2022) — confirm only projection/ridge limits + not in a Solar Safeguarding Zone (near airports)'
+        : 'Confirm non-domestic rooftop stays within exempted-development limits, else planning permission is required',
+      required: input.propertyType !== 'domestic' && input.systemSizeKw > 6,
       status: 'pending',
       source: 'site_surveys.planning_status',
     },
