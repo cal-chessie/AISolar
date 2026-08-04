@@ -119,17 +119,23 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
 ## SPRINT 2 — 🔴 THE BLOCKERS (the launch spine — nothing below matters if these don't close)
 
 ### 2A · The paper trail (Cal: "worst thing is a mistake in the paper trail")
-- ⭐ **ONE doc-id vocabulary** — reconcile `decideCompliance` short ids vs `lead_documents` CHECK long ids
-  vs `fieldRecord` cert keys. One name per document, everywhere.
-- ⭐ **Wire the writes** — `lead_documents` + `esb_submissions` (sealed → portal-submitted → REAL ESB ref →
-  status). **Nothing writes them today** — the whole "prepare/track/chase" claim rests on this
-  (PAPERWORK_AUDIT §3).
-- **Per-customer pack gate** — every cohort customer's NC pack passes `nc6Completeness` + a human eyeball.
-- **Surface the gate** — missing items at the 3 human touchpoints (job card · consultant lead view · owner
+- ✅ ⭐ **ONE doc-id vocabulary** *(Done 4 Aug)* — `docVocab.ts` reconciles `decideCompliance` short ids ↔
+  `lead_documents` CHECK long ids ↔ `fieldRecord` cert keys. One name everywhere.
+- ✅ ⭐ **Wire the writes** *(Done 4 Aug)* — `paperTrail.ts` writes `lead_documents` + `esb_submissions`
+  (sealed; `esb_reference`/submitted stay NULL until a REAL portal submission — truth-pass). Demo-safe (no
+  session = no-op). Migration `20260804_doc_vocab_reconcile.sql` applied live + verified.
+- ✅ **NC6 §3 correspondence** *(Done 4 Aug)* — company landline + email wired into the §3 form block.
+- ✅ **BEYOND 2A (4 Aug) — the full NC7 + NC7-01 forms** (all pages: §4/§5 incl. MIC/MEC + the 3 assessment
+  questions, §6/§7 owner signatory, the confirmation cert's header + protection column + sign-off + owner
+  declarations, Vector-Shift truth-pass), **the Installers roster** (Safe Electric Cert Number), **and the
+  ENTIRE SEAI grant workflow** (eligibility gate · lifecycle spine + `seai_grants` table live · owner tracker
+  · customer card · auto-advance off the gate · DoW + data-sheet PDF artifact + both-party eIDAS signatures +
+  bundled equipment datasheets). See docs/SEAI_GRANT_WORKFLOW.md.
+- ⬜ **Per-customer pack gate** — every cohort customer's NC pack passes `nc6Completeness` + a human eyeball.
+- ⬜ **Surface the gate** — missing items at the 3 human touchpoints (job card · consultant lead view · owner
   badge); the Coach speaks them *(dealIntel already carries packBlockers — finish the surfacing)*.
-- **NC8 decision** — the overlay is EMPTY (>50kW jobs get the data appendix only). Calibrate it, or state
+- ⬜ **NC8 decision** — the overlay is EMPTY (>50kW jobs get the data appendix only). Calibrate it, or state
   "appendix-only for NC8" honestly at launch. Decide, don't drift.
-- **NC6 §3 correspondence** — company landline + email are captured but never wired into the form block.
 
 ### 2B · The front door + the fork
 - ⭐ **A1 · Auth + tenant onboarding** — signup → tenant + role + first-admin bootstrap; the Flowith flow is
