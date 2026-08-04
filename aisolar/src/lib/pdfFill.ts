@@ -34,6 +34,8 @@ import { getFieldRecord } from '@/lib/fieldRecord';
 import { getTenantBrand } from '@/lib/tenantBrand';
 import { getCompanyCompliance } from '@/lib/companyCompliance';
 import { brand } from '@/config/brand';
+import { decideCompliance } from '@/lib/complianceDecision';
+import { sealSubmission, recordDocument } from '@/lib/paperTrail';
 
 type EsbForm = 'NC6' | 'NC7' | 'NC8' | 'NC5';
 
@@ -449,7 +451,9 @@ async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
  *        silently re-typed.
  * Client-side today; DB persistence + real submission/notify are Sweep 8 (M1-M3, X1).
  */
-export async function buildSubmissionPack(lead: DummyLead): Promise<Blob> {
+export interface SealedPack { blob: Blob; sha256: string; pageCount: number; mprn: string; installer: string; reciNo: string; }
+
+export async function buildSubmissionPack(lead: DummyLead): Promise<SealedPack> {
   const nc6Bytes = await (await fillEsbForm(lead, 'NC6')).arrayBuffer();
   const nc6Hash = await sha256Hex(nc6Bytes);            // (11)(12) seal of the filled NC6
   const doc = await PDFDocument.load(nc6Bytes, { ignoreEncryption: true });
@@ -573,14 +577,28 @@ export async function buildSubmissionPack(lead: DummyLead): Promise<Blob> {
   doc.setKeywords(['NC6', 'ESB Networks', 'microgeneration', mprn, reciNo, `seal:${nc6Hash.slice(0, 16)}`, 'AISolar'].filter(Boolean));
   doc.setCreationDate(new Date());
 
-  return new Blob([await doc.save()], { type: 'application/pdf' });
+  const blob = new Blob([await doc.save()], { type: 'application/pdf' });
+  return { blob, sha256: nc6Hash, pageCount: doc.getPageCount(), mprn, installer, reciNo };
 }
 
 export async function downloadSubmissionPack(lead: DummyLead) {
-  const blob = await buildSubmissionPack(lead);
+  const pack = await buildSubmissionPack(lead);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = URL.createObjectURL(pack.blob);
   a.download = `ESB-submission-pack-${lead.name.replace(/\s+/g, '-')}.pdf`;
   a.click();
   URL.revokeObjectURL(a.href);
+
+  // SEAL THE SUBMISSION — one esb_submissions row per sealed pack, with the seal
+  // + the completeness snapshot at this moment. Demo-safe (no-op signed-out);
+  // esb_reference stays NULL until a REAL portal submission (truth-pass).
+  const c = nc6Completeness(lead);
+  const esbForm = decideCompliance(lead).esbForm.toLowerCase() as 'nc6' | 'nc7' | 'nc8';
+  await sealSubmission(lead.id, {
+    form: esbForm, packSha256: pack.sha256, pageCount: pack.pageCount,
+    mprn: pack.mprn || undefined, installerName: pack.installer || undefined, reciNumber: pack.reciNo || undefined,
+    completenessReady: c.ready, missing: c.missing,
+  });
+  // The sealed NC6 pack is itself a pack document — record it with its seal.
+  await recordDocument(lead.id, 'nc6', { status: c.ready ? 'complete' : 'prepared', sha256: pack.sha256, source: 'installer' });
 }

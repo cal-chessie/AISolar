@@ -43,6 +43,7 @@ import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
 import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
+import { recordCert } from '@/lib/paperTrail';
 import { useCompanyCompliance } from '@/lib/companyCompliance';
 import { downloadSubmissionPack } from '@/lib/pdfFill';
 import { esbFormForAcKw, inverterAcKw, type EsbFormChoice } from '@/lib/complianceDecision';
@@ -215,6 +216,12 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
       persist({ certs: next });
       return next;
     });
+    // PAPER TRAIL: a captured cert becomes a tracked pack document with its seal
+    // (reci/dow/sld/typeTest → canonical doc_type). Demo-safe no-op; real write
+    // when authed, tenant-isolated by RLS. 'plate' is evidence, not a pack doc.
+    if (key === 'reci' || key === 'dow' || key === 'sld' || key === 'typeTest') {
+      if (file.dataUrl) recordCert(lead.id, key, file.dataUrl, file.name);
+    }
   };
 
   const storageKey = `jobview_v2_${lead.id}`;
