@@ -60,10 +60,16 @@ transitions), because the customer card and DoW/BER steps all hang off it. Then
 the customer "apply for your grant" card, then BER capture, then wire the DoW as
 the stage-5 artifact.
 
-## Open tenant-config questions
-- Does the owner **discount the grant upfront** (customer reclaims) or does the
-  customer pay net and the grant lands with them? Drives the invoice + net-cost story.
-- Capture **`year_built`** on intake (currently absent in demo) so eligibility is live.
+## Resolved (Cal, 4 Aug)
+- **Grant is NET and lands with the CUSTOMER** — SEAI pays the homeowner directly
+  (they submit their bank details on the SEAI portal). The owner does NOT discount
+  upfront and reclaim. Copy everywhere reflects "SEAI pays you the grant."
+- **DoW + data sheets go to the CUSTOMER in pre-handover, on the customer portal**,
+  because the customer schedules the BER and the **BER assessor needs them**. So
+  `docs_shared` (stage 4) surfaces the DoW + data sheets on the portal BEFORE the BER.
+
+## Still open
+- Capture **`year_built`** on intake (absent in demo) so the eligibility gate is live.
 
 ## Build log — the spine (4 Aug)
 - **src/lib/seaiGrant.ts** — the 8-stage lifecycle state machine + per-lead record
