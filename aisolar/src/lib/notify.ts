@@ -28,6 +28,8 @@ export type NotifyEventType =
   | 'team_invite'
   | 'stage_change'
   | 'callback_request'
+  | 'customer_message'      // a portal message from the customer (AI answered or escalated)
+  | 'survey_options'        // survey time options offered to the customer
   | 'seai_offer_reminder'   // the parked SEAI 8-month clock nudge rides this
   | 'seai_ber_overdue';     // and the BER-overdue chase
 

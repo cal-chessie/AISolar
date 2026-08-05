@@ -22,6 +22,7 @@ import {
 import type { DummyLead } from '@/lib/dummyData';
 import { getStage, PIPELINE_STAGES } from '@/lib/leadIntake';
 import { brand } from '@/config/brand';
+import { askBrain } from '@/lib/customerBrain';
 
 export type { LucideIcon };
 
@@ -279,40 +280,18 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
 
 /**
  * Generate an AI response to a customer/consultant question.
- * Keyword-based for now — will be replaced by a real LLM call in Phase 4.
+ *
+ * DELEGATES to the customer brain (customerBrain.ts) — one intelligence, one
+ * set of facts. The old inline version here quoted €900/kWp (the WRONG grant
+ * rate — domestic is €700/€200 tiered) and claimed "we auto-start your grant
+ * application" (the customer applies; SEAI pays them) — the brain carries the
+ * verified facts and stays consistent with the grant card on screen.
+ *
+ * Callers that need escalation handling (the portal) use askBrain directly;
+ * this wrapper serves read-only previews (the consultant cockpit).
  */
 export function generateAIResponse(question: string, lead: DummyLead): string {
-  const q = question.toLowerCase();
-  if (q.includes('when') && (q.includes('install') || q.includes('date'))) {
-    return lead.assignment?.scheduled_date
-      ? `Your installation is scheduled for ${new Date(lead.assignment.scheduled_date).toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' })}. The crew will arrive between 8-9am. You'll get an email reminder the day before.`
-      : `Your installation will be scheduled once you pay the deposit. Typically within 4-6 weeks of deposit payment, weather permitting.`;
-  }
-  if (q.includes('save') || q.includes('saving') || q.includes('bill')) {
-    return lead.proposal
-      ? `Based on your ${lead.proposal.system_size_kw}kWp system, you'll save approximately ${eur(lead.proposal.annual_savings)} per year. Over 20 years (accounting for inflation), that's ${eur(lead.proposal.twenty_year_savings)} net of installation cost. Your payback period is ${lead.proposal.payback_years} years.`
-      : `Based on your bill of €${lead.monthly_bill}/month, you could save €800-1,400/year with solar.`;
-  }
-  if (q.includes('grant') || q.includes('seai')) {
-    return lead.proposal
-      ? `Your SEAI Solar Electricity Grant is ${eur(lead.proposal.seai_grant)} (€900/kWp, capped at €1,800). We handle all the paperwork — once your contract is signed, the SEAI Grant Agent auto-starts the application.`
-      : `The SEAI grant is €900/kWp installed, capped at €1,800. For a typical 6kWp system, that's the full €1,800 off. We handle all paperwork.`;
-  }
-  if (q.includes('pay') || q.includes('deposit') || q.includes('cost') || q.includes('price')) {
-    return lead.proposal
-      ? `Your net cost after the SEAI grant is ${eur(lead.proposal.net_cost)}. The deposit is 30% (${eur(lead.proposal.net_cost * 0.3)}) due on contract signing, and the balance of 70% (${eur(lead.proposal.net_cost * 0.7)}) is due after installation. You can pay by card or bank transfer.`
-      : `Once your proposal is ready, you'll see the full cost breakdown. Typically a 6kWp system costs €8,000-12,000 after the SEAI grant.`;
-  }
-  if (q.includes('warranty')) {
-    return `Your solar system comes with: (1) 10-year workmanship warranty from us, (2) 25-year performance guarantee on panels, (3) 10-year inverter warranty${lead.proposal?.battery_model ? ', (4) 10-year battery warranty' : ''}. Full warranty docs are in your portal after installation.`;
-  }
-  if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
-    return `Hi ${lead.name.split(' ')[0]}! I'm your solar assistant. Ask me anything about your project — timing, savings, grants, warranty, payments. I'm here 24/7.`;
-  }
-  if (q.includes('progress') || q.includes('status') || q.includes('where')) {
-    return `Your project is currently at: ${getStage(lead.workflow_stage).label}. ${getStage(lead.workflow_stage).automation}. You can see the full timeline in our conversation below.`;
-  }
-  return `Great question! I've noted it and your consultant will follow up by email within 24 hours. For anything urgent, call ${brand.contact.phoneDisplay}. You can also review your documents using the 📄 button below.`;
+  return askBrain(lead, question).text;
 }
 
 /**

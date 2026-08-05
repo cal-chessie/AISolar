@@ -67,7 +67,10 @@ import SurveyBooking from './SurveyBooking';
 import CustomerGrantCard from './CustomerGrantCard';
 import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
 import { isDemoMode, isDemoAvailable } from '@/lib/demoMode';
-import { buildConversation, generateAIResponse, type ChatMessage } from '@/lib/conversation';
+import { buildConversation, type ChatMessage } from '@/lib/conversation';
+import { askBrain, suggestedQuestions } from '@/lib/customerBrain';
+import { notify } from '@/lib/notify';
+import { getGrant } from '@/lib/seaiGrant';
 
 // The staging DemoBanner renders a 28px in-flow spacer that pushes full-height
 // (h-dvh) routes down, so 100dvh overflows and the chat input drops below the
@@ -121,24 +124,51 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
 
   const handleSend = async () => {
     if (!input.trim() || thinking) return;
+    const question = input.trim();
 
     const userMsg: ChatMessage = {
       id: `user_${Date.now()}`,
       type: 'customer',
-      body: input,
+      body: question,
       timestamp: new Date().toISOString(),
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setThinking(true);
 
-    await new Promise(r => setTimeout(r, 800));
+    // The brain answers off the live record (stage, money, the real grant),
+    // and tells us when a human should pick this up.
+    const answer = askBrain(lead, question);
 
-    const response = generateAIResponse(input, lead);
+    // BOTH-ENDS LAW: every portal message reaches the team. Escalations bell as
+    // their own kind (complaint/callback/booking); answered questions land as a
+    // quiet customer_message so the consultant's thread stays complete. The
+    // write also PERSISTS the message for real leads (notifications → thread).
+    let text = answer.text;
+    if (answer.escalation) {
+      const r = await notify({
+        type: answer.escalation.type, leadId: lead.id, bothEnds: false,
+        title: answer.escalation.title, message: answer.escalation.message,
+        metadata: { concern: answer.concern, urgent: answer.escalation.urgent, from: 'portal' },
+      });
+      // Truth-pass: the answer claims a human was told. If the flag genuinely
+      // failed (signed-in, write error), swap the claim for a direct route.
+      if (!r.ok && r.reason !== 'demo') {
+        text += `\n\nActually — that flag didn't go through just now. Tap "Call me back" below or ring ${brand.contact.phoneDisplay} and we'll pick it up directly.`;
+      }
+    } else {
+      void notify({
+        type: 'customer_message', leadId: lead.id, bothEnds: false,
+        title: `${lead.name.split(' ')[0]} asked (AI answered)`, message: question,
+        metadata: { concern: answer.concern, answered: true, from: 'portal' },
+      });
+    }
+
+    await new Promise(r => setTimeout(r, 500));
     setMessages(prev => [...prev, {
       id: `ai_${Date.now()}`,
       type: 'ai',
-      body: response,
+      body: text,
       timestamp: new Date().toISOString(),
     }]);
     setThinking(false);
@@ -147,31 +177,39 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
   // Cal: "book call" is a CALL BACK, not a consultation booking — and it happens
   // IN the chat, like the survey booking does. Drops the request into the thread
   // and confirms a callback on their number; no detour to an external calendar.
-  const requestCallback = () => {
+  const requestCallback = async () => {
     if (thinking) return;
     const now = new Date().toISOString();
     setMessages(prev => [...prev, {
       id: `cb_${Date.now()}`, type: 'customer', body: 'Could someone give me a call back?', timestamp: now,
     }]);
     setThinking(true);
+    // THE trigger that must never be silent: a customer asking to be called.
+    // Bells the whole tenant team; the reply only promises what actually landed.
+    const r = await notify({
+      type: 'callback_request', leadId: lead.id, bothEnds: false,
+      title: `📞 Callback — ${lead.name}`, message: `Wants a call back on ${lead.phone}.`,
+      metadata: { phone: lead.phone, from: 'portal', urgent: true },
+    });
+    const ok = r.ok || r.reason === 'demo';
     setTimeout(() => {
       const who = lead.assigned_consultant?.split(' ')[0] || 'Your consultant';
       setMessages(prev => [...prev, {
         id: `cbr_${Date.now()}`, type: 'agent',
-        body: `Of course — ${who} will call you back today on ${lead.phone}. If another number suits you better, just reply here with it.`,
+        body: ok
+          ? `Of course — ${who} has been pinged and will call you back today on ${lead.phone}. If another number suits you better, just reply here with it.`
+          : `That request didn't go through just now — please ring us directly on ${brand.contact.phoneDisplay} and we'll pick straight up.`,
         timestamp: new Date().toISOString(),
       }]);
       setThinking(false);
-    }, 800);
-    toast.success('Callback requested', { description: `We'll ring you on ${lead.phone}.` });
+    }, 500);
+    if (ok) toast.success('Callback requested', { description: `We'll ring you on ${lead.phone}.` });
   };
 
-  const suggestedQuestions = [
-    'When will my installation happen?',
-    'How much will I save?',
-    'What\'s the SEAI grant?',
-    'What warranty do I get?',
-  ];
+  // Exactly-timed prompts (Cal): the chips match what THIS stage makes the
+  // customer wonder — a proposal-stage home asks different questions to a
+  // just-installed one. One source: the customer brain.
+  const promptChips = suggestedQuestions(lead);
 
   const stage = getStage(lead.workflow_stage);
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
@@ -296,7 +334,7 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
         {/* Suggested questions (show when conversation is short or after AI responds) */}
         {messages.length <= 4 && !thinking && (
           <div className="flex flex-wrap gap-2 justify-center py-2">
-            {suggestedQuestions.map(q => (
+            {promptChips.map(q => (
               <button
                 key={q}
                 onClick={() => { setInput(q); setTimeout(() => handleSend(), 100); }}
@@ -391,7 +429,7 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
                     { label: 'Deposit Invoice', desc: lead.invoice ? `${eur(lead.invoice.deposit_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.deposit_paid ? 'Paid' : 'Pay', edge: 'border-l-doc-deposit', chip: 'bg-doc-deposit/10 text-doc-deposit' },
                     { label: 'Final Invoice', desc: lead.invoice ? `${eur(lead.invoice.final_amount)}` : 'Pending', icon: CreditCard, available: !!lead.invoice, action: lead.invoice?.final_paid ? 'Paid' : 'Pay', edge: 'border-l-doc-invoice', chip: 'bg-doc-invoice/10 text-doc-invoice' },
                     { label: 'Warranty', desc: ['installed','final_paid','completed'].includes(lead.workflow_stage) ? '10yr workmanship + 25yr panels' : 'After install', icon: Award, available: ['installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View', edge: 'border-l-tech', chip: 'bg-tech-subtle text-tech' },
-                    { label: 'SEAI Application', desc: lead.workflow_stage === 'completed' ? 'Submitted' : 'In progress', icon: Zap, available: ['approved','deposit_paid','install_scheduled','installing','installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View', edge: 'border-l-tech', chip: 'bg-tech-subtle text-tech' },
+                    { label: 'SEAI Grant', desc: (() => { const s = getGrant(lead.id).status; return s === 'paid' ? 'Paid to you' : ['ber_published','dow_submitted'].includes(s) ? 'Claim with SEAI' : ['installed','docs_shared','ber_booked'].includes(s) ? 'BER next — pack in here' : ['offer_applied','offer_received'].includes(s) ? 'Offer stage' : 'Tracked for you'; })(), icon: Zap, available: ['approved','deposit_paid','install_scheduled','installing','installed','final_paid','completed'].includes(lead.workflow_stage), action: 'View', edge: 'border-l-tech', chip: 'bg-tech-subtle text-tech' },
                   ].map((doc, i) => {
                     const Icon = doc.icon;
                     return (
@@ -556,11 +594,26 @@ function MoneyView({ lead }: { lead: DummyLead }) {
   const paid = (depositPaid ? deposit : 0) + (finalPaid ? (inv?.final_amount ?? (p.net_cost - deposit)) : 0);
   const due = Math.max(0, p.net_cost - paid);
 
-  // Grant status — honest to where the job actually is.
-  const grantStatus =
-    ['installed', 'final_paid', 'completed'].includes(stage) ? { label: 'Paperwork with SEAI', tone: 'text-tech' }
-    : ['deposit_paid', 'install_scheduled', 'installing'].includes(stage) ? { label: 'We\'ll file it after install', tone: 'text-muted-foreground' }
-    : { label: 'Included in your price', tone: 'text-muted-foreground' };
+  // Grant status — read from the SAME live grant record as the grant card
+  // above, so this screen can never carry two different grant stories (found
+  // 5 Aug: this line said "we'll file it after install" while the card said
+  // "apply now, before the install" — direct contradiction, fixed).
+  const grantRec = getGrant(lead.id);
+  const GRANT_SUB: Record<string, string> = {
+    not_started: 'yours to claim — steps in your grant card',
+    eligible: 'yours to claim — steps in your grant card',
+    offer_applied: 'application in — awaiting your offer',
+    offer_received: 'offer in hand — paid to you at the end',
+    installed: 'book your BER — the grant follows it',
+    docs_shared: 'BER pack in your Documents — book your assessor',
+    ber_booked: 'BER booked — the grant follows it',
+    ber_published: 'claim with SEAI — paid to your account',
+    dow_submitted: 'claim with SEAI — paid to your account',
+    paid: 'paid to your account',
+    ineligible: 'talk to your consultant about eligibility',
+    offer_expired: 'offer expired — talk to your consultant',
+  };
+  const grantStatus = { label: GRANT_SUB[grantRec.status] ?? GRANT_SUB.not_started, tone: 'text-tech' };
 
   // What happens next, money-wise — one honest line off the stage.
   const nextLine =
