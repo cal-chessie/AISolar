@@ -101,6 +101,59 @@ solid. The 2.5 was "unproven + GATE 0"; both are answered. Re-run this pass befo
 
 ---
 
+## 🔒🔒🔒 DEEP SWEEP — DOUBLE-DOWN (6 Aug — Cal: "go deeper, double down, no stone")
+_Went table-by-table across all 40 tables, every SECURITY DEFINER function, the
+token path, storage buckets, and the RPC surface. Found + fixed FIVE MORE real
+holes the first two passes didn't reach. The deeper you look, the more you find —
+these are now closed + proven; a pro pen-test before scaling to hundreds is still
+worth it._
+
+### 🚨 CRITICAL — `grant_role` platform-admin backdoor (FIXED + PROVEN)
+A SECURITY DEFINER function (so it BYPASSES the RLS I fixed on day 1), EXECUTE-able
+by `authenticated`, gated by the tenant-blind `has_role`, and it inserted the role
+with NO tenant_id → `tenant_id NULL` + `admin` = **PLATFORM admin (god mode over
+every tenant)**. Any tenant admin could `grant_role('own-email','admin')` and own
+the whole platform. Fix (`20260805_grant_role_tenant_scope`): rewritten
+tenant-scoped (caller must be a tenant admin; grant stamped to THAT tenant, never
+platform) + EXECUTE revoked from public/anon. **PROVEN: a tenant admin's grant now
+lands tenant-stamped, zero platform escalation.**
+
+### 🔴 HIGH — `anonymise_lead` cross-tenant data destruction (FIXED + PROVEN)
+The GDPR-erasure function was SECURITY DEFINER, EXECUTE-able by anon+authenticated,
+with NO ownership check — anyone with a lead UUID could erase another tenant's
+customer (name, email, docs, photos). Fix (`20260806_deep_sweep_hardening`): added
+`own_lead OR is_platform_admin` guard + revoked anon. **PROVEN: tenant B's admin
+BLOCKED from erasing tenant A's lead; the lead survived intact.**
+
+### 🔴 HIGH — storage buckets: cross-tenant document access (FIXED)
+`storage.objects` had permissive policies ("Authenticated users can view/**delete**
+project documents", unscoped "view/update survey photos") — RLS is OR'd, so these
+overrode the scoped staff/owner policies, letting ANY signed-in user read/delete
+another tenant's customer documents + roof photos. Dropped the 4 permissive
+policies; scoped staff-read + owner-write remain. *(Completing fix = path→tenant
+scoping on the object key; the upload flows aren't fully wired yet, so buckets are
+near-empty — do the path scoping before real files land.)*
+
+### 🔴 HIGH — 8 SECURITY DEFINER functions, mutable `search_path` (FIXED)
+`claim_next_agent_job`, the `enqueue_*` functions, `fail_agent_job`,
+`handle_new_user` ran SECURITY DEFINER without a pinned search_path — the classic
+Postgres definer-hijack escalation. Pinned all 8 to `public,extensions`
+(`20260805_secdef_search_path`). Now 0 unpinned across the whole DB.
+
+### 🟡 MEDIUM — agent-queue functions callable by users (FIXED)
+`claim/complete/fail/enqueue_agent` were EXECUTE-able by anon/authenticated → a
+user could manipulate the agent runtime. Revoked to service-role only (agent-drain
+uses the service key). Same migration.
+
+### ✅ VERIFIED CLEAN (double-down)
+All 40 tables RLS-on · **no permissive `true` policy anywhere** · every
+customer-data table (proposals·invoices·contracts·lead_intake·seai_applications·
+conversations·agent_runs·activity_logs…) tenant-scoped via `can_see_lead` ·
+`own_lead` write-gate is staff-only (customers read their project but can't queue
+agents or forge audit) · `can_see_lead` token path is per-lead (no over-grant) ·
+`provision_tenant` safe (tenant-stamped, idempotent, self-guarded) · every other
+SECURITY DEFINER helper is a read-only boolean.
+
 ## 🔒🔒 DEEP HARDENING SWEEP — weekend #2 (5 Aug — Cal: "all gates, guardrails, full spine, every inbound/outbound, no stone")
 _The deeper pass. Found + fixed TWO real holes the first sweep didn't reach._
 
@@ -165,7 +218,7 @@ brutal honesty, new evidence. Nothing inflated._
 | Dimension | Was | Now | Why it moved |
 |---|---|---|---|
 | **Craft / architecture** | 8.5 | **8.5** | Unchanged — it was always the strength. Prod build green, code-split, clean separation. |
-| **Security posture** | 2.5 | **~8** | GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock + the legacy-global-tables decision. |
+| **Security posture** | 2.5 | **~8**| GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock + the legacy-global-tables decision. |
 | **Readiness** | 3.5 | **~6** | Real prod build GREEN + 3 real prod-breakers found & fixed (widget key, tour loop, env.example). Still needs the actual DEPLOY + the joint smoke to hit "proven live." |
 | **Maintainability / bus-factor** | 4 | **~6** | The docs are now the continuity: LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM make a CTO current in an hour. Still one-founder until that hire — honest. |
 
@@ -188,6 +241,10 @@ half is Lane A — your hands, my prep. You're in materially better shape than 1
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
 ### 🐞 Bugs (found + fixed this session)
+- **🚨 grant_role platform-admin backdoor** (SECURITY DEFINER bypass → god mode) — FIXED + proven (double-down).
+- **🔴 anonymise_lead cross-tenant erasure** (no ownership check) — FIXED + proven.
+- **🔴 storage cross-tenant doc view/delete** (permissive policies) — FIXED.
+- **🔴 8 SECURITY DEFINER mutable search_path** (injection) — FIXED.
 - **🚨 Cross-tenant privilege escalation** (user_roles has_role not tenant-scoped) → any tenant admin could grant themselves admin on any tenant. FIXED + proven live (deep sweep).
 - **🔴 AI-key secret leak** (ai_config global, has_role-readable) → tenant admins could read the shared OpenRouter key. FIXED (locked to platform admin).
 - **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
