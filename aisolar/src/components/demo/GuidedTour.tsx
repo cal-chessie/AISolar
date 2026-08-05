@@ -15,7 +15,7 @@
  * or the first time an owner lands on their cockpit. Resumes across reloads
  * (sessionStorage) so it never restarts mid-walk.
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { enableDemoMode } from '@/lib/demoMode';
@@ -116,16 +116,28 @@ export default function GuidedTour() {
     setOpen(false); writeState(false, 0);
   }, []);
 
-  // Auto-run once (?tour=1, or the first cockpit visit), and the sidebar relaunch.
+  // The sidebar "Take the tour" relaunch — set up once.
   useEffect(() => {
+    window.addEventListener('start-tour', start);
+    return () => window.removeEventListener('start-tour', start);
+  }, [start]);
+
+  // Auto-run AT MOST ONCE (?tour=1, or the first cockpit visit). The ref guard is
+  // load-bearing: without it, if `navigate` changes identity before the URL
+  // flushes the `?tour=1` removal, this effect re-fires start() every render →
+  // "Maximum update depth" (found on the 5 Aug console sweep). The ref makes the
+  // auto-start fire exactly once per mount, independent of navigate's identity.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current) return;
     const params = new URLSearchParams(location.search);
     let seen = true;
     try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch { /* ignore */ }
     const onCockpit = location.pathname.startsWith('/owner');
-    if (params.get('tour') === '1' || (!seen && onCockpit && !readState().active)) start();
-    window.addEventListener('start-tour', start);
-    return () => window.removeEventListener('start-tour', start);
-    // location.pathname/search are the intended triggers.
+    if (params.get('tour') === '1' || (!seen && onCockpit && !readState().active)) {
+      autoStarted.current = true;
+      start();
+    }
   }, [start, location.pathname, location.search]);
 
   if (!open) return null;

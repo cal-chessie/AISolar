@@ -117,6 +117,9 @@ _What a senior team runs before prod. All evidenced; fixes committed._
 
 ### 🐞 Bugs (found + fixed this session)
 - **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
+- **Guided tour `?tour=1` auto-run loop** — a console-sweep catch: if `navigate` changed identity before the URL flushed `?tour=1`, the auto-start effect re-fired every render → "Maximum update depth". FIXED with a `useRef` one-shot guard; re-verified the tour auto-starts at 1/15 and navigates off `?tour=1` without hanging. (My earlier tour test used the event path, which missed this — the sweep earned its keep.)
+- **`.env.example` said Mapbox** — the app uses Google Maps (`googleSolar.ts`); a deploy following it would break satellite/roof. FIXED.
+- _Tooling note:_ the dev in-app browser's console **buffer persists stale HMR errors across reloads** (frozen `?t=` timestamps, incl. a `GuidedTour is not defined` that references code no longer in OwnerCockpit). Not app behaviour — verify current state by source + a functional render, not the raw buffer.
 - Tour restarted on navigation (mounted in cockpit) → lifted app-level + sessionStorage. FIXED + verified.
 - Tour render loop (setState-in-effect) → imperative view-drive. FIXED (live-counted 0).
 - `notifications.tenant_id` column missing → consultant replies on real leads failed to persist. Migration applied.
