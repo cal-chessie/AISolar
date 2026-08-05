@@ -302,7 +302,11 @@ export function useLeads() {
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      if (isDemoMode()) {
+      // Authoritative + race-free: a real session ALWAYS gets real data, even
+      // before the cached session flag in demoMode resolves. Demo cast only
+      // when there's genuinely no session AND demo is on (signed-out explore).
+      const { data: auth } = await supabase.auth.getSession();
+      if (!auth.session && isDemoMode()) {
         setLeads(generateDummyLeads());
       } else {
         setLeads(await fetchRealLeads());

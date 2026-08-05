@@ -11,7 +11,11 @@ tick as landed. First client tests on THIS._
 ```
 - **Demo OFF in prod:** the production build must NOT set `VITE_ENABLE_DEMO` — demo
   mode is what makes every send a silent no-op. If a prod user sees the demo cast,
-  this flag is why.
+  this flag is why. **Belt on top (5 Aug):** even if that flag leaks, a REAL
+  signed-in session now forces demo data OFF everywhere (`hasRealSession()` in
+  demoMode.ts + `useLeads` awaits the session) — a stray `?demo=1` can no longer
+  hijack a paying tenant's pipeline. Demo is the signed-out / prospect-walkthrough
+  state; to demo to a prospect, use a signed-out browser (incognito).
 - **OpenRouter key is entered IN-APP** (Owner → AI Config), not a secret. Until it's
   in, the AI runs on the deterministic floor — which works, so this can wait.
 

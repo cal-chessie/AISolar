@@ -7,6 +7,35 @@
 
 const DEMO_KEY = 'aisolar_demo_mode';
 
+/* THE TIGHTENING (5 Aug): a REAL signed-in session forces demo data OFF —
+ * whatever the sticky ?demo=1 flag or a leaked VITE_ENABLE_DEMO says. Before
+ * this, useLeads chose demo-vs-real on the localStorage flag ALONE, so a stray
+ * ?demo=1 could silently swap a paying tenant's real pipeline for the fabricated
+ * cast and persist it across reloads. Now: signed in ⇒ your real data, full
+ * stop. Demo is the signed-out / prospect-walkthrough state.
+ *
+ * A module-level cached flag (not an await) so the many SYNC callers
+ * (coachBrain, installerRoster, dummyData seeds) all tighten at once. Seeded on
+ * load and kept live by an auth listener — set up once, lazily, on first use. */
+let realSessionActive = false;
+let sessionWatchStarted = false;
+function startSessionWatch(): void {
+  if (sessionWatchStarted || typeof window === 'undefined') return;
+  sessionWatchStarted = true;
+  void (async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.auth.getSession();
+      realSessionActive = !!data.session;
+      supabase.auth.onAuthStateChange((_e, session) => { realSessionActive = !!session; });
+    } catch { /* no client / offline — demo stays governed by the flag alone */ }
+  })();
+}
+
+/** True when a real authenticated session is present. The data layer treats
+ *  this as the override: a real operator never sees the demo cast. */
+export function hasRealSession(): boolean { return realSessionActive; }
+
 /* TWO different things were tangled behind one flag (found 3 Aug, A9/A10):
  *   1. DEMO DATA — the 10 archetypes + the guided tour. Cal WANTS this in
  *      production: every new user meets the cast and is walked round the spine
@@ -29,6 +58,12 @@ export function isAuthBypassAllowed(): boolean {
 export function isDemoMode(): boolean {
   if (!DEMO_AVAILABLE) return false;
   if (typeof window === 'undefined') return false;
+
+  // Start (once) watching auth, then honour the override: a real signed-in
+  // session forces demo OFF — the footgun that let a stray ?demo=1 hijack a
+  // real tenant's pipeline. A prospect walkthrough runs signed-out.
+  startSessionWatch();
+  if (realSessionActive) return false;
 
   const params = new URLSearchParams(window.location.search);
   if (params.get('demo') === '1') {
