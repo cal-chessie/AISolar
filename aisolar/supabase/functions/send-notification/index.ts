@@ -318,15 +318,22 @@ serve(async (req) => {
         break;
 
       case "stage_change":
+        // The APP's real workflow ids (5 Aug fix: the old map used a different
+        // vocabulary, so customer emails printed raw ids like survey_complete).
         const stageLabels: Record<string, string> = {
-          new: 'New Lead',
-          contacted: 'Contacted',
-          survey: 'Survey Scheduled',
-          proposal: 'Proposal Sent',
+          new: 'New Enquiry',
+          intake_complete: 'Details Received',
+          survey_scheduled: 'Survey Booked',
+          survey_complete: 'Survey Done',
+          proposal_drafted: 'Proposal In Design',
+          proposal_sent: 'Proposal Ready',
           approved: 'Proposal Approved',
-          scheduled: 'Installation Scheduled',
-          installed: 'Installation Complete',
-          completed: 'Project Completed',
+          deposit_paid: 'Deposit Received',
+          install_scheduled: 'Installation Booked',
+          installing: 'Installation In Progress',
+          installed: 'Installed & Commissioned',
+          final_paid: 'Paid In Full',
+          completed: 'Project Complete',
         };
         const prevLabel = stageLabels[previousStage || 'new'] || previousStage;
         const newLabel = stageLabels[newStage || 'new'] || newStage;

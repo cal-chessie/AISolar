@@ -84,17 +84,24 @@ function useLiveFeed(role: CockpitRole): { feed: Notice[]; live: boolean; markAl
           .select('id, type, title, message, read, created_at')
           .order('created_at', { ascending: false })
           .limit(20);
-        if (on && data) {
-          setRows(data.map(n => {
-            const meta = TYPE_META[n.type as string] ?? { icon: Bot, tone: 'text-muted-foreground' };
-            return { id: n.id as string, icon: meta.icon, tone: meta.tone,
-              text: n.title ? `${n.title}${n.message ? ` — ${n.message}` : ''}` : (n.message as string ?? ''),
-              time: relTime(n.created_at as string), read: !!n.read };
-          }));
-        }
+        const toNotice = (n: Record<string, unknown>): Notice => {
+          const meta = TYPE_META[n.type as string] ?? { icon: Bot, tone: 'text-muted-foreground' };
+          return { id: n.id as string, icon: meta.icon, tone: meta.tone,
+            text: n.title ? `${n.title}${n.message ? ` — ${n.message}` : ''}` : (n.message as string ?? ''),
+            time: relTime(n.created_at as string), read: !!n.read };
+        };
+        if (on && data) setRows(data.map(toNotice));
+        // REALTIME (5 Aug): new rows ring live mid-session — no refresh needed.
+        const channel = supabase
+          .channel('bell')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
+            (payload) => { if (on) setRows(prev => [toNotice(payload.new as Record<string, unknown>), ...(prev ?? [])].slice(0, 20)); })
+          .subscribe();
+        cleanup = () => supabase.removeChannel(channel);
       } catch { /* stays on the demo feed */ }
     })();
-    return () => { on = false; };
+    let cleanup: (() => void) | undefined;
+    return () => { on = false; cleanup?.(); };
   }, [role]);
   const markAllRead = () => {
     void (async () => {

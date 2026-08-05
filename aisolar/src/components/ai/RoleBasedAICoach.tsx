@@ -25,10 +25,22 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   getCoachSummary, COACH_SYSTEM_PROMPTS, type CoachRole,
 } from '@/lib/aiCoach';
-import { coachAnswer, coachBriefing, COACH_PROMPTS, type CoachAnswer } from '@/lib/coachBrain';
+// ONE BRAIN (5 Aug): the panel talks to the facade — same grounding as the
+// customer portal, the coach voices, and the taught knowledge.
+import { ask as brainAsk, briefing as brainBriefing, prompts as brainPrompts } from '@/lib/brain';
+import type { CoachAnswer } from '@/lib/coachBrain';
 import { aiReports, nextMove, type CoachPOV } from '@/lib/dealIntel';
 import { useLeads } from '@/lib/realLeads';
 import { isDemoMode } from '@/lib/demoMode';
+
+// Facade adapters — the panel's old call shapes, served by the one brain.
+const brainAskCompat = (role: Parameters<typeof brainAsk>[0], q: string): CoachAnswer => {
+  const r = brainAsk(role, { question: q });
+  return { text: r.text, actions: r.actions };
+};
+const brainPromptsCompat = new Proxy({} as Record<string, string[]>, {
+  get: (_, role: string) => brainPrompts(role as Parameters<typeof brainPrompts>[0]),
+});
 
 interface ChatMsg { id: string; from: 'coach' | 'you'; text: string; actions?: CoachAnswer['actions']; }
 
@@ -81,7 +93,7 @@ export default function RoleBasedAICoach() {
   }, [user, roles, loading, location.pathname]);
 
   const summary = getCoachSummary(role);
-  const prompts = COACH_PROMPTS[role] ?? COACH_PROMPTS.consultant;
+  const prompts = brainPromptsCompat[role] ?? COACH_PROMPTS.consultant;
 
   // THE intelligence: every report is computed from the real book (dealIntel) —
   // deal value, days-in-stage, opens, tone, NC6 blockers. No vibes.
@@ -96,7 +108,7 @@ export default function RoleBasedAICoach() {
   // Seed the conversation with a live briefing the first time it opens.
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const brief = coachBriefing(role);
+      const brief = brainBriefing(role);
       const briefText = topMove
         ? `**The one move right now:** ${topMove.action}\n${topMove.reason}\n\n${brief.text}`
         : brief.text;
@@ -117,7 +129,7 @@ export default function RoleBasedAICoach() {
     setThinking(true);
     // A short beat so it reads as a considered answer, not an instant lookup.
     window.setTimeout(() => {
-      const a = coachAnswer(role, text);
+      const a = brainAskCompat(role, text);
       setMessages(m => [...m, { id: `c${Date.now()}`, from: 'coach', text: a.text, actions: a.actions }]);
       setThinking(false);
     }, 450);

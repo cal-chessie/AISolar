@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { brand } from '@/config/brand';
 import { useCompanyCompliance, saveCompanyCompliance, complianceGaps, type CompanyCompliance } from '@/lib/companyCompliance';
 import { useInstallers, saveInstallers, type Installer } from '@/lib/installerRoster';
-import { getKnowledge, saveKnowledge, teachAnswer, unansweredQuestions, type BrainKnowledge, type AskEntry } from '@/lib/brainKnowledge';
+import { getKnowledge, saveKnowledge, teachAnswer, unansweredQuestions, fetchServerAsks, type BrainKnowledge, type AskEntry } from '@/lib/brainKnowledge';
 import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
@@ -966,6 +966,15 @@ function TeachYourAiCard() {
     const update = () => { setK(getKnowledge()); setQueue(unansweredQuestions()); };
     window.addEventListener('ai-knowledge-changed', update);
     window.addEventListener('ai-asklog-changed', update);
+    // CROSS-DEVICE: real customer asks (from the portal, via notifications)
+    // merge into the teach queue — deduped against the local log by wording.
+    fetchServerAsks().then(server => {
+      if (!server.length) return;
+      setQueue(prev => {
+        const seen = new Set(prev.map(e => e.q.toLowerCase()));
+        return [...prev, ...server.filter(e => !seen.has(e.q.toLowerCase()))].slice(0, 10);
+      });
+    });
     return () => { window.removeEventListener('ai-knowledge-changed', update); window.removeEventListener('ai-asklog-changed', update); };
   }, []);
 

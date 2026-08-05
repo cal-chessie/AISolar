@@ -148,9 +148,11 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
     let text = answer.text;
     if (answer.escalation) {
       const r = await notify({
-        type: answer.escalation.type, leadId: lead.id, bothEnds: false,
+        type: answer.escalation.type, leadId: lead.id, bothEnds: false, accessToken: lead.access_token,
         title: answer.escalation.title, message: answer.escalation.message,
-        metadata: { concern: answer.concern, urgent: answer.escalation.urgent, from: 'portal' },
+        // The AI's own reply rides along — the team sees exactly what the
+        // customer was told before they pick up (oversight, not guesswork).
+        metadata: { concern: answer.concern, urgent: answer.escalation.urgent, from: 'portal', aiAnswer: answer.text.slice(0, 500) },
       });
       // Truth-pass: the answer claims a human was told. If the flag genuinely
       // failed (signed-in, write error), swap the claim for a direct route.
@@ -159,9 +161,9 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
       }
     } else {
       void notify({
-        type: 'customer_message', leadId: lead.id, bothEnds: false,
+        type: 'customer_message', leadId: lead.id, bothEnds: false, accessToken: lead.access_token,
         title: `${lead.name.split(' ')[0]} asked (AI answered)`, message: question,
-        metadata: { concern: answer.concern, answered: true, from: 'portal' },
+        metadata: { concern: answer.concern, answered: true, from: 'portal', aiAnswer: answer.text.slice(0, 500) },
       });
     }
 
@@ -193,7 +195,7 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
     // THE trigger that must never be silent: a customer asking to be called.
     // Bells the whole tenant team; the reply only promises what actually landed.
     const r = await notify({
-      type: 'callback_request', leadId: lead.id, bothEnds: false,
+      type: 'callback_request', leadId: lead.id, bothEnds: false, accessToken: lead.access_token,
       title: `📞 Callback — ${lead.name}`, message: `Wants a call back on ${lead.phone}.`,
       metadata: { phone: lead.phone, from: 'portal', urgent: true },
     });
@@ -303,6 +305,17 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
         {/* The customer's live SEAI grant — status + the one thing to do now
             (apply → book BER → paid). The grant is net + paid to them. */}
         {lead.proposal && <CustomerGrantCard lead={lead} />}
+
+        {/* REFERRAL — asked once, at the moment goodwill peaks (system live,
+            money settled). One tap notifies the team; the thread confirms. */}
+        {['final_paid', 'completed'].includes(lead.workflow_stage) && (
+          <ReferralCard lead={lead} onSent={(friend) => {
+            setMessages(prev => [...prev,
+              { id: `ref_${Date.now()}`, type: 'customer', body: `I'd like to refer ${friend} for solar.`, timestamp: new Date().toISOString() },
+              { id: `refr_${Date.now()}`, type: 'agent', body: `Brilliant — thank you! We'll look after ${friend.split(' ')[0]} the way we looked after you, and we'll let you know when they're booked in.`, timestamp: new Date().toISOString() },
+            ]);
+          }} />
+        )}
 
         {messages.map(msg => (
           <ChatBubble key={msg.id} message={msg} leadName={lead.name} />
@@ -663,6 +676,38 @@ function MoneyView({ lead }: { lead: DummyLead }) {
       <div className="px-4 py-2.5 bg-muted/30 border-t border-border">
         <div className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">What's next</div>
         <p className="text-xs text-foreground leading-body">{nextLine}</p>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * ReferralCard — the referral ask, once, at the happy end (Cal's flywheel:
+ * clean handover = the review and the referral). One field, one tap; the team
+ * is notified with the friend's details and the customer sees a warm confirm.
+ */
+function ReferralCard({ lead, onSent }: { lead: DummyLead; onSent: (friend: string) => void }) {
+  const [friend, setFriend] = useState('');
+  const [sent, setSent] = useState(false);
+  if (sent) return null;
+  return (
+    <div className="rounded-panel border border-doc-deposit/30 bg-doc-deposit/5 p-4">
+      <h3 className="text-sm font-semibold flex items-center gap-2"><Star className="size-4 text-doc-deposit" /> Know someone thinking about solar?</h3>
+      <p className="mt-1 text-xs text-muted-foreground">Pass us a name (with their OK) and we'll look after them the way we looked after you.</p>
+      <div className="mt-2.5 flex items-center gap-2">
+        <Input value={friend} onChange={e => setFriend(e.target.value)} placeholder="Their name — and a number if you have it" className="h-9 text-sm flex-1" />
+        <Button size="sm" className="h-9 shrink-0" disabled={!friend.trim()} onClick={async () => {
+          const r = await notify({
+            type: 'referral', leadId: lead.id, bothEnds: false, accessToken: lead.access_token,
+            title: `⭐ Referral from ${lead.name}`, message: `Referred: ${friend.trim()}`,
+            metadata: { from: 'portal', referredBy: lead.name },
+          });
+          setSent(true); onSent(friend.trim());
+          if (r.ok || r.reason === 'demo') toast.success('Referral sent — thank you!');
+        }}>
+          Send
+        </Button>
       </div>
     </div>
   );

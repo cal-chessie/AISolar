@@ -54,6 +54,10 @@ export interface NotifyEvent {
   bell?: boolean;
   /** Extra structured data carried on the bell + email metadata. */
   metadata?: Record<string, unknown>;
+  /** The lead's magic-link token. A portal customer has NO session — when set
+   *  and no session exists, the event rides the portal-inbox edge fn instead
+   *  (M4). Demo leads carry no token, so the demo stays a no-op. */
+  accessToken?: string | null;
 }
 
 export interface NotifyResult { ok: boolean; bell: boolean; email: boolean; reason?: string; }
@@ -85,7 +89,20 @@ async function staffRecipients(leadId?: string, fallback?: string | null): Promi
  */
 export async function notify(e: NotifyEvent): Promise<NotifyResult> {
   const uid = await currentUserId();
-  if (!uid) return { ok: false, bell: false, email: false, reason: 'demo' }; // demo / signed-out → no-op
+  if (!uid) {
+    // No session. A REAL portal customer still has a voice: their lead's
+    // access token authenticates the write server-side (portal-inbox).
+    if (e.accessToken) {
+      try {
+        const { data, error } = await supabase.functions.invoke('portal-inbox', {
+          body: { accessToken: e.accessToken, type: e.type, title: e.title, message: e.message, metadata: e.metadata ?? {} },
+        });
+        if (!error && (data as { ok?: boolean })?.ok) return { ok: true, bell: true, email: false };
+      } catch (err) { console.warn('[notify] portal-inbox', err); }
+      return { ok: false, bell: false, email: false, reason: 'portal-offline' };
+    }
+    return { ok: false, bell: false, email: false, reason: 'demo' }; // demo / signed-out → no-op
+  }
 
   const both = e.bothEnds ?? !!e.leadId;
   let bell = false, email = false;

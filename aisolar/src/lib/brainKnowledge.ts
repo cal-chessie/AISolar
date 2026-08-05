@@ -116,7 +116,47 @@ export function teachAnswer(q: string, a: string): void {
   saveKnowledge({ faqs: [...k.faqs, { q: q.trim(), a: a.trim() }] });
 }
 
-/** Most-asked questions — feeds the FAQ chips so real demand shapes the UI. */
+/** Most-asked questions — feeds the FAQ chips so real demand shapes the UI.
+ *  Taught FAQ questions join the pool: once the owner teaches an answer, the
+ *  chip advertises it (ask → instant answer — the FAQ writing itself). */
 export function topAsked(limit = 4): string[] {
-  return readLog().sort((a, b) => b.count - a.count).slice(0, limit).map(e => e.q);
+  const asked = readLog().sort((a, b) => b.count - a.count).map(e => e.q);
+  const taught = getKnowledge().faqs.map(f => f.q);
+  return [...new Set([...asked, ...taught])].slice(0, limit);
+}
+
+/**
+ * Server asks — the SAME teach queue, fed from the notifications the portal
+ * writes (customer_message + escalations carry the question + answered flag in
+ * metadata). This is what makes the learning loop CROSS-DEVICE: a customer
+ * asks on their phone, the owner teaches on their laptop. Signed-in only;
+ * returns [] quietly everywhere else.
+ */
+export async function fetchServerAsks(): Promise<AskEntry[]> {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: auth } = await supabase.auth.getSession();
+    if (!auth.session) return [];
+    const { data } = await supabase
+      .from('notifications')
+      .select('message, type, metadata, created_at')
+      .in('type', ['customer_message', 'callback_request', 'reschedule'])
+      .order('created_at', { ascending: false })
+      .limit(100);
+    const taught = getKnowledge().faqs;
+    const byQ = new Map<string, AskEntry>();
+    for (const n of data ?? []) {
+      const q = (n.message as string ?? '').trim();
+      if (!q || q.length < 8) continue;
+      const meta = (n.metadata ?? {}) as Record<string, unknown>;
+      const answered = meta.answered === true;
+      if (answered) continue;                                   // only the misses
+      const key = tokens(q).join(' ');
+      if (!key || taught.some(f => tokens(f.q).join(' ') === key)) continue;
+      const hit = byQ.get(key);
+      if (hit) hit.count += 1;
+      else byQ.set(key, { q, concern: (meta.concern as string) ?? 'other', answered: false, at: n.created_at as string, count: 1 });
+    }
+    return [...byQ.values()].sort((a, b) => b.count - a.count).slice(0, 8);
+  } catch { return []; }
 }
