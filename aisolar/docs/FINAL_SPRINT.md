@@ -286,7 +286,10 @@ lead + sends a real proposal" half is the deploy smoke test — DEPLOYMENT_GATE 
 ## 🔑 DEPLOYMENT — CAL'S GATE (I prep every artefact; you run; every line has a verify)
 _The full, current, one-command-per-line runbook is **`docs/DEPLOYMENT_GATE.md`** (compiled 5 Aug)._
 1. `brew install supabase/tap/supabase` + `supabase login`.
-2. ✅ **GATE 0 CLOSED** (Cal, 5 Aug: keys rotated + history purged "ages ago"). No longer a blocker.
+2. ✅ **GATE 0 REDUNDANT** (Cal, 5 Aug): we moved to a FRESH Supabase project (V5
+   `ywizcsulurxoqjdgnkvc`). The leaked keys were on the OLD dead projects (coxmtpnq · vythuqax ·
+   kernel) — nothing to purge on the live one. Not a blocker. *(The Maps key referrer-lock is the
+   one live security to-do — LAST_MILE 🔒.)*
 3. Deploy **18 edge functions** (the 17 + `verify-artefact`) + set secrets — I prep the manifest with a
    per-fn verify line. verify-artefact's smoke: one real cert photo → a planted mismatch caught.
 4. Postmark server token + DNS (DKIM/return-path) → one real email lands in a real inbox.
