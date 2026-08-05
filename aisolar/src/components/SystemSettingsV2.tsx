@@ -29,13 +29,14 @@ import {
   AlertCircle, AlertTriangle, Save, Zap, Cloud, Phone, Lock, Key,
   Activity, Cpu, Server, Globe, Bell, Palette, FileText, Users,
   TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink, ArrowRight, XCircle,
-  HardHat, Plus, Trash2, Sparkles,
+  HardHat, Plus, Trash2, Sparkles, Code2, Copy, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { brand } from '@/config/brand';
 import { useCompanyCompliance, saveCompanyCompliance, complianceGaps, type CompanyCompliance } from '@/lib/companyCompliance';
 import { useInstallers, saveInstallers, type Installer } from '@/lib/installerRoster';
 import { getKnowledge, saveKnowledge, teachAnswer, unansweredQuestions, fetchServerAsks, type BrainKnowledge, type AskEntry } from '@/lib/brainKnowledge';
+import { fetchEmbedInfo, embedSnippet } from '@/lib/embedCode';
 import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
@@ -475,6 +476,9 @@ function BrandConfigFull() {
             softly into customer answers) + the SELF-LEARNING loop: questions
             the AI couldn't answer queue here; answer once, it knows forever. */}
         <TeachYourAiCard />
+
+        {/* ── EMBED ON YOUR SITE (2E ⭐) — the tenant's calculator→lead door. */}
+        <EmbedOnYourSiteCard />
 
         {/* Basic brand */}
         <div className="grid sm:grid-cols-2 gap-3">
@@ -944,6 +948,44 @@ function CompanyComplianceCard() {
           Save
         </Button>
         {dirty && <span className="text-2xs text-muted-foreground">unsaved changes</span>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * EmbedOnYourSiteCard — 2E ⭐ the owner's "copy your embed code" panel. Shows
+ * the one iframe snippet (carrying the tenant's source key) to paste on their
+ * own website; the branded calculator→lead door goes live where they put it.
+ */
+function EmbedOnYourSiteCard() {
+  const [key, setKey] = useState<string | null>(null);
+  const [label, setLabel] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { fetchEmbedInfo().then(i => { setKey(i.sourceKey); setLabel(i.label); }); }, []);
+  const snippet = embedSnippet(key);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return (
+    <div className="rounded-panel border border-border bg-card p-4">
+      <h3 className="text-sm font-semibold flex items-center gap-2">
+        <Code2 className="size-4 text-tech shrink-0" /> Put your calculator on your website
+      </h3>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        Paste this once on your site. Visitors get your branded solar calculator, and every estimate they finish becomes a lead in your pipeline{label ? ` (“${label}”)` : ''}.
+      </p>
+
+      <div className="mt-3 relative">
+        <pre className="overflow-x-auto rounded-control border border-border bg-muted/40 p-3 text-2xs leading-relaxed"><code>{snippet}</code></pre>
+        <Button size="sm" variant="outline" className="absolute top-2 right-2 h-7 text-xs"
+          onClick={() => { navigator.clipboard?.writeText(snippet); setCopied(true); setTimeout(() => setCopied(false), 1600); }}>
+          {copied ? <><Check className="size-3.5 mr-1" /> Copied</> : <><Copy className="size-3.5 mr-1" /> Copy</>}
+        </Button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {key
+          ? <a href={`${origin}/embed?src=${key}`} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-2">Preview your live widget →</a>
+          : <span className="text-2xs text-muted-foreground">Your embed key appears here once you\'re signed in as your company. The snippet works the moment it resolves.</span>}
       </div>
     </div>
   );

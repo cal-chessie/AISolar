@@ -15,12 +15,14 @@
  * until coxmtpnq access lands, "book" hands off to /start with the bill seeded.
  */
 import { useState } from 'react';
-import { PencilRuler, ReceiptText, ArrowRight, ArrowLeft } from 'lucide-react';
+import { PencilRuler, ReceiptText, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { AiosGlyph } from '@/components/brand/AiosMark';
 import SolarCalculator from '@/components/calculator/SolarCalculator';
+import { captureWidgetLead, type WidgetLeadInput } from '@/lib/widgetLead';
 
-type Mode = 'choose' | 'manual' | 'bill';
+type Mode = 'choose' | 'manual' | 'bill' | 'capture' | 'done';
+type Estimate = NonNullable<WidgetLeadInput['estimate']>;
 
 /** Bill door — three plain numbers (or an upload at launch) size the system. */
 function BillEntry({ onGo }: { onGo: (bill: number) => void }) {
@@ -64,10 +66,56 @@ function BillEntry({ onGo }: { onGo: (bill: number) => void }) {
   );
 }
 
+/** LeadCapture — the door. After the estimate, the visitor leaves their details
+ *  and the lead lands in the tenant's pipeline (via ingest-lead + source key). */
+function LeadCapture({ estimate, onDone }: { estimate: Estimate | null; onDone: () => void }) {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', eircode: '' });
+  const [busy, setBusy] = useState(false);
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  return (
+    <div className="max-w-md mx-auto w-full">
+      <div className="rounded-panel bg-card shadow-card p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Send me my full proposal</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {estimate?.systemSizeKw
+              ? `Your ${estimate.systemSizeKw}kWp estimate is ready. Leave your details and a local specialist confirms the exact numbers off a real bill — no obligation.`
+              : 'Leave your details and a local specialist confirms your exact numbers — no obligation.'}
+          </p>
+        </div>
+        <form className="space-y-3" onSubmit={async (e) => {
+          e.preventDefault(); setBusy(true);
+          await captureWidgetLead({ ...form, estimate: estimate ?? undefined });
+          setBusy(false); onDone(); // always thank them — a soft miss still logs client-side
+        }}>
+          <input required value={form.name} onChange={set('name')} placeholder="Your name"
+            className="w-full h-11 rounded-panel border border-border bg-background px-3.5 text-sm outline-none focus:border-primary transition-colors" />
+          <input required type="email" value={form.email} onChange={set('email')} placeholder="you@email.com"
+            className="w-full h-11 rounded-panel border border-border bg-background px-3.5 text-sm outline-none focus:border-primary transition-colors" />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="tel" value={form.phone} onChange={set('phone')} placeholder="Phone (optional)"
+              className="w-full h-11 rounded-panel border border-border bg-background px-3.5 text-sm outline-none focus:border-primary transition-colors" />
+            <input value={form.eircode} onChange={set('eircode')} placeholder="Eircode (optional)"
+              className="w-full h-11 rounded-panel border border-border bg-background px-3.5 text-sm outline-none focus:border-primary transition-colors" />
+          </div>
+          <button type="submit" disabled={busy}
+            className="w-full h-12 rounded-panel bg-primary text-primary-foreground font-medium inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60">
+            {busy ? 'Sending…' : <>Send me my proposal <ArrowRight className="size-4" /></>}
+          </button>
+          <p className="text-2xs text-muted-foreground text-center">
+            We only use your details to prepare your solar proposal.
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function CalculatorWidget() {
   const brand = useTenantBrand();
   const [mode, setMode] = useState<Mode>('choose');
   const [seedBill, setSeedBill] = useState(250);
+  const [estimate, setEstimate] = useState<Estimate | null>(null);
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
@@ -144,14 +192,37 @@ export default function CalculatorWidget() {
 
         {mode === 'manual' && (
           <div className="px-4 py-6">
-            {/* one engine — the bill door seeds it, the draw door starts fresh */}
-            <SolarCalculator showHeader={false} initialBill={seedBill} />
+            {/* one engine — the bill door seeds it, the draw door starts fresh.
+                onGetProposal is THE door: the CTA captures into the tenant. */}
+            <SolarCalculator showHeader={false} initialBill={seedBill}
+              onGetProposal={(est) => { setEstimate(est); setMode('capture'); }} />
           </div>
         )}
 
         {mode === 'bill' && (
           <div className="px-4 py-10">
             <BillEntry onGo={(b) => { setSeedBill(b); setMode('manual'); }} />
+          </div>
+        )}
+
+        {mode === 'capture' && (
+          <div className="px-4 py-10">
+            <LeadCapture estimate={estimate} onDone={() => setMode('done')} />
+          </div>
+        )}
+
+        {mode === 'done' && (
+          <div className="px-4 py-16 max-w-md mx-auto w-full text-center">
+            <CheckCircle2 className="size-12 text-doc-deposit mx-auto" />
+            <h2 className="mt-4 text-xl font-semibold">Thank you — that's with {brand.name}.</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A local specialist will be in touch shortly to confirm your exact
+              numbers and answer anything you'd like to know. No obligation.
+            </p>
+            <button onClick={() => { setEstimate(null); setMode('choose'); }}
+              className="mt-6 text-sm font-medium text-primary inline-flex items-center gap-1">
+              <ArrowLeft className="size-3.5" /> Start another estimate
+            </button>
           </div>
         )}
       </main>

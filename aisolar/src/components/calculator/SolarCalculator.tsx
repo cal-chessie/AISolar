@@ -83,6 +83,10 @@ export default function SolarCalculator({
   /** Real unit rate off the bill. Absent (manual path) → conservative fallback
       (€0.24 commercial / €0.35 domestic) and the estimate is flagged indicative. */
   unitRate,
+  /** EMBED MODE (2E): when set, the CTA captures the lead into the tenant via
+      this callback (with the estimate) INSTEAD of navigating to /start — the
+      embedded widget lives on the tenant's own site, not the AISOLAR funnel. */
+  onGetProposal,
 }: {
   showHeader?: boolean;
   initialBill?: number;
@@ -91,6 +95,12 @@ export default function SolarCalculator({
   showUploadCta?: boolean;
   propertyType?: 'domestic' | 'commercial';
   unitRate?: number | null;
+  onGetProposal?: (estimate: {
+    monthlyBill: number; systemSizeKw: number; annualSavings: number;
+    seaiGrant: number; netCost: number; paybackYears: number;
+    propertyType: 'domestic' | 'commercial'; orientation: string; battery: boolean;
+    roofKwp: number; roofAddress: string;
+  }) => void;
 }) {
   const navigate = useNavigate();
   const [monthlyBill, setMonthlyBill] = useState(initialBill);
@@ -113,16 +123,29 @@ export default function SolarCalculator({
   // continues from THEIR numbers — bill, night split, orientation, battery
   // and the roof they drew — instead of starting blank (Cal: the drawn array
   // must automate to the estimate → survey → proposal).
-  const goToStart = () => navigate('/start', {
-    state: {
-      calc: {
-        monthlyBill, nightPct, orientation: faces.join('+'), battery,
-        roofPanels, roofKwp, roofAddress,
-        systemSizeKw: r.systemSizeKw, annualSavings: r.annualSavings,
+  // Embed mode captures the lead into the tenant; standalone continues to the
+  // AISOLAR funnel. One CTA, the right destination for where it's rendered.
+  const continueFromEstimate = () => {
+    if (onGetProposal) {
+      onGetProposal({
+        monthlyBill, systemSizeKw: r.systemSizeKw, annualSavings: r.annualSavings,
         seaiGrant: r.seaiGrant, netCost: r.netCost, paybackYears: r.paybackYears,
+        propertyType, orientation: faces.join('+'), battery, roofKwp, roofAddress,
+      });
+      return;
+    }
+    navigate('/start', {
+      state: {
+        calc: {
+          monthlyBill, nightPct, orientation: faces.join('+'), battery,
+          roofPanels, roofKwp, roofAddress,
+          systemSizeKw: r.systemSizeKw, annualSavings: r.annualSavings,
+          seaiGrant: r.seaiGrant, netCost: r.netCost, paybackYears: r.paybackYears,
+        },
       },
-    },
-  });
+    });
+  };
+  const goToStart = continueFromEstimate;
 
   const r = useMemo(() => {
     // The merge: your bill sizes the system, your roof caps it at what fits.
@@ -350,7 +373,21 @@ export default function SolarCalculator({
             <MiniStat icon={Leaf} tint="text-doc-deposit" value={`${r.co2} t`} label="CO₂ cut a year" />
           </div>
 
-          {showUploadCta && (
+          {/* Embed mode: one button → the widget's own capture panel (name +
+              contact), which lands the lead in the tenant's pipeline. */}
+          {onGetProposal && (
+            <div className="p-4 pt-0">
+              <button onClick={continueFromEstimate}
+                className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-panel bg-pop text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                Get my full proposal <ArrowRight className="size-4" />
+              </button>
+              <p className="mt-2 text-2xs text-center text-muted-foreground">
+                A local specialist confirms your exact numbers off a real bill — no obligation.
+              </p>
+            </div>
+          )}
+
+          {showUploadCta && !onGetProposal && (
             <div className="p-4 pt-0 space-y-2">
               <form onSubmit={(e) => { e.preventDefault(); goToStart(); }} className="flex gap-2">
                 <input
