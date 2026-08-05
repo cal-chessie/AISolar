@@ -25,7 +25,7 @@ Deploy the comms three via the script above. Then the ones the flows already cal
 | `brain-voice` | LLM voice on the brain (optional, floor works without) | portal polish() |
 | `create-checkout` | the deposit CHARGE (Stripe) | customer portal pay button |
 | `stripe-webhook` | marks deposit/final PAID in the DB | Stripe → project URL |
-| `ingest-lead` | the widget/site lead door (Solar Ireland Group route) | public sites, embed |
+| `ingest-lead` | the widget/site lead door — **the embed widget is dead without it** | public sites, `/embed?src=` |
 | `extract-bill-data` | bill-photo → estimate numbers | intake/estimate |
 | `agent-drain` | the agent queue (drafter etc.) — draft-only law | owner approvals |
 | others (`send-*`, `slack-approve`, `analyse-roof-photo`, `solar-roof`, `expert-chat`, `verify-artefact`, `coinbase-*`) | deploy as their surfaces go live — not cohort-blocking | — |
@@ -75,6 +75,9 @@ FRESH project ever: run `supabase/migrations/` in order.
    installer notified.
 7. Settings → Teach your AI → teach an answer → ask it in the portal → instant FAQ.
 8. AI Config: enter OpenRouter key → portal answers arrive re-voiced (same numbers).
+9. **Widget:** Settings → "Put your calculator on your website" → copy the iframe
+   → open `/embed?src=<your key>` → finish an estimate → submit → a lead lands in
+   your pipeline (needs `ingest-lead` deployed + the tenant's `sources` row).
 
 ## 7 · Cohort day-1 truths (say these to the first client)
 - Every send is behind a human click; nothing auto-sends (draft-gated law).
