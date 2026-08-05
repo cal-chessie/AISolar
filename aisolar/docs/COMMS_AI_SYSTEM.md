@@ -124,3 +124,82 @@ honours the DB read flag, and mark-all-read persists. Demo keeps the role feed.
 4. **Referral send** — the last unwired notify seam.
 5. **LLM voice layer** — the brains are deterministic floors; the AI-key LLM
    pass (Sprint 2D personalisation) adds voice on top, never facts.
+
+## THE BRAIN, WHOLE (5 Aug, second pass) — architecture
+
+```
+                          brain.ts — ask(pov, {lead, question})
+        ┌────────────────────────┼──────────────────────────────┐
+   customer POV            staff POVs (consultant·installer·owner·admin)
+        │                                │
+  guardrails (scope wall)          coachBrain intents
+        ↓                                │
+  taught FAQ (instant)                   │
+        ↓                                │
+  grounded intents ──── SHARED GROUNDING ┴── dealIntel · ONE quote engine ·
+        ↓               live SEAI grant record · invoice/install state ·
+  knowledge weave ───── brainKnowledge (Settings → Teach your AI) ── coach pitch
+        ↓
+  scrub (output wall) → logAsk (the learning loop) → llmVoice.polish (optional)
+```
+
+- **Guardrails, both sides.** Customer input scope wall (other customers /
+  margins / pipeline / staff / system → polite refusal, data never touched);
+  output scrub both directions (no surveillance, no scores, no internals, agent
+  names → brand). The consultant's SUGGESTED drafts pass the same scrub — the
+  machine never drafts surveillance into a human's mouth. The same law ships as
+  LLM_SCOPE_RULES in the voice layer's system prompt.
+- **Teach your AI (Settings → Brand).** Story / edge / offer — woven softly
+  (edge on objections, story early, offer once, never pushed) — plus the taught
+  FAQ manager. Per-tenant, dual-written (`tenant_settings.ai_knowledge`,
+  migration applied live), hydrated on sign-in.
+- **The self-learning loop, PROVEN live:** unknown question → honest hand-off +
+  logged → surfaces in the teach queue (most-asked first) → owner answers once →
+  the brain answers it instantly from then on, even re-phrased. Ask → miss →
+  teach → know.
+- **LLM + BYO keys:** `brain-voice` edge fn reads the owner's OpenRouter key
+  from `ai_config` (KV, admin RLS) SERVER-SIDE only. The model REPHRASES the
+  deterministic floor — llmVoice.polish() guards it (every € figure must
+  survive, length sane, else floor verbatim). **Works without AI, always** —
+  everything above ran in demo with zero LLM.
+- **White-label voice:** no agent names anywhere a customer looks — bubbles are
+  labelled with the TENANT'S name (humans: "Your consultant"/"Your installer");
+  all demo agent touchpoints humanised; emails carry the tenant From-name.
+- **Email rail closed (code-complete):** send-notification now takes ANY event
+  → branded generic email with the customer's MAGIC LINK on every send;
+  consultant replies email the customer. Slack = v2 third rail on notify()
+  (per-tenant webhook in Settings).
+
+## DEPLOY CHECKLIST (Cal's gate — one command each, then the rails are fully on)
+```
+supabase functions deploy send-notification   # generic email rail + magic links
+supabase functions deploy brain-voice         # LLM voice layer (BYO key)
+```
+Secrets already expected: POSTMARK_SERVER_TOKEN · POSTMARK_SENDER_EMAIL. The
+OpenRouter key is entered in-app (AI Config) — no secret needed for brain-voice.
+
+## FULL AUDIT — remaining gaps (ranked, 5 Aug second pass)
+1. **Deploy the two edge fns** (above) — until then: bell rail live, email rail
+   only for built-in types, voice = floor.
+2. **Token-customer writes (M4).** A magic-link customer has no session, so
+   their portal messages/escalations no-op outside demo. Needs a small edge fn
+   (token-authenticated) for notify + asklog. THE production gap that matters.
+3. **Ask-log is per-browser** (localStorage). The knowledge dual-writes; the
+   LOG doesn't yet — cross-device teach queues need a table or tenant_settings
+   append. Post-cohort fine.
+4. **Realtime bell** — fetches on mount; subscribe for live rings.
+5. **Referral send** — last unwired notify seam.
+6. **AICoach panel** still imports coachBrain directly — works (same brain
+   underneath), but migrating it to brain.ts `ask()` completes the one-door story.
+7. **suggestedQuestions vs taught FAQs** — taught questions could also join the
+   chips (today: most-asked + stage defaults). Nice-to-have.
+
+## Have we got something special? (the honest read)
+Yes — and it's the COMBINATION: grounded answers that can't disagree with the
+screen · guardrails that make the white-label safe to sell · an owner who can
+teach the AI in their own words and watch it learn from real customer demand ·
+every miss landing on a human's bell with the words verbatim · and the whole
+thing working with AI switched OFF, so the LLM is pure upside, never a
+dependency. Competitors bolt a chatbot beside their CRM; this one IS the CRM
+speaking. The demo moment stands: objection typed → their own payback number
+back + the consultant's bell rings with a drafted reply waiting.
