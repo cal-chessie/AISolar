@@ -113,6 +113,33 @@ _What a senior team runs before prod. All evidenced; fixes committed._
 7. ⚠️ **`npm audit`:** the only advisory that SHIPS to prod is `react-router` (open-redirect via `//` paths) — low exploit surface here (our redirects are fixed internal paths like `/auth`, never user-controlled external). Patch when convenient; do NOT risk a router major-bump right before launch. The rest (brace-expansion, flatted, glob, js-yaml) are dev/build-only deps — never in the shipped bundle.
 8. 🧹 **Cleanup for Cal (your files, your call):** `.env.LOCAL.calchessie.bak` + `.env.LOCAL.coxmtpnq.bak` are stale local env files holding DEAD-project keys — gitignored (not leaked), safe to delete when you like.
 
+## 📊 READINESS VERDICT — re-scored on evidence (5 Aug, after the pass)
+_Last night's scores were pre-pass. Here's where they honestly sit now — same
+brutal honesty, new evidence. Nothing inflated._
+
+| Dimension | Was | Now | Why it moved |
+|---|---|---|---|
+| **Craft / architecture** | 8.5 | **8.5** | Unchanged — it was always the strength. Prod build green, code-split, clean separation. |
+| **Security posture** | 2.5 | **~7.5** | GATE 0 redundant (fresh project) · tenant isolation PROVEN live · no secrets in bundle · edge auth solid. One to-do: referrer-lock the Maps key. |
+| **Readiness** | 3.5 | **~6** | Real prod build GREEN + 3 real prod-breakers found & fixed (widget key, tour loop, env.example). Still needs the actual DEPLOY + the joint smoke to hit "proven live." |
+| **Maintainability / bus-factor** | 4 | **~6** | The docs are now the continuity: LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM make a CTO current in an hour. Still one-founder until that hire — honest. |
+
+**The honest line:** the two scores that scared you (security 2.5, readiness 3.5)
+were "unproven + not deployed." The pass answered the *proof* half. The *deploy*
+half is Lane A — your hands, my prep. You're in materially better shape than 1am.
+
+## 🔄 ROLLBACK PLAN (if a deploy goes bad)
+- **Frontend (Vercel):** every deploy is immutable + versioned. Roll back =
+  "Promote" the previous deployment in the Vercel dashboard (instant, no rebuild).
+- **Edge functions:** `supabase functions deploy <fn>` from the previous git
+  commit re-publishes the old version. Git is the source of truth — `git revert`
+  the bad commit, redeploy.
+- **Database:** migrations are **add-only / idempotent** — no destructive drops,
+  so a bad deploy can't lose data. If a migration misbehaves, it's forward-fix
+  (write a new corrective migration), never a rollback that drops columns.
+- **Secrets:** if a key leaks, rotate it in the provider + `supabase secrets set`
+  the new one; note it in this doc, tell Cal same-day (the incident protocol).
+
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
 ### 🐞 Bugs (found + fixed this session)
