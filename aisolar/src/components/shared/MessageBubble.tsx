@@ -26,7 +26,9 @@ export default function MessageBubble({ message, onAction }: { message: ChatMess
   // Company-side messages tag the actual sender so the field team reads as
   // "Installer" and the sales team as "Consultant" in the one shared thread.
   const companyLabel = message.sender === 'installer' ? 'Installer' : 'Consultant';
-  const label = isCustomer ? 'Customer' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : companyLabel;
+  // White-label: automation speaks as the business (staff still see the Bot
+  // icon, so they know it was automated — the NAME is the brand's).
+  const label = isCustomer ? 'Customer' : (isAI || isAgent) ? getTenantBrand().name : companyLabel;
   const Icon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
   const ActionIcon = message.actionIcon;
   const CardIcon = message.card?.ctaIcon;

@@ -27,6 +27,8 @@ import { getStage, computeQuote, ratesFromIntake } from './leadIntake';
 import { seaiPropertyType, seaiGrantEligibility, eur as seaiEur } from './seaiPipeline';
 import { getGrant, offerClock, type SeaiGrantRecord } from './seaiGrant';
 import type { NotifyEventType } from './notify';
+import { customerScope, scrubForCustomer } from './brainGuardrails';
+import { getKnowledge, matchFaq, logAsk, topAsked } from './brainKnowledge';
 
 const eur = seaiEur;
 const firstName = (l: DummyLead) => l.name.split(' ')[0].replace(/'s$/, '');
@@ -274,16 +276,77 @@ const PLANNING_RX = /planning permission|planning\b/i;
 const MONITORING_RX = /monitor|app\b|performance|generating|producing/i;
 const REFER_RX = /refer|friend|neighbour|neighbor/i;
 
-/** Wrap answerCustomer with the leftover intents the chips can raise. */
+/**
+ * askBrain — THE customer entry point. The full pipeline (Cal, 5 Aug):
+ *   guardrails → taught FAQ → knowledge-woven grounded answer → scrub → learn.
+ *
+ * - GUARDRAIL first: out-of-scope questions (other customers, margins,
+ *   pipeline, staff, system) get a polite scope refusal — the data layer is
+ *   never touched.
+ * - TAUGHT FAQ next: if the owner has taught this answer, it's given straight
+ *   away, like an FAQ — the self-learning loop paying out.
+ * - Then the grounded intents, with the owner's knowledge woven in softly
+ *   (their edge on an objection, their story early on, the offer at most once).
+ * - EVERY reply is scrubbed (no surveillance, no internals, no agent names)
+ *   and EVERY ask is logged — misses surface in Settings for the owner to
+ *   teach, closing the loop.
+ */
 export function askBrain(lead: DummyLead, question: string): BrainAnswer {
+  const finish = (a: BrainAnswer): BrainAnswer => {
+    logAsk(question, a.concern, !a.escalation);
+    return { ...a, text: scrubForCustomer(a.text) };
+  };
+
+  // 1 · guardrail — scope before anything reads data.
+  const scope = customerScope(question);
+  if (!scope.ok) {
+    return finish({ concern: 'other', text: scope.refusal! });
+  }
+
+  // 2 · taught FAQ — the owner answered this once; the brain knows it now.
+  const taught = matchFaq(question);
+  if (taught) {
+    return finish({ concern: 'other', text: taught.a });
+  }
+
+  // 3 · the built-in leftover intents.
   if (PLANNING_RX.test(question)) {
-    return { concern: 'other', text: 'For almost every home, no planning permission is needed: rooftop solar has been exempt regardless of size since 2022 (the exceptions are protected structures and Solar Safeguarding Zones near airports). Your survey confirms yours is clear before anything is ordered.' };
+    return finish({ concern: 'other', text: 'For almost every home, no planning permission is needed: rooftop solar has been exempt regardless of size since 2022 (the exceptions are protected structures and Solar Safeguarding Zones near airports). Your survey confirms yours is clear before anything is ordered.' });
   }
   if (MONITORING_RX.test(question) && ['installed', 'final_paid', 'completed'].includes(lead.workflow_stage)) {
-    return { concern: 'status', text: 'Your inverter\'s monitoring app shows live generation, what you\'re using, and what\'s exporting. The crew set it up with you at handover — if you need the login again or anything looks off in it, say the word here and we\'ll sort it.' };
+    return finish({ concern: 'status', text: 'Your inverter\'s monitoring app shows live generation, what you\'re using, and what\'s exporting. The crew set it up with you at handover — if you need the login again or anything looks off in it, say the word here and we\'ll sort it.' });
   }
   if (REFER_RX.test(question)) {
-    return { concern: 'other', text: 'We\'d love that. Send them the same door you came through, or reply here with their name and number (with their OK) and we\'ll look after them properly. Word of mouth is how most of our work arrives.' };
+    return finish({ concern: 'other', text: 'We\'d love that. Send them the same door you came through, or reply here with their name and number (with their OK) and we\'ll look after them properly. Word of mouth is how most of our work arrives.' });
   }
-  return answerCustomer(lead, question);
+
+  // 4 · the grounded intents + the owner's knowledge, woven softly.
+  const a = answerCustomer(lead, question);
+  return finish(weaveKnowledge(a, lead));
+}
+
+/** Weave the owner-taught business intelligence into the answer — one line,
+ *  where it naturally belongs, never pushed (Cal: "softly sells outcomes"). */
+function weaveKnowledge(a: BrainAnswer, lead: DummyLead): BrainAnswer {
+  const k = getKnowledge();
+  const early = ['new', 'intake_complete', 'survey_scheduled', 'survey_complete'].includes(lead.workflow_stage);
+  let text = a.text;
+  if (a.concern === 'objection' && k.edge.trim()) {
+    // Their edge answers "why you?" at exactly the moment it's being asked.
+    text = text.replace('\n\nNo pressure from me.', `\n\nWorth knowing while you weigh it: ${k.edge.trim()}\n\nNo pressure from me.`);
+    if (!text.includes(k.edge.trim())) text += `\n\nWorth knowing while you weigh it: ${k.edge.trim()}`;
+  } else if ((a.concern === 'greeting' || a.concern === 'status') && early && k.businessStory.trim()) {
+    text += `\n\n${k.businessStory.trim()}`;
+  } else if (a.concern === 'savings' && k.offer.trim()) {
+    text += `\n\nOne more thing worth knowing: ${k.offer.trim()}`;
+  }
+  return { ...a, text };
+}
+
+/** The prompt chips, demand-shaped: the most-asked real questions lead, the
+ *  stage defaults fill the rest — the FAQ writing itself from usage. */
+export function liveSuggestions(lead: DummyLead): string[] {
+  const learned = topAsked(2).filter(q => q.length <= 48 && customerScope(q).ok);
+  const defaults = suggestedQuestions(lead).filter(d => !learned.some(l => l.toLowerCase() === d.toLowerCase()));
+  return [...learned, ...defaults].slice(0, 4);
 }

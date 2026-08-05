@@ -271,6 +271,13 @@ export default function ConsultantCockpitV5() {
     addTouchpoint(selectedLead.id, message).catch((e) => {
       toast.error(`Reply didn't save — ${(e as Error).message}`);
     });
+    // EMAIL the customer their reply + magic link (Cal, 5 Aug: every portal
+    // message reaches them). Bell rows skipped — addTouchpoint holds the thread,
+    // and your own reply shouldn't ring your own bell.
+    void notify({
+      type: 'reply', leadId: selectedLead.id, email: selectedLead.email, bell: false,
+      title: `A message from your solar team`, message, portalPath: '/customer',
+    });
   };
 
   /** Ask AI to summarize the conversation — Phase 3 feature. */

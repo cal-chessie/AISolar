@@ -29,6 +29,7 @@ export type NotifyEventType =
   | 'stage_change'
   | 'callback_request'
   | 'customer_message'      // a portal message from the customer (AI answered or escalated)
+  | 'reply'                 // a human reply from the team to the customer
   | 'survey_options'        // survey time options offered to the customer
   | 'seai_offer_reminder'   // the parked SEAI 8-month clock nudge rides this
   | 'seai_ber_overdue';     // and the BER-overdue chase
@@ -47,6 +48,10 @@ export interface NotifyEvent {
   portalPath?: string;
   /** Notify BOTH the customer (email) and staff (bell). Default: true when leadId set. */
   bothEnds?: boolean;
+  /** Write the staff bell rows (default true). A consultant's own reply sets
+   *  false — the thread row is already written via addTouchpoint, and ringing
+   *  your own bell for your own message is noise. */
+  bell?: boolean;
   /** Extra structured data carried on the bell + email metadata. */
   metadata?: Record<string, unknown>;
 }
@@ -86,7 +91,7 @@ export async function notify(e: NotifyEvent): Promise<NotifyResult> {
   let bell = false, email = false;
 
   // 1. THE BELL — the guaranteed rail. One row per staff recipient.
-  try {
+  if (e.bell !== false) try {
     const recips = await staffRecipients(e.leadId, uid);
     if (recips.length) {
       const rows = recips.map(user_id => ({
@@ -102,9 +107,11 @@ export async function notify(e: NotifyEvent): Promise<NotifyResult> {
   // 2. THE EMAIL — branded, portal link in, best-effort. Customer-facing events only.
   if (both && (e.email || e.leadId)) {
     try {
+      const { getTenantBrand } = await import('@/lib/tenantBrand');
       const { error } = await supabase.functions.invoke('send-notification', {
         body: { type: e.type, leadId: e.leadId ?? null, to: e.email ?? null,
                 subject: e.title, message: e.message, portalPath: e.portalPath ?? null,
+                brandName: getTenantBrand().name,   // white-label From + header
                 metadata: e.metadata ?? {} },
       });
       if (error) console.warn('[notify] email', error.message); else email = true;

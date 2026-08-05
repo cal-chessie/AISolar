@@ -16,12 +16,23 @@ const BRAND_NAME = "AISOLAR";
 const BRAND_EMAIL = POSTMARK_SENDER_EMAIL;
 
 interface EmailRequest {
-  type: "invoice_created" | "deposit_paid" | "final_paid" | "installation_scheduled" | "installation_completed" | "stage_change";
-  leadId: string;
+  /** Built-in rich templates, or ANY notify() event type — unknown types get
+   *  the branded GENERIC email (subject + message + the customer's magic link).
+   *  5 Aug extension: closes "the email rail lands only for built-in types". */
+  type: string;
+  leadId?: string | null;
   invoiceId?: string;
   installationDate?: string;
   previousStage?: string;
   newStage?: string;
+  /** Generic-email fields (notify() already sends these). */
+  subject?: string | null;
+  message?: string | null;
+  portalPath?: string | null;
+  /** Explicit recipient — required when there is no lead (e.g. team invite). */
+  to?: string | null;
+  /** White-label: the tenant's display name for the From line + header. */
+  brandName?: string | null;
 }
 
 serve(async (req) => {
@@ -40,22 +51,24 @@ serve(async (req) => {
       await requireRole(req, ["admin", "consultant", "installer"]);
     }
 
-    const { type, leadId, invoiceId, installationDate, previousStage, newStage }: EmailRequest = await req.json();
+    const { type, leadId, invoiceId, installationDate, previousStage, newStage, subject: subjectIn, message, to, brandName }: EmailRequest = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch lead details
-    const { data: lead, error: leadError } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("id", leadId)
-      .single();
-
-    if (leadError || !lead) {
-      throw new Error("Lead not found");
+    // Fetch lead details — optional: a no-lead generic send (team invite)
+    // carries an explicit `to` instead.
+    let lead: any = null;
+    if (leadId) {
+      const { data, error: leadError } = await supabase
+        .from("leads").select("*").eq("id", leadId).single();
+      if (leadError || !data) throw new Error("Lead not found");
+      lead = data;
     }
+    if (!lead && !to) throw new Error("No recipient: need leadId or to");
+    const displayBrand = (brandName && String(brandName).trim()) || BRAND_NAME;
+    const firstName = lead ? String(lead.name || "").split(" ")[0] : "there";
 
     // Fetch invoice if provided
     let invoice = null;
@@ -70,7 +83,8 @@ serve(async (req) => {
 
     let subject = "";
     let html = "";
-    const portalUrl = lead.access_token 
+    // THE MAGIC LINK — every customer email carries their portal door.
+    const portalUrl = lead?.access_token
       ? `${req.headers.get("origin")}/customer/${lead.access_token}`
       : null;
 
@@ -359,11 +373,43 @@ serve(async (req) => {
         `;
         break;
 
-      default:
-        throw new Error(`Unknown email type: ${type}`);
+      default: {
+        // GENERIC branded email — any notify() event: the message, said as the
+        // business, with the customer's magic link. No robot voice, no agent
+        // names (white-label law, 5 Aug).
+        subject = subjectIn || `A message from ${displayBrand}`;
+        const bodyText = message || "There's an update on your project — it's waiting in your portal.";
+        html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">☀️ ${displayBrand}</h1>
+            </div>
+            <div style="padding: 32px; background: #f9fafb;">
+              <h2 style="color: #111827; margin-top: 0;">Hi ${firstName},</h2>
+              <p style="color: #4b5563; line-height: 1.6; white-space: pre-wrap;">${bodyText}</p>
+              ${portalUrl ? `
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${portalUrl}" style="display: inline-block; background: #10b981; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                  Open your project
+                </a>
+              </div>
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">That button is your personal link — no password needed.</p>
+              ` : ""}
+              <p style="color: #6b7280; font-size: 14px;">
+                Reply to this email or message us in your portal — a real person reads both.
+              </p>
+            </div>
+            <div style="padding: 24px; text-align: center; background: #111827; color: #9ca3af; font-size: 12px;">
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${displayBrand}. SEAI Registered | RECI Certified.</p>
+            </div>
+          </div>
+        `;
+        break;
+      }
     }
 
-    console.log(`Sending ${type} email to ${lead.email} via Postmark`);
+    const recipient = to || lead?.email;
+    console.log(`Sending ${type} email to ${recipient} via Postmark`);
 
     // Send via Postmark API
     const postmarkResponse = await fetch(POSTMARK_API_URL, {
@@ -374,8 +420,8 @@ serve(async (req) => {
         "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN || "",
       },
       body: JSON.stringify({
-        From: `${BRAND_NAME} <${BRAND_EMAIL}>`,
-        To: lead.email,
+        From: `${displayBrand} <${BRAND_EMAIL}>`,
+        To: recipient,
         Subject: subject,
         HtmlBody: html,
         MessageStream: "outbound",

@@ -265,7 +265,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'new', daysAgo: 0, consultant: CONSULTANTS[0],
       touchpoints: [
         { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded via landing page', timestamp: iso(0, 9), actor: 'customer' },
-        { stage: 'new', channel: 'email', direction: 'outbound', summary: 'LeadIntakeAgent sent auto-acknowledge', timestamp: iso(0, 9), actor: 'agent' },
+        { stage: 'new', channel: 'email', direction: 'outbound', summary: 'Thanks — we have your details, and your estimate is underway', timestamp: iso(0, 9), actor: 'agent' },
       ],
     },
     // 2. SURVEY SCHEDULED — domestic · large + battery
@@ -274,7 +274,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       surveyDate: isoFuture(2),
       touchpoints: [
-        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'SurveySchedulerAgent booked Tue 10am', timestamp: iso(2, 11), actor: 'agent' },
+        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'Your survey is booked for Tuesday at 10am — see you then', timestamp: iso(2, 11), actor: 'agent' },
         { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Survey confirmation emailed — Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
       ],
     },
@@ -284,7 +284,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'survey_complete', daysAgo: 3, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + shed-roof measurements', timestamp: iso(1, 15), actor: 'installer' },
-        { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'ProposalDrafter Agent notified consultant', timestamp: iso(1, 15), actor: 'agent' },
+        { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'Your system design is drafted — our team is giving it a final look', timestamp: iso(1, 15), actor: 'agent' },
         { stage: 'survey_complete', channel: 'email', direction: 'inbound', summary: 'Quick question before the proposal — can the panels go on the east-facing shed roof too, or just the house?', timestamp: iso(0, 10), actor: 'customer' },
       ],
     },
@@ -293,7 +293,7 @@ export function generateDummyLeads(): DummyLead[] {
       archetype: 'domestic_large', name: 'Sarah McDonald', address: '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
       stage: 'proposal_drafted', daysAgo: 4, sizeKw: 7.2, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
-        { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Auto-drafted system for consultant review', timestamp: iso(2, 9), actor: 'agent' },
+        { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Your system design is ready and with our team for review', timestamp: iso(2, 9), actor: 'agent' },
       ],
     },
     // 5. PROPOSAL SENT — large industrial, opening repeatedly (hot)
@@ -315,9 +315,9 @@ export function generateDummyLeads(): DummyLead[] {
       touchpoints: [
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(1, 9), actor: 'customer' },
         { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed contract', timestamp: iso(0, 14), actor: 'customer' },
-        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Invoice auto-created + deposit link emailed', timestamp: iso(0, 14), actor: 'agent' },
+        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Your invoice is ready — the deposit link is in your portal', timestamp: iso(0, 14), actor: 'agent' },
         // Truth-pass (5 Aug): the agent PREPARES + tracks — the customer applies.
-        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent prepared your SEAI grant steps — the application is yours to send, and SEAI pay you directly', timestamp: iso(0, 14), actor: 'agent' },
+        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Your SEAI grant steps are ready in your portal — the application is yours to send, and SEAI pay you directly', timestamp: iso(0, 14), actor: 'agent' },
       ],
     },
     // 7. DEPOSIT PAID — farm, install being scheduled
@@ -326,7 +326,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'deposit_paid', daysAgo: 7, sizeKw: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
         { stage: 'deposit_paid', channel: 'portal', direction: 'inbound', summary: 'Stripe deposit confirmed', timestamp: iso(1, 12), actor: 'customer' },
-        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'InstallCoordinator Agent: scheduling the fit', timestamp: iso(1, 12), actor: 'agent' },
+        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'We're lining up your installation — date options on the way', timestamp: iso(1, 12), actor: 'agent' },
       ],
     },
     // 8. INSTALLING — small business, crew on site
@@ -343,7 +343,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'installed', daysAgo: 10, routeDate: 3, sizeKw: 3.2, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + final photos', timestamp: iso(1, 16), actor: 'installer' },
-        { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'PostInstallAgent: warranty docs + final invoice sent', timestamp: iso(1, 16), actor: 'agent' },
+        { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'Your warranty documents and final invoice are in your portal', timestamp: iso(1, 16), actor: 'agent' },
       ],
     },
     // 10. COMPLETED — domestic · large, closed with a review
@@ -352,7 +352,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'completed', daysAgo: 30, sizeKw: 6.5, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
         { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment received', timestamp: iso(7, 14), actor: 'customer' },
-        { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'GrantAgent: SEAI paperwork submitted', timestamp: iso(6, 10), actor: 'agent' },
+        { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'Your SEAI paperwork is complete and with SEAI — the grant pays out to you', timestamp: iso(6, 10), actor: 'agent' },
         { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'Handover pack + referral request sent', timestamp: iso(5, 11), actor: 'agent' },
         { stage: 'completed', channel: 'email', direction: 'inbound', summary: 'Customer left 5★ review', timestamp: iso(2, 9), actor: 'customer' },
       ],

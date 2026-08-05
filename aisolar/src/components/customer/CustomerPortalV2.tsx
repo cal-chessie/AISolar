@@ -68,9 +68,10 @@ import CustomerGrantCard from './CustomerGrantCard';
 import { DataSubjectRightsPanel } from '@/lib/gdpr';
 import { isDemoMode, isDemoAvailable } from '@/lib/demoMode';
 import { buildConversation, type ChatMessage } from '@/lib/conversation';
-import { askBrain, suggestedQuestions } from '@/lib/customerBrain';
+import { askBrain, liveSuggestions } from '@/lib/customerBrain';
 import { notify } from '@/lib/notify';
 import { getGrant } from '@/lib/seaiGrant';
+import { getTenantBrand } from '@/lib/tenantBrand';
 
 // The staging DemoBanner renders a 28px in-flow spacer that pushes full-height
 // (h-dvh) routes down, so 100dvh overflows and the chat input drops below the
@@ -209,7 +210,7 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
   // Exactly-timed prompts (Cal): the chips match what THIS stage makes the
   // customer wonder — a proposal-stage home asks different questions to a
   // just-installed one. One source: the customer brain.
-  const promptChips = suggestedQuestions(lead);
+  const promptChips = liveSuggestions(lead);
 
   const stage = getStage(lead.workflow_stage);
   const progressPct = Math.round((PIPELINE_STAGES.findIndex(s => s.id === lead.workflow_stage) / (PIPELINE_STAGES.length - 1)) * 100);
@@ -537,7 +538,11 @@ function ChatBubble({ message, leadName }: { message: ChatMessage; leadName: str
     ? 'bg-tech/10 text-foreground rounded-bl-sm'
     : 'bg-muted text-foreground rounded-bl-sm';
 
-  const actorLabel = isCustomer ? 'You' : isAI ? 'AI Assistant' : isAgent ? 'AI Agent' : leadName.split(' ')[0] + '\'s Consultant';
+  // WHITE-LABEL (Cal, 5 Aug): the customer hears the BUSINESS, never an
+  // internal agent name. Automated + AI voices carry the tenant's brand;
+  // humans are 'Your consultant' / 'Your installer'.
+  const tenantName = getTenantBrand().name;
+  const actorLabel = isCustomer ? 'You' : (isAI || isAgent) ? tenantName : message.sender === 'installer' ? 'Your installer' : 'Your consultant';
   const actorIcon = isCustomer ? User : isAI ? Sparkles : isAgent ? Bot : MessageSquare;
 
   const Icon = actorIcon;

@@ -81,7 +81,7 @@ function quiet(p: PromiseLike<unknown>) {
   Promise.resolve(p).catch(() => { /* dual-write is best-effort until cutover flips the order */ });
 }
 
-type TenantSettingKey = 'tenant_brand' | 'proposal_terms' | 'finance_config' | 'company_compliance' | 'pricing';
+type TenantSettingKey = 'tenant_brand' | 'proposal_terms' | 'finance_config' | 'company_compliance' | 'pricing' | 'ai_knowledge';
 
 /** tenant_settings upsert — the server home for the five owner-settings stores.
  *  Tenant via resolveTenantId (user_roles-backed — works TODAY, no JWT claim). */
@@ -104,6 +104,7 @@ const SETTING_STORES: Record<TenantSettingKey, { storageKey: string; event: stri
   finance_config:     { storageKey: 'aisolar.finance.v1',         event: 'finance-config-changed' },
   proposal_terms:     { storageKey: 'aisolar.proposalTerms.v1',   event: 'proposal-terms-changed' },
   pricing:            { storageKey: 'aisolar.pricing.v1',         event: 'pricing-config-changed' },
+  ai_knowledge:       { storageKey: 'aisolar_ai_knowledge',       event: 'ai-knowledge-changed' },
 };
 
 /**
