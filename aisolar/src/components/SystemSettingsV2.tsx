@@ -29,12 +29,13 @@ import {
   AlertCircle, AlertTriangle, Save, Zap, Cloud, Phone, Lock, Key,
   Activity, Cpu, Server, Globe, Bell, Palette, FileText, Users,
   TrendingUp, DollarSign, Clock, RefreshCw, Power, ExternalLink, ArrowRight, XCircle,
-  HardHat, Plus, Trash2,
+  HardHat, Plus, Trash2, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { brand } from '@/config/brand';
 import { useCompanyCompliance, saveCompanyCompliance, complianceGaps, type CompanyCompliance } from '@/lib/companyCompliance';
 import { useInstallers, saveInstallers, type Installer } from '@/lib/installerRoster';
+import { getKnowledge, saveKnowledge, teachAnswer, unansweredQuestions, type BrainKnowledge, type AskEntry } from '@/lib/brainKnowledge';
 import { saveTenantBrand, getTenantBrand } from '@/lib/tenantBrand';
 
 type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
@@ -468,6 +469,12 @@ function BrandConfigFull() {
             Per-installer facts that aren't company-wide — today just the Safe
             Electric Cert Number the NC7-01 wants for whoever signed the job. */}
         <InstallerRosterCard />
+
+        {/* ── TEACH YOUR AI ───────────────────────────────────────────────────
+            The owner's business-intelligence feed (story/edge/offer, woven
+            softly into customer answers) + the SELF-LEARNING loop: questions
+            the AI couldn't answer queue here; answer once, it knows forever. */}
+        <TeachYourAiCard />
 
         {/* Basic brand */}
         <div className="grid sm:grid-cols-2 gap-3">
@@ -941,6 +948,120 @@ function CompanyComplianceCard() {
     </div>
   );
 }
+
+/**
+ * TeachYourAiCard — the owner feeds the brain (Cal, 5 Aug): the business story,
+ * the edge, the current offer — woven SOFTLY into customer answers — plus the
+ * self-learning loop: questions the AI couldn't answer queue here; the owner
+ * answers once and the brain gives it like an FAQ from then on.
+ */
+function TeachYourAiCard() {
+  const [k, setK] = useState<BrainKnowledge>(() => getKnowledge());
+  const [dirty, setDirty] = useState(false);
+  const [queue, setQueue] = useState<AskEntry[]>(() => unansweredQuestions());
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [newQ, setNewQ] = useState(''); const [newA, setNewA] = useState('');
+
+  useEffect(() => {
+    const update = () => { setK(getKnowledge()); setQueue(unansweredQuestions()); };
+    window.addEventListener('ai-knowledge-changed', update);
+    window.addEventListener('ai-asklog-changed', update);
+    return () => { window.removeEventListener('ai-knowledge-changed', update); window.removeEventListener('ai-asklog-changed', update); };
+  }, []);
+
+  const FIELDS: Array<{ key: 'businessStory' | 'edge' | 'offer'; label: string; hint: string; placeholder: string }> = [
+    { key: 'businessStory', label: 'Your story', hint: 'Woven into early conversations — who you are, in a line or two.', placeholder: "e.g. We're a family firm out of Roscommon — 400 roofs on, and the same crew that quotes you fits you." },
+    { key: 'edge', label: 'Your edge', hint: 'Said when a customer is weighing it up — why you over the next quote.', placeholder: 'e.g. Every install is handed over with the grant paperwork done and a 10-year workmanship warranty — no chasing us after.' },
+    { key: 'offer', label: 'Current offer', hint: 'Mentioned once where it fits, never pushed.', placeholder: 'e.g. Book this month and the hot-water diverter goes in free.' },
+  ];
+
+  return (
+    <div className="rounded-panel border border-border bg-card p-4">
+      <div className="flex items-start gap-2 flex-wrap">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Sparkles className="size-4 text-tech shrink-0" /> Teach your AI
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            What you write here, your AI says — softly, in the right moments, as your business. It only ever uses your words.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-3">
+        {FIELDS.map(f => (
+          <div key={f.key}>
+            <Label className="text-xs">{f.label}</Label>
+            <Textarea value={k[f.key]} placeholder={f.placeholder}
+              onChange={e => { setK(prev => ({ ...prev, [f.key]: e.target.value })); setDirty(true); }}
+              className="mt-1 min-h-14 text-sm" />
+            <p className="mt-0.5 text-2xs text-muted-foreground">{f.hint}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* The teach queue — the learning loop's misses, most-asked first. */}
+      {queue.length > 0 && (
+        <div className="mt-4 rounded-control border border-doc-proposal/30 bg-doc-proposal/5 p-3">
+          <p className="text-xs font-semibold text-doc-proposal">Your AI was asked these and had to hand off — teach it the answer once:</p>
+          <div className="mt-2 space-y-2.5">
+            {queue.map(q => (
+              <div key={q.q}>
+                <p className="text-xs font-medium">"{q.q}" <span className="text-2xs text-muted-foreground">· asked {q.count}×</span></p>
+                <div className="mt-1 flex items-center gap-2">
+                  <Input value={answers[q.q] ?? ''} onChange={e => setAnswers(a => ({ ...a, [q.q]: e.target.value }))}
+                    placeholder="Write the answer your AI should give…" className="h-8 text-sm flex-1" />
+                  <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" disabled={!(answers[q.q] ?? '').trim()}
+                    onClick={() => { teachAnswer(q.q, answers[q.q]); setAnswers(a => ({ ...a, [q.q]: '' })); toast.success('Taught — your AI answers this itself now'); }}>
+                    Teach
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Taught FAQs — the brain's learned answers, editable by removal. */}
+      <div className="mt-4">
+        <Label className="text-xs">Taught answers ({k.faqs.length})</Label>
+        {k.faqs.length > 0 && (
+          <div className="mt-1.5 space-y-1.5">
+            {k.faqs.map((f, i) => (
+              <div key={i} className="flex items-start gap-2 rounded-control border border-border p-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium truncate">{f.q}</p>
+                  <p className="text-2xs text-muted-foreground line-clamp-2">{f.a}</p>
+                </div>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-pop shrink-0"
+                  onClick={() => { saveKnowledge({ faqs: k.faqs.filter((_, j) => j !== i) }); }} aria-label="Remove taught answer">
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-2 grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+          <Input value={newQ} onChange={e => setNewQ(e.target.value)} placeholder="A question customers ask…" className="h-8 text-sm" />
+          <Input value={newA} onChange={e => setNewA(e.target.value)} placeholder="The answer, in your voice" className="h-8 text-sm" />
+          <Button size="sm" variant="outline" className="h-8 text-xs" disabled={!newQ.trim() || !newA.trim()}
+            onClick={() => { teachAnswer(newQ, newA); setNewQ(''); setNewA(''); toast.success('Taught'); }}>
+            <Plus className="size-3.5 mr-1" /> Add
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <Button size="sm" className="h-8 text-xs" disabled={!dirty}
+          onClick={() => { saveKnowledge({ businessStory: k.businessStory, edge: k.edge, offer: k.offer }); setDirty(false); toast.success('Saved — your AI speaks with this from now on'); }}>
+          Save
+        </Button>
+        {dirty && <span className="text-2xs text-muted-foreground">unsaved changes</span>}
+      </div>
+    </div>
+  );
+}
+
 
 /**
  * InstallerRosterCard — the named installers the owner works with. The one

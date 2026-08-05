@@ -28,6 +28,7 @@ import { computeBOM } from './bom';
 import { optimiseRoute, coordsForAddress } from './routeOptimize';
 import { monitoringAppForModel } from './monitoringHandoff';
 import type { CoachRole } from './aiCoach';
+import { getKnowledge } from './brainKnowledge';
 
 export interface CoachAnswer {
   text: string;
@@ -131,7 +132,12 @@ export function coachAnswer(role: CoachRole, qRaw: string): CoachAnswer {
   // 5.5) Pitch / how to sell / angle / objection — the higher-level play.
   // The lead cards and proposal show the WHAT; this is the HOW, one level up.
   if (/(pitch|sell|angle|approach|objection|talk track|script|how.*win|how.*close)/.test(q)) {
-    const generic = `**The play that's converting right now:**\n\n1. **Open on their roof, from above.** Their own house, so the quote stops being an average home's and starts being theirs.\n2. **Read their bill back.** Day/night split, their unit rate. Ask which other quote opened the bill.\n3. **Walk the gear as products.** Warranty and monitoring first, brand names second.\n4. **Tie the savings to how they live.** Occupancy sets self-consumption, which is why the number is theirs, not a default.\n5. **Price last.** After all that, the net cost reads as fair, not high.`;
+    // The owner's taught edge rides the pitch — the same line the customer AI
+    // uses softly is the one the coach hands the consultant (one truth,
+    // different voices; Settings → Teach your AI).
+    const edge = getKnowledge().edge.trim();
+    const edgeLine = edge ? `\n6. **Your edge, in your words:** "${edge}" — that's the line when they mention another quote.` : '';
+    const generic = `**The play that's converting right now:**\n\n1. **Open on their roof, from above.** Their own house, so the quote stops being an average home's and starts being theirs.\n2. **Read their bill back.** Day/night split, their unit rate. Ask which other quote opened the bill.\n3. **Walk the gear as products.** Warranty and monitoring first, brand names second.\n4. **Tie the savings to how they live.** Occupancy sets self-consumption, which is why the number is theirs, not a default.\n5. **Price last.** After all that, the net cost reads as fair, not high.${edgeLine}`;
     const hot = leads.map(l => ({ l, e: leadEngagement(l) })).filter(x => x.e.warmth === 'hot').sort((a, b) => b.e.views - a.e.views)[0];
     if (hot) return { text: `${generic}\n\nRun it on **${first(hot.l)}** first. ${hot.e.views} opens, warmest lead you've got.`, actions: [{ label: `Open ${first(hot.l)}`, route: '/consultant' }] };
     return { text: generic };

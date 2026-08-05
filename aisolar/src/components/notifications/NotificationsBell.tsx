@@ -24,7 +24,7 @@ interface Notice {
 const FEED: Record<CockpitRole, Notice[]> = {
   consultant: [
     { id: 'c0', icon: Award, tone: 'text-doc-contract', text: 'SEAI grant OFFER received for Siobhán Murphy — install can now be booked', time: 'just now' },
-    { id: 'c1', icon: FileText, tone: 'text-doc-proposal', text: 'Sarah McDonald's proposal is drafted — waiting on your review', time: '9 min ago' },
+    { id: 'c1', icon: FileText, tone: 'text-doc-proposal', text: "Sarah McDonald's proposal is drafted — waiting on your review", time: '9 min ago' },
     { id: 'c2', icon: Bot, tone: 'text-tech', text: 'James Wilson opened his proposal a 4th time — worth a call today', time: '1 hr ago' },
     { id: 'c3', icon: Calendar, tone: 'text-muted-foreground', text: 'Survey booked for Linda O\'Sullivan, Thursday 10:00', time: '3 hrs ago' },
   ],

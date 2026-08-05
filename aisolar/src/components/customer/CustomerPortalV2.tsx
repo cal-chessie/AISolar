@@ -165,6 +165,11 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
       });
     }
 
+    // Optional LLM voice (owner's BYO key, server-side): rephrases the floor's
+    // answer warmer — same facts, same numbers. Any failure = the floor speaks.
+    const { polish } = await import('@/lib/llmVoice');
+    text = await polish(text, { pov: 'customer', brandName: getTenantBrand().name });
+
     await new Promise(r => setTimeout(r, 500));
     setMessages(prev => [...prev, {
       id: `ai_${Date.now()}`,

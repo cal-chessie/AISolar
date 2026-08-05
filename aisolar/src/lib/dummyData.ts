@@ -326,7 +326,7 @@ export function generateDummyLeads(): DummyLead[] {
       stage: 'deposit_paid', daysAgo: 7, sizeKw: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
         { stage: 'deposit_paid', channel: 'portal', direction: 'inbound', summary: 'Stripe deposit confirmed', timestamp: iso(1, 12), actor: 'customer' },
-        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: 'We're lining up your installation — date options on the way', timestamp: iso(1, 12), actor: 'agent' },
+        { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: "We're lining up your installation — date options on the way", timestamp: iso(1, 12), actor: 'agent' },
       ],
     },
     // 8. INSTALLING — small business, crew on site
