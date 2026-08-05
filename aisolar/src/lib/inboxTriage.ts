@@ -10,6 +10,7 @@
  */
 import type { DummyLead } from './dummyData';
 import { callPrep } from './dealIntel';
+import { askBrain } from './customerBrain';
 
 export type TriageKind = 'question' | 'objection' | 'booking' | 'complaint' | 'silence';
 
@@ -81,9 +82,18 @@ export function triageInbound(lead: DummyLead): Triage {
     };
   }
   if (RX.question.test(heard)) {
+    // The brain answers the question off the live record — the consultant's
+    // draft arrives WITH the answer done, not an empty "let me check" (5 Aug
+    // audit: the most common inbound kind got filler). Human edits + sends.
+    // When the brain couldn't answer (it escalates), its copy says "I've told
+    // your consultant" — nonsense in the consultant's own mouth, so fall back
+    // to a plain opener for the human to finish.
+    const brained = askBrain(lead, heard);
     return {
       kind: 'question', heard, tone: 'doc-deposit',
-      draft: `Hi ${first}, good question — let me answer that properly. `,
+      draft: brained.escalation
+        ? `Hi ${first}, good question — `
+        : `Hi ${first}, ${brained.text.replace(/\*\*/g, '').replace(/\n+/g, ' ').trim()}`,
     };
   }
   // Understood inbound that isn't clearly any of the above → treat as a general reply.

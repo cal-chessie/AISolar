@@ -287,6 +287,7 @@ export default function ConsultantCockpitV5() {
 
   /** Move a lead to the next pipeline stage (used by Kanban drag-to-advance). */
   const advanceLeadStage = (leadId: string, targetStage: string) => {
+    const moved = leads.find(l => l.id === leadId);
     setLeads(prev => prev.map(l =>
       l.id === leadId ? { ...l, workflow_stage: targetStage } : l
     ));
@@ -296,6 +297,15 @@ export default function ConsultantCockpitV5() {
     persistLeadStage(leadId, targetStage).catch((e) => {
       toast.error(`Stage change didn't save — ${(e as Error).message}`);
       refetch();
+    });
+    // BOTH-ENDS LAW (5 Aug audit: stage moves were silent — the single most
+    // common event in the pipeline notified nobody). Bell for the team; the
+    // customer email rides send-notification's built-in stage_change type.
+    void notify({
+      type: 'stage_change', leadId,
+      title: `${moved?.name || 'Lead'} → ${getStage(targetStage).label}`,
+      message: `Moved from ${moved ? getStage(moved.workflow_stage).label : '—'} to ${getStage(targetStage).label}.`,
+      metadata: { from: moved?.workflow_stage, to: targetStage },
     });
     toast.success(`Moved to ${getStage(targetStage).label}`, {
       description: `${selectedLead?.name || 'Lead'} is now in the ${getStage(targetStage).label} stage.`,

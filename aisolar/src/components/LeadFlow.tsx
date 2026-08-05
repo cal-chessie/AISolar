@@ -493,6 +493,10 @@ function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
                             : bookMode === 'first' ? (() => { const d = new Date(); d.setDate(d.getDate() + 2); return `${d.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric' })} · Morning`; })()
                             : surveyBooked!.slot;
                           if (bookMode === 'options') {
+                            void notify({ type: 'survey_options', leadId: lead.id, email: lead.email,
+                              title: `Survey times — ${lead.name}`,
+                              message: 'Pick the survey time that suits you in your portal — a couple of options are waiting.',
+                              portalPath: '/customer' });
                             toast.success(`Survey options sent to ${lead.name.split(' ')[0]}`, {
                               description: 'They pick in their chat, then the scheduler confirms and books the calendar.',
                             });

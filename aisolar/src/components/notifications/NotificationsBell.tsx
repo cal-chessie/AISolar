@@ -16,6 +16,8 @@ interface Notice {
   tone: string;         // icon colour class
   text: string;
   time: string;
+  /** Live rows carry the DB read flag; demo rows use local readIds. */
+  read?: boolean;
 }
 
 /* Demo feeds per role — replaced by kernel events at launch. */
@@ -39,12 +41,79 @@ const FEED: Record<CockpitRole, Notice[]> = {
   ],
 };
 
+/* Icon + tone per real notify() event type — the bell speaks the spine's language. */
+const TYPE_META: Record<string, { icon: typeof Bot; tone: string }> = {
+  callback_request: { icon: MessageCircle, tone: 'text-pop' },
+  customer_message: { icon: MessageCircle, tone: 'text-doc-deposit' },
+  reply: { icon: Send, tone: 'text-muted-foreground' },
+  deposit_link: { icon: Euro, tone: 'text-doc-deposit' },
+  proposal_sent: { icon: FileText, tone: 'text-doc-proposal' },
+  photo_request: { icon: Calendar, tone: 'text-tech' },
+  handover_pack: { icon: Award, tone: 'text-doc-contract' },
+  team_invite: { icon: Mail, tone: 'text-tech' },
+  stage_change: { icon: Bot, tone: 'text-tech' },
+  reschedule: { icon: Calendar, tone: 'text-pop' },
+  survey_options: { icon: Calendar, tone: 'text-tech' },
+  seai_offer_reminder: { icon: Award, tone: 'text-pop' },
+  seai_ber_overdue: { icon: Award, tone: 'text-pop' },
+};
+
+const relTime = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
+  return `${Math.round(diff / 86_400_000)}d ago`;
+};
+
+/** Signed in → the REAL notifications table (RLS scopes to you + your leads);
+ *  demo → the role feed. The 5 Aug audit found notify() writing rows nothing
+ *  displayed — this closes the loop. */
+function useLiveFeed(role: CockpitRole): { feed: Notice[]; live: boolean; markAllRead: () => void } {
+  const demoFeed = useMemo(() => FEED[role], [role]);
+  const [rows, setRows] = useState<Notice[] | null>(null);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: auth } = await supabase.auth.getSession();
+        if (!auth.session) return; // demo / signed out — keep the role feed
+        const { data } = await supabase
+          .from('notifications')
+          .select('id, type, title, message, read, created_at')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (on && data) {
+          setRows(data.map(n => {
+            const meta = TYPE_META[n.type as string] ?? { icon: Bot, tone: 'text-muted-foreground' };
+            return { id: n.id as string, icon: meta.icon, tone: meta.tone,
+              text: n.title ? `${n.title}${n.message ? ` — ${n.message}` : ''}` : (n.message as string ?? ''),
+              time: relTime(n.created_at as string), read: !!n.read };
+          }));
+        }
+      } catch { /* stays on the demo feed */ }
+    })();
+    return () => { on = false; };
+  }, [role]);
+  const markAllRead = () => {
+    void (async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase.from('notifications').update({ read: true }).eq('read', false);
+      } catch { /* best-effort */ }
+    })();
+  };
+  return { feed: rows ?? demoFeed, live: rows != null, markAllRead };
+}
+
 export default function NotificationsBell({ role }: { role: CockpitRole }) {
-  const feed = useMemo(() => FEED[role], [role]);
+  const { feed, live, markAllRead } = useLiveFeed(role);
   const [readIds, setReadIds] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const unread = feed.filter(n => !readIds.includes(n.id)).length;
+  const isRead = (n: Notice) => n.read === true || readIds.includes(n.id);
+  const unread = feed.filter(n => !isRead(n)).length;
 
   // No popover primitive in this repo — self-contained dropdown with
   // click-outside + Escape close.
@@ -73,7 +142,7 @@ export default function NotificationsBell({ role }: { role: CockpitRole }) {
         <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
           <span className="text-sm font-semibold">Notifications</span>
           {unread > 0 && (
-            <button onClick={() => setReadIds(feed.map(n => n.id))}
+            <button onClick={() => { setReadIds(feed.map(n => n.id)); if (live) markAllRead(); }}
               className="text-2xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors">
               <CheckCheck className="size-3" /> Mark all read
             </button>
@@ -82,13 +151,13 @@ export default function NotificationsBell({ role }: { role: CockpitRole }) {
         <div className="max-h-72 overflow-y-auto divide-y divide-border">
           {feed.map(n => (
             <button key={n.id} onClick={() => setReadIds(ids => ids.includes(n.id) ? ids : [...ids, n.id])}
-              className={`w-full text-left px-3 py-2.5 flex gap-2.5 hover:bg-muted/50 transition-colors ${readIds.includes(n.id) ? 'opacity-60' : ''}`}>
+              className={`w-full text-left px-3 py-2.5 flex gap-2.5 hover:bg-muted/50 transition-colors ${isRead(n) ? 'opacity-60' : ''}`}>
               <n.icon className={`size-4 mt-0.5 shrink-0 ${n.tone}`} />
               <span className="min-w-0">
                 <span className="block text-xs leading-snug">{n.text}</span>
                 <span className="block text-2xs text-muted-foreground mt-0.5">{n.time}</span>
               </span>
-              {!readIds.includes(n.id) && <span className="size-1.5 rounded-full bg-tech shrink-0 mt-1.5 ml-auto" />}
+              {!isRead(n) && <span className="size-1.5 rounded-full bg-tech shrink-0 mt-1.5 ml-auto" />}
             </button>
           ))}
         </div>
