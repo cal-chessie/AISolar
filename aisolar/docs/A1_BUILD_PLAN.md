@@ -107,6 +107,17 @@ A1 bolts tenant-creation onto the far end and swaps the words.
 - **OAuth:** Google + email at launch, or email-only for the cohort (Google needs an
   OAuth app configured)? — gates the signup UI slice, not the DB foundation.
 
+## ✅ Tenant isolation — PROVEN (5 Aug, live on V5)
+Seeded two throwaway users + tenants + leads, then queried the **real RLS policies**
+as each user via JWT-claim simulation (`set role authenticated` + `request.jwt.claims.sub`):
+- `tenants`: U1 saw only ISO-TENANT-1, U2 only ISO-TENANT-2.
+- `leads` (customer data): U1 saw only its own lead, U2 only its own — **neither could
+  see the other tenant's lead.**
+- Bonus: seeding the auth users showed `handle_new_user` fires and assigns the default
+  `customer` role. All test data cleaned up (0 rows left; delete cascaded correctly).
+The multi-tenant floor (`has_tenant_access` → `own_lead`/`can_see_lead`) isolates
+tenants end-to-end. Safe to build the rest of A1 on top.
+
 ## Done-means
 A stranger hits the installer signup → answers installer-copy chips → a tenant is
 created, they're its admin, a 7-day trial is running, and they land in the app
