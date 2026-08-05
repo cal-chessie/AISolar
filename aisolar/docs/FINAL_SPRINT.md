@@ -154,41 +154,46 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
   tables. Verify signed in: the cockpit shows DB rows and settings round-trip.
 - **National merge** — RI + SI = one national account, two brands; Cal's owner login sees both.
 
-### 2C · Per-surface wiring (the SAAS_MAP ⬜ list — what makes each cockpit LIVE, not lifelike)
-- **Consultant:** `handleSendReply` → `touchpoints` + Postmark (+ Realtime) · `advanceLeadStage` →
-  `workflow_stage` + kernel `StageTransitioned`.
-- **Installer:** photos → storage + `install_evidence` · serials → `installed_equipment` (write fn exists) ·
-  offline sign-off · NC submission record.
-- ⭐ **Deposit → installer routing (multi-installer).** When a deposit is paid the job must be routable to
-  ONE OF SEVERAL installers, not the single assigned name. **Cohort = owner's choice + gate:** on
-  deposit-paid the owner picks the installer from their roster (the roster already exists — Owner → Settings →
-  Installers) and confirms; the assignment writes `assignment.installer_id` + notifies that installer. A GATE
-  stops the job progressing until an installer is assigned. Deterministic, no geo data needed. *(Post-cohort:
-  auto-route by area covered + distance — see POST_COHORT.md.)* Needs: `installer_id` on the assignment +
-  an area/roster field per installer; migration add-only.
-- **Owner:** FinanceWindow deposit link → `create-checkout` — the button exists, the charge doesn't.
-- **Customer:** Ask-AI → **guardrailed** LLM (L4: refuses anything outside THEIR project) + persist +
-  notify consultant · callback request → record + notify.
+### 2C · Per-surface wiring — ✅ **LANDED 5 Aug** (except installer photos→storage, parked)
+- ✅ **Consultant:** `handleSendReply` → `addTouchpoint` (DB) + `notify('reply')` emails the customer their
+  reply + magic link *(Done 5 Aug)*. `advanceLeadStage` → `workflow_stage` + `notify('stage_change')`
+  both-ends *(Done 5 Aug)*. *(kernel `StageTransitioned` = post-cohort.)*
+- ✅ **Installer:** serials → `installed_equipment` (JobViewV2 wired, verified) *(Done)*. ⬜ **photos →
+  storage + `install_evidence`** — the ONE 2C leftover; needs a storage bucket *(parked in DEPLOYMENT_GATE)*.
+- ✅ ⭐ **Deposit → installer routing (multi-installer).** *(Done 5 Aug — verified in-browser: job surfaced →
+  routed to a crew → gate cleared.)* `InstallerGate` on the owner's Financials surfaces every deposit-paid
+  job with no crew; roster picker → `assignInstaller()` writes the `assignments` row (migration
+  `20260805_assignments_roster_ref` applied live: `installer_ref`/`installer_name`, `installer_id` nullable)
+  + bells the team. *(Post-cohort: geo-route by area + distance — POST_COHORT.md.)*
+- ✅ **Owner:** FinanceWindow deposit link → `notify('deposit_link')` (branded email + magic link) *(Done
+  5 Aug)*. The CHARGE itself rides `create-checkout` (deploy-gated — DEPLOYMENT_GATE).
+- ✅ **Customer:** Ask-AI → **guardrailed** brain (customerBrain + brainGuardrails L4: refuses anything
+  outside THEIR project) + persists + notifies consultant · callback → `notify('callback_request')`. Token
+  customers write via the `portal-inbox` edge fn (M4). *(Done 5 Aug — verified live.)*
 
-### 2D · Outbound that's real (X1 + L1 + M4 — this IS the notification spine; one build)
-- ⭐ **`notify(event)` spine** — one call → bell + brand-themed email, portal link always in. Wires the 4
-  draft-gated "queued — goes out with your approval" toasts to REAL sends: proposal · deposit link · photo
-  request · reschedule · handover pack · referral · team invite.
-- **Both-ends law (L1)** — every interaction notifies customer AND consultant. Email + magic link only.
-- **Branded outbound** — tenant from-name + reply-to on one verified domain at launch.
-- **M4 tables** — `notifications` + `magic_link_tokens` beneath it all.
-- **⬅️ Proposal personalisation (moved from Sprint 1).** The drafter's LLM call carries dealSignals so the
-  proposal narrative speaks to THEIR life ("you're out all day, so the battery is what makes this work") —
-  the numbers stay `computeQuote`'s, never the model's. Built + tested here because it's in the deployed
-  `agent-drain` edge fn and needs the AI key on.
+### 2D · Outbound that's real — ✅ **LANDED 5 Aug** (email rail is code-complete; deploy flips it on)
+- ✅ ⭐ **`notify(event)` spine** *(Done 5 Aug)* — one call → bell (`notifications` table, RLS-scoped,
+  realtime) + branded email with the portal magic link always in. Every send wired: proposal · deposit link ·
+  photo request · reschedule · survey options · handover pack · referral · team invite · stage change ·
+  callback · customer message. The bell rail is LIVE end-to-end; `send-notification` extended for the generic
+  branded email (deploy + Postmark secret to switch on).
+- ✅ **Both-ends law (L1)** — every interaction notifies customer AND consultant. Email + magic link only.
+- ✅ **Branded outbound** — tenant from-name via `getTenantBrand()`. *(Verified-domain reply-to = deploy.)*
+- ✅ **M4** — `notifications` (tenant_id + user-addressed RLS) + `portal-inbox` fn for token customers. The
+  dedicated `magic_link_tokens` table = M4 hardening, parked (the lead `access_token` serves today).
+- ✅ **Proposal personalisation** — `agent-drain` drafter already carries occupancy/dealSignals; the LLM
+  voice layer (`brain-voice`, BYO key) rephrases without touching the numbers. Seam ready; deploy + AI key on.
 
-### 2E · The go-live signal
-- ⭐ **The WIDGET** — the per-tenant embeddable calculator→lead door + the owner "copy your embed code"
-  panel.
-- **Sites wiring** — SolarIrelandGroup · RenewableIreland · wideawakesolar: door helper + calculator-first +
-  certificate kept + Cal.com booking. **Designs untouched.**
-- **🔐 D4 + D3** — the Maps key OUT of the client bundle (edge proxy) · Google Solar server-side (kills the
-  CORS path). Security, not polish — ships with the widget it serves.
+### 2E · The go-live signal — ✅ **WIDGET LANDED 5 Aug** (sites wiring + Maps-key security still open)
+- ✅ ⭐ **The WIDGET** *(Done 5 Aug — verified: /embed bill → estimate → capture → "thank you")*. The
+  calculator now CAPTURES: after the estimate, the visitor's details POST to `ingest-lead` with the embed's
+  `x-source-key` → `resolve_lead_door` → the lead lands in THAT tenant's pipeline. `SolarCalculator` gains
+  `onGetProposal` (embed fork). Owner Settings → "Put your calculator on your website" shows the one iframe
+  snippet + copy + live preview. Demo-safe (no key → walkable, no write). *(Needs `ingest-lead` deployed.)*
+- ⬜ **Sites wiring** — SolarIrelandGroup · RenewableIreland · wideawakesolar: door helper + calculator-first
+  + Cal.com booking. **Designs untouched.** *(Go-live moment — DEPLOYMENT_GATE §6.)*
+- ⬜ **🔐 D4 + D3** — the Maps key OUT of the client bundle (edge proxy) · Google Solar server-side.
+  Security; **widget-blocking, not cohort-blocking** *(flagged in DEPLOYMENT_GATE)*.
 
 **Done-means:** a stranger signs up, becomes a tenant, and takes a lead door → proposal → deposit → pack
 with every send real and every document row written — verified as a real signed-in tenant, not in demo.
@@ -260,26 +265,28 @@ Cal's explicit yes/no · a cold adversarial pass finds nothing the checklist mis
 
 ---
 
-## SPRINT 5 — 🎬 THE FINALE (LAST — Cal's explicit order; only after the coach sings)
+## SPRINT 5 — 🎬 THE FINALE — ✅ **LANDED 5 Aug** (built to Cal's exact spec)
 
-- **The demo toggle moves to the owner sidebar** (left column). Flipping it populates the **10 archetypes**
-  — the user clicks real work, not a menu. Browse-Views becomes **leads-only**.
-- ⭐ **The guided tour** — instructional, not decorative: it prompts the user through the whole product
-  following the SPINE — lead in → estimate → survey → design → proposal → send → contract → deposit →
-  install → NC6/SEAI pack → handover — **finale: agents → product catalog → settings → analytics.** Each
-  stop says what this screen is FOR, what to click, and what just happened behind it.
-- **It doubles as:** new-tenant onboarding (first-run after signup — every new user gets the cast + the
-  walk, Cal 3 Aug) · cohort training · the founder teaching walk (SWEEP10 §E).
+- ✅ **Owner sidebar demo toggle** *(Done 5 Aug — verified)*. A real toggle (not a button); ON ⇒ the
+  **5-lead cast** (one per variant, each NC6/NC7 filled) REPLACES the pipeline across the CRM, OFF ⇒ real
+  leads. Deliberate-only (the sticky `?demo=1` footgun is gone); sandbox write-guard = no real DB writes
+  while on. "Browse Views" route-index + `/demo` page RIPPED OUT; DemoBanner now a thin "Sample data" strip.
+- ✅ ⭐ **The guided tour** *(Done 5 Aug — verified: 15 stops, cross-surface, no loop, survives navigation)*.
+  App-level + route-driven, so it survives clicking around (the restart bug is fixed). Walks the spine and
+  **ducks into the consultant's survey + the installer's field job as sub-steps**, doubles back on the SEAI
+  pack (download it, see for yourself), finishes in Settings. Every stop makes the human-gate point.
+  Auto-runs once (first cockpit visit / `?tour=1`), relaunch from the sidebar "Take the tour."
+- ✅ **Doubles as** new-tenant onboarding + cohort training + the founder teaching walk.
 
-**Done-means:** someone who has never seen AISolar completes the tour unaided, then adds a real lead and
-sends a real proposal without help.
+**Done-means:** ✅ someone who has never seen AISolar completes the tour unaided. *(The "then adds a real
+lead + sends a real proposal" half is the deploy smoke test — DEPLOYMENT_GATE §6.)*
 
 ---
 
 ## 🔑 DEPLOYMENT — CAL'S GATE (I prep every artefact; you run; every line has a verify)
+_The full, current, one-command-per-line runbook is **`docs/DEPLOYMENT_GATE.md`** (compiled 5 Aug)._
 1. `brew install supabase/tap/supabase` + `supabase login`.
-2. **Key rotation + git-history purge** (coxmtpnq · vythuqax · kernel · Maps) — **GATE 0**; agents stay
-   undeployed until this closes.
+2. ✅ **GATE 0 CLOSED** (Cal, 5 Aug: keys rotated + history purged "ages ago"). No longer a blocker.
 3. Deploy **18 edge functions** (the 17 + `verify-artefact`) + set secrets — I prep the manifest with a
    per-fn verify line. verify-artefact's smoke: one real cert photo → a planted mismatch caught.
 4. Postmark server token + DNS (DKIM/return-path) → one real email lands in a real inbox.
