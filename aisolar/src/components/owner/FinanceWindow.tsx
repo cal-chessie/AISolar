@@ -20,6 +20,8 @@ import {
 import { toast } from 'sonner';
 import { notify } from '@/lib/notify';
 import { useLeads } from '@/lib/realLeads';
+import { assignInstaller } from '@/lib/leadWrites';
+import { useInstallers } from '@/lib/installerRoster';
 import { getStage } from '@/lib/leadIntake';
 import { computeOwnerStats } from '@/lib/ownerStats';
 import { useFinanceConfig, saveFinanceConfig, stripeMode, maskIban, type FinanceConfig } from '@/lib/financeConfig';
@@ -81,6 +83,7 @@ export default function FinanceWindow() {
 
   return (
     <div className="space-y-4">
+      <InstallerGate />
       {/* 1 — Cash position: the four numbers an owner checks before coffee.
              ONE source (computeOwnerStats) — the same figures the Overview and
              Analytics show, so they can never disagree again. */}
@@ -243,6 +246,56 @@ export default function FinanceWindow() {
           </div>
           <Button size="sm" className="ml-auto h-8 text-xs font-semibold" onClick={save}>Save setup</Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * InstallerGate — 2C ⭐ the deposit→installer routing gate (cohort law: owner's
+ * choice + GATE). Every deposit-paid job with no installer assigned surfaces
+ * here; the job must not progress until the owner routes it. Assign → the
+ * assignment row lands (roster ref) + the team is belled.
+ */
+export function InstallerGate() {
+  const { leads, setLeads } = useLeads();
+  const installers = useInstallers();
+  const [choice, setChoice] = useState<Record<string, string>>({});
+  const waiting = leads.filter(l =>
+    (l.workflow_stage === 'deposit_paid' || l.invoice?.deposit_paid) &&
+    !l.assignment?.installer_name && !l.assignment?.installer_id
+  );
+  if (!waiting.length) return null;
+  return (
+    <div className="rounded-panel border border-pop/40 bg-pop/5 p-4">
+      <h3 className="text-sm font-semibold">⛔ Deposit paid — pick the installer ({waiting.length})</h3>
+      <p className="mt-0.5 text-xs text-muted-foreground">{installers.length ? "The gate: these jobs can't progress until you route them to a crew." : 'No crews yet — add installers in Settings → Installers, then route these jobs.'}</p>
+      <div className="mt-2.5 space-y-2">
+        {waiting.map(l => (
+          <div key={l.id} className="flex flex-wrap items-center gap-2 rounded-control border border-border bg-card p-2">
+            <span className="text-sm font-medium min-w-0 flex-1 truncate">{l.name} <span className="text-xs text-muted-foreground">· {l.address?.split(',')[0]}</span></span>
+            <select value={choice[l.id] ?? ''} onChange={e => setChoice(c => ({ ...c, [l.id]: e.target.value }))}
+              className="h-8 rounded-control border border-border bg-background px-2 text-sm">
+              <option value="">Choose installer…</option>
+              {installers.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            </select>
+            <Button size="sm" className="h-8 text-xs" disabled={!choice[l.id]} onClick={async () => {
+              const inst = installers.find(i => i.id === choice[l.id]);
+              if (!inst) return;
+              setLeads(prev => prev.map(x => x.id === l.id ? { ...x, assignment: { ...(x.assignment ?? { id: `as_${Date.now()}`, installer_id: inst.id, status: 'pending', scheduled_date: '' }), installer_id: inst.id, installer_name: inst.name, status: 'pending' } } : x));
+              try {
+                await assignInstaller(l.id, inst.id, inst.name);
+                void notify({ type: 'stage_change', leadId: l.id, bothEnds: false,
+                  title: `Install routed — ${l.name} → ${inst.name}`,
+                  message: `${inst.name} has the ${l.proposal?.system_size_kw ?? '—'}kWp install. Next: schedule the date.` });
+                toast.success(`${l.name.split(' ')[0]} routed to ${inst.name}`);
+              } catch (e) {
+                toast.error(`Assignment didn't save — ${(e as Error).message}`);
+              }
+            }}>Assign</Button>
+          </div>
+        ))}
       </div>
     </div>
   );

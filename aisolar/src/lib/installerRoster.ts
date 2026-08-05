@@ -25,11 +25,21 @@ export interface Installer {
   safeElectricCert: string;
 }
 
+/** Demo cast roster — the demo owner sees crews to route (never in prod). */
+const DEMO_ROSTER: Installer[] = [
+  { id: 'ins-001', name: 'Mike Doyle' } as Installer,
+  { id: 'ins-002', name: 'Liam Brennan' } as Installer,
+  { id: 'ins-003', name: 'Cian Murphy' } as Installer,
+];
+
 export function getInstallers(): Installer[] {
   try {
     const raw = localStorage.getItem(KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
+    if (Array.isArray(list) && list.length) return list;
+    // Empty roster: in DEMO the cast crews appear so the routing gate is
+    // drivable; a real signed-in owner sees empty (add crews in Settings).
+    return isDemoMode() ? DEMO_ROSTER : [];
   } catch {
     return [];
   }
@@ -54,6 +64,7 @@ export function findInstallerCert(name: string | undefined | null): string {
 
 /** React hook — re-renders when the roster changes in this tab or another. */
 import { useEffect, useState } from 'react';
+import { isDemoMode } from './demoMode';
 export function useInstallers(): Installer[] {
   const [list, setList] = useState<Installer[]>(() => getInstallers());
   useEffect(() => {

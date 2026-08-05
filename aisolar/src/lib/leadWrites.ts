@@ -103,3 +103,19 @@ export async function addTouchpoint(leadId: string, message: string, title = 'Re
   });
   if (error) throw error;
 }
+
+/**
+ * assignInstaller — 2C ⭐ deposit→installer routing (cohort = owner's choice +
+ * gate). Writes the assignment (roster ref + display name; installer_id stays
+ * for when installers become auth users) and stamps the lead's stage forward.
+ * The GATE: a deposit-paid job without one of these rows must not progress.
+ */
+export async function assignInstaller(leadId: string, installerRef: string, installerName: string): Promise<void> {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return; // demo — local state only
+  const { error } = await supabase.from('assignments').insert({
+    lead_id: leadId, installer_ref: installerRef, installer_name: installerName,
+    assignment_type: 'install', status: 'pending', assigned_by: u.user.id,
+  });
+  if (error) throw new Error(error.message);
+}
