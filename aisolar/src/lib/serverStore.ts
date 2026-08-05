@@ -73,9 +73,12 @@ export async function resolveTenantId(): Promise<string | null> {
   }
 }
 
-/** Fire-and-forget guard: swallow everything — offline, undeployed, RLS-denied. */
-function quiet(p: Promise<unknown>) {
-  p.catch(() => { /* dual-write is best-effort until cutover flips the order */ });
+/** Fire-and-forget guard: swallow everything — offline, undeployed, RLS-denied.
+ *  Accepts PromiseLike: a raw Supabase query builder is a THENABLE without
+ *  .catch — passing one straight in threw "p.catch is not a function" on every
+ *  consent click (found on the 5 Aug audit). Promise.resolve() normalises it. */
+function quiet(p: PromiseLike<unknown>) {
+  Promise.resolve(p).catch(() => { /* dual-write is best-effort until cutover flips the order */ });
 }
 
 type TenantSettingKey = 'tenant_brand' | 'proposal_terms' | 'finance_config' | 'company_compliance' | 'pricing';

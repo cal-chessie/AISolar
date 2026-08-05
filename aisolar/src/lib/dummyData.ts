@@ -316,7 +316,8 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(1, 9), actor: 'customer' },
         { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed contract', timestamp: iso(0, 14), actor: 'customer' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Invoice auto-created + deposit link emailed', timestamp: iso(0, 14), actor: 'agent' },
-        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent started SEAI application', timestamp: iso(0, 14), actor: 'agent' },
+        // Truth-pass (5 Aug): the agent PREPARES + tracks — the customer applies.
+        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'GrantAgent prepared your SEAI grant steps — the application is yours to send, and SEAI pay you directly', timestamp: iso(0, 14), actor: 'agent' },
       ],
     },
     // 7. DEPOSIT PAID — farm, install being scheduled

@@ -190,7 +190,9 @@ export function buildConversation(lead: DummyLead, opts: { audience?: 'customer'
     msgs.push({
       id: 'contract_signed',
       type: 'system',
-      body: 'Contract signed! Your SEAI grant paperwork has been auto-started. Invoice created.',
+      // Truth-pass (5 Aug): was "your SEAI grant paperwork has been auto-started"
+      // — the customer applies for the offer themselves; we prepare + track.
+      body: 'Contract signed! Invoice created. Your SEAI grant steps live in your grant card above — SEAI pays the grant to you.',
       timestamp: lead.contract.signed_date,
       actionLabel: 'View contract',
       actionIcon: FileText,

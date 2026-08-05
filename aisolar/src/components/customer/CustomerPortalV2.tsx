@@ -65,7 +65,7 @@ import { AichatWordmark } from '@/components/brand/AiosMark';
 import PreSurveySnaps from './PreSurveySnaps';
 import SurveyBooking from './SurveyBooking';
 import CustomerGrantCard from './CustomerGrantCard';
-import { CookieConsentBanner, DataSubjectRightsPanel } from '@/lib/gdpr';
+import { DataSubjectRightsPanel } from '@/lib/gdpr';
 import { isDemoMode, isDemoAvailable } from '@/lib/demoMode';
 import { buildConversation, type ChatMessage } from '@/lib/conversation';
 import { askBrain, suggestedQuestions } from '@/lib/customerBrain';
@@ -503,8 +503,9 @@ export default function CustomerPortalV2({ lead: realLead }: { lead?: DummyLead 
         )}
       </AnimatePresence>
 
-      {/* Cookie consent */}
-      <CookieConsentBanner />
+      {/* Cookie consent renders ONCE, globally, from App.tsx — a second mount
+          here stacked two identical banners and they fought over dismissal
+          (found on the 5 Aug portal audit). */}
     </div>
   );
 }
