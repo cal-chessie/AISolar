@@ -29,10 +29,19 @@ Every one shows an honest toast: **sent** when signed-in (bell + email land) vs
 - ✅ **Proposal sent** — `LeadFlow`.
 - ✅ **Handover pack** — `compliance/PaperworkWindow`.
 
-## Still to wire (same one-liner pattern)
-- **Reschedule / survey options** — `LeadFlow:~495` (survey window offer).
+## Wired 5 Aug (the portal + brain pass — see COMMS_AI_SYSTEM.md)
+- ✅ **Callback request** — CustomerPortalV2 "Call me back" bells the team (📞 + number).
+- ✅ **Customer messages** — every portal message notifies: escalations as their kind
+  (complaint/objection/booking, customer's words verbatim), answered questions as a
+  quiet `customer_message` row.
+- ✅ **Survey options** — LeadFlow offer → `survey_options`.
+- ✅ **Stage moves** — consultant kanban `advanceLeadStage` → `stage_change` (both-ends;
+  email rides the edge fn's built-in type).
+- ✅ **The bell reads the real table** when signed in (see COMMS_AI_SYSTEM.md).
+
+## Still to wire
 - **Referral** — the post-completion referral ask (find the seam when it's built out).
-- **Callback request** — `CustomerPortalV2` (customer → consultant, both-ends).
+- **Realtime** — the bell fetches on mount; subscribe to `notifications` for live rings.
 
 ## ⚠️ EDGE-FN DEPENDENCY (do this before the email rail is real)
 `supabase/functions/send-notification/index.ts` today switches on a FIXED set of
