@@ -42,6 +42,7 @@ import CustomerPortalV2 from "./components/customer/CustomerPortalV2";
 import CustomerPortalTokenRoute from "./components/customer/CustomerPortalTokenRoute";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import DemoBanner from "./components/DemoBanner";
+import GuidedTour from "@/components/demo/GuidedTour";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CookieConsentBanner } from "./lib/gdpr";
 import { isDemoMode } from "./lib/demoMode";
@@ -108,6 +109,7 @@ function AppRoutes() {
   return (
     <>
       {!isEmbed && <DemoBanner />}
+      {!isEmbed && <GuidedTour />}
       {!isEmbed && <CookieConsentBanner />}
       <GlobalSearchModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
       {showAICoach && useRoleCoach && <RoleBasedAICoach />}

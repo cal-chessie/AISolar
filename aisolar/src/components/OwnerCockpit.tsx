@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { notify } from '@/lib/notify';
 import { AiosMark } from "@/components/brand/AiosMark";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import DemoToggle from '@/components/demo/DemoToggle';
-import GuidedTour, { launchTour, type OwnerView } from '@/components/demo/GuidedTour';
+import { launchTour } from '@/components/demo/GuidedTour';
 import { Compass } from 'lucide-react';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -102,6 +102,7 @@ const SIDEBAR_ITEMS: Array<{ id: SidebarView; label: string; icon: typeof Home; 
 export default function OwnerCockpit() {
   const tb = useTenantBrand();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const { leads } = useLeads();
   const [activeView, setActiveView] = useState<SidebarView>('overview');
@@ -115,13 +116,14 @@ export default function OwnerCockpit() {
     else setSidebarOpen(false);
   }, [isMobile]);
 
-  // Deep-link a section via ?view= (e.g. the coach sends the owner to Settings
-  // to fix a company-compliance blocker). Runs on mount + when the param changes.
+  // Deep-link a section via ?view= — REACTIVE to the search string, so the coach
+  // (and the app-level guided tour) can switch the owner's section even when
+  // already on /owner. Was mount-only, which is why the tour couldn't drive it.
   useEffect(() => {
-    const v = new URLSearchParams(window.location.search).get('view');
+    const v = new URLSearchParams(location.search).get('view');
     const valid: SidebarView[] = ['financials', 'overview', 'calendar', 'consultants', 'installers', 'clients', 'feedback', 'products', 'settings', 'agents', 'analytics', 'seai', 'estimates'];
     if (v && (valid as string[]).includes(v)) setActiveView(v as SidebarView);
-  }, []);
+  }, [location.search]);
 
   // Escape closes the mobile drawer
   useEffect(() => {
@@ -280,7 +282,6 @@ export default function OwnerCockpit() {
         </div>
       )}
     >
-        <GuidedTour setView={(v) => setActiveView(v as SidebarView)} />
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setActiveView={setActiveView} />
