@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,19 @@ import GlobalSearchModal from "@/components/search/GlobalSearchModal";
 import ProposalPage from "@/pages/ProposalPage";
 import { useGlobalShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+
+// Code-split the heavy authed surfaces so the public landing + portal don't
+// ship all three cockpits (cut the 1.44MB main chunk). Proven lazyWithRetry
+// pattern (survives a stale-chunk fetch after a deploy).
+const AgentFoundation = lazyWithRetry(() => import("./components/AgentFoundation"));
+const ConsultantCockpitV5 = lazyWithRetry(() => import("./components/ConsultantCockpitV5"));
+const OwnerCockpit = lazyWithRetry(() => import("./components/OwnerCockpit"));
+const LeadFlow = lazyWithRetry(() => import("./components/LeadFlow"));
+const JobViewV2 = lazyWithRetry(() => import("./components/installer/JobViewV2"));
+const InstallerPortalV5 = lazyWithRetry(() => import("./components/installer/InstallerPortalV5"));
+const CustomerPortalV2 = lazyWithRetry(() => import("./components/customer/CustomerPortalV2"));
+const CustomerPortalTokenRoute = lazyWithRetry(() => import("./components/customer/CustomerPortalTokenRoute"));
 
 // Pages
 import NotFound from "./pages/NotFound";
@@ -30,16 +43,8 @@ import AiTeamPage from "./pages/AiTeamPageV2";
 import PricingPage from "./pages/PricingPage";
 import DocsPage from "./pages/DocsPage";
 import AgentsPage from "./pages/AgentsPage";
-import AgentFoundation from "./components/AgentFoundation";
 
 // Components (current versions only — no legacy)
-import ConsultantCockpitV5 from "./components/ConsultantCockpitV5";
-import OwnerCockpit from "./components/OwnerCockpit";
-import LeadFlow from "./components/LeadFlow";
-import JobViewV2 from "./components/installer/JobViewV2";
-import InstallerPortalV5 from "./components/installer/InstallerPortalV5";
-import CustomerPortalV2 from "./components/customer/CustomerPortalV2";
-import CustomerPortalTokenRoute from "./components/customer/CustomerPortalTokenRoute";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import DemoBanner from "./components/DemoBanner";
 import GuidedTour from "@/components/demo/GuidedTour";
@@ -113,6 +118,7 @@ function AppRoutes() {
       {!isEmbed && <CookieConsentBanner />}
       <GlobalSearchModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
       {showAICoach && useRoleCoach && <RoleBasedAICoach />}
+      <Suspense fallback={<div className="min-h-dvh grid place-items-center text-sm text-muted-foreground">Loading…</div>}>
       <Routes location={location} key={location.pathname}>
           {/* Public */}
           {/* Cal: AIOS is the homescreen; AISolar is the first product page */}
@@ -164,6 +170,7 @@ function AppRoutes() {
           {/* Catch-all */}
           <Route path="*" element={wrap(<NotFound />)} />
       </Routes>
+      </Suspense>
     </>
   );
 }

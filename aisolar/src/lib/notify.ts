@@ -17,6 +17,7 @@
  *    an honest result.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { isDemoMode } from './demoMode';
 
 export type NotifyEventType =
   | 'proposal_sent'
@@ -90,7 +91,6 @@ async function staffRecipients(leadId?: string, fallback?: string | null): Promi
 export async function notify(e: NotifyEvent): Promise<NotifyResult> {
   // SANDBOX GUARD (Cal, 5 Aug): a signed-in owner in the demo sandbox must not
   // fire real sends. The cast is a training surface, not live work.
-  const { isDemoMode } = await import('./demoMode');
   if (isDemoMode()) return { ok: true, bell: false, email: false, reason: 'demo' };
 
   const uid = await currentUserId();

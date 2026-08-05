@@ -58,8 +58,8 @@ export async function captureWidgetLead(input: WidgetLeadInput): Promise<WidgetL
         'Content-Type': 'application/json',
         'x-source-key': sourceKey,
         // The anon key is the public function gate; the source key is the tenant scope.
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
       body: JSON.stringify({
         source: 'website_survey',

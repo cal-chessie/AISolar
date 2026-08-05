@@ -101,9 +101,22 @@ solid. The 2.5 was "unproven + GATE 0"; both are answered. Re-run this pass befo
 
 ---
 
+## 🏗️ DEPLOYMENT-READINESS PASS — weekend #1 (5 Aug — "no stone unturned", senior-team checklist)
+_What a senior team runs before prod. All evidenced; fixes committed._
+
+1. ✅ **The real production build passes** (`npm run build` → `✓ built in ~6s`). tsc-green ≠ prod-build-green; this is the one that matters, and it's GREEN.
+2. ✅ **Bundle code-split** — the landing used to ship all three cockpits (1.44MB main chunk). Lazy-loaded the 8 heavy authed surfaces (Owner/Consultant/Installer cockpits, LeadFlow, JobView, both portals, AgentFoundation) → main chunk **1,441→1,071KB (465→368KB gzip, −21%)**; each cockpit is its own chunk now. Browser-verified all lazy routes still render.
+3. 🐞 **FIXED — real prod-breaker: the widget's anon key.** `widgetLead.ts` read `VITE_SUPABASE_ANON_KEY` — a var that is NOT defined (the app uses `VITE_SUPABASE_PUBLISHABLE_KEY`). Every embedded lead capture would have sent `Bearer undefined` and failed silently in prod. Unified to the canonical name. **This would have broken the 2E widget on day one.**
+4. ✅ **Env manifest pinned** — the app needs exactly THREE client vars: `VITE_SUPABASE_URL` · `VITE_SUPABASE_PUBLISHABLE_KEY` · `VITE_GOOGLE_MAPS_KEY`. (`VITE_SUPABASE_PROJECT_ID` is in `.env` but unused in code.) Full manifest → DEPLOYMENT_GATE §5.
+5. ✅ **Role→route matrix** (belt; RLS is the braces): `/owner`=admin,owner · `/consultant`+`/lead-flow`+`/agent-console`=+consultant · `/installer`+`/job`=+installer · `/my-projects`=any authed · `/customer/:token`=token-only. Coherent; RLS enforces data isolation on top (proven above).
+6. ⚠️ **Migration tracking gap (note, not blocker):** migrations were applied via the management API, so `supabase_migrations.schema_migrations` doesn't exist. The live schema is COMPLETE + correct (every recent table/column verified present), but a future `supabase db push` on a fresh env would re-run them — they're idempotent/add-only so that's safe. Post-launch: baseline the migration history.
+7. ⚠️ **`npm audit`:** the only advisory that SHIPS to prod is `react-router` (open-redirect via `//` paths) — low exploit surface here (our redirects are fixed internal paths like `/auth`, never user-controlled external). Patch when convenient; do NOT risk a router major-bump right before launch. The rest (brace-expansion, flatted, glob, js-yaml) are dev/build-only deps — never in the shipped bundle.
+8. 🧹 **Cleanup for Cal (your files, your call):** `.env.LOCAL.calchessie.bak` + `.env.LOCAL.coxmtpnq.bak` are stale local env files holding DEAD-project keys — gitignored (not leaked), safe to delete when you like.
+
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
 ### 🐞 Bugs (found + fixed this session)
+- **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
 - Tour restarted on navigation (mounted in cockpit) → lifted app-level + sessionStorage. FIXED + verified.
 - Tour render loop (setState-in-effect) → imperative view-drive. FIXED (live-counted 0).
 - `notifications.tenant_id` column missing → consultant replies on real leads failed to persist. Migration applied.

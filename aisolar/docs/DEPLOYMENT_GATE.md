@@ -53,18 +53,28 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=...        # stripe-webhook signature
 - Email confirmations ON; the `/signup` door + `provision_tenant` are already live
   (A1) — sanity: sign up a throwaway, confirm tenant row + role land.
 
-## 4 · Database (all 5-Aug migrations are ALREADY APPLIED live — verified)
+## 4 · Database (all migrations ALREADY APPLIED live — schema verified complete 5 Aug)
 `doc_vocab_reconcile · seai_grants · site_surveys_nc7_capacity · a1_tenants ·
-notifications_bell · ai_knowledge` — nothing to run for these. If deploying to a
-FRESH project ever: run `supabase/migrations/` in order.
-- Tenant isolation was PROVEN on V5 (two-user RLS test, 4 Aug). Re-run the smoke
-  after any RLS change.
+notifications_bell · ai_knowledge · assignments_roster_ref` — nothing to run.
+- ⚠️ **No migration-history table** (applied via management API, not `db push`).
+  Live schema is complete + correct. If you EVER stand up a fresh project: run
+  `supabase/migrations/` in order — they're idempotent/add-only, safe to re-run.
+- Tenant isolation **PROVEN LIVE 5 Aug** (cross-tenant read test, rolled back —
+  LAST_MILE 🔒). Re-run that check after any RLS change and before the 40 users.
 
-## 5 · Client env (.env.production)
-- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` → V5 (`ywizcsulurxoqjdgnkvc`).
-- **No demo flag** (see §0). No service keys in client env, ever.
-- 🔐 Known pre-widget task (FINAL_SPRINT D4/D3): move the Maps key behind an edge
-  proxy — it's in the client bundle today. Not cohort-blocking; IS widget-blocking.
+## 5 · Client env — the DEFINITIVE manifest (deploy sets EXACTLY these 3)
+```
+VITE_SUPABASE_URL=https://ywizcsulurxoqjdgnkvc.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<the V5 anon/publishable key>   # public by design
+VITE_GOOGLE_MAPS_KEY=<referrer-locked to your domains in Google Cloud>
+```
+- ⚠️ **Use `VITE_SUPABASE_PUBLISHABLE_KEY`, NOT `..._ANON_KEY`** — a stray
+  `ANON_KEY` reference in widgetLead.ts was fixed 5 Aug; the app is unified on
+  PUBLISHABLE. (`VITE_SUPABASE_PROJECT_ID` sits in `.env` but is unused in code.)
+- **No `VITE_ENABLE_DEMO` in prod** (§0). No service keys in client env, EVER.
+- 🔐 Referrer-lock `VITE_GOOGLE_MAPS_KEY` in Google Cloud to the tenant domains
+  before the sites go public (it's client-bundled — normal for Maps; edge-proxy
+  D4 is the belt-and-braces later).
 
 ## 6 · Post-deploy smoke (the 10-minute proof, in order)
 1. Sign in staff → bell shows real rows (not the demo feed).
