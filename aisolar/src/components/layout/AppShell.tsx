@@ -43,6 +43,9 @@ interface AppShellProps {
   /** Flush content: no shell padding, children own their scroll (chat/operator
    *  layouts — the consultant inbox, the installer board). Default = padded page. */
   flush?: boolean;
+  /** Rendered in the sidebar footer, above the collapse control (owner demo
+   *  toggle). Collapsed state is passed so the slot can shrink to an icon. */
+  sidebarFooter?: (collapsed: boolean) => ReactNode;
   children: ReactNode;
 }
 
@@ -50,7 +53,7 @@ const COLLAPSE_KEY = 'aisolar_shell_collapsed';
 
 export function AppShell({
   persona, brandName, personaLabel, nav, activeId, title,
-  primaryAction, headerExtra, flush, children,
+  primaryAction, headerExtra, flush, sidebarFooter, children,
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(COLLAPSE_KEY) === '1',
@@ -119,8 +122,11 @@ export function AppShell({
           })}
         </nav>
 
-        {/* Collapse toggle — bottom, out of the way */}
-        <div className="p-2 border-t border-border">
+        {/* Sidebar footer slot (owner demo toggle) then the collapse control. */}
+        {sidebarFooter && (
+          <div className="px-2 pt-2 border-t border-border">{sidebarFooter(collapsed)}</div>
+        )}
+        <div className="p-2">
           <Button
             variant="ghost" size="sm"
             onClick={() => setCollapsed(c => !c)}

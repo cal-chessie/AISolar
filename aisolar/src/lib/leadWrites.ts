@@ -11,7 +11,12 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { resolveTenantId } from './serverStore';
+import { isDemoMode } from './demoMode';
 import type { DummyLead } from './dummyData';
+
+/** Sandbox guard: in the demo cast, mutations update local state only (the
+ *  component's optimistic setState) and NEVER touch the real DB. */
+const SANDBOX = () => isDemoMode();
 
 /** 64-char hex token for the customer magic-link (`leads.access_token`). */
 function token64(): string {
@@ -39,6 +44,7 @@ export interface NewLeadInput {
 
 /** Insert a real lead (auto-routed + kernel-bridged by DB triggers). Returns its id. */
 export async function createLead(input: NewLeadInput): Promise<string> {
+  if (SANDBOX()) return `demo_${Date.now()}`;
   const tenant_id = await getCurrentTenantId();
   if (!tenant_id) throw new Error('createLead: no tenant for the current user');
   const { data, error } = await supabase
@@ -68,6 +74,7 @@ export async function updateLead(
   id: string,
   patch: Partial<Pick<DummyLead, 'name' | 'email' | 'phone' | 'address' | 'monthly_bill' | 'annual_kwh' | 'mprn'>> & { eircode?: string },
 ): Promise<void> {
+  if (SANDBOX()) return;
   const db: Record<string, unknown> = {};
   if (patch.name !== undefined) db.name = patch.name;
   if (patch.email !== undefined) db.email = patch.email;
@@ -84,12 +91,14 @@ export async function updateLead(
 
 /** Move a lead to a new pipeline stage. */
 export async function advanceLeadStage(id: string, stage: string): Promise<void> {
+  if (SANDBOX()) return;
   const { error } = await supabase.from('leads').update({ workflow_stage: stage }).eq('id', id);
   if (error) throw error;
 }
 
 /** Log an outbound touchpoint against a lead (notifications = the comms log). */
 export async function addTouchpoint(leadId: string, message: string, title = 'Reply sent'): Promise<void> {
+  if (SANDBOX()) return;
   const { data: { user } } = await supabase.auth.getUser();
   const tenant_id = await getCurrentTenantId();
   const { error } = await supabase.from('notifications').insert({
@@ -111,6 +120,7 @@ export async function addTouchpoint(leadId: string, message: string, title = 'Re
  * The GATE: a deposit-paid job without one of these rows must not progress.
  */
 export async function assignInstaller(leadId: string, installerRef: string, installerName: string): Promise<void> {
+  if (SANDBOX()) return;
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return; // demo — local state only
   const { error } = await supabase.from('assignments').insert({

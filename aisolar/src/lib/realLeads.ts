@@ -302,11 +302,10 @@ export function useLeads() {
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
-      // Authoritative + race-free: a real session ALWAYS gets real data, even
-      // before the cached session flag in demoMode resolves. Demo cast only
-      // when there's genuinely no session AND demo is on (signed-out explore).
-      const { data: auth } = await supabase.auth.getSession();
-      if (!auth.session && isDemoMode()) {
+      // Demo is the owner's DELIBERATE sidebar sandbox (isDemoMode gates on a
+      // signed-in owner or DEV internally, so a random visitor never lands
+      // here). ON ⇒ the 5-lead cast REPLACES the pipeline; OFF ⇒ real leads.
+      if (isDemoMode()) {
         setLeads(generateDummyLeads());
       } else {
         setLeads(await fetchRealLeads());
@@ -322,6 +321,10 @@ export function useLeads() {
 
   useEffect(() => {
     refetch();
+    // Flicking the sidebar demo toggle re-reads the pipeline (cast ⇄ real).
+    const onDemo = () => refetch();
+    window.addEventListener('demo-mode-changed', onDemo);
+    return () => window.removeEventListener('demo-mode-changed', onDemo);
   }, [refetch]);
 
   return { leads, setLeads, loading, error, refetch };

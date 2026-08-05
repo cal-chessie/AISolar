@@ -253,108 +253,74 @@ interface Scenario {
   touchpoints: DummyLead['touchpoints'];
 }
 
-/** TEN leads — the key pipeline stages, every archetype represented (Cal: 10 not 13). */
+/**
+ * THE SANDBOX CAST — five leads, one per variant (Cal, 5 Aug: "5 leads with all
+ * different variants of an NC6 and NC7 application — domestic small and larger,
+ * commercial small and large, and farm"). Each sits at a different point on the
+ * spine so the CRM looks alive and the guided tour has a real lead at every
+ * phase, and each carries its compliance application, filled:
+ *   1. Domestic small  · 3.5kW · NC6 · survey done
+ *   2. Commercial small · 20kW · NC7 · proposal out
+ *   3. Domestic large  · 6.8kW+battery · NC7 (residential-yet-NC7) · approved
+ *   4. Farm            · 14kW · NC7 · deposit paid, install lining up
+ *   5. Commercial large · 75kW · NC7 · installed, handover + NC pack
+ * NC6 vs NC7 is not hand-set — it follows the real rule (>6kW inverter ⇒ NC7),
+ * applied in the survey block below.
+ */
 export function generateDummyLeads(): DummyLead[] {
   const leads: DummyLead[] = [];
   const panelWatts = getPricingConfig().panelWatts;
 
   const scenarios: Scenario[] = [
-    // 1. NEW — bill just uploaded (domestic · small)
+    // 1. SURVEY COMPLETE — domestic · small · NC6. Survey done, design being drawn.
     {
       archetype: 'domestic_small', name: 'Aoife Nolan', address: '9 Howth Road, Howth, Dublin 13, D13 E8W1',
-      stage: 'new', daysAgo: 0, consultant: CONSULTANTS[0],
+      stage: 'survey_complete', daysAgo: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
-        { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded via landing page', timestamp: iso(0, 9), actor: 'customer' },
-        { stage: 'new', channel: 'email', direction: 'outbound', summary: 'Thanks — we have your details, and your estimate is underway', timestamp: iso(0, 9), actor: 'agent' },
+        { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded via landing page', timestamp: iso(6, 9), actor: 'customer' },
+        { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Your survey is booked for Tuesday at 10am — see you then', timestamp: iso(5, 11), actor: 'agent' },
+        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Surveyor uploaded 6 photos + roof measurements', timestamp: iso(1, 15), actor: 'installer' },
+        { stage: 'survey_complete', channel: 'email', direction: 'inbound', summary: 'Roughly when would we see the proposal?', timestamp: iso(0, 10), actor: 'customer' },
       ],
     },
-    // 2. SURVEY SCHEDULED — domestic · large + battery
+    // 2. PROPOSAL SENT — commercial · small · NC7. Proposal with the owner.
     {
-      archetype: 'domestic_large', name: 'Patrick Kelly', address: '5 Foxrock Road, Foxrock, Dublin 18, D18 F5T2',
-      stage: 'survey_scheduled', daysAgo: 2, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
-      surveyDate: isoFuture(2),
+      archetype: 'commercial_small', name: 'Ryan\'s SuperValu', address: 'Main Street, Roscommon Town, Co. Roscommon, F42 AK21',
+      stage: 'proposal_sent', daysAgo: 5, consultant: CONSULTANTS[0], installer: INSTALLERS[2], source: 'referral',
       touchpoints: [
-        { stage: 'intake_complete', channel: 'email', direction: 'outbound', summary: 'Your survey is booked for Tuesday at 10am — see you then', timestamp: iso(2, 11), actor: 'agent' },
-        { stage: 'survey_scheduled', channel: 'email', direction: 'outbound', summary: 'Survey confirmation emailed — Tue 10am with Liam', timestamp: iso(2, 11), actor: 'agent' },
+        { stage: 'proposal_sent', channel: 'email', direction: 'outbound', summary: 'Proposal link emailed to the store owner', timestamp: iso(3, 11), actor: 'consultant' },
+        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time) — forwarded to their accountant', timestamp: iso(0, 18), actor: 'customer' },
+        { stage: 'proposal_sent', channel: 'email', direction: 'inbound', summary: 'The numbers look strong — can you talk me through the payback before we commit?', timestamp: iso(0, 16), actor: 'customer' },
       ],
     },
-    // 3. SURVEY COMPLETE — farm (agri)
-    {
-      archetype: 'farm', name: 'Brennan Dairy Farm', address: 'Corrandulla, Co. Galway, H91 XR68',
-      stage: 'survey_complete', daysAgo: 3, routeDate: 3, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
-      touchpoints: [
-        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Installer uploaded 8 photos + shed-roof measurements', timestamp: iso(1, 15), actor: 'installer' },
-        { stage: 'survey_complete', channel: 'email', direction: 'outbound', summary: 'Your system design is drafted — our team is giving it a final look', timestamp: iso(1, 15), actor: 'agent' },
-        { stage: 'survey_complete', channel: 'email', direction: 'inbound', summary: 'Quick question before the proposal — can the panels go on the east-facing shed roof too, or just the house?', timestamp: iso(0, 10), actor: 'customer' },
-      ],
-    },
-    // 4. PROPOSAL DRAFTED — domestic · large (awaiting review)
+    // 3. APPROVED — domestic · large + battery · NC7 (residential-yet-NC7). Signed, deposit due.
     {
       archetype: 'domestic_large', name: 'Sarah McDonald', address: '18 Mulberry Lane, Dundrum, Dublin 16, D16 H9K4',
-      stage: 'proposal_drafted', daysAgo: 4, sizeKw: 7.2, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
+      stage: 'approved', daysAgo: 6, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
       touchpoints: [
-        { stage: 'proposal_drafted', channel: 'portal', direction: 'outbound', summary: 'Your system design is ready and with our team for review', timestamp: iso(2, 9), actor: 'agent' },
-      ],
-    },
-    // 5. PROPOSAL SENT — large industrial, opening repeatedly (hot)
-    {
-      archetype: 'commercial_large', name: 'Corrib Logistics', address: 'IDA Business & Technology Park, Athlone, Co. Westmeath, N37 DX59',
-      stage: 'proposal_sent', daysAgo: 5, consultant: CONSULTANTS[0], source: 'referral',
-      touchpoints: [
-        { stage: 'proposal_sent', channel: 'email', direction: 'outbound', summary: 'Proposal link emailed to the finance director', timestamp: iso(3, 11), actor: 'consultant' },
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (1st time)', timestamp: iso(2, 19), actor: 'customer' },
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(2, 21), actor: 'customer' },
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (3rd time) — forwarded to accountant', timestamp: iso(0, 18), actor: 'customer' },
-        { stage: 'proposal_sent', channel: 'email', direction: 'inbound', summary: 'Had a proper look through — it\'s a big number vs what we\'d budgeted. Can you talk me through the payback before we commit?', timestamp: iso(0, 16), actor: 'customer' },
-      ],
-    },
-    // 6. APPROVED — contract signed (domestic · small)
-    {
-      archetype: 'domestic_small', name: 'David Walsh', address: '34 Seafield Road, Clontarf, Dublin 3, D03 V2N6',
-      stage: 'approved', daysAgo: 6, sizeKw: 4.0, consultant: CONSULTANTS[1],
-      touchpoints: [
-        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(1, 9), actor: 'customer' },
+        { stage: 'proposal_sent', channel: 'portal', direction: 'inbound', summary: 'Customer opened proposal (2nd time)', timestamp: iso(2, 9), actor: 'customer' },
         { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed contract', timestamp: iso(0, 14), actor: 'customer' },
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Your invoice is ready — the deposit link is in your portal', timestamp: iso(0, 14), actor: 'agent' },
-        // Truth-pass (5 Aug): the agent PREPARES + tracks — the customer applies.
         { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Your SEAI grant steps are ready in your portal — the application is yours to send, and SEAI pay you directly', timestamp: iso(0, 14), actor: 'agent' },
       ],
     },
-    // 7. DEPOSIT PAID — farm, install being scheduled
+    // 4. DEPOSIT PAID — farm (agri) · 14kW · NC7. Install being scheduled.
     {
       archetype: 'farm', name: 'O\'Sullivan Agri', address: 'Ballinlough, Co. Roscommon, F42 YH03',
-      stage: 'deposit_paid', daysAgo: 7, sizeKw: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
+      stage: 'deposit_paid', daysAgo: 8, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
       touchpoints: [
         { stage: 'deposit_paid', channel: 'portal', direction: 'inbound', summary: 'Stripe deposit confirmed', timestamp: iso(1, 12), actor: 'customer' },
         { stage: 'deposit_paid', channel: 'email', direction: 'outbound', summary: "We're lining up your installation — date options on the way", timestamp: iso(1, 12), actor: 'agent' },
       ],
     },
-    // 8. INSTALLING — small business, crew on site
+    // 5. INSTALLED — commercial · large / industrial · NC7. Handover + NC pack, final invoice out.
     {
-      archetype: 'commercial_small', name: 'Ryan\'s SuperValu', address: 'Main Street, Roscommon Town, Co. Roscommon, F42 AK21',
-      stage: 'installing', daysAgo: 9, routeDate: 3, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
+      archetype: 'commercial_large', name: 'Corrib Logistics', address: 'IDA Business & Technology Park, Athlone, Co. Westmeath, N37 DX59',
+      stage: 'installed', daysAgo: 12, consultant: CONSULTANTS[0], installer: INSTALLERS[2],
       touchpoints: [
-        { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Installer marked "on site" + uploaded 4 progress photos', timestamp: iso(0, 9), actor: 'installer' },
-      ],
-    },
-    // 9. INSTALLED — domestic · small, awaiting final payment
-    {
-      archetype: 'domestic_small', name: 'Emma Ryan', address: '6 Silchester Road, Glasnevin, Dublin 11, D11 A7C3',
-      stage: 'installed', daysAgo: 10, routeDate: 3, sizeKw: 3.2, consultant: CONSULTANTS[1], installer: INSTALLERS[0],
-      touchpoints: [
-        { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + final photos', timestamp: iso(1, 16), actor: 'installer' },
-        { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'Your warranty documents and final invoice are in your portal', timestamp: iso(1, 16), actor: 'agent' },
-      ],
-    },
-    // 10. COMPLETED — domestic · large, closed with a review
-    {
-      archetype: 'domestic_large', name: 'Michael Byrne', address: '31 Rathmines Road Lower, Rathmines, Dublin 6, D06 T4M2',
-      stage: 'completed', daysAgo: 30, sizeKw: 6.5, consultant: CONSULTANTS[0], installer: INSTALLERS[1],
-      touchpoints: [
-        { stage: 'final_paid', channel: 'portal', direction: 'inbound', summary: 'Final payment received', timestamp: iso(7, 14), actor: 'customer' },
-        { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'Your SEAI paperwork is complete and with SEAI — the grant pays out to you', timestamp: iso(6, 10), actor: 'agent' },
-        { stage: 'completed', channel: 'email', direction: 'outbound', summary: 'Handover pack + referral request sent', timestamp: iso(5, 11), actor: 'agent' },
-        { stage: 'completed', channel: 'email', direction: 'inbound', summary: 'Customer left 5★ review', timestamp: iso(2, 9), actor: 'customer' },
+        { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Crew marked "on site" + uploaded progress photos', timestamp: iso(3, 9), actor: 'installer' },
+        { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + commissioning photos', timestamp: iso(1, 16), actor: 'installer' },
+        { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'Your handover pack and final invoice are in your portal', timestamp: iso(1, 16), actor: 'agent' },
       ],
     },
   ];

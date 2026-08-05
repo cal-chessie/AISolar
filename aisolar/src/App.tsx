@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { ThemeProvider } from 'next-themes';
 import PageTransition from "@/components/layout/PageTransition";
 import GlobalSearchModal from "@/components/search/GlobalSearchModal";
@@ -15,11 +15,9 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import AboutUs from "./pages/AboutUs";
 import AuthPage from "./pages/AuthPage";
-import OnboardingMode from "./pages/OnboardingMode";
 import InstallerSignup from "./pages/InstallerSignup";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import DemoIndex from "./pages/DemoIndex";
 import ROICalculator from "./pages/ROICalculator";
 import CalculatorWidget from "./components/calculator/CalculatorWidget";
 import FAQ from "./pages/FAQ";
@@ -141,8 +139,7 @@ function AppRoutes() {
           {/* A1 — the AISolar-site door: installer signup (provisions a tenant) vs
               property estimate. INSTALLER copy; card-payer becomes admin. */}
           <Route path="/signup" element={wrap(<InstallerSignup />)} />
-          <Route path="/onboarding" element={wrap(<OnboardingMode />)} />
-          <Route path="/demo" element={wrap(<DemoIndex />)} />
+          <Route path="/onboarding" element={<Navigate to="/owner?tour=1" replace />} />
 
           {/* Main views — auth-guarded */}
           <Route path="/owner" element={wrap(<ProtectedRoute roles={['admin', 'owner']}><OwnerCockpit /></ProtectedRoute>)} />

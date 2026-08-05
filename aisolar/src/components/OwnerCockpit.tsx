@@ -52,6 +52,9 @@ import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
+import DemoToggle from '@/components/demo/DemoToggle';
+import GuidedTour, { launchTour, type OwnerView } from '@/components/demo/GuidedTour';
+import { Compass } from 'lucide-react';
 import NotificationsBell from '@/components/notifications/NotificationsBell';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CockpitSkeleton, CardListSkeleton } from '@/components/ui/SuspenseFallbacks';
@@ -261,7 +264,23 @@ export default function OwnerCockpit() {
       activeId={activeView}
       title={SIDEBAR_ITEMS.find(it => it.id === activeView)?.label ?? 'Overview'}
       headerExtra={<><NotificationsBell role="owner" /><DarkModeToggle /></>}
+      sidebarFooter={(collapsed) => (
+        <div className="space-y-1">
+          <button
+            onClick={launchTour}
+            title="Take the guided tour"
+            className={collapsed
+              ? 'w-full h-control grid place-items-center rounded-md text-muted-foreground hover:bg-muted transition-colors'
+              : 'w-full flex items-center gap-2.5 rounded-md h-control px-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors'}
+          >
+            <Compass className="size-4 shrink-0" />
+            {!collapsed && <span>Take the tour</span>}
+          </button>
+          <DemoToggle collapsed={collapsed} />
+        </div>
+      )}
     >
+        <GuidedTour setView={(v) => setActiveView(v as SidebarView)} />
         <Suspense fallback={<CockpitSkeleton />}>
           {activeView === 'overview' && (
             <OverviewView data={data} leads={leads} expandedStage={expandedStage} setExpandedStage={setExpandedStage} navigate={navigate} setActiveView={setActiveView} />
