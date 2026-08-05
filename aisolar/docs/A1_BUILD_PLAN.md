@@ -118,6 +118,22 @@ as each user via JWT-claim simulation (`set role authenticated` + `request.jwt.c
 The multi-tenant floor (`has_tenant_access` → `own_lead`/`can_see_lead`) isolates
 tenants end-to-end. Safe to build the rest of A1 on top.
 
+## ⏸ RESUME IN A FRESH SESSION — Stripe trial + land-in-app (Cal: "start Stripe on a new session")
+Everything below the DB foundation + door + isolation-proof is banked. Next session picks up here:
+1. **Stripe card + 7-day trial subscription** at the account step — the card-payer is
+   the admin (already how `provision_tenant` works). Store `stripe_customer_id` +
+   `stripe_subscription_id` on `tenants` (columns already there). **Per-seat**: the
+   subscription quantity = seats; +1 when the admin adds a non-owner-email teammate.
+   Stripe infra already exists in-repo (`create-checkout` for deposits) — reuse the pattern.
+2. **Provision-on-confirm**: `InstallerSignup` already stashes `aisolar_pending_tenant`
+   in localStorage when email-confirmation is on. Add a first-authenticated-load hook
+   (app shell / OnboardingMode) that, if the user has no tenant + a pending stash exists,
+   calls `provisionTenant(...)` and clears the stash.
+3. **Land-in-app**: first-login checklist (the 10-step activation in ONBOARDING_SPEC) →
+   brand + compliance (both EXIST in Settings) → widget embed.
+- Files: `src/pages/InstallerSignup.tsx`, `src/lib/tenant.ts`, `supabase/migrations/20260804_a1_tenants.sql`.
+- Gate: GATE 0 (key rotation) before ANY live signup.
+
 ## Done-means
 A stranger hits the installer signup → answers installer-copy chips → a tenant is
 created, they're its admin, a 7-day trial is running, and they land in the app
