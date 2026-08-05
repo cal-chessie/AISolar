@@ -41,6 +41,7 @@ import { getProduct, getProductsByKind } from '@/config/productCatalog';
 import { brand } from '@/config/brand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import { toast } from 'sonner';
+import { notify } from '@/lib/notify';
 import { SpinnerSkeleton } from '@/components/ui/SuspenseFallbacks';
 
 // Use the REAL SiteSurveyForm — not a stripped-down version
@@ -632,9 +633,10 @@ function LeadFlowInner({ initialLead }: { initialLead: DummyLead }) {
                 ) : (
                   <Button
                     className="bg-primary transition-colors hover:bg-primary h-12 px-6"
-                    onClick={() => {
+                    onClick={async () => {
                       setProposalSent(true);
-                      toast.success('Proposal sent to customer', {
+                      const r = await notify({ type: 'proposal_sent', leadId: lead.id, email: lead.email, title: `Proposal sent — ${lead.name}`, message: 'Your solar proposal is ready to view in your portal.', portalPath: '/customer' });
+                      toast.success(r.ok ? 'Proposal sent to customer' : 'Proposal queued for the customer', {
                         description: `${lead.name} will receive it by email. Follow-Up Agent checks in after 3 days.`,
                       });
                     }}

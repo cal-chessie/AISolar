@@ -21,6 +21,7 @@ import { AisalesWordmark } from "@/components/brand/AiosMark";
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { notify } from '@/lib/notify';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -548,7 +549,7 @@ export default function ConsultantCockpitV5() {
                       </button>
                     )}
                     {['new','intake_complete','survey_scheduled'].includes(selectedLead.workflow_stage) && (
-                      <button onClick={() => toast.success(`Photo request sent to ${selectedLead.name.split(' ')[0]}`, { description: 'The four survey shots, prompted right in their chat — may shorten or save the visit.' })}
+                      <button onClick={async () => { const r = await notify({ type: 'photo_request', leadId: selectedLead.id, email: selectedLead.email, title: `Photo request — ${selectedLead.name}`, message: 'Please send the four survey photos in your portal — it may shorten or even save the visit.', portalPath: '/customer' }); toast.success(r.ok ? `Photo request sent to ${selectedLead.name.split(' ')[0]}` : `Photo request queued for ${selectedLead.name.split(' ')[0]}`, { description: 'The four survey shots, prompted right in their chat — may shorten or save the visit.' }); }}
                         className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-tech-subtle text-tech text-xs font-medium hover:opacity-80 transition-opacity">
                         <Camera className="size-3" /> Request photos
                       </button>
@@ -560,7 +561,7 @@ export default function ConsultantCockpitV5() {
                       </button>
                     )}
                     {selectedLead.proposal && !selectedLead.invoice?.deposit_paid && ['approved','proposal_sent'].includes(selectedLead.workflow_stage) && (
-                      <button onClick={() => toast.success(`Deposit link queued for ${selectedLead.name.split(' ')[0]} — goes out with your approval`)}
+                      <button onClick={async () => { const r = await notify({ type: 'deposit_link', leadId: selectedLead.id, email: selectedLead.email, title: `Deposit link — ${selectedLead.name}`, message: 'Your deposit link for the solar install is ready in your portal.', portalPath: '/customer' }); toast.success(r.ok ? `Deposit link sent to ${selectedLead.name.split(' ')[0]}` : `Deposit link queued for ${selectedLead.name.split(' ')[0]} — goes out with your approval`); }}
                         className="shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-doc-deposit/10 text-doc-deposit text-xs font-medium hover:opacity-80 transition-opacity">
                         <DollarSign className="size-3" /> Send deposit link
                       </button>

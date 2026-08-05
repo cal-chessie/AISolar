@@ -26,6 +26,7 @@ import {
   CheckCircle2, Clock, Lock, ArrowRight, CalendarClock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { notify } from '@/lib/notify';
 import type { DummyLead } from '@/lib/dummyData';
 import { getStage } from '@/lib/leadIntake';
 import { getProposalTerms } from '@/lib/proposalTerms';
@@ -275,7 +276,7 @@ export default function PaperworkWindow({ lead, onBack }: { lead: DummyLead; onB
             </div>
           </div>
           <Button disabled={!allReady} className="shrink-0 font-semibold"
-            onClick={() => toast.success(`Handover pack released to ${lead.name.split(' ')[0]}`, { description: 'Filed in their portal documents — the closer takes it from here.' })}>
+            onClick={async () => { const r = await notify({ type: 'handover_pack', leadId: lead.id, email: lead.email, title: `Handover pack — ${lead.name}`, message: 'Your completed install pack is filed in your portal — warranty, certs and documents.', portalPath: '/customer' }); toast.success(r.ok ? `Handover pack released to ${lead.name.split(' ')[0]}` : `Handover pack queued for ${lead.name.split(' ')[0]}`, { description: 'Filed in their portal documents — the closer takes it from here.' }); }}>
             Release pack <ArrowRight className="size-4 ml-1" />
           </Button>
         </div>

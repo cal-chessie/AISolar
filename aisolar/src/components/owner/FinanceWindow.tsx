@@ -18,6 +18,7 @@ import {
   Send, Award, Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { notify } from '@/lib/notify';
 import { useLeads } from '@/lib/realLeads';
 import { getStage } from '@/lib/leadIntake';
 import { computeOwnerStats } from '@/lib/ownerStats';
@@ -120,7 +121,7 @@ export default function FinanceWindow() {
                 <span className="text-xs text-muted-foreground shrink-0">{j.stage}</span>
                 <span className="ml-auto tabular-nums font-semibold shrink-0">{eur(j.deposit)}</span>
                 <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"
-                  onClick={() => toast.success(`Deposit link queued for ${j.name.split(' ')[0]} — goes out with your approval`)}>
+                  onClick={async () => { const r = await notify({ type: 'deposit_link', leadId: j.id, title: `Deposit link — ${j.name}`, message: 'Your deposit link for the solar install is ready in your portal.', portalPath: '/customer' }); toast.success(r.ok ? `Deposit link sent to ${j.name.split(' ')[0]}` : `Deposit link queued for ${j.name.split(' ')[0]} — goes out with your approval`); }}>
                   <Send className="size-3 mr-1" /> Send deposit link
                 </Button>
               </div>

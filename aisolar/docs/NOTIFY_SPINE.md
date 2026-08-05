@@ -18,20 +18,21 @@ scattered "queued — goes out with your approval" toasts that never sent._
   handover_pack · referral · team_invite · stage_change · callback_request ·
   **seai_offer_reminder · seai_ber_overdue** (the parked SEAI nudges ride these two).
 
-## Wired so far (the proven pattern)
-- **Team invite** (OwnerCockpit, both consultant + installer) → `notify({type:'team_invite'})`.
-  The add-person click IS the approval → the invite email fires + the toast is honest
-  (sent vs demo-queued) and states **"adds a seat to your plan"** (per Cal's seat rule).
+## Wired (5 Aug) — the fake "queued" toasts now fire notify()
+Every one shows an honest toast: **sent** when signed-in (bell + email land) vs
+**queued** in demo (no-op). All draft-gated — the button click IS the approval.
+- ✅ **Team invite** — OwnerCockpit (consultant + installer). States "adds a seat to
+  your plan" (Cal's seat rule).
+- ✅ **Deposit link** — `ConsultantCockpitV5` + `owner/FinanceWindow`. (The real Stripe
+  link is `create-checkout` — notify carries/announces it.)
+- ✅ **Photo request** — `ConsultantCockpitV5`.
+- ✅ **Proposal sent** — `LeadFlow`.
+- ✅ **Handover pack** — `compliance/PaperworkWindow`.
 
-## STILL TO WIRE (same pattern — swap the fake toast for a notify() call)
-Each is a one-liner change at the button that today shows a "queued — goes out with
-your approval" toast:
-- **Deposit link** — `ConsultantCockpitV5.tsx:~563`, `owner/FinanceWindow.tsx:~123`
-  (`type:'deposit_link'`, leadId, the customer email, a `/customer/:token` portalPath).
-  Note: the real Stripe deposit LINK generation is `create-checkout` (exists) — notify
-  carries/announces it.
-- **Proposal sent** — the proposal send seam (`type:'proposal_sent'`).
-- **Photo request · reschedule · handover pack · referral** — same shape.
+## Still to wire (same one-liner pattern)
+- **Reschedule / survey options** — `LeadFlow:~495` (survey window offer).
+- **Referral** — the post-completion referral ask (find the seam when it's built out).
+- **Callback request** — `CustomerPortalV2` (customer → consultant, both-ends).
 
 ## ⚠️ EDGE-FN DEPENDENCY (do this before the email rail is real)
 `supabase/functions/send-notification/index.ts` today switches on a FIXED set of
