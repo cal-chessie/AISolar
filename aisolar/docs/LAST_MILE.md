@@ -101,6 +101,51 @@ solid. The 2.5 was "unproven + GATE 0"; both are answered. Re-run this pass befo
 
 ---
 
+## 🔒🔒 DEEP HARDENING SWEEP — weekend #2 (5 Aug — Cal: "all gates, guardrails, full spine, every inbound/outbound, no stone")
+_The deeper pass. Found + fixed TWO real holes the first sweep didn't reach._
+
+### 🚨 CRITICAL — cross-tenant privilege escalation (FIXED + PROVEN)
+`user_roles` admin policies trusted `has_role(uid,'admin')`, which is **not
+tenant-scoped**, and an `ALL` catch-all never checked the new row's tenant. Any
+tenant admin could `insert (own_uid, VICTIM_TENANT, 'admin')` → become admin of
+another tenant → read/write ALL their customers, surveys, grants. **Catastrophic
+with 40 installer-tenants.** FIX (`20260805_userroles_tenant_scope`, applied
+live): new `is_tenant_admin(uid, tenant)` (SECURITY DEFINER, search_path pinned);
+every admin policy re-scoped to the target row's tenant; self-read kept (login
+safe). **PROVEN LIVE (rollback test): tenant-A admin BLOCKED from granting
+themselves admin on tenant B; legit same-tenant grant still WORKS.**
+
+### 🔴 HIGH — AI-key secret leak (FIXED)
+`ai_config` is global (no tenant_id) and holds the OpenRouter key; its policy was
+`has_role(admin)` = ANY tenant admin could read the shared secret once set. FIX
+(`20260805_ai_config_platform_only`, applied live): locked to `is_platform_admin`
+(2 platform admins exist; key currently empty, so closed BEFORE it went live).
+Edge fns read via service role — unaffected.
+
+### 🟡 MEDIUM — legacy global tables (documented; Cal's product call before scaling)
+`installers · solar_products · agent_prompts · follow_up_settings · survey_photos
+· seai_documents` are single-tenant-era tables with **no tenant_id**, gated by
+`has_role(admin)` → shared across all tenants. They hold CONFIG/reference, **not
+customer PII** (leads/surveys/grants ARE tenant-scoped + proven isolated), so no
+data-theft path — but a tenant admin could edit shared config. **Decision needed:
+platform-curated (→ lock to platform admin, like ai_config) OR per-tenant (→ add
+tenant_id + scope)?** Resolve before the cohort grows past the first few.
+
+### ✅ VERIFIED CLEAN (the rest of the sweep)
+- **RLS writes** — every data table's INSERT/UPDATE/DELETE `with_check` is
+  tenant-scoped (`has_tenant_access` / `own_lead`). No cross-tenant write path.
+- **XSS** — one `dangerouslySetInnerHTML`, and it's app-controlled JSON-LD SEO
+  schema (`JSON.stringify`), not user input. No injection surface.
+- **Edge fns** — all ~20 gated (JWT / role / token / HMAC signature). Only
+  `solar-roof` is public *by design* (the calculator) — a cost/abuse surface, so
+  **recommend a light rate-limit** on it to protect the Google API bill.
+- **Inbound** — `ingest-lead` dedups (email+brand 24h) + length-caps every field
+  (name 200, email 254, msg 2000…). `portal-inbox` token-gated + type allow-list.
+- **Outbound** — truth-pass holds: NO live SMS/WhatsApp claims to customers.
+- **Draft-gate** — agent proposals are hard `status:"draft"` ("never auto-send").
+- **Guardrails** — EVERY customerBrain output routes through `finish()` →
+  `scrubForCustomer` (no surveillance/internals/agent-names) + `customerScope`.
+
 ## 🏗️ DEPLOYMENT-READINESS PASS — weekend #1 (5 Aug — "no stone unturned", senior-team checklist)
 _What a senior team runs before prod. All evidenced; fixes committed._
 
@@ -120,7 +165,7 @@ brutal honesty, new evidence. Nothing inflated._
 | Dimension | Was | Now | Why it moved |
 |---|---|---|---|
 | **Craft / architecture** | 8.5 | **8.5** | Unchanged — it was always the strength. Prod build green, code-split, clean separation. |
-| **Security posture** | 2.5 | **~7.5** | GATE 0 redundant (fresh project) · tenant isolation PROVEN live · no secrets in bundle · edge auth solid. One to-do: referrer-lock the Maps key. |
+| **Security posture** | 2.5 | **~8** | GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock + the legacy-global-tables decision. |
 | **Readiness** | 3.5 | **~6** | Real prod build GREEN + 3 real prod-breakers found & fixed (widget key, tour loop, env.example). Still needs the actual DEPLOY + the joint smoke to hit "proven live." |
 | **Maintainability / bus-factor** | 4 | **~6** | The docs are now the continuity: LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM make a CTO current in an hour. Still one-founder until that hire — honest. |
 
@@ -143,6 +188,8 @@ half is Lane A — your hands, my prep. You're in materially better shape than 1
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
 ### 🐞 Bugs (found + fixed this session)
+- **🚨 Cross-tenant privilege escalation** (user_roles has_role not tenant-scoped) → any tenant admin could grant themselves admin on any tenant. FIXED + proven live (deep sweep).
+- **🔴 AI-key secret leak** (ai_config global, has_role-readable) → tenant admins could read the shared OpenRouter key. FIXED (locked to platform admin).
 - **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
 - **Guided tour `?tour=1` auto-run loop** — a console-sweep catch: if `navigate` changed identity before the URL flushed `?tour=1`, the auto-start effect re-fired every render → "Maximum update depth". FIXED with a `useRef` one-shot guard; re-verified the tour auto-starts at 1/15 and navigates off `?tour=1` without hanging. (My earlier tour test used the event path, which missed this — the sweep earned its keep.)
 - **`.env.example` said Mapbox** — the app uses Google Maps (`googleSolar.ts`); a deploy following it would break satellite/roof. FIXED.
