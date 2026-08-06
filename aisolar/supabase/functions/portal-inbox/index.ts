@@ -55,6 +55,23 @@ serve(async (req) => {
       userIds = [null as unknown as string];
     }
 
+    // Idempotency: a retry (flaky signal) or a double-tap must not double-post.
+    // If an identical message (same lead + type + text) already landed in the last
+    // 30s, treat it as the same request and return OK without inserting again.
+    const { data: dupe } = await supabase
+      .from("notifications")
+      .select("id")
+      .eq("lead_id", lead.id)
+      .eq("type", type)
+      .eq("message", message.slice(0, 2000))
+      .gte("created_at", new Date(Date.now() - 30_000).toISOString())
+      .limit(1);
+    if (dupe && dupe.length > 0) {
+      return new Response(JSON.stringify({ ok: true, deduped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const rows = userIds.map((user_id) => ({
       user_id, lead_id: lead.id, tenant_id: lead.tenant_id ?? null,
       type, title: String(title ?? `Message from ${lead.name}`).slice(0, 140),

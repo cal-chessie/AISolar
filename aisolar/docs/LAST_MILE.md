@@ -114,7 +114,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 ### ⚙️ Edge functions (deeper)
 37. ✅ **Fail-fast secret validation DONE 6 Aug.** New shared `requireSecrets(names)` (`_shared/auth.ts`) throws a clear 500 "missing secret(s): …" instead of half-working. Wired into all 4 email senders (`send-notification` + `-payment-reminder`/`-proposal-accepted`/`-survey-notification`) so a missing `POSTMARK_SERVER_TOKEN` fails fast instead of sending a blank token → confusing 422. Already fail-fast (credited): `create-checkout` + `stripe-webhook` (Stripe keys), the `sendEmail` helper (Postmark token).
 38. ✅ **Already done (verified 6 Aug)** — `analyse-roof-photo` + `verify-artefact` both reject `imageDataUrl` over **8 MB** with a 413 ("retake at lower resolution"). That's the DoS + AI-bill guard already in place.
-39. **Idempotency keys** on mutating fns (`portal-inbox`, `create-checkout`) — a retried request must not double-insert/charge.
+39. ✅ **Idempotency DONE 6 Aug (portal-inbox).** A flaky-signal retry or double-tap no longer double-posts a customer message/callback: `portal-inbox` now skips the insert if an identical message (same lead + type + text) landed in the last 30s, returning `{ok, deduped}`. *Dedup query semantics proven live (recent match found, time-bound respected).* `create-checkout` isn't a double-charge risk — it creates a **Stripe checkout session** (a duplicate session is harmless; only one gets paid, and Stripe holds the charge), so no key needed there.
 40. **No PII/tokens in logs** — audit the `console.log`s; add correlation IDs; **dead-letter** for `agent-drain` failures.
 
 ### 🔐 Security (deeper)
