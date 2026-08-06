@@ -65,10 +65,11 @@ export function BrandMark({ className, glyphClassName, label = 'AISolar' }: {
  *  scales perfectly at any tile size. Best at md+ (auth hero, footer, marketing)
  *  where the word is legible. */
 type Word = 'AIOS' | 'AISolar' | 'AITeam' | 'AIChat' | 'AIField' | 'AISales';
-// AISolar matches AITeam's cap-height (both 27) so switching marketing tabs
-// doesn't visibly jump. "AISolar" @27 measures ~94 wide in the 100 tile — fits
-// (AITeam runs to ~98), same visual size, no overflow.
-const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 27, AITeam: 27, AIChat: 27, AIField: 26, AISales: 26 };
+// ONE size across the whole family so every mark reads the same — the About-page
+// grid, the cross-nav tabs, in-app headers. 27 is the max that fits the longest
+// words in the 100 tile (AISolar/AIField/AISales ≈ 94 wide, AITeam ≈ 98); AIOS is
+// short so it simply sits with a little more breathing room. No member is "bigger."
+const WORD_SIZE: Record<Word, number> = { AIOS: 27, AISolar: 27, AITeam: 27, AIChat: 27, AIField: 27, AISales: 27 };
 
 export function Wordmark({ word, className }: { word: Word; className?: string }) {
   return (

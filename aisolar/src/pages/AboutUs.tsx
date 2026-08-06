@@ -192,7 +192,7 @@ export default function AboutUs() {
             <div className="mt-5 flex flex-wrap items-start justify-center gap-x-8 gap-y-5">
               {([
                 ['AIOS', '/', 'the kernel'],
-                ['AISolar', '/aisolar', 'the installer OS'],
+                ['AISolar', '/aisolar', 'installer OS'],
                 ['AITeam', '/aiteam', 'the workforce'],
                 ['AIChat', '/my-projects', 'the customer'],
                 ['AIField', '/installer', 'the crew'],
