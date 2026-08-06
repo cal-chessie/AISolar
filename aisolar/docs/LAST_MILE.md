@@ -14,6 +14,24 @@ prove it, and a short ranked list.
 
 ---
 
+## 🔁 CROSS-EXAMINED vs FINAL_SPRINT.md (5 Aug — the two docs now agree)
+_Reconciled so nothing falls between them. Drift found + fixed: FINAL_SPRINT had
+the pack gate (2A) + installer photos (2C) still ⬜ though both shipped; Sprint 4
+didn't reflect the security work. Both now ticked. **The complete REMAINING list,
+from both docs combined:**_
+1. **A1 Stripe billing** (FINAL_SPRINT 2B / LAST_MILE Lane B①) — fresh session.
+2. **Deploy + prove** (Lane A / FINAL_SPRINT deployment) — Cal's hands.
+3. **Sites wiring** — brand-site doors → `ingest-lead` (FINAL_SPRINT 2E).
+4. **Maps key referrer-lock** (2E D4) — Cal's Google console, 2 min.
+5. **NC8 decision** (FINAL_SPRINT 2A) — >50kW appendix-only? Cal's call.
+6. **Legacy global tables** — platform-lock vs tenant_id (Sprint 4). Cal's call.
+7. **`solar-roof` rate-limit** (Sprint 4) — protect the Google bill.
+8. **Sprint 3 polish** (Lane C) — shell conformity ✓ done; design-studio centroid
+   + AIField mobile logic-walk + sweep-8 M6/M7 = minor, deferred.
+9. **Coach goes conversational** (FINAL_SPRINT Sprint 1) — nice-to-have.
+_Everything else across both docs = ✅ landed. Statutory flags (ESB bands, typed
+e-sig) stay in FINAL_SPRINT §STATUTORY — Cal's yes required, never a quiet edit._
+
 ## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
 _(The security final pass — Lane B's evidence — was pulled forward to this weekend at
 Cal's ask; results below.)_
@@ -34,7 +52,7 @@ Runbook + the 10-minute prod smoke = **DEPLOYMENT_GATE.md**. Short form:
 
 ### 🔨 LANE B — the real builds (ranked)
 1. ⭐ **A1 · Stripe billing** — 7-day trial → per-seat subscription. Foundation is live; this is the money layer. Needed for self-serve + the 40, NOT for a concierge first client. *(Fresh session — A1_BUILD_PLAN.md.)*
-2. **2A · per-customer pack gate** — surface missing NC6/NC7/grant items at the 3 human touchpoints. **Cohort-blocking** (the paper-trail rule). + NC8 decision.
+2. ✅ **2A · pack gate** *(Done 5 Aug)* — surfaced at all 3 touchpoints (owner/consultant/installer) + the compliance-vision mismatch now BLOCKS the pack. **Remaining:** the per-customer human eyeball (operational) + the **NC8 decision** (Cal's call — >50kW appendix-only?).
 3. **Founder operational setup (Cal: "I haven't got a baldy")** — I WALK CAL THROUGH: (a) **Branding** — Settings → Brand: logo, from-name, portal title, accent (touches every customer surface). (b) **Postmark** — verify a sending domain (DKIM/return-path), paste the token as the secret; the from-name comes from the tenant brand. (c) **How every customer uses it** — the customer journey playbook (magic-link portal, no password; they ask the AI, book, pay, download the pack). Notes seeded in Founder training below; expand as we do each.
 4. ✅ **2C · installer photos → storage** *(Done 5 Aug)* — JobViewV2 photos now really upload (phone camera → `project-documents` bucket at `{leadId}/install/…`, tenant-scoped RLS). The last 2C leftover, closed.
 5. ✅ **Security proof pass** — DONE this weekend, see 🔒 below.
@@ -287,12 +305,83 @@ half is Lane A — your hands, my prep. You're in materially better shape than 1
 - `magic_link_tokens` table not built — the lead `access_token` serves as the customer magic link today. Works; harden in M4 before heavy portal traffic.
 - Installer photos → local/no bucket yet (2C leftover).
 
-### 🎓 Founder training (Cal — plain English, expand as we do each)
-- **What "deploy" means:** the app runs in the browser now, but the server-side helpers (email, the widget's lead-catcher, card charges, the AI voice) are separate little programs ("edge functions") that have to be pushed live once + given their secret keys. Until then they're built but switched off. One script does most of it: `./scripts/deploy-comms.sh`.
-- **Branding:** Owner → Settings → Brand. Your logo, your "from" name on emails, your portal title, your accent colour — this stamps every customer-facing surface. Set it once per tenant.
-- **Postmark (email):** it's the postman. You verify you own a sending domain (so Gmail trusts your mail), paste one secret token at deploy, and every branded email + magic link goes out as YOU. Without the token the app just… doesn't send (no error to the customer).
-- **How every customer uses it:** they get a magic link (no password) → a chat-first portal that IS their project. They ask the AI (it answers off their real numbers), pick a survey time, pay the deposit by card, and download their grant pack. Your team sees every message on their side; nothing sends to the customer without a human clicking.
-- **The demo toggle:** flick "Sample data" in your sidebar to see 5 example leads and take the tour — it never touches your real leads. Safe to play in front of anyone.
+### 🎓 FOUNDER OPERATING PLAYBOOK (Cal — plain English, everything to run · deliver · sell)
+_The "I haven't got a baldy" doc. No jargon. Read top to bottom once; keep it as
+your reference. Where it says "click here," it's a real button in your cockpit._
+
+**0. The mental model (say this to yourself once).** AISolar is one system that
+three different people log into — YOU (owner), your consultants (sell), your
+installers (fit) — plus the customer (their own little portal). Everyone sees the
+same job, their slice of it. The AI reads the real record and helps each of them.
+Nothing goes OUT to a customer (email, proposal, send) without a human clicking.
+
+**1. Getting it live ("deploy").** The app you click around in already works. But
+the bits that reach the outside world — sending email, catching leads from your
+website, charging a card, the AI's "voice" — are little server programs that have
+to be switched on once and handed their secret keys. That's the deploy. **You run
+2 commands; I've prepped every line** (DEPLOYMENT_GATE.md). You'll need to paste
+your Postmark + Stripe keys — I never touch those.
+
+**2. Set up YOUR brand (5 min, once).** Owner → **Settings → Brand**:
+- **Logo + company name** → shows on the customer portal, every email, the proposal PDF.
+- **"From" name + reply-to** → who your emails come from (e.g. "Renewably").
+- **Accent colour** → your colour across the app.
+This is what makes it *yours*, not "AISolar." Set it and forget it.
+
+**3. Email (Postmark) — the postman.** Email needs one setup so Gmail/Outlook
+trust your mail and don't bin it:
+- (a) In Postmark, **verify your sending domain** (you add a couple of DNS records
+  — I'll hand you the exact ones). This is the "DKIM" bit; it just proves the mail
+  is really from you.
+- (b) Paste the **Postmark token** as a secret at deploy (one line).
+- Then every branded email + magic link goes out as YOU. If the token's missing,
+  the app simply doesn't send — no scary error to the customer, it just waits.
+
+**4. Teach your AI (the moat, 10 min).** Owner → **Settings → Teach your AI**:
+- **Your story** (a line or two — who you are). **Your edge** (why you over the
+  next quote — this is what the AI says when a customer's weighing it up). **Your
+  offer** (any current hook).
+- Whatever a customer asks that the AI can't answer lands in a **teach queue**
+  right here — you type the answer once, and from then on the AI gives it
+  instantly, in your words. It learns from real demand.
+
+**5. How every customer experiences it (so you can describe it in your sleep).**
+Enquiry → they get a **magic link** (no password — one tap opens their portal) →
+the portal IS their project: a chat where they ask the AI (it answers off THEIR
+numbers — their savings, their grant, their dates), pick a survey time, pay the
+deposit by card, and download their grant pack. Your team sees every message on
+their side and replies as your business. **The grant is theirs** — they apply,
+SEAI pays them; you prepare + track it. (Never say "we submit your grant.")
+
+**6. Your day as the owner (the daily flow).** Open your cockpit → **"Needs you"**
+at the top tells you the few things that need a human right now (a hot lead, a
+deposit to route to a crew, a pack that's not filable yet). Work those. The
+**bell** rings when a customer messages or asks for a call. When a deposit lands,
+you **pick which installer** gets the job (it can't progress until you do — that's
+the gate). That's it — the app surfaces what matters; you decide.
+
+**7. Add your team.** Owner → Settings → Installers (add crews) / the team invite
+(add consultants). Each teammate is a seat. They log in and see their own slice —
+the consultant their pipeline, the installer their jobs. Their work flows straight
+back to your board.
+
+**8. Show it off (demo + tour).** Flick **"Sample data"** in your sidebar → 5
+example leads appear across the CRM (never touches your real ones — safe in front
+of anyone). Hit **"Take the tour"** → it walks you (or a prospect) around the
+whole product, every stop saying what the screen is for. Flick it off → your real
+pipeline's back.
+
+**9. When something looks wrong.** Message me (this session, or a fresh one — the
+docs carry the context). If it's a real bug I fix it; if it's a live incident (a
+key leaks, a send fails), we follow the protocol in "The Cover" above — rotate,
+note it here, sort it same day. You're not alone on it.
+
+**10. How to SELL it (the 20-second moat).** Open the customer portal beside your
+consultant inbox. Type "this feels expensive" as the customer → the AI answers
+with THEIR own payback number, no pressure — and the consultant's bell rings with
+that objection word-for-word plus a drafted reply waiting. One motion, both ends.
+**The line:** "Your customers get an answer in seconds that's actually about their
+project — and your team never misses the moment it matters." (More in COMMS_AI_SYSTEM.md.)
 
 ---
 

@@ -131,11 +131,16 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
   ENTIRE SEAI grant workflow** (eligibility gate · lifecycle spine + `seai_grants` table live · owner tracker
   · customer card · auto-advance off the gate · DoW + data-sheet PDF artifact + both-party eIDAS signatures +
   bundled equipment datasheets). See docs/SEAI_GRANT_WORKFLOW.md.
-- ⬜ **Per-customer pack gate** — every cohort customer's NC pack passes `nc6Completeness` + a human eyeball.
-- ⬜ **Surface the gate** — missing items at the 3 human touchpoints (job card · consultant lead view · owner
-  badge); the Coach speaks them *(dealIntel already carries packBlockers — finish the surfacing)*.
+- ✅ **Surface the pack gate** *(Done 5 Aug — all 3 touchpoints, verified live)*. Any job at/after
+  commissioning whose `nc6Completeness` isn't ready surfaces FIRST in the owner's "Needs you", a
+  consultant Today banner ("don't mark it done with the customer"), and the installer's ArtefactCheckCard.
+- ✅ **Compliance vision ENFORCED** *(Done 5 Aug)*. `verify-artefact` verdicts now PERSIST to the field
+  record, and an AI-found mismatch blocks `nc6Completeness` ("AI mismatch on the type-test — resolve
+  before filing"). Read → record → refuse.
+- 🔲 **Per-customer human eyeball** — the last mile is operational: each cohort customer's pack gets Cal's
+  eye before filing (the surfacing above makes the gaps impossible to miss).
 - ⬜ **NC8 decision** — the overlay is EMPTY (>50kW jobs get the data appendix only). Calibrate it, or state
-  "appendix-only for NC8" honestly at launch. Decide, don't drift.
+  "appendix-only for NC8" honestly at launch. Decide, don't drift. *(Still open — Cal's call.)*
 
 ### 2B · The front door + the fork
 - ⭐ **A1 · Auth + tenant onboarding** — signup → tenant + role + first-admin bootstrap; the Flowith flow is
@@ -158,8 +163,9 @@ with a real cert photo · no AI claim anywhere the deterministic floor can't bac
 - ✅ **Consultant:** `handleSendReply` → `addTouchpoint` (DB) + `notify('reply')` emails the customer their
   reply + magic link *(Done 5 Aug)*. `advanceLeadStage` → `workflow_stage` + `notify('stage_change')`
   both-ends *(Done 5 Aug)*. *(kernel `StageTransitioned` = post-cohort.)*
-- ✅ **Installer:** serials → `installed_equipment` (JobViewV2 wired, verified) *(Done)*. ⬜ **photos →
-  storage + `install_evidence`** — the ONE 2C leftover; needs a storage bucket *(parked in DEPLOYMENT_GATE)*.
+- ✅ **Installer:** serials → `installed_equipment` (JobViewV2 wired, verified) *(Done)*. ✅ **photos →
+  storage** *(Done 5 Aug)* — JobViewV2 now really uploads (phone camera → `project-documents` bucket at
+  `{leadId}/install/…`, tenant-scoped storage RLS). The last 2C leftover, closed.
 - ✅ ⭐ **Deposit → installer routing (multi-installer).** *(Done 5 Aug — verified in-browser: job surfaced →
   routed to a crew → gate cleared.)* `InstallerGate` on the owner's Financials surfaces every deposit-paid
   job with no crew; roster picker → `assignInstaller()` writes the `assignments` row (migration
@@ -236,17 +242,21 @@ its own line · zero invented numbers anywhere customer-facing.
 
 ---
 
-## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY (make it boring; make it inevitable)
+## SPRINT 4 — 🧹 HARDENING · BUGS · SECURITY — ✅ **CORE LANDED 5 Aug** (two deep sweeps; full evidence in LAST_MILE 🔒/🔒🔒)
 
-- ⭐ **Role→route matrix, tested** — every route × every role (owner / consultant / installer / customer /
-  anonymous), asserted: who gets in, who bounces where. The A9 fix proved the front door; this proves every
-  corridor.
-- ⭐ **RLS proof pass** — per-table, per-role queries against V5. The Saunderson check: the client's
-  3-brands-one-tenant sees ONE book; a second tenant sees NOTHING.
-- **Security checklist:** no secret in the built bundle (grep the build output) · no service key
-  client-side · every edge fn rejects anon where it must (verify-artefact ✓ · extract-bill-data ✓ — sweep
-  the other 16) · consent + GDPR erasure end-to-end (`anonymise_lead` leaves nothing behind) · demo env OFF
-  in prod, verified · rate limits on the public doors (`ingest-lead` dedupe ✓).
+- ✅ ⭐ **Role→route matrix** *(Done — documented in LAST_MILE)*: `/owner`=admin,owner · `/consultant`+
+  `/lead-flow`=+consultant · `/installer`+`/job`=+installer · `/my-projects`=any authed · `/customer/:token`
+  =token-only. Route-gate (belt) + RLS (braces).
+- ✅ ⭐ **RLS proof pass + THEN some.** Live cross-tenant test PASSED (Saunderson: A sees its lead, 0 of B's).
+  The deep double-down went further and FOUND + FIXED real holes: a cross-tenant **admin escalation**
+  (`user_roles` has_role not tenant-scoped), an **AI-key leak** (`ai_config` global), **8 mutable-search_path**
+  SECURITY DEFINER functions, and **storage buckets** readable across tenants — all fixed + re-proven no
+  OR-bypass. All 40 tables RLS-ON, zero permissive `true` policies.
+- ✅ **Security checklist:** no secret in the built bundle · no service key client-side · ALL ~20 edge fns
+  gated (swept, not just 2 — solar-roof public by design) · GDPR `anonymise_lead` · demo env OFF in prod +
+  the real-session sandbox guard · `ingest-lead` dedupe + length caps. *(Remaining: `solar-roof` rate-limit.)*
+- 🟡 **Open (Cal's product call):** 6 legacy global tables (installers/solar_products/…, no tenant_id) —
+  platform-lock vs add tenant_id, before the cohort grows. In LAST_MILE.
 - **Error honesty:** every catch either surfaces to the user or logs with context — no silent swallows on
   the money paths (checkout · sends · pack seal).
 - **Bug sweep:** the PUNCH_LIST leftovers + a fresh click-through of every cockpit at desktop AND 375px ·
