@@ -15,6 +15,13 @@
  * far bank; this record is the bridge.
  */
 
+import { supabase } from '@/integrations/supabase/client';
+import { isDemoMode } from './demoMode';
+
+/** Sandbox guard — never write real field-record rows while the owner is on the
+ *  demo tour (mirrors leadWrites/notify). */
+const SANDBOX = () => isDemoMode();
+
 export interface SerialState {
   fittedModel: string;      // inverter model AS FITTED — off the rating plate
   serial: string;           // inverter serial number — off the plate
@@ -99,32 +106,103 @@ export interface FieldRecord {
   verdicts?: Record<string, ArtefactVerdictRecord>;
 }
 
-/** Persist the AI verdict for an artefact into the same offline-first store the
- *  job view uses. So the compliance vision RECORDS what it read — not read-and-
- *  forget — and a mismatch can block the pack (see nc6Completeness). */
-export function setArtefactVerdict(leadId: string, kind: string, verdict: ArtefactVerdictRecord): void {
+/** Shared local writer — mutate the offline-first cache, stamp `_updatedAt` (for
+ *  last-write-wins hydrate) and fan out the change event. localStorage is the
+ *  crew's offline source; the server mirror is best-effort on top. */
+function writeLocal(leadId: string, mutate: (d: Record<string, unknown>) => void): void {
   try {
     const key = `jobview_v2_${leadId}`;
     const raw = localStorage.getItem(key);
     const data = raw ? JSON.parse(raw) : {};
-    data.verdicts = { ...(data.verdicts ?? {}), [kind]: verdict };
+    mutate(data);
+    data._updatedAt = new Date().toISOString();
     localStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('field-record-changed', { detail: { leadId } }));
   } catch { /* ignore */ }
 }
 
-/** Record a handover sign-off name (eIDAS simple signature) into the same
- *  offline-first store JobViewV2 uses. Self-contained so the handover UI can
- *  write without threading state through the whole job view. */
-export function setHandoverSignoff(leadId: string, patch: Partial<HandoverSignoff>): void {
+/** What goes to the server mirror: the structured ATTESTATION only. Cert files
+ *  are stripped to presence (name/kind) — the real bytes live in the
+ *  project-documents bucket, so the row stays small and can't blow a jsonb/quota
+ *  limit. */
+function stripForDb(data: Record<string, any>): Record<string, unknown> {
+  const certs = data.certs
+    ? Object.fromEntries(Object.entries(data.certs).map(([k, v]: [string, any]) =>
+        [k, v ? { name: v.name, kind: v.kind } : v]))
+    : undefined;
+  return {
+    serials: data.serials,
+    verdicts: data.verdicts,
+    handoverSignoff: data.handoverSignoff,   // eIDAS names — own key (see setHandoverSignoff)
+    signature: data.signature,
+    certs,
+    // checklist progress (small booleans) so a cache-clear loses nothing, not just the gate
+    preInstall: data.preInstall, roof: data.roof, electrical: data.electrical,
+    commissioning: data.commissioning, handover: data.handover, photos: data.photos,
+  };
+}
+
+/** Best-effort upsert of the field record to the durable server mirror
+ *  (`field_records`). Demo-guarded (no real rows in the sandbox) and offline-safe
+ *  — a failed write leaves localStorage as the source, so the crew loses nothing.
+ *  tenant_id is stamped server-side from the lead; RLS (`own_lead`) authorises. */
+export async function pushFieldRecord(leadId: string): Promise<void> {
+  if (SANDBOX()) return;
   try {
+    const raw = localStorage.getItem(`jobview_v2_${leadId}`);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    await supabase.from('field_records').upsert(
+      { lead_id: leadId, record: stripForDb(data) },
+      { onConflict: 'lead_id' },
+    );
+  } catch { /* offline / best-effort — localStorage still holds it */ }
+}
+
+/** Pull the server mirror into localStorage when the local cache is missing or
+ *  older — the cache-clear / new-device case (#27: the crew must not lose the
+ *  commissioning gate). Last-write-wins by `updated_at`. Returns true if it
+ *  adopted the server copy. Call on job open. */
+export async function hydrateFieldRecord(leadId: string): Promise<boolean> {
+  if (SANDBOX()) return false;
+  try {
+    const { data, error } = await supabase
+      .from('field_records')
+      .select('record, updated_at')
+      .eq('lead_id', leadId)
+      .maybeSingle();
+    if (error || !data?.record) return false;
     const key = `jobview_v2_${leadId}`;
-    const raw = localStorage.getItem(key);
-    const data = raw ? JSON.parse(raw) : {};
-    data.handover = { ...(data.handover ?? {}), ...patch };
-    localStorage.setItem(key, JSON.stringify(data));
+    const localRaw = localStorage.getItem(key);
+    const local = localRaw ? JSON.parse(localRaw) : null;
+    const remoteAt = data.updated_at ? Date.parse(data.updated_at) : 0;
+    const localAt = local?._updatedAt ? Date.parse(local._updatedAt) : 0;
+    if (local && localAt >= remoteAt) return false; // local is fresher — keep it
+    const merged = { ...(local ?? {}), ...(data.record as object), _updatedAt: data.updated_at };
+    localStorage.setItem(key, JSON.stringify(merged));
     window.dispatchEvent(new CustomEvent('field-record-changed', { detail: { leadId } }));
-  } catch { /* ignore */ }
+    return true;
+  } catch { return false; }
+}
+
+/** Persist the AI verdict for an artefact into the offline-first store AND the
+ *  server mirror. So the compliance vision RECORDS what it read — not read-and-
+ *  forget — and a mismatch can block the pack (see nc6Completeness) even on a
+ *  fresh device. */
+export function setArtefactVerdict(leadId: string, kind: string, verdict: ArtefactVerdictRecord): void {
+  writeLocal(leadId, (d) => { d.verdicts = { ...((d.verdicts as object) ?? {}), [kind]: verdict }; });
+  void pushFieldRecord(leadId);
+}
+
+/** Record a handover sign-off name (eIDAS simple signature) into the offline-first
+ *  store AND the server mirror. Self-contained so the handover UI can write
+ *  without threading state through the whole job view. */
+export function setHandoverSignoff(leadId: string, patch: Partial<HandoverSignoff>): void {
+  // Distinct key from JobViewV2's `handover` TOGGLE list (both share this record):
+  // the signoff object lives under `handoverSignoff`, so the eIDAS names that print
+  // on the SEAI Declaration of Works can't be clobbered by a checklist tick.
+  writeLocal(leadId, (d) => { d.handoverSignoff = { ...((d.handoverSignoff as object) ?? {}), ...patch }; });
+  void pushFieldRecord(leadId);
 }
 
 /** Read a job's field record. Null when the crew hasn't started that job on
@@ -138,8 +216,9 @@ export function getFieldRecord(leadId: string): FieldRecord | null {
     return {
       serials: { ...DEFAULT_SERIALS, ...(data.serials ?? {}) },
       signature: data.signature ?? null,
-      handover: data.handover ?? undefined,
+      handover: (data.handoverSignoff as HandoverSignoff) ?? undefined,   // eIDAS signoff (own key; deconflicted from the toggle list)
       certs: (data.certs ?? {}) as CertRecord,
+      verdicts: data.verdicts ?? undefined,   // FIX: was dropped — the mismatch block read undefined
     };
   } catch {
     return null;

@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
-import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
+import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile, hydrateFieldRecord, pushFieldRecord } from '@/lib/fieldRecord';
 import HandoverSignoff from '@/components/installer/HandoverSignoff';
 import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
 import { uploadInstallPhoto } from '@/lib/installPhotos';
@@ -228,24 +228,36 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
 
   const storageKey = `jobview_v2_${lead.id}`;
 
-  // Load from localStorage
+  // Load from localStorage (offline-first cache) + pull the durable server mirror
+  // so a cache-clear / new device doesn't lose the commissioning gate (#27). The
+  // change event lets an async hydrate — or a sibling writer (HandoverSignoff,
+  // artefact verdict) — re-hydrate this view.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
+    const loadFromLocal = () => {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) return;
         const data = JSON.parse(saved);
         if (data.preInstall) setPreInstall(data.preInstall);
         if (data.roof) setRoof(data.roof);
         if (data.electrical) setElectrical(data.electrical);
         if (data.commissioning) setCommissioning(data.commissioning);
-        if (data.handover) setHandover(data.handover);
+        if (Array.isArray(data.handover)) setHandover(data.handover); // toggle list only (signoff is under handoverSignoff)
         if (data.photos) setPhotos(data.photos);
         if (data.signature) setSignature(data.signature);
         if (data.serials) setSerials({ ...DEFAULT_SERIALS, ...data.serials });
         if (data.certs) setCerts(data.certs);
-      }
-    } catch { /* ignore */ }
-  }, [storageKey]);
+      } catch { /* ignore */ }
+    };
+    loadFromLocal();
+    void hydrateFieldRecord(lead.id).then((adopted) => { if (adopted) loadFromLocal(); });
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.leadId === lead.id) loadFromLocal();
+    };
+    window.addEventListener('field-record-changed', onChange);
+    return () => window.removeEventListener('field-record-changed', onChange);
+  }, [storageKey, lead.id]);
 
   const persist = (updates: Partial<{
     preInstall: ToggleItem[]; roof: ToggleItem[]; electrical: ToggleItem[];
@@ -256,10 +268,12 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
     const data = {
       preInstall, roof, electrical, commissioning, handover, photos, signature, serials, certs,
       ...updates,
+      _updatedAt: new Date().toISOString(), // last-write-wins vs the server mirror
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(data));
     } catch { /* ignore */ }
+    void pushFieldRecord(lead.id); // best-effort durable mirror (demo-guarded, offline-safe)
   };
 
   const updateToggle = (phase: 'preInstall' | 'roof' | 'electrical' | 'commissioning' | 'handover', id: string, updates: Partial<ToggleItem>) => {

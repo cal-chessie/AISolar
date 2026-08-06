@@ -98,7 +98,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 
 ### 🗄️ Database & data durability
 26. ✅ **FIXED — 2 missing RLS-hot indexes** (`user_roles(user_id,tenant_id)` — hit on EVERY tenant query — + `notifications.lead_id`). *(20260806_perf_indexes)*
-27. 🔴 **localStorage IS the field record.** Serials, the commissioning gate, artefact verdicts, tour + demo state all live in the browser's localStorage — **an installer who clears their browser loses the commissioning gate mid-job.** The `installed_equipment` table exists but the working store is local. Durability gap: sync the field record to the DB.
+27. ✅ **DONE 6 Aug — field record now mirrors to the DB.** Was: serials, the commissioning gate, artefact verdicts, handover all lived only in browser localStorage → a cache-clear lost the gate mid-job. Now: new `field_records` table (jsonb mirror; tenant_id stamped server-side by trigger, staff-only RLS via `own_lead`) — every mutation best-effort upserts, opening a job hydrates from it (last-write-wins). localStorage stays the offline-first cache; the DB is the durable backup. **Two bugs fixed in the same pass:** (a) `getFieldRecord` never returned `verdicts` → the AI-mismatch pack-block was reading `undefined` (dead); (b) the eIDAS handover signoff and JobViewV2's handover checklist both wrote `data.handover` — a checklist tick wiped the SEAI Declaration-of-Works signature — now deconflicted to `handoverSignoff`. *Migration `20260806_field_records` applied + trigger/RLS proven live; tsc clean; both surfaces render.* Heavy cert files stay in the project-documents bucket (row stays small). `installed_equipment` remains the Sweep-8 normalized target.
 28. **Tenant-delete cascade is inconsistent** (user_roles CASCADE vs notifications SET NULL) — decide + unify; and prefer **soft-delete** for tenants (never hard-delete a paying customer's data).
 29. **DB constraints audit** — CHECK/UNIQUE on money + status (invoice amounts ≥ 0 · `workflow_stage` in a known set · no negative kWp).
 30. **No down-migrations** + set a **`statement_timeout`** for the anon/authenticated roles (a runaway query can't hog the DB).
@@ -146,7 +146,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 ### 🧑‍💼 Process
 57. **Prod access control** (who can touch prod) · **secrets rotation schedule** · **no direct-to-main** / change approval · runbooks for the top ops tasks.
 
-**The three that genuinely worry me most (add to launch-blocking thinking):** #27 (field record only in localStorage — an installer loses the commissioning gate on a cache clear), #48 (14-day cooling-off — a real legal requirement for the sale), #32 (no offline for field crews). The rest is the maturity ladder.
+**The three that genuinely worry me most (add to launch-blocking thinking):** ✅ ~~#27 (field record only in localStorage)~~ **CLOSED 6 Aug — mirrored to `field_records`**, #48 (14-day cooling-off — a real legal requirement for the sale), #32 (no offline for field crews). The rest is the maturity ladder.
 
 ## 🏴 PRE-DEPLOYMENT — ROUND 3 (the deepest cut; "there's more than that" — grounded in the code, not guessed)
 
