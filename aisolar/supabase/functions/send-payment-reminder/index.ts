@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { requireRole } from "../_shared/auth.ts";
+import { requireRole, requireSecrets } from "../_shared/auth.ts";
 import { isEmailSuppressed } from "../_shared/email.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
@@ -41,6 +41,7 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
+    requireSecrets(["POSTMARK_SERVER_TOKEN"]); // fail fast, not a blank-token 422
     // Find invoices where:
     // - Installation is completed (deposit_paid = true)
     // - Final payment is NOT received

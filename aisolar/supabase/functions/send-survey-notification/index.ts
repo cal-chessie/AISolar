@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { requireRole } from "../_shared/auth.ts";
+import { requireRole, requireSecrets } from "../_shared/auth.ts";
 import { isEmailSuppressed } from "../_shared/email.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
@@ -47,6 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    requireSecrets(["POSTMARK_SERVER_TOKEN"]); // fail fast, not a blank-token 422
     const {
       customerName,
       customerEmail,

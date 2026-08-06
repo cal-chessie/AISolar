@@ -162,6 +162,16 @@ export class HttpError extends Error {
   }
 }
 
+/** Fail fast on a missing secret: throw a clear 500 (surfaced by errorResponse or
+ *  any catch that reads error.message) instead of half-working with an empty string
+ *  — e.g. a blank Postmark token, which otherwise fails with a confusing 422. */
+export function requireSecrets(names: string[]): void {
+  const missing = names.filter((n) => !Deno.env.get(n));
+  if (missing.length > 0) {
+    throw new HttpError(500, `Server misconfigured — missing secret(s): ${missing.join(", ")}`);
+  }
+}
+
 /** Convert any thrown error to an HTTP response. */
 export function errorResponse(err: unknown, headers: Record<string, string>): Response {
   if (err instanceof HttpError) {

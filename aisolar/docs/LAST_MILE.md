@@ -112,7 +112,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 36. **Reduced-motion** honoured (framer-motion is everywhere) · **tap targets ≥ 44px** on the field + customer surfaces · font-display (no FOIT).
 
 ### ⚙️ Edge functions (deeper)
-37. **Fail-fast secret validation** on boot (a missing Postmark/Stripe key should error clearly, not half-work).
+37. ✅ **Fail-fast secret validation DONE 6 Aug.** New shared `requireSecrets(names)` (`_shared/auth.ts`) throws a clear 500 "missing secret(s): …" instead of half-working. Wired into all 4 email senders (`send-notification` + `-payment-reminder`/`-proposal-accepted`/`-survey-notification`) so a missing `POSTMARK_SERVER_TOKEN` fails fast instead of sending a blank token → confusing 422. Already fail-fast (credited): `create-checkout` + `stripe-webhook` (Stripe keys), the `sendEmail` helper (Postmark token).
 38. ✅ **Already done (verified 6 Aug)** — `analyse-roof-photo` + `verify-artefact` both reject `imageDataUrl` over **8 MB** with a 413 ("retake at lower resolution"). That's the DoS + AI-bill guard already in place.
 39. **Idempotency keys** on mutating fns (`portal-inbox`, `create-checkout`) — a retried request must not double-insert/charge.
 40. **No PII/tokens in logs** — audit the `console.log`s; add correlation IDs; **dead-letter** for `agent-drain` failures.
