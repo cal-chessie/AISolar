@@ -40,7 +40,7 @@ items are all below). Grouped by what it is + who owns it._
 
 ### 🟡 D. Security remaining (the two deep sweeps closed the criticals — these are the tail)
 - **`solar-roof` rate-limit** — it's public by design; cap it so no one runs up the Google bill.
-- **Legacy global tables** (installers/solar_products/agent_prompts/follow_up_settings/survey_photos, no tenant_id) — platform-lock vs add tenant_id. **Cal's product call** before the cohort grows.
+- ✅ **Legacy global tables** (installers/solar_products/agent_prompts/follow_up_settings/survey_photos, no tenant_id) — **DECIDED 6 Aug (Cal): platform-owned for cohort 1.** They hold **settings, not customer data**, so there's no cross-tenant break-in risk — and a single curated product catalogue + installer list actually **FITS the wholesaler-fed launch** (the wholesaler stocks the shelf everyone draws from). **Revisit — platform-curated vs per-installer — before scaling past the first few installers.** Not a launch blocker.
 - **Error-honesty audit on the money paths** — checkout · sends · pack seal: every catch surfaces or logs, no silent swallow.
 - **Mobile bug sweep** — a fresh click-through of all 3 cockpits at 375px + `ProposalView:424` blank-onClick re-verify + console-clean on every route.
 
@@ -196,6 +196,7 @@ Runbook + the 10-minute prod smoke = **DEPLOYMENT_GATE.md**. Short form:
 1. ⭐ **A1 · Stripe billing** — 7-day trial → per-seat subscription. Foundation is live; this is the money layer. Needed for self-serve + the 40, NOT for a concierge first client. *(Fresh session — A1_BUILD_PLAN.md.)*
 2. ✅ **2A · pack gate** *(Done 5 Aug)* — surfaced at all 3 touchpoints (owner/consultant/installer) + the compliance-vision mismatch now BLOCKS the pack. **Remaining:** the per-customer human eyeball (operational) + the **NC8 decision** (Cal's call — >50kW appendix-only?).
 3. **Founder operational setup (Cal: "I haven't got a baldy")** — I WALK CAL THROUGH: (a) **Branding** — Settings → Brand: logo, from-name, portal title, accent (touches every customer surface). (b) **Postmark** — verify a sending domain (DKIM/return-path), paste the token as the secret; the from-name comes from the tenant brand. (c) **How every customer uses it** — the customer journey playbook (magic-link portal, no password; they ask the AI, book, pay, download the pack). Notes seeded in Founder training below; expand as we do each.
+   - 🔒 **LOCKED (Cal, 6 Aug — AGREED): branding + Postmark + Stripe secrets + the first proof run happen TOGETHER when Cal's back at the machine.** Two honest reasons: (1) it needs **Cal's own Postmark/Stripe secrets** to actually work — I can't and shouldn't hold them; (2) Cal wants the **proof run side-by-side**, watched live, not reported after. My job before then: prep every line so the joint session is a click-through, not a build.
 4. ✅ **2C · installer photos → storage** *(Done 5 Aug)* — JobViewV2 photos now really upload (phone camera → `project-documents` bucket at `{leadId}/install/…`, tenant-scoped RLS). The last 2C leftover, closed.
 5. ✅ **Security proof pass** — DONE this weekend, see 🔒 below.
 6. **2E · Maps key** referrer-lock now / edge-proxy later (D4) · **sites wiring** (brand-site doors → ingest-lead).
@@ -224,10 +225,23 @@ who owns these is a real, working setup. Here's the protocol for each._
   here, and if anything ever leaks we follow the incident steps (rotate the one key, note
   it here, tell Cal same day). I am the eyes and ears.
 - **Maintainability / bus-factor (was 4 — "one non-tech founder, AI-authored, no senior
-  review").** THE ANSWER is this doc. Every build gets notes + verification here, so the
-  system is NOT trapped in one AI session's memory — the docs ARE the continuity. When the
-  CTO lands, they read LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM and they're current in
-  an hour. That's how we survive the bus-factor: write it down, always.
+  review").** THE ANSWER is the **CONTINUITY PACK** — three living docs that make the whole
+  system legible to any engineer, so nothing is trapped in one AI session's memory:
+  - **`docs/LAST_MILE.md`** *(this file — START HERE)* — the single source of truth: all
+    remaining work, **every decision and the why behind it**, the security evidence, the
+    founder playbook, the living log.
+  - **`docs/DEPLOYMENT_GATE.md`** — exactly how it goes live: the 3 env vars, the edge
+    functions, the secrets, the smoke test. The runbook.
+  - **`docs/COMMS_AI_SYSTEM.md`** — how the brains + comms actually work: the three brains,
+    every trigger, the guardrails, the sales talking points.
+
+  **The one-hour onboarding path for the first CTO:** `THE_ONE_READ` → `LAST_MILE` →
+  `DEPLOYMENT_GATE` → `COMMS_AI_SYSTEM`. They land current in an hour — architecture, state,
+  decisions, and the deploy path, all on disk. **The rule that keeps this true: every build
+  gets its notes + verification written HERE, in the same session — never a new doc, never
+  "I'll write it up later."** That discipline IS the bus-factor answer. Still one founder
+  until that hire — said honestly — but the knowledge lives on disk, not in a session that
+  can end.
 
 ---
 
@@ -351,7 +365,7 @@ audit: all 40 tables RLS-ON, zero permissive `true` policies, every customer-dat
 table tenant-scoped (`can_see_lead`); write gate `own_lead` is staff-only (no
 token path — customers can't queue agents / forge audit logs).
 
-### 🟡 MEDIUM — legacy global tables (documented; Cal's product call before scaling)
+### 🟡 MEDIUM — legacy global tables (✅ DECIDED 6 Aug: platform-owned for cohort 1 — settings not customer data, fits the wholesaler launch; revisit per-installer before scaling)
 `installers · solar_products · agent_prompts · follow_up_settings · survey_photos
 · seai_documents` are single-tenant-era tables with **no tenant_id**, gated by
 `has_role(admin)` → shared across all tenants. They hold CONFIG/reference, **not
@@ -394,7 +408,7 @@ brutal honesty, new evidence. Nothing inflated._
 | Dimension | Was | Now | Why it moved |
 |---|---|---|---|
 | **Craft / architecture** | 8.5 | **8.5** | Unchanged — it was always the strength. Prod build green, code-split, clean separation. |
-| **Security posture** | 2.5 | **~8**| GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock + the legacy-global-tables decision. |
+| **Security posture** | 2.5 | **~8**| GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock. *(Legacy-global-tables: DECIDED — platform-owned for cohort 1.)* |
 | **Readiness** | 3.5 | **~6** | Real prod build GREEN + 3 real prod-breakers found & fixed (widget key, tour loop, env.example). Still needs the actual DEPLOY + the joint smoke to hit "proven live." |
 | **Maintainability / bus-factor** | 4 | **~6** | The docs are now the continuity: LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM make a CTO current in an hour. Still one-founder until that hire — honest. |
 
