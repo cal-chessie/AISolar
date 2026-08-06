@@ -148,6 +148,32 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 
 **The three that genuinely worry me most (add to launch-blocking thinking):** #27 (field record only in localStorage — an installer loses the commissioning gate on a cache clear), #48 (14-day cooling-off — a real legal requirement for the sale), #32 (no offline for field crews). The rest is the maturity ladder.
 
+## 🏴 PRE-DEPLOYMENT — ROUND 3 (the deepest cut; "there's more than that" — grounded in the code, not guessed)
+
+### A. NEW gaps I found by reading the actual source ✅ CONFIRMED
+58. 🟠 **Money is computed in floating point.** `computeQuote.ts` builds `annualSavings`, `grossCost - grant`, etc. as JS floats. Fine for an *indicative* estimate; **a rounding bug at the invoice/payment boundary** (0.1 + 0.2 ≠ 0.3). Fix: round to cents (integer minor units) the moment a number becomes an invoice or a Stripe amount.
+59. 🟠 **The leads query has no pagination + fetches everything.** `realLeads.ts`: `.from('leads').select('*').order(...)` with **no `.limit()`/`.range()`**, then five more `.in('lead_id', ids)` fan-out queries. One tenant with a few hundred leads pulls the whole table + 5 joins on every load. Fix: paginate + select only needed columns.
+60. 🟡 **Magic-link token rides in the URL** (`/customer/:token`). URLs leak via `Referer` headers, browser history, and server/analytics logs — and a **forwarded link = access**. Fix: short expiry + one-time exchange for a cookie session; keep the token out of the referer (we already set `strict-origin-when-cross-origin`, good).
+61. 🟡 **Prompt-injection surface on the vision functions.** `analyse-roof-photo` / `verify-artefact` send **customer-uploaded images** to an LLM — untrusted input. Keep the model's output *advisory only* (it already gates via a verdict, good) and never let raw customer text reach an ungrounded prompt. `brain-voice` only re-phrases our *own* grounded text (low risk) — keep it that way.
+62. 🟡 **Invoice numbering isn't provably sequential.** `invoices.invoice_number` is referenced but I found no gap-free generator. **Irish VAT invoices legally need sequential, gap-free numbers.** Fix: a DB sequence per tenant.
+63. 🟢 **Doc drift:** `docs/SECRETS.md` still lists **Mapbox** — the app is on **Google Maps** now. One-line fix (same drift we already fixed in CSP + .env.example).
+
+### B. Things a top team checks that YOU ALREADY HAVE ✅ (I verified — credit where due)
+64. ✅ **Per-route error boundaries** — `App.tsx` wraps each route so one view crashing **doesn't white-screen the app**. Exactly right.
+65. ✅ **Secrets hygiene** — `.env`, `.env.local`, `.env.*.local` are all git-ignored; the only tracked secrets file is `docs/SECRETS.md`, and it's **placeholders + a rotation runbook** (`sk_live_...`), not real keys.
+66. ✅ **Stale-deploy resilience** — `lazyWithRetry.ts` catches a 404'd old chunk after a deploy and does **one guarded hard-reload** (with a sessionStorage loop-guard) instead of a dead screen.
+
+### C. The last disciplines still uncalled (grouped — this is the bottom of the barrel)
+67. **Release engineering** — zero-downtime / backward-compatible migrations (don't drop a column while old JS is still served) · deploy order (DB→code) · **feature-flag the rollout to the 40** (turn tenants on in waves, not all at once).
+68. **GDPR operations** — Data-access export (DSAR) · erasure runbook (`anonymise_lead` exists — expose it as a one-command runbook) · an **audit trail** (who changed what).
+69. **Email deliverability (deep)** — SPF/DKIM/**DMARC** on the sending domain · Postmark **bounce + complaint** webhooks → suppression list · **one-click unsubscribe** (PECR/CAN-SPAM).
+70. **Mobile field (deep)** — **strip EXIF/GPS from customer home photos** (metadata leaks the address) · upload retry on flaky signal · file-type + size validation on every upload.
+71. **Accessibility specifics (EAA is law)** — full keyboard path · focus management in the tour + modals · `aria-live` on form errors + the AI chat · labels on icon-only buttons · contrast-check the family-colour system.
+72. **Trust & content** — "indicative, subject to survey" disclaimer on estimates · branded 404/500 · never show a stack trace to a user.
+73. **Infra config** — dev/staging/prod parity · Supabase CORS allowed-origins · edge rate-limiting.
+
+**Honest floor:** that's ~73 items across three rounds. Rounds 1–2 were the categories; Round 3 is me **reading the source** and it turned up 6 real ones + confirmed 3 you'd already nailed. Beyond this I'd be padding. **The map is complete. The move now is to burn down the reds, not keep listing.**
+
 ## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
 _(The security final pass — Lane B's evidence — was pulled forward to this weekend at
 Cal's ask; results below.)_
