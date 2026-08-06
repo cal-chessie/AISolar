@@ -129,7 +129,11 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 47. **PCI:** confirm no card data ever touches the DB/logs (Stripe-hosted checkout keeps it off us — verify).
 
 ### ⚖️ Compliance / legal (this is a REGULATED domain — ESB + SEAI)
-48. 🔴 **Consumer cooling-off** — Irish/EU distance-selling law gives a **14-day right to cancel**; a solar sale needs the notice + a cancel path. Legal gap.
+48. 🟠 **Consumer cooling-off — engine + install-guard DONE 6 Aug; customer-facing notice = CAL'S YES (statutory).** Built (safe, non-legal): `contracts` now carries **`cooling_off_ends_at`** (trigger-stamped `signed_at` + 14 days), `cooling_off_waived`, `cancelled_at`, `cancellation_reason` (*proven live: signed 6 Aug → ends 20 Aug*); `coolingOff.ts` state engine; and an installer **warning banner** on the job overview ("customer can still cancel, N days left — only start if they've asked you to"), *browser-verified*. **⚠️ NOT built — needs your yes + likely a solicitor (these are legally binding):**
+    - **(a) The cooling-off NOTICE wording** shown to the customer at/before contract (must state the 14-day right + how to cancel). I can draft it; you/legal sign it off.
+    - **(b) The cancellation flow + refund policy** — a customer "cancel my order" path in the portal within the window, and what refund applies (full, vs part-payment if work began after a waiver).
+    - **(c) The early-start WAIVER capture** — the waiver must come from the **customer, in writing** (portal), not an installer's click. Policy: do we allow early start at all, and on what terms?
+    - Also confirm: does any solar install qualify for a **made-to-measure exemption** (likely not for a standard system) — a legal question, not a code one.
 49. 🔴 **European Accessibility Act (in force June 2025)** — accessibility is now a **legal** requirement for EU e-commerce, not just nice-to-have (ties to a11y above).
 50. **eIDAS signature validity** — confirm the "simple electronic signature" holds for the ESB NC6 + the customer contract (statutory flag #2) · **document tamper-proofing** (signature_hash M3 on the filed DoW/NC).
 51. **Data-retention policy** (how long post-completion) · **sub-processor DPAs** (Supabase · Stripe · Postmark · OpenRouter — GDPR Art 28) · **RECI/Safe-Electric cert expiry** tracked per installer.
@@ -146,7 +150,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 ### 🧑‍💼 Process
 57. **Prod access control** (who can touch prod) · **secrets rotation schedule** · **no direct-to-main** / change approval · runbooks for the top ops tasks.
 
-**The three that genuinely worry me most (add to launch-blocking thinking):** ✅ ~~#27 (field record only in localStorage)~~ **CLOSED 6 Aug — mirrored to `field_records`**, #48 (14-day cooling-off — a real legal requirement for the sale), ✅ ~~#32 (no offline for field crews)~~ **write-durability + reconnect-flush + offline indicator DONE 6 Aug; cold-start SW = Cal's call.** The rest is the maturity ladder.
+**The three that genuinely worry me most (add to launch-blocking thinking):** ✅ ~~#27 (field record only in localStorage)~~ **CLOSED 6 Aug — mirrored to `field_records`**, 🟠 #48 (14-day cooling-off — **engine + install-guard DONE 6 Aug; customer notice + cancel/waiver = Cal's yes**), ✅ ~~#32 (no offline for field crews)~~ **write-durability + reconnect-flush + offline indicator DONE 6 Aug; cold-start SW = Cal's call.** The rest is the maturity ladder.
 
 ## 🏴 PRE-DEPLOYMENT — ROUND 3 (the deepest cut; "there's more than that" — grounded in the code, not guessed)
 
