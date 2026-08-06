@@ -434,6 +434,11 @@ half is Lane A — your hands, my prep. You're in materially better shape than 1
 
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
+### 🏗️ 6 Aug — the "knock the reds out" grind (17 items, all tool-proven, remote `1c135d4`)
+**Shipped + verified:** field record → DB durable mirror (+2 live bug fixes: dead verdicts block, handover↔signature key collision) · money→cents `numeric(12,2)` + gap-free VAT invoice numbers · leads pull bounded · **email reputation pipeline** (bounce/complaint suppression + `List-Unsubscribe` across all 5 customer senders + webhook) · offline write-durability (queue + flush-on-reconnect + offline strip) · Mapbox→Google drift incl. **GDPR sub-processor legal fix** · **observability floor** (`client_errors` crash sink, token-masked) · `/api/health` · fail-fast secret validation · DB non-negativity CHECKs · portal-inbox idempotency · verified **no first-admin lockout** (`provision_tenant` self-bootstraps). Credited already-done: vision 8MB caps, stripe-webhook/create-checkout key guards, per-route error boundaries.
+**Migrations live (6 Aug):** perf_indexes · field_records · invoice_integrity · email_suppressions · cooling_off · client_errors · nonneg_constraints (all rollback-proven).
+**Built the safe half, PARKED for Cal (genuine decisions, not guessed):** #48 cooling-off (engine+installer-warning live; **notice wording + cancel/refund + customer waiver = your yes**, likely a solicitor) · #32 cold-start offline (**re-add a service worker? — the kill-switch is deliberate**) · #60 token→session redesign (needs a real portal test) · #44 CORS lock (needs the confirmed prod domain) · email DNS SPF/DKIM/DMARC (the joint Postmark session).
+
 ### 🐞 Bugs (found + fixed this session)
 - Compliance-vision verdict was ephemeral (verified then thrown away) → now PERSISTS to the field record + a mismatch BLOCKS the pack. Storage buckets were cross-tenant readable → tenant-scoped. Install photos were fake toggles → real uploads.
 - **🚨 grant_role platform-admin backdoor** (SECURITY DEFINER bypass → god mode) — FIXED + proven (double-down).
