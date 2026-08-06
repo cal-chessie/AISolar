@@ -36,7 +36,7 @@ Runbook + the 10-minute prod smoke = **DEPLOYMENT_GATE.md**. Short form:
 1. ⭐ **A1 · Stripe billing** — 7-day trial → per-seat subscription. Foundation is live; this is the money layer. Needed for self-serve + the 40, NOT for a concierge first client. *(Fresh session — A1_BUILD_PLAN.md.)*
 2. **2A · per-customer pack gate** — surface missing NC6/NC7/grant items at the 3 human touchpoints. **Cohort-blocking** (the paper-trail rule). + NC8 decision.
 3. **Founder operational setup (Cal: "I haven't got a baldy")** — I WALK CAL THROUGH: (a) **Branding** — Settings → Brand: logo, from-name, portal title, accent (touches every customer surface). (b) **Postmark** — verify a sending domain (DKIM/return-path), paste the token as the secret; the from-name comes from the tenant brand. (c) **How every customer uses it** — the customer journey playbook (magic-link portal, no password; they ask the AI, book, pay, download the pack). Notes seeded in Founder training below; expand as we do each.
-4. **2C · installer photos → storage** — a Supabase bucket + `install_evidence` rows. The one 2C leftover.
+4. ✅ **2C · installer photos → storage** *(Done 5 Aug)* — JobViewV2 photos now really upload (phone camera → `project-documents` bucket at `{leadId}/install/…`, tenant-scoped RLS). The last 2C leftover, closed.
 5. ✅ **Security proof pass** — DONE this weekend, see 🔒 below.
 6. **2E · Maps key** referrer-lock now / edge-proxy later (D4) · **sites wiring** (brand-site doors → ingest-lead).
 
@@ -257,6 +257,7 @@ half is Lane A — your hands, my prep. You're in materially better shape than 1
 ## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
 
 ### 🐞 Bugs (found + fixed this session)
+- Compliance-vision verdict was ephemeral (verified then thrown away) → now PERSISTS to the field record + a mismatch BLOCKS the pack. Storage buckets were cross-tenant readable → tenant-scoped. Install photos were fake toggles → real uploads.
 - **🚨 grant_role platform-admin backdoor** (SECURITY DEFINER bypass → god mode) — FIXED + proven (double-down).
 - **🔴 anonymise_lead cross-tenant erasure** (no ownership check) — FIXED + proven.
 - **🔴 storage cross-tenant doc view/delete** (permissive policies) — FIXED.
