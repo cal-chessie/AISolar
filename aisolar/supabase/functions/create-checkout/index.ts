@@ -98,6 +98,11 @@ serve(async (req) => {
       description = `Final Payment for Invoice #${invoice.invoice_number}`;
     }
 
+    // Money boundary (#58): the deposit split (total * 0.3) can produce a
+    // sub-cent float — snap to whole cents so the charge, the log and any
+    // downstream record all agree. (Stripe's unit_amount is integer cents anyway.)
+    checkoutAmount = Math.round(checkoutAmount * 100) / 100;
+
     if (checkoutAmount <= 0) {
       throw new HttpError(400, "Invalid invoice amount");
     }
