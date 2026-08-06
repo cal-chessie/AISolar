@@ -50,6 +50,7 @@ import SchedulingTransparency from '@/components/owner/SchedulingTransparency';
 import { PipelineBar } from '@/components/layout/PipelineBar';
 import { AppShell, type ShellNavItem } from '@/components/layout/AppShell';
 import { brand } from '@/config/brand';
+import { nc6Completeness } from '@/lib/pdfFill';
 import { useTenantBrand } from '@/lib/tenantBrand';
 import { DarkModeToggle } from '@/components/ui/DarkModeToggle';
 import DemoToggle from '@/components/demo/DemoToggle';
@@ -397,6 +398,13 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
   // call WITH its reason — the same intelligence the coach speaks, so the
   // cockpit and the coach can never tell different stories.
   const draftsWaiting = leads.filter((l: DummyLead) => l.proposal?.status === 'draft');
+  // PACK GATE (2A — Cal's paper-trail rule: "worst thing is a mistake in the
+  // paper trail"). A job at/after commissioning whose NC6 pack is missing items
+  // must never file half-done — surface it here so nothing slips through.
+  const packBlocked = leads
+    .filter((l: DummyLead) => ['installing', 'installed', 'final_paid', 'completed'].includes(l.workflow_stage))
+    .map((l: DummyLead) => ({ l, c: nc6Completeness(l) }))
+    .filter((x: { c: { ready: boolean } }) => !x.c.ready);
   const moveRank = { now: 0, today: 1, soon: 2 } as const;
   const seenMove = new Set<string>();
   const topMoves = leads
@@ -408,6 +416,15 @@ function OverviewView({ data, leads, expandedStage, setExpandedStage, navigate, 
     .sort((a: any, b: any) => moveRank[a.severity] - moveRank[b.severity])
     .slice(0, 3);
   const gates: Array<{ icon: any; title: string; desc: string; cta: string; onClick: () => void }> = [
+    // Incomplete NC packs first — a filable pack that's missing items is the one
+    // thing that must never slip through to submission.
+    ...(packBlocked.length > 0 ? [{
+      icon: AlertTriangle,
+      title: `${packBlocked.length} NC pack${packBlocked.length === 1 ? '' : 's'} not filable yet`,
+      desc: `${packBlocked[0].l.name.split(' ')[0]}: ${packBlocked[0].c.missing[0]}${packBlocked[0].c.missing.length > 1 ? ` +${packBlocked[0].c.missing.length - 1} more` : ''}`,
+      cta: packBlocked[0].c.missing[0].includes('Settings') ? 'Fix in Settings' : 'Open job',
+      onClick: () => packBlocked[0].c.missing[0].includes('Settings') ? setActiveView('settings') : navigate(`/job/${packBlocked[0].l.id}`),
+    }] : []),
     ...(data.agentFailures > 0 ? [{ icon: Bot, title: `${data.agentFailures} agent run failed`, desc: 'Postmark rate limit — needs a look', cta: 'Open agents', onClick: () => setActiveView('agents') }] : []),
     ...(draftsWaiting.length > 0 ? [{ icon: FileText, title: `${draftsWaiting.length} proposal draft${draftsWaiting.length === 1 ? '' : 's'} waiting on review`, desc: draftsWaiting.map((l: DummyLead) => l.name.split(' ')[0]).slice(0, 3).join(', '), cta: 'Review', onClick: () => navigate(`/lead-flow/${draftsWaiting[0].id}`) }] : []),
     ...topMoves.map((m: any) => ({
