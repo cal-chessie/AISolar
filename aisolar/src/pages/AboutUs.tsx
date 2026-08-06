@@ -192,7 +192,7 @@ export default function AboutUs() {
             <div className="mt-5 flex flex-wrap items-start justify-center gap-x-8 gap-y-5">
               {([
                 ['AIOS', '/', 'the kernel'],
-                ['AISolar', '/aisolar', 'installer OS'],
+                ['AISolar', '/aisolar', 'the installer OS'],
                 ['AITeam', '/aiteam', 'the workforce'],
                 ['AIChat', '/my-projects', 'the customer'],
                 ['AIField', '/installer', 'the crew'],
@@ -200,7 +200,7 @@ export default function AboutUs() {
               ] as const).map(([w, to, sub]) => (
                 <Link key={w} to={to} className="group flex flex-col items-center gap-1.5 w-20">
                   <Wordmark word={w} className="size-11 group-hover:opacity-80 transition-opacity" />
-                  <span className="text-2xs text-muted-foreground">{sub}</span>
+                  <span className="text-2xs text-muted-foreground whitespace-nowrap">{sub}</span>
                 </Link>
               ))}
             </div>
