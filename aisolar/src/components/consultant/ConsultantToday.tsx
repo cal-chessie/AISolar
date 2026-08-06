@@ -17,10 +17,11 @@
  */
 import { useMemo } from 'react';
 import {
-  ArrowRight, CalendarClock, Flame, PhoneCall, Send, Sun, TrendingUp,
+  ArrowRight, CalendarClock, Flame, PhoneCall, Send, Sun, TrendingUp, AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getStage } from '@/lib/leadIntake';
+import { nc6Completeness } from '@/lib/pdfFill';
 import type { DummyLead } from '@/lib/dummyData';
 import EngagementBadge from '@/components/consultant/EngagementBadge';
 import AgentWindow, { useAgentActions } from '@/components/agents/AgentWindow';
@@ -90,7 +91,7 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
   onOpenLead: (lead: DummyLead) => void;
   onGoCalendar: () => void;
 }) {
-  const { diary, needsMe, waiting, pipelineValue } = useMemo(() => {
+  const { diary, needsMe, waiting, pipelineValue, packBlocked } = useMemo(() => {
     const today = new Date().toDateString();
     const diary = leads.filter(l => {
       const d = l.survey?.scheduled_date;
@@ -107,7 +108,11 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
     const pipelineValue = leads
       .filter(l => l.proposal && !['completed', 'final_paid'].includes(l.workflow_stage))
       .reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0);
-    return { diary, needsMe, waiting, pipelineValue };
+    // Pack gate (2A) — the consultant shouldn't tell a customer "all done" while
+    // the NC pack is still short. Awareness only; the fix is field/owner side.
+    const packBlocked = leads.filter(l =>
+      ['installing', 'installed', 'final_paid', 'completed'].includes(l.workflow_stage) && !nc6Completeness(l).ready);
+    return { diary, needsMe, waiting, pipelineValue, packBlocked };
   }, [leads]);
 
   const agentActions = useAgentActions(leads, 8);
@@ -133,6 +138,20 @@ export default function ConsultantToday({ leads, onOpenLead, onGoCalendar }: {
         <Kpi tone="proposal" icon={<Send />} value={waiting.length} label="For decision" />
         <Kpi tone="deposit" icon={<TrendingUp />} value={eurCompact(pipelineValue)} label="Pipeline in play" />
       </div>
+
+      {/* Pack-not-filable banner — so a job's paperwork can't quietly go out short. */}
+      {packBlocked.length > 0 && (
+        <button
+          onClick={() => onOpenLead(packBlocked[0])}
+          className="w-full flex items-center gap-2 rounded-panel border border-doc-contract/40 bg-doc-contract/5 px-3 py-2 text-left text-xs hover:bg-doc-contract/10 transition-colors"
+        >
+          <AlertTriangle className="size-3.5 text-doc-contract shrink-0" />
+          <span className="min-w-0">
+            <span className="font-semibold">{packBlocked.length} job{packBlocked.length === 1 ? '' : 's'} can't file the NC pack yet</span>
+            <span className="text-muted-foreground"> — {packBlocked[0].name.split(' ')[0]}: {nc6Completeness(packBlocked[0]).missing[0]}. Don't mark it done with the customer.</span>
+          </span>
+        </button>
+      )}
 
       {/* Priority gets the full width; it carries the day. */}
       <Panel
