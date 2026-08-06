@@ -40,7 +40,7 @@ the human approving every outward send.*
 | Layer | Tech |
 |---|---|
 | Language | **TypeScript end-to-end** (frontend + Deno edge functions) |
-| Frontend | React 18 · Vite · React Router v6 · Tailwind + shadcn/ui (Radix) · TanStack Query · framer-motion · recharts · **pdf-lib + pdfjs-dist** (the paperwork engine) · mapbox-gl · zod · react-hook-form |
+| Frontend | React 18 · Vite · React Router v6 · Tailwind + shadcn/ui (Radix) · TanStack Query · framer-motion · recharts · **pdf-lib + pdfjs-dist** (the paperwork engine) · Google Maps + Solar API · zod · react-hook-form |
 | Hosting (FE) | Static SPA on **Vercel** (`vercel.json`) |
 | Backend | **Supabase**: Postgres + Auth + Storage + **Edge Functions (Deno)** + **pg_cron** |
 | Kernel | Separate Supabase project (`vythuqax…`) — event switchboard, cross-tenant routing |

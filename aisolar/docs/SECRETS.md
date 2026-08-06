@@ -8,7 +8,7 @@ Every secret used by AISolar, where it lives, and how to rotate it.
 |--------|---------------|----------|-------|
 | `VITE_SUPABASE_URL` | `.env`, Vercel env | On project migration | Public URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `.env`, Vercel env | On suspect leak | Anon key — RLS protects data |
-| `VITE_MAPBOX_TOKEN` | `.env`, Vercel env | Quarterly | Free tier: 50k loads/mo |
+| `VITE_GOOGLE_MAPS_KEY` | `.env`, Vercel env | Quarterly | Maps + Solar API; referrer-lock in Google Cloud |
 | `VITE_ENABLE_DEMO` | Vercel env | n/a | Set `true` ONLY on staging |
 
 ## Server-side (Supabase Edge Functions + pg_cron)

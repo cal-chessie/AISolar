@@ -434,7 +434,7 @@ export function DataSubjectRightsPanel({ userEmail }: { userEmail: string }) {
           </div>
           <div className="flex items-center gap-1">
             <Database className="h-3 w-3" />
-            <span>Data stored in EU (Supabase Frankfurt). Sub-processors: Stripe, Postmark, Google Gemini, Coinbase, Mapbox.</span>
+            <span>Data stored in EU (Supabase Frankfurt). Sub-processors: Stripe, Postmark, Google Gemini, Coinbase, Google Maps.</span>
           </div>
           <div className="flex items-center gap-1">
             <Globe className="h-3 w-3" />
@@ -539,7 +539,7 @@ export function SubProcessorList() {
     { name: 'Postmark', purpose: 'Transactional email', location: 'US (with EU SCCs)', dpasSigned: true },
     { name: 'Google Gemini', purpose: 'AI bill extraction + proposal drafting', location: 'US (with EU SCCs)', dpasSigned: true },
     { name: 'Coinbase Commerce', purpose: 'Crypto payment option', location: 'US (with EU SCCs)', dpasSigned: true },
-    { name: 'Mapbox', purpose: 'Installer map view', location: 'US (with EU SCCs)', dpasSigned: true },
+    { name: 'Google Maps Platform', purpose: 'Maps + satellite/roof imagery', location: 'US (with EU SCCs)', dpasSigned: true },
     { name: 'Lovable AI Gateway', purpose: 'AI gateway for Gemini', location: 'US (with EU SCCs)', dpasSigned: true },
   ];
 
