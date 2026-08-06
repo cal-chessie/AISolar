@@ -81,11 +81,36 @@ export interface HandoverSignoff {
   signedAt?: string;        // when both signed
 }
 
+/** The AI compliance-vision verdict for one artefact, PERSISTED so the pack
+ *  records that it was checked (and blocks filing on a mismatch). Keyed by
+ *  artefact kind ('type_test' | 'plate' | 'reci' | 'sld'). */
+export interface ArtefactVerdictRecord {
+  status: string;      // 'ok' | 'mismatch' | 'unreadable' | 'error'
+  at: string;          // ISO — when the AI read it
+  mismatchCount: number;
+}
+
 export interface FieldRecord {
   serials: SerialState;
   signature: string | null; // the drawn pad (customer) — kept alongside the names
   handover?: HandoverSignoff;
   certs: CertRecord;
+  /** AI compliance-vision verdicts per artefact — the moat's persisted evidence. */
+  verdicts?: Record<string, ArtefactVerdictRecord>;
+}
+
+/** Persist the AI verdict for an artefact into the same offline-first store the
+ *  job view uses. So the compliance vision RECORDS what it read — not read-and-
+ *  forget — and a mismatch can block the pack (see nc6Completeness). */
+export function setArtefactVerdict(leadId: string, kind: string, verdict: ArtefactVerdictRecord): void {
+  try {
+    const key = `jobview_v2_${leadId}`;
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : {};
+    data.verdicts = { ...(data.verdicts ?? {}), [kind]: verdict };
+    localStorage.setItem(key, JSON.stringify(data));
+    window.dispatchEvent(new CustomEvent('field-record-changed', { detail: { leadId } }));
+  } catch { /* ignore */ }
 }
 
 /** Record a handover sign-off name (eIDAS simple signature) into the same

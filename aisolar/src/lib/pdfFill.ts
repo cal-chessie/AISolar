@@ -361,6 +361,11 @@ export function nc6Completeness(lead: DummyLead): { ready: boolean; missing: str
   if (!cc.companyEmail) missing.push('Installer email (Owner -> Settings)');
   if (!cc.companyMobile) missing.push('Installer mobile (Owner -> Settings)');
   if (!lead.assignment?.installer_name) missing.push('Named installer (assignment)');
+  // The compliance vision, enforced: if the AI read an artefact and it DISAGREES
+  // with the typed serials/RECI, the pack must not file until it's resolved.
+  for (const [kind, v] of Object.entries(fr?.verdicts ?? {})) {
+    if (v?.status === 'mismatch') missing.push(`AI mismatch on the ${kind.replace('_', '-')} — resolve before filing`);
+  }
   if (!gate) missing.push('Commissioning gate - serials confirmed on site');
   else {
     if (!gate.protectionConfirmed) missing.push('EN 50549-1 Table 1 settings attested');

@@ -31,6 +31,9 @@ interface Props {
   serials: Pick<SerialState, 'fittedModel' | 'acRatingKw' | 'ratedCurrentA' | 'typeTestCertRef' | 'serial'>;
   /** RECI number from Settings (only used by the reci check). */
   reciNumber?: string;
+  /** The lead — so the AI verdict PERSISTS to the field record (the moat's
+   *  evidence + a mismatch blocks the pack). */
+  leadId?: string;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -42,7 +45,7 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export default function ArtefactCheckCard({ kind, title, blurb, cert, onCapture, serials, reciNumber }: Props) {
+export default function ArtefactCheckCard({ kind, title, blurb, cert, onCapture, serials, reciNumber, leadId }: Props) {
   const [verdict, setVerdict] = useState<ArtefactVerdict | null>(null);
   const [checking, setChecking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -61,6 +64,14 @@ export default function ArtefactCheckCard({ kind, title, blurb, cert, onCapture,
     const v = await verifyArtefact(kind, cert.dataUrl, serials, reciNumber);
     setVerdict(v);
     setChecking(false);
+    // PERSIST the verdict — the compliance vision RECORDS what it read (evidence
+    // for the pack + audit), and a mismatch blocks filing (nc6Completeness).
+    if (leadId && (v.status === 'ok' || v.status === 'mismatch')) {
+      setArtefactVerdict(leadId, kind, {
+        status: v.status, at: new Date().toISOString(),
+        mismatchCount: v.status === 'mismatch' ? v.mismatches.length : 0,
+      });
+    }
     if (v.status === 'mismatch') {
       toast.error(`${v.mismatches.length} mismatch${v.mismatches.length === 1 ? '' : 'es'} vs the ${title.toLowerCase()}`, {
         description: 'Look again before this goes on the NC6 — the document wins.',

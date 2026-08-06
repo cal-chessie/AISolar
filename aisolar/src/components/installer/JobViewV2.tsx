@@ -481,6 +481,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
                         and the RECI cert (its number vs Settings). ── */}
                     <div className="space-y-2">
                       <ArtefactCheckCard
+                        leadId={lead.id}
                         kind="plate"
                         title="Check the rating plate"
                         blurb="Photograph the inverter's rating/serial plate — reads the serial, AC rating and model and compares them with what you typed above."
@@ -489,6 +490,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
                         serials={serials}
                       />
                       <ArtefactCheckCard
+                        leadId={lead.id}
                         kind="type_test"
                         title="Check the type-test certificate"
                         blurb="Reads the inverter type-test cert and compares AC rating, rated current, model and cert ref. This is the check that makes an NC6→NC7 band error impossible."
@@ -497,6 +499,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
                         serials={serials}
                       />
                       <ArtefactCheckCard
+                        leadId={lead.id}
                         kind="reci"
                         title="Check the RECI certificate"
                         blurb="Reads the Safe Electric (RECI) cert and checks its number against the one in Settings — a wrong RECI number blocks every ESB NC6/NC7."
