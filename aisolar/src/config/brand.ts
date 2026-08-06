@@ -32,7 +32,7 @@ export const brand = {
     phone: "+353 1 234 5678",
     phoneDisplay: "01 234 5678",
     whatsapp: "", // truth-pass: EMPTY until a real, manned WhatsApp number exists — never a placeholder
-    email: "hello@aisolar.ie",
+    email: "hi@aisolar.ie",
     address: "Dublin, Ireland",
   },
   

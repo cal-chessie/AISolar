@@ -80,7 +80,7 @@ const INITIAL_INTEGRATIONS: Integration[] = [
     entry: 'Owner: campaigns + digests · Consultant: proposals + follow-ups',
     configFields: [
       { key: 'server_token', label: 'Server Token', type: 'password', placeholder: '...' },
-      { key: 'sender_email', label: 'Sender Email', type: 'email', placeholder: 'hello@aisolar.ie' },
+      { key: 'sender_email', label: 'Sender Email', type: 'email', placeholder: 'hi@aisolar.ie' },
     ],
     docsUrl: 'https://account.postmarkapp.com',
   },

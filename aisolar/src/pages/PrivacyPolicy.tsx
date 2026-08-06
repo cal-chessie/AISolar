@@ -18,7 +18,7 @@ import { openCookiePreferences } from '@/lib/gdpr';
 import { brand } from '@/config/brand';
 
 const UPDATED = '24 July 2026';
-const EMAIL = brand.contact?.email ?? 'hello@aisolar.ie';
+const EMAIL = brand.contact?.email ?? 'hi@aisolar.ie';
 const ADDRESS = brand.contact?.address ?? 'Dublin, Ireland';
 const ENTITY = brand.legal?.registeredName ?? 'AISolar Ireland Ltd';
 
