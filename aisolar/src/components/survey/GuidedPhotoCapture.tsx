@@ -66,9 +66,11 @@ export default function GuidedPhotoCapture({
       const fileName = `${leadId}/${photoType}-${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('survey-photos').upload(fileName, file);
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from('survey-photos').getPublicUrl(fileName);
+      // The bucket is PRIVATE + tenant-scoped, so getPublicUrl returns a dead
+      // link — a signed URL is the only one that authorises (5 Aug fix).
+      const { data: signed } = await supabase.storage.from('survey-photos').createSignedUrl(fileName, 60 * 60 * 24 * 7);
       const filteredPhotos = existingPhotos.filter(p => p.type !== photoType);
-      const newPhoto: CapturedPhoto = { id: fileName, url: publicUrl, type: photoType };
+      const newPhoto: CapturedPhoto = { id: fileName, url: signed?.signedUrl ?? '', type: photoType };
       onPhotosChange([...filteredPhotos, newPhoto]);
       toast({ title: 'Photo captured', description: `${REQUIRED_PHOTOS.find(p => p.id === photoType)?.label || 'Photo'} saved` });
     } catch (error: any) {
