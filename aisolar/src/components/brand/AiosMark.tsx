@@ -65,7 +65,10 @@ export function BrandMark({ className, glyphClassName, label = 'AISolar' }: {
  *  scales perfectly at any tile size. Best at md+ (auth hero, footer, marketing)
  *  where the word is legible. */
 type Word = 'AIOS' | 'AISolar' | 'AITeam' | 'AIChat' | 'AIField' | 'AISales';
-const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 25, AITeam: 27, AIChat: 27, AIField: 26, AISales: 26 };
+// AISolar matches AITeam's cap-height (both 27) so switching marketing tabs
+// doesn't visibly jump. "AISolar" @27 measures ~94 wide in the 100 tile — fits
+// (AITeam runs to ~98), same visual size, no overflow.
+const WORD_SIZE: Record<Word, number> = { AIOS: 36, AISolar: 27, AITeam: 27, AIChat: 27, AIField: 26, AISales: 26 };
 
 export function Wordmark({ word, className }: { word: Word; className?: string }) {
   return (
