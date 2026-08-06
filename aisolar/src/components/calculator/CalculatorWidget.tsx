@@ -16,7 +16,7 @@
  */
 import { useState } from 'react';
 import { PencilRuler, ReceiptText, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { useTenantBrand } from '@/lib/tenantBrand';
+import { useEmbedBrand } from '@/lib/embedBrand';
 import { AiosGlyph } from '@/components/brand/AiosMark';
 import SolarCalculator from '@/components/calculator/SolarCalculator';
 import { captureWidgetLead, type WidgetLeadInput } from '@/lib/widgetLead';
@@ -112,8 +112,8 @@ function LeadCapture({ estimate, onDone }: { estimate: Estimate | null; onDone: 
 }
 
 export default function CalculatorWidget() {
-  const brand = useTenantBrand();
-  const [mode, setMode] = useState<Mode>('choose');
+  const brand = useEmbedBrand();
+  const [mode, setMode] = useState<Mode>('bill'); // bill-first — one path, the AI hook up front
   const [seedBill, setSeedBill] = useState(250);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
 
@@ -122,16 +122,16 @@ export default function CalculatorWidget() {
       {/* Tenant-branded strip — their name, their logo (or the mark) */}
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto w-full px-4 py-3 flex items-center gap-2.5">
-          {brand.logoDataUrl
-            ? <img src={brand.logoDataUrl} alt={brand.name} className="h-7 w-auto" />
+          {brand.logoUrl
+            ? <img src={brand.logoUrl} alt={brand.name} className="h-7 w-auto" />
             : <AiosGlyph className="size-7" />}
           <div className="min-w-0">
             <div className="text-sm font-semibold truncate">{brand.name}</div>
-            <div className="text-2xs text-muted-foreground truncate">Solar savings calculator</div>
+            <div className="text-2xs text-muted-foreground truncate">{brand.subtitle}</div>
           </div>
-          {mode !== 'choose' && (
+          {mode !== 'bill' && (
             <button
-              onClick={() => setMode('choose')}
+              onClick={() => setMode('bill')}
               className="ml-auto text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0"
             >
               <ArrowLeft className="size-3.5" /> Start over
@@ -202,6 +202,14 @@ export default function CalculatorWidget() {
         {mode === 'bill' && (
           <div className="px-4 py-10">
             <BillEntry onGo={(b) => { setSeedBill(b); setMode('manual'); }} />
+            <div className="text-center mt-5">
+              <button
+                onClick={() => setMode('manual')}
+                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                Rather draw your roof on a map? <ArrowRight className="size-3" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -219,7 +227,7 @@ export default function CalculatorWidget() {
               A local specialist will be in touch shortly to confirm your exact
               numbers and answer anything you'd like to know. No obligation.
             </p>
-            <button onClick={() => { setEstimate(null); setMode('choose'); }}
+            <button onClick={() => { setEstimate(null); setMode('bill'); }}
               className="mt-6 text-sm font-medium text-primary inline-flex items-center gap-1">
               <ArrowLeft className="size-3.5" /> Start another estimate
             </button>
@@ -230,7 +238,7 @@ export default function CalculatorWidget() {
       {/* Quiet credit — the parent brand, never louder than the tenant */}
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto w-full px-4 py-2.5 flex items-center justify-center gap-1.5 text-2xs text-muted-foreground">
-          <AiosGlyph className="size-3.5 opacity-60" /> Powered by AIOS
+          <AiosGlyph className="size-3.5 opacity-60" /> Powered by AISolar
         </div>
       </footer>
     </div>
