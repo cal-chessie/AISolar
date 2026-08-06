@@ -93,6 +93,61 @@ _Grounded in THIS app, not generic. ✅ = done · ⚠️ = real gap · 🔴 = fi
 24. **Browser/device matrix** — swept the in-app browser; verify real Safari + iOS Safari + Android Chrome (mobile Safari has quirks).
 25. **Sub-processor / DPA list** — GDPR needs a named list (Supabase · Stripe · Postmark · OpenRouter) + a data-retention policy.
 
+## 🏁🏁 PRE-DEPLOYMENT — ROUND 2 (the deeper cuts a top team runs; "there's defo more than that")
+_Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS._
+
+### 🗄️ Database & data durability
+26. ✅ **FIXED — 2 missing RLS-hot indexes** (`user_roles(user_id,tenant_id)` — hit on EVERY tenant query — + `notifications.lead_id`). *(20260806_perf_indexes)*
+27. 🔴 **localStorage IS the field record.** Serials, the commissioning gate, artefact verdicts, tour + demo state all live in the browser's localStorage — **an installer who clears their browser loses the commissioning gate mid-job.** The `installed_equipment` table exists but the working store is local. Durability gap: sync the field record to the DB.
+28. **Tenant-delete cascade is inconsistent** (user_roles CASCADE vs notifications SET NULL) — decide + unify; and prefer **soft-delete** for tenants (never hard-delete a paying customer's data).
+29. **DB constraints audit** — CHECK/UNIQUE on money + status (invoice amounts ≥ 0 · `workflow_stage` in a known set · no negative kWp).
+30. **No down-migrations** + set a **`statement_timeout`** for the anon/authenticated roles (a runaway query can't hog the DB).
+31. **Supabase plan headroom** — DB size · egress · edge-fn invocation limits vs 40 tenants + customers.
+
+### 💻 Frontend (deeper)
+32. 🔴 **Offline / PWA** — installers work on roofs with no signal; there's no service worker or offline queue. A field app that dies without signal isn't a field app.
+33. **Image optimisation** — customer home photos upload raw (no resize/WebP); no `width/height` → layout shift (CLS).
+34. **Double-submit guards** on money buttons (pay · send) + **unsaved-changes** warning on the survey/proposal forms.
+35. **Memory-leak sweep** — every `window.addEventListener` (I added several: demo-mode, field-record, tour) has a cleanup; verify no dangling subscriptions.
+36. **Reduced-motion** honoured (framer-motion is everywhere) · **tap targets ≥ 44px** on the field + customer surfaces · font-display (no FOIT).
+
+### ⚙️ Edge functions (deeper)
+37. **Fail-fast secret validation** on boot (a missing Postmark/Stripe key should error clearly, not half-work).
+38. **Payload size limits** on the vision fns (`analyse-roof-photo` / `verify-artefact` take base64 images — cap the size or it's a cheap DoS + a big AI bill).
+39. **Idempotency keys** on mutating fns (`portal-inbox`, `create-checkout`) — a retried request must not double-insert/charge.
+40. **No PII/tokens in logs** — audit the `console.log`s; add correlation IDs; **dead-letter** for `agent-drain` failures.
+
+### 🔐 Security (deeper)
+41. **JWT/session expiry + refresh rotation** config · **signed-URL expiry** for photos appropriate (7 days set — right for the customer portal?).
+42. **Source-key rotation/revocation** for `ingest-lead` — tested (revoke a leaked embed key, confirm it dies).
+43. **react-router advisory** patch (open-redirect) · a **SAST + adversarial pass** (ideally external pen-test before the 40).
+44. **CORS inconsistency** — `send-notification` uses `*`; `_shared/auth.ts` locks origin. Standardise.
+
+### 💳 Payments (deeper)
+45. **Irish VAT on the actual invoice** — 0% domestic install vs 13.5% commercial — correct on the receipt, not just the estimate.
+46. **Idempotency key on charge creation** + **reconciliation** (Stripe ledger vs `invoices`) + **refund / partial-refund** flow.
+47. **PCI:** confirm no card data ever touches the DB/logs (Stripe-hosted checkout keeps it off us — verify).
+
+### ⚖️ Compliance / legal (this is a REGULATED domain — ESB + SEAI)
+48. 🔴 **Consumer cooling-off** — Irish/EU distance-selling law gives a **14-day right to cancel**; a solar sale needs the notice + a cancel path. Legal gap.
+49. 🔴 **European Accessibility Act (in force June 2025)** — accessibility is now a **legal** requirement for EU e-commerce, not just nice-to-have (ties to a11y above).
+50. **eIDAS signature validity** — confirm the "simple electronic signature" holds for the ESB NC6 + the customer contract (statutory flag #2) · **document tamper-proofing** (signature_hash M3 on the filed DoW/NC).
+51. **Data-retention policy** (how long post-completion) · **sub-processor DPAs** (Supabase · Stripe · Postmark · OpenRouter — GDPR Art 28) · **RECI/Safe-Electric cert expiry** tracked per installer.
+
+### 🛰️ Ops / reliability
+52. **`/api/health`** endpoint (missing — the vercel rewrite even carves out the path) + **uptime monitoring + alerting**.
+53. **Graceful degradation** — AI down / Maps down / email down / Stripe down: does the app degrade cleanly or throw? Add **timeouts + circuit breakers** on external calls.
+54. **Cost / bill-shock monitoring** — Supabase · OpenRouter · Google Maps · Stripe usage alerts (CLAUDE.md already notes a shared free-tier cap — a runaway loop = a surprise bill).
+55. **Status page** for the cohort when something's down.
+
+### 🧪 Testing / QA (deeper)
+56. **Unit tests** — `computeQuote` is assertion-verified (27/27) ✅ — the one bright spot; extend to grant/VAT/NDMG. **E2E** on signup→proposal→pay. **axe** a11y pass. **Contract tests** on the client↔edge-fn payload shapes. **Cross-browser** (real Safari/iOS/Android).
+
+### 🧑‍💼 Process
+57. **Prod access control** (who can touch prod) · **secrets rotation schedule** · **no direct-to-main** / change approval · runbooks for the top ops tasks.
+
+**The three that genuinely worry me most (add to launch-blocking thinking):** #27 (field record only in localStorage — an installer loses the commissioning gate on a cache clear), #48 (14-day cooling-off — a real legal requirement for the sale), #32 (no offline for field crews). The rest is the maturity ladder.
+
 ## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
 _(The security final pass — Lane B's evidence — was pulled forward to this weekend at
 Cal's ask; results below.)_
