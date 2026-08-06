@@ -61,3 +61,22 @@ verify_jwt = true
 # Auth = INGEST_API_KEY shared secret, same pattern as the payment webhooks.
 [functions.ingest-lead]
 verify_jwt = false
+
+# --- CUSTOMER PORTAL (verify_jwt=false, x-access-token verified inside) ---
+# The magic-link token IS the auth; portal customers have no JWT.
+[functions.portal-inbox]
+verify_jwt = false
+
+# --- POSTMARK BOUNCE/COMPLAINT WEBHOOK (verify_jwt=false, shared secret inside) ---
+# Postmark isn't a Supabase user — POSTMARK_WEBHOOK_SECRET is the auth.
+[functions.postmark-webhook]
+verify_jwt = false
+
+# --- PUBLIC CALCULATOR (verify_jwt=false) — satellite/roof imagery for the embed
+# widget + /calculator, called anonymously. Rate-limit before scale (LAST_MILE).
+[functions.solar-roof]
+verify_jwt = false
+
+# --- SLACK APPROVAL ACTIONS (verify_jwt=false) — Slack calls it, not a Supabase user.
+[functions.slack-approve]
+verify_jwt = false
