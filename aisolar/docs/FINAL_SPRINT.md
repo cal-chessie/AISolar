@@ -1,6 +1,15 @@
 # FINAL SPRINT — the whole last mile, one doc (v2 · 3 Aug 2026)
 
-> **What this is.** The single ordered runway from HERE to LIVE. Written after a full-estate sweep of every
+> # ⛔ SUPERSEDED (6 Aug 2026) → **`docs/LAST_MILE.md` is now the single source of truth.**
+> Cal's call: every not-done item was scraped out of here into LAST_MILE's "📋 ALL
+> REMAINING WORK" section (grouped: launch-blocking · statutory · deploy · security
+> tail · polish · AI depth · post-cohort). **Do NOT track open work here anymore** —
+> it will drift. The ticked ✅ items below remain as the build RECORD (what landed,
+> when, how proven), which is still worth keeping. For anything OPEN, go to LAST_MILE.
+>
+> ---
+>
+> **What this WAS.** The single ordered runway from HERE to LIVE. Written after a full-estate sweep of every
 > note, audit and sweep doc (source ledger at the bottom). It **supersedes the ORDERING** of every other
 > doc — their detail stands, this is the map and the sequence. When every box is ticked and the smoke test
 > passes, the cohort comes in. Nothing on this list is unowned; nothing open lives anywhere else.

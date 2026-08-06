@@ -1,8 +1,10 @@
-# THE LAST MILE — the one hub (5 Aug 2026)
+# THE LAST MILE — the ONE source of truth (6 Aug 2026)
 
-_Cal's rule: ALL running notes stream into THIS doc (or POST_COHORT / CAL_GROWTH),
-never new note files. Bugs, bottlenecks, thin code, founder training, the security
-pass — they live here. The deploy command detail stays in `DEPLOYMENT_GATE.md`._
+_Cal's rule: ALL running notes + ALL open work stream into THIS doc (or POST_COHORT
+/ CAL_GROWTH), never new note files. **This doc SUPERSEDES `FINAL_SPRINT.md`** (6
+Aug) — everything not-done was scraped in here ("📋 ALL REMAINING WORK" below).
+FINAL_SPRINT keeps only its ✅ build record. The deploy command detail stays in
+`DEPLOYMENT_GATE.md`; the Founder Operating Playbook + the security evidence live here._
 
 **Where we are:** the product is BUILT and browser-verified on the cast — the whole
 spine (lead → survey/NC6-NC7 → proposal → deposit → installer-routing gate → install
@@ -14,23 +16,48 @@ prove it, and a short ranked list.
 
 ---
 
-## 🔁 CROSS-EXAMINED vs FINAL_SPRINT.md (5 Aug — the two docs now agree)
-_Reconciled so nothing falls between them. Drift found + fixed: FINAL_SPRINT had
-the pack gate (2A) + installer photos (2C) still ⬜ though both shipped; Sprint 4
-didn't reflect the security work. Both now ticked. **The complete REMAINING list,
-from both docs combined:**_
-1. **A1 Stripe billing** (FINAL_SPRINT 2B / LAST_MILE Lane B①) — fresh session.
-2. **Deploy + prove** (Lane A / FINAL_SPRINT deployment) — Cal's hands.
-3. **Sites wiring** — brand-site doors → `ingest-lead` (FINAL_SPRINT 2E).
-4. **Maps key referrer-lock** (2E D4) — Cal's Google console, 2 min.
-5. **NC8 decision** (FINAL_SPRINT 2A) — >50kW appendix-only? Cal's call.
-6. **Legacy global tables** — platform-lock vs tenant_id (Sprint 4). Cal's call.
-7. **`solar-roof` rate-limit** (Sprint 4) — protect the Google bill.
-8. **Sprint 3 polish** (Lane C) — shell conformity ✓ done; design-studio centroid
-   + AIField mobile logic-walk + sweep-8 M6/M7 = minor, deferred.
-9. **Coach goes conversational** (FINAL_SPRINT Sprint 1) — nice-to-have.
-_Everything else across both docs = ✅ landed. Statutory flags (ESB bands, typed
-e-sig) stay in FINAL_SPRINT §STATUTORY — Cal's yes required, never a quiet edit._
+## 📋 ALL REMAINING WORK — **THIS DOC NOW SUPERSEDES FINAL_SPRINT.md** (6 Aug)
+_Scraped everything not-done out of FINAL_SPRINT into here, so there's ONE source
+of truth. FINAL_SPRINT is retired (its ✅ history stays as the record; the OPEN
+items are all below). Grouped by what it is + who owns it._
+
+### 🔴 A. Launch-blocking (must close before a real customer sees it)
+- **A1 · Stripe billing** — 7-day trial → per-seat subscription checkout + webhook. The auth/tenant foundation is live; this is the money layer. *(Fresh session — A1_BUILD_PLAN.md.)*
+- **⚠️ TRUTH-PASS VIOLATION — `brand.ts` placeholder stats** are on customer-facing pages TODAY (invented numbers). Replace with real or remove. Non-negotiable before live.
+- **L5 · white-label sweep** — every customer-facing "AISOLAR" → the tenant brand (the demo bubbles are done; sweep the marketing/proposal/email surfaces).
+- **NC8 decision** (statutory-adjacent) — >50kW jobs get the data appendix only; calibrate the overlay OR say "appendix-only for NC8" honestly. **Cal decides.**
+
+### ⚖️ B. STATUTORY FLAGS — **Cal's explicit yes required; never a quiet edit**
+1. **ESB micro-gen bands** — code says 6/11 kW; rule is 25 A/phase = 5.75 kVA single-phase / 11.04 kVA three-phase. We under-file at 5.75–6.0 kW single-phase. Policy read + sign-off.
+2. **Typed e-signature on NC6 vs wet ink** — until ESB confirms typed is accepted, the pack says "print, sign & date by hand."
+3. **NDMG + ACA figures** — verified vs the SEAI PDF before they show on a commercial proposal.
+
+### 🚦 C. Deploy — Cal's hands (I prep every line; runbook = DEPLOYMENT_GATE.md)
+- The gate: `supabase login` → deploy the edge fns → set Postmark + Stripe secrets → Auth Site URL = prod domain → demo env OFF → PITR backups ON.
+- **Sites wiring** — the brand-site doors (SolarIrelandGroup · RenewableIreland · wideawakesolar) point at `ingest-lead`. The public go-live moment.
+- **Maps key referrer-lock** — 2 min in your Google console (before the sites go public).
+- **The joint prod smoke** — one real job door→handover, every send real, read-flip verified signed-in.
+
+### 🟡 D. Security remaining (the two deep sweeps closed the criticals — these are the tail)
+- **`solar-roof` rate-limit** — it's public by design; cap it so no one runs up the Google bill.
+- **Legacy global tables** (installers/solar_products/agent_prompts/follow_up_settings/survey_photos, no tenant_id) — platform-lock vs add tenant_id. **Cal's product call** before the cohort grows.
+- **Error-honesty audit on the money paths** — checkout · sends · pack seal: every catch surfaces or logs, no silent swallow.
+- **Mobile bug sweep** — a fresh click-through of all 3 cockpits at 375px + `ProposalView:424` blank-onClick re-verify + console-clean on every route.
+
+### 🟢 E. Polish (Sprint 3 — the feel of one product; NOT blocking)
+- **Shell conformity** ✅ done (both cockpits on AppShell).
+- **AIField mobile-first** — the full phone logic-walk: serials gate → NC6 fields → sign-off.
+- **Design Studio** — the default array snaps to the roof centroid (drops on the driveway today).
+- **Sweep-8 codes:** M6 designs persistence (kills stored-vs-live kWp drift) · M7 proposal_versions (contract rests on a version) · M3 signature_hash on the DoW/NC · M11 touchpoints.sender + Realtime · M12 staff home-address + depots · M13 agent_route_runs · X2 Cal.com real booking · X3 distance-matrix (kills naive today+5/+28 dates) · X9 e-sign contract path · A3 leadflow real sends · A6 consent honoured server-side.
+- **Front-end shine:** hero snapshots reshot from current UI · copy pass every page · pricing-page depth (what you lose down-tier · FAQ · € not just %) · the AIOS page becomes a real AIOS-blue page · proposal "fantastic" pass · blog + per-page meta (deferred Sweep-7 content).
+- **Per-tab polish:** Clients type-badges · Financials aging · SEAI pack-status chips · Schedule roster + unscheduled queue.
+- **Redundancy + cleanups:** `touchpoints` vs `lead_touchpoints` (one survives) · retire old `AiTeamPage` · rename the two `AgentWindow`s · delete `aios.smoketest` user · deprecate `extracted_premises_type` · ToS rewrite · CSV bulk import · doc-ref hygiene (~20 docs cite dead `coxmtpnq`/`vythuqax`) · fix stale `leadWrites.ts` RLS comment.
+
+### 🧠 F. AI depth (Sprint 1 — nice-to-have)
+- Coach goes **conversational** (prompts at every gate, not just stage lines) · owner/consultant coach voices deepen.
+
+### ⏸ G. Post-cohort — **parked on purpose → POST_COHORT.md** (build on revenue, don't pull forward)
+Learning loop (agent_corrections → owner report → approve → version bump) · agent-training UI · AIGate national gate-call cockpit · browser `portal_submitter` · referrals + tier_entitlements · plan gating · installer_vault · inventory/depot · Realtime everywhere · Sentry · `/health`+uptime · review→Google Business · SMS/WhatsApp (Twilio first, claimed only then) · per-tenant DKIM · dunning · kernel Phase 2. _(Full list in POST_COHORT.md.)_
 
 ## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
 _(The security final pass — Lane B's evidence — was pulled forward to this weekend at
