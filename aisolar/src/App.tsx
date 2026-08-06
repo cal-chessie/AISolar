@@ -48,6 +48,7 @@ import AgentsPage from "./pages/AgentsPage";
 import RoleBasedAICoach from "./components/ai/RoleBasedAICoach";
 import DemoBanner from "./components/DemoBanner";
 import GuidedTour from "@/components/demo/GuidedTour";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CookieConsentBanner } from "./lib/gdpr";
 import { isDemoMode } from "./lib/demoMode";
@@ -116,6 +117,7 @@ function AppRoutes() {
       {!isEmbed && <DemoBanner />}
       {!isEmbed && <GuidedTour />}
       {!isEmbed && <CookieConsentBanner />}
+      {!isEmbed && <OfflineIndicator />}
       <GlobalSearchModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
       {showAICoach && useRoleCoach && <RoleBasedAICoach />}
       <Suspense fallback={<div className="min-h-dvh grid place-items-center text-sm text-muted-foreground">Loading…</div>}>

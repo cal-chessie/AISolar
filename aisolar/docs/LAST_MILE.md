@@ -105,7 +105,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 31. **Supabase plan headroom** — DB size · egress · edge-fn invocation limits vs 40 tenants + customers.
 
 ### 💻 Frontend (deeper)
-32. 🔴 **Offline / PWA** — installers work on roofs with no signal; there's no service worker or offline queue. A field app that dies without signal isn't a field app.
+32. 🟡 **Offline for field crews — durability DONE 6 Aug; cold-start = CAL'S SW CALL.** What's built (safe, no service worker): the field record already writes to localStorage offline; now `pushFieldRecord` **queues on failure** and a browser `online` listener **flushes the queue on reconnect** (`flushPendingFieldRecords`), so the commissioning gate lands in the DB the moment signal returns. Plus an app-level **`OfflineIndicator`** — a thin "you're offline, work is saved, will sync" strip (browser-verified: shows offline, clears + flushes on reconnect). Photos/notify already degrade cleanly offline. **⚠️ NOT done — deliberately:** cold-start-while-offline (opening the app with ZERO signal) needs a **service worker**, and this app ships a SW **kill-switch** on purpose (`public/sw.js` — a cache-first SW once served stale JS bundles and crashed the app *daily*). Re-adding a caching SW is an architecture decision with real regression risk → **Cal's call**, not a silent re-add. Safe interim: crews open the app with signal (depot/van) and it keeps running on the roof.
 33. **Image optimisation** — customer home photos upload raw (no resize/WebP); no `width/height` → layout shift (CLS).
 34. **Double-submit guards** on money buttons (pay · send) + **unsaved-changes** warning on the survey/proposal forms.
 35. **Memory-leak sweep** — every `window.addEventListener` (I added several: demo-mode, field-record, tour) has a cleanup; verify no dangling subscriptions.
@@ -146,7 +146,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 ### 🧑‍💼 Process
 57. **Prod access control** (who can touch prod) · **secrets rotation schedule** · **no direct-to-main** / change approval · runbooks for the top ops tasks.
 
-**The three that genuinely worry me most (add to launch-blocking thinking):** ✅ ~~#27 (field record only in localStorage)~~ **CLOSED 6 Aug — mirrored to `field_records`**, #48 (14-day cooling-off — a real legal requirement for the sale), #32 (no offline for field crews). The rest is the maturity ladder.
+**The three that genuinely worry me most (add to launch-blocking thinking):** ✅ ~~#27 (field record only in localStorage)~~ **CLOSED 6 Aug — mirrored to `field_records`**, #48 (14-day cooling-off — a real legal requirement for the sale), ✅ ~~#32 (no offline for field crews)~~ **write-durability + reconnect-flush + offline indicator DONE 6 Aug; cold-start SW = Cal's call.** The rest is the maturity ladder.
 
 ## 🏴 PRE-DEPLOYMENT — ROUND 3 (the deepest cut; "there's more than that" — grounded in the code, not guessed)
 

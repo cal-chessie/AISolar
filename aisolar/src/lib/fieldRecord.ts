@@ -142,9 +142,21 @@ function stripForDb(data: Record<string, any>): Record<string, unknown> {
   };
 }
 
+/** Lead IDs whose server mirror failed to sync (offline / error). Persisted in
+ *  localStorage so a reload doesn't drop the queue — retried on reconnect. */
+const PENDING_KEY = 'field_records_pending';
+function setPending(leadId: string, pending: boolean): void {
+  try {
+    const set = new Set<string>(JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'));
+    if (pending) set.add(leadId); else set.delete(leadId);
+    localStorage.setItem(PENDING_KEY, JSON.stringify([...set]));
+  } catch { /* ignore */ }
+}
+
 /** Best-effort upsert of the field record to the durable server mirror
  *  (`field_records`). Demo-guarded (no real rows in the sandbox) and offline-safe
- *  — a failed write leaves localStorage as the source, so the crew loses nothing.
+ *  — a failed write leaves localStorage as the source AND queues the lead for a
+ *  retry on reconnect, so the crew loses nothing on a roof with no signal.
  *  tenant_id is stamped server-side from the lead; RLS (`own_lead`) authorises. */
 export async function pushFieldRecord(leadId: string): Promise<void> {
   if (SANDBOX()) return;
@@ -152,11 +164,24 @@ export async function pushFieldRecord(leadId: string): Promise<void> {
     const raw = localStorage.getItem(`jobview_v2_${leadId}`);
     if (!raw) return;
     const data = JSON.parse(raw);
-    await supabase.from('field_records').upsert(
+    const { error } = await supabase.from('field_records').upsert(
       { lead_id: leadId, record: stripForDb(data) },
       { onConflict: 'lead_id' },
     );
-  } catch { /* offline / best-effort — localStorage still holds it */ }
+    setPending(leadId, !!error);   // error → retry on reconnect; ok → clear
+  } catch {
+    setPending(leadId, true);      // offline — localStorage holds it; retry on reconnect
+  }
+}
+
+/** Re-push every field record that failed to sync while offline. Wire to the
+ *  browser 'online' event (see OfflineIndicator) so the commissioning gate lands
+ *  in the DB the moment signal returns — no service worker involved. */
+export async function flushPendingFieldRecords(): Promise<void> {
+  if (SANDBOX()) return;
+  let pending: string[] = [];
+  try { pending = JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); } catch { return; }
+  for (const leadId of pending) await pushFieldRecord(leadId);
 }
 
 /** Pull the server mirror into localStorage when the local cache is missing or
