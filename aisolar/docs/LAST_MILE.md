@@ -113,7 +113,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 
 ### ⚙️ Edge functions (deeper)
 37. **Fail-fast secret validation** on boot (a missing Postmark/Stripe key should error clearly, not half-work).
-38. **Payload size limits** on the vision fns (`analyse-roof-photo` / `verify-artefact` take base64 images — cap the size or it's a cheap DoS + a big AI bill).
+38. ✅ **Already done (verified 6 Aug)** — `analyse-roof-photo` + `verify-artefact` both reject `imageDataUrl` over **8 MB** with a 413 ("retake at lower resolution"). That's the DoS + AI-bill guard already in place.
 39. **Idempotency keys** on mutating fns (`portal-inbox`, `create-checkout`) — a retried request must not double-insert/charge.
 40. **No PII/tokens in logs** — audit the `console.log`s; add correlation IDs; **dead-letter** for `agent-drain` failures.
 
@@ -121,7 +121,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 41. **JWT/session expiry + refresh rotation** config · **signed-URL expiry** for photos appropriate (7 days set — right for the customer portal?).
 42. **Source-key rotation/revocation** for `ingest-lead` — tested (revoke a leaked embed key, confirm it dies).
 43. **react-router advisory** patch (open-redirect) · a **SAST + adversarial pass** (ideally external pen-test before the 40).
-44. **CORS inconsistency** — `send-notification` uses `*`; `_shared/auth.ts` locks origin. Standardise.
+44. 🟡 **CORS inconsistency (documented; deploy-config, not changed blind).** `send-notification` sends `Access-Control-Allow-Origin: *`; every other fn uses the shared `corsHeaders(req)` (origin-locked, default `aisolar.ie`/`www`). It's an **authed** endpoint, so `*` isn't a real hole (the JWT is the gate) — but for consistency, adopt `corsHeaders(req)` **only once the exact prod origin(s) are in `ALLOWED_ORIGINS`** (now in DEPLOYMENT_GATE §2). Doing it blind would break the **email rail** on any domain mismatch (preview URLs, www vs apex), so it waits for a domain-verified deploy test.
 
 ### 💳 Payments (deeper)
 45. **Irish VAT on the actual invoice** — 0% domestic install vs 13.5% commercial — correct on the receipt, not just the estimate.
@@ -139,7 +139,7 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 51. **Data-retention policy** (how long post-completion) · **sub-processor DPAs** (Supabase · Stripe · Postmark · OpenRouter — GDPR Art 28) · **RECI/Safe-Electric cert expiry** tracked per installer.
 
 ### 🛰️ Ops / reliability
-52. **`/api/health`** endpoint (missing — the vercel rewrite even carves out the path) + **uptime monitoring + alerting**.
+52. ✅ **`/api/health` DONE 6 Aug** — Edge function `api/health.ts` (the vercel rewrite already reserved the path) returns 200 `{status:ok,ts}` so an uptime monitor confirms the deploy is live. *tsc clean.* Follow-up: a deeper dependency probe (Supabase/Stripe/Postmark), plus wiring an actual uptime monitor + status page.
 53. **Graceful degradation** — AI down / Maps down / email down / Stripe down: does the app degrade cleanly or throw? Add **timeouts + circuit breakers** on external calls.
 54. **Cost / bill-shock monitoring** — Supabase · OpenRouter · Google Maps · Stripe usage alerts (CLAUDE.md already notes a shared free-tier cap — a runaway loop = a surprise bill).
 55. **Status page** for the cohort when something's down.

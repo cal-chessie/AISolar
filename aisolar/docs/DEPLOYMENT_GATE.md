@@ -42,7 +42,11 @@ supabase secrets set POSTMARK_SENDER_EMAIL=notify@<verified-domain>
 supabase secrets set STRIPE_SECRET_KEY=...            # create-checkout
 supabase secrets set STRIPE_WEBHOOK_SECRET=...        # stripe-webhook signature check
 supabase secrets set POSTMARK_WEBHOOK_SECRET=...      # gates the bounce/complaint webhook
+supabase secrets set ALLOWED_ORIGINS=https://<prod-domain>  # CORS lock for the edge fns (comma-sep; defaults to aisolar.ie/www)
 ```
+- **`ALLOWED_ORIGINS`**: set this to the REAL prod origin(s) before locking
+  `send-notification`'s CORS off `*` (LAST_MILE #44). If the deployed domain isn't
+  exactly `aisolar.ie`/`www`, an unset/wrong value breaks browser email sends.
 - Postmark sender must be a **verified sender signature/domain** in Postmark or
   every send 422s. Set reply-to on the same domain (branded-outbound law).
 - Stripe webhook: after deploy, register the endpoint URL
