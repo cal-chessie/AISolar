@@ -160,12 +160,20 @@ function mapRow(l: Row, rel: Related, installerNames: Record<string, string>): D
   };
 }
 
-/** Fetch all real leads (RLS scopes them to the caller's tenant) + children. */
+/** Newest-first cap on the pipeline pull — bounds the leads query AND the child
+ *  fan-out below, so a tenant with a long history can't drag the whole table (+6
+ *  joins) on every mount (#59). Cohort-1 tenants sit far under this; true cursor
+ *  pagination is the scale follow-up. */
+const LEADS_FETCH_CAP = 1000;
+
+/** Fetch real leads (RLS scopes them to the caller's tenant) + children, newest
+ *  first, capped at LEADS_FETCH_CAP. */
 export async function fetchRealLeads(): Promise<DummyLead[]> {
   const { data: leads, error } = await supabase
     .from('leads')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(LEADS_FETCH_CAP);
   if (error) throw error;
   if (!leads || leads.length === 0) return [];
 
