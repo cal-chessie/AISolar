@@ -175,6 +175,22 @@ themselves admin on tenant B; legit same-tenant grant still WORKS.**
 (2 platform admins exist; key currently empty, so closed BEFORE it went live).
 Edge fns read via service role — unaffected.
 
+### 🔴 HIGH — storage buckets not tenant-scoped (FIXED, before any leak)
+`survey-photos` + `project-documents` buckets: INSERT allowed ANY authed user,
+SELECT allowed ANY staff of ANY tenant → once populated, a cohort installer could
+read every other tenant's customer home photos + documents. Buckets were EMPTY,
+so fixed pre-leak (`20260805_storage_tenant_scope`, live): tenant-scoped via
+`own_lead`/`can_see_lead` on the `{lead_id}/` path. Also fixed `GuidedPhotoCapture`
+using `getPublicUrl` on a private bucket (dead link) → `createSignedUrl`.
+
+### 🟡 SECURITY DEFINER search_path (FIXED) + legacy global tables (Cal's call)
+8 SECURITY DEFINER functions (agent-queue enqueue/claim/complete/fail +
+handle_new_user) had a mutable search_path (Postgres definer-escalation vector) →
+all pinned (`20260805_secdef_search_path`, live; verified 0 unpinned). Full-table
+audit: all 40 tables RLS-ON, zero permissive `true` policies, every customer-data
+table tenant-scoped (`can_see_lead`); write gate `own_lead` is staff-only (no
+token path — customers can't queue agents / forge audit logs).
+
 ### 🟡 MEDIUM — legacy global tables (documented; Cal's product call before scaling)
 `installers · solar_products · agent_prompts · follow_up_settings · survey_photos
 · seai_documents` are single-tenant-era tables with **no tenant_id**, gated by
