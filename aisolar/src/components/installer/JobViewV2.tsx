@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { type DummyLead } from '@/lib/dummyData';
 import { useLead } from '@/lib/realLeads';
+import { coolingOffStatus } from '@/lib/coolingOff';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile, hydrateFieldRecord, pushFieldRecord } from '@/lib/fieldRecord';
 import HandoverSignoff from '@/components/installer/HandoverSignoff';
 import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
@@ -611,9 +612,28 @@ function OverviewTab({ lead, overallComplete, onBegin }: {
 }) {
   const proposal = lead.proposal;
   const survey = lead.survey;
+  const cooling = coolingOffStatus(lead);
 
   return (
     <div className="space-y-4">
+      {/* Cooling-off (#48): a distance solar sale carries a 14-day right to cancel.
+          Warn before the crew starts. Gold = pending/warning (Cal's colour rule).
+          NOT a hard block — a valid early-start waiver comes from the customer, not
+          this screen; the customer-facing notice + waiver flow is Cal's legal call. */}
+      {cooling.state === 'active' && !overallComplete && (
+        <Card className="border-doc-proposal/40 bg-doc-proposal/10">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertTriangle className="h-6 w-6 text-doc-proposal shrink-0" />
+            <div>
+              <div className="font-semibold text-sm text-doc-proposal">Cooling-off period — the customer can still cancel</div>
+              <div className="text-xs text-muted-foreground">
+                {cooling.daysLeft} day{cooling.daysLeft === 1 ? '' : 's'} left (until {cooling.endsAt?.toLocaleDateString('en-IE')}). Only begin the install if the customer has <span className="font-medium">asked you to start early</span>.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Completion status banner */}
       {overallComplete ? (
         <Card className="border-doc-deposit/40 bg-doc-deposit/10 dark:bg-doc-deposit/10">

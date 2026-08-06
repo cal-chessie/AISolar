@@ -95,6 +95,12 @@ export interface DummyLead {
     id: string;
     signed_date: string;
     signed_by: string;
+    /** Statutory 14-day cooling-off deadline (distance contract). See coolingOff.ts. */
+    cooling_off_ends_at?: string;
+    /** Customer expressly asked us to start early (waives the cancel right for work done). */
+    cooling_off_waived?: boolean;
+    /** Set when the consumer cancelled within the window. */
+    cancelled_at?: string | null;
   };
   invoice?: {
     id: string;

@@ -132,7 +132,14 @@ function mapRow(l: Row, rel: Related, installerNames: Record<string, string>): D
         }
       : undefined,
     contract: contract
-      ? { id: contract.id, signed_date: contract.signed_at || '', signed_by: contract.signed_by_name || '' }
+      ? {
+          id: contract.id,
+          signed_date: contract.signed_at || '',
+          signed_by: contract.signed_by_name || '',
+          cooling_off_ends_at: contract.cooling_off_ends_at || undefined,
+          cooling_off_waived: contract.cooling_off_waived ?? false,
+          cancelled_at: contract.cancelled_at ?? null,
+        }
       : undefined,
     invoice: invoice
       ? {
