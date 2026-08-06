@@ -59,6 +59,40 @@ items are all below). Grouped by what it is + who owns it._
 ### ⏸ G. Post-cohort — **parked on purpose → POST_COHORT.md** (build on revenue, don't pull forward)
 Learning loop (agent_corrections → owner report → approve → version bump) · agent-training UI · AIGate national gate-call cockpit · browser `portal_submitter` · referrals + tier_entitlements · plan gating · installer_vault · inventory/depot · Realtime everywhere · Sentry · `/health`+uptime · review→Google Business · SMS/WhatsApp (Twilio first, claimed only then) · per-tenant DKIM · dunning · kernel Phase 2. _(Full list in POST_COHORT.md.)_
 
+## 🏁 SENIOR-TEAM PRE-DEPLOYMENT CHECKLIST (6 Aug — "what a Tesla-grade team checks", called out one by one)
+_Grounded in THIS app, not generic. ✅ = done · ⚠️ = real gap · 🔴 = fix before live._
+
+**✅ Already covered (this session's work):**
+1. **Security headers** — HSTS · X-Frame DENY · CSP · nosniff · referrer-policy · permissions-policy (vercel.json). ✅
+2. **Tenant isolation** — proven live (reads + writes); escalation/AI-key-leak/storage/secdef holes fixed. ✅
+3. **Prod build + code-split** green · **secrets not in bundle** · **all edge fns gated** · **rollback plan**. ✅
+4. **GDPR** — consent · erasure (`anonymise_lead`) · privacy/terms · EU-hosted · `<html lang>`. ✅
+
+**🔴 Fix before live:**
+5. **CSP was blocking Google Maps** — it allowed Mapbox (unused) and omitted `maps.googleapis.com`, so satellite + geocoding would 've been dead in prod. **FIXED 6 Aug** (added to script-src + connect-src, Mapbox removed).
+6. **`brand.ts` placeholder stats** on customer pages — invented numbers, a truth-pass violation shipping today. Replace/remove. *(In "ALL REMAINING WORK" A.)*
+
+**⚠️ Real gaps a top team closes before/at launch (ranked by risk):**
+7. **No error reporting** — a prod crash shows the user a friendly card (ErrorBoundary ✓) but Cal never learns it happened. Add Sentry (or equivalent) so crashes + failed sends are visible. *(High — you're flying blind otherwise.)*
+8. **No automated tests** — zero unit/integration/e2e; every change is hand-verified. At 40 tenants a regression ships silently. At least smoke-test the money + pack paths.
+9. **No CI/CD + staging gate** — deploys are manual; nothing runs build+tsc on push. A green-build gate + a staging env before prod.
+10. **Payment robustness** — the Stripe webhook isn't idempotent on `event.id` (Stripe retries → possible double-processing of side-effects); and failed-payment / refund / dispute / double-pay paths are unhandled. Money code needs belt + braces.
+11. **Load / concurrency** — never load-tested for 40 tenants + their customers; verify Supabase connection pooling + the agent-drain under concurrency.
+12. **Accessibility (WCAG)** — unaudited beyond `lang`: keyboard nav, focus order, contrast, ARIA, screen-reader labels. Customer-facing + a legal exposure.
+13. **Performance / Core Web Vitals** — main chunk still ~1MB (split helped); no Lighthouse run; mobile time-to-interactive unmeasured (your customers are on phones).
+14. **Empty / first-run states** — the demo cast masks the real new-tenant experience (zero leads). Walk every screen as a brand-new tenant before a real one does.
+15. **Email deliverability** — DKIM via Postmark ✓ (deploy), but set **DMARC**, handle **bounces**, and add a **List-Unsubscribe** header (GDPR/CAN-SPAM).
+16. **Auth hardening** — verify password policy, email confirmation, **login rate-limit** (brute-force), session expiry; offer MFA; run the **first-admin bootstrap** (AUTH_RUNBOOK) so Cal isn't locked out as a customer.
+17. **Rate-limit the public doors** — `solar-roof` (Google bill) + the auth endpoints.
+18. **Backups — and a TESTED restore** — enable PITR (deploy) AND do one restore drill. A backup you've never restored isn't a backup.
+19. **Feature kill-switches** — AI has one (`enable_llm_calls` ✓); add a pause for `agent-drain` so a misbehaving agent can be stopped without a redeploy.
+20. **DR runbook** — rollback ✓; add the "Supabase/Stripe/Postmark is down" playbook.
+21. **Product analytics** — none yet (PostHog is post-cohort); you won't see where customers drop in the funnel.
+22. **Audit trail** — `activity_logs` exists; confirm it's WRITTEN on the money + compliance actions (dispute defence).
+23. **Stored-XSS pass** — confirm a lead name / note containing `<script>` is never rendered raw (React escapes by default, but check any `innerHTML`/markdown paths).
+24. **Browser/device matrix** — swept the in-app browser; verify real Safari + iOS Safari + Android Chrome (mobile Safari has quirks).
+25. **Sub-processor / DPA list** — GDPR needs a named list (Supabase · Stripe · Postmark · OpenRouter) + a data-retention policy.
+
 ## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
 _(The security final pass — Lane B's evidence — was pulled forward to this weekend at
 Cal's ask; results below.)_
