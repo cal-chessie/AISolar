@@ -69,6 +69,18 @@ supabase secrets set ALLOWED_ORIGINS=https://<prod-domain>  # CORS lock for the 
   `/customer/*` paths) — signup emails bounce to localhost otherwise.
 - Email confirmations ON; the `/signup` door + `provision_tenant` are already live
   (A1) — sanity: sign up a throwaway, confirm tenant row + role land.
+- ✅ **No first-admin lockout (the old CLAUDE.md warning is STALE).** `provision_tenant`
+  is self-bootstrapping — on signup it grants the user `admin`+`consultant`+`installer`
+  (tenant-stamped) and drops the default `customer` role. A new installer becomes their
+  own tenant's admin automatically; no manual bootstrap SQL. *(Verified live 6 Aug.)*
+- **Optional one-time PLATFORM-admin grant** (only to read cross-tenant ops data like
+  `client_errors`; NOT needed to run your own tenant). Platform admin = `admin` with
+  `tenant_id IS NULL`. Run once with Cal's auth uid:
+  ```sql
+  insert into public.user_roles (user_id, role, tenant_id)
+  values ('<cal-auth-uid>', 'admin', null) on conflict do nothing;
+  ```
+  Without it, read `client_errors` etc. via the Supabase dashboard (service role).
 
 ## 4 · Database (all migrations ALREADY APPLIED live — schema verified complete 5 Aug)
 `doc_vocab_reconcile · seai_grants · site_surveys_nc7_capacity · a1_tenants ·

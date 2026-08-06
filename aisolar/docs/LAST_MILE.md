@@ -82,7 +82,7 @@ _Grounded in THIS app, not generic. ✅ = done · ⚠️ = real gap · 🔴 = fi
 13. **Performance / Core Web Vitals** — main chunk still ~1MB (split helped); no Lighthouse run; mobile time-to-interactive unmeasured (your customers are on phones).
 14. **Empty / first-run states** — the demo cast masks the real new-tenant experience (zero leads). Walk every screen as a brand-new tenant before a real one does.
 15. ✅ **Email deliverability (code) DONE 6 Aug** — bounce/complaint → suppression pipeline + `List-Unsubscribe` built (see #69). DMARC/SPF/DKIM DNS = the joint Postmark session (DEPLOYMENT_GATE).
-16. **Auth hardening** — verify password policy, email confirmation, **login rate-limit** (brute-force), session expiry; offer MFA; run the **first-admin bootstrap** (AUTH_RUNBOOK) so Cal isn't locked out as a customer.
+16. **Auth hardening** — ✅ **first-admin lockout RESOLVED (verified 6 Aug):** `provision_tenant` self-bootstraps — a signup gets `admin`+`consultant`+`installer` (tenant-stamped) and loses the `customer` default, so no manual bootstrap and no lockout (old CLAUDE.md warning is stale). Optional one-time **platform-admin** grant documented (DEPLOYMENT_GATE §3 — needed to read `client_errors` etc.). Still open (Supabase dashboard, not code): password policy · **login rate-limit** (brute-force) · session expiry · offer MFA.
 17. **Rate-limit the public doors** — `solar-roof` (Google bill) + the auth endpoints.
 18. **Backups — and a TESTED restore** — enable PITR (deploy) AND do one restore drill. A backup you've never restored isn't a backup.
 19. **Feature kill-switches** — AI has one (`enable_llm_calls` ✓); add a pause for `agent-drain` so a misbehaving agent can be stopped without a redeploy.
