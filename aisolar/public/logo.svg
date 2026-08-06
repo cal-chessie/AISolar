@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AISolar">
+  <title>AISolar</title>
+  <rect width="512" height="512" rx="96" fill="#1C1C1E"/>
+  <text x="256" y="256" text-anchor="middle" dominant-baseline="central"
+        fill="#FFFFFF"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="108" font-weight="700" letter-spacing="-3">AISolar</text>
+  <!-- corner spark (subtle) -->
+  <path d="M452 432 L456 448 L472 452 L456 456 L452 472 L448 456 L432 452 L448 448 Z"
+        fill="#8A8A8E" opacity="0.65"/>
+</svg>

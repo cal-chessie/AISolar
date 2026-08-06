@@ -1,179 +1,86 @@
-# AISOLAR — The Solar Installer Operating System
+<p align="center">
+  <img src="public/logo.svg" width="112" height="112" alt="AISolar" />
+</p>
 
-> Run your solar business on autopilot. Bill extract at the front door. Autonomous agents handle survey scheduling, proposal drafting, SEAI grants, install coordination, and customer follow-ups. Your crews install. The platform does the rest.
+<h1 align="center">AISolar</h1>
+
+<p align="center"><em>The operating system for Irish solar installers.</em></p>
+
+---
+
+AISolar reads the day/night usage split from a customer's electricity bill and drives the whole installer workflow from there: **bill → estimate → site survey → proposal → SEAI grant → install → customer portal.** A queue of autonomous agents handles the busywork — scheduling, drafting, follow-ups — while proposals are always **drafted, never auto-sent**. Your crews install; the platform runs the rest.
+
+Multi-tenant by design: each installer is a tenant with their own branding, data, and pipeline, isolated at the database with row-level security.
 
 ## Stack
 
-- **Frontend:** Vite + React 18 + TypeScript + Tailwind CSS + shadcn/ui + framer-motion
-- **Backend:** Supabase (Postgres + Auth + Edge Functions + Realtime + Storage)
-- **AI:** OpenRouter (7 LLMs supported) — bill extraction, proposal drafting, role-aware coaching
-- **Payments:** Stripe (card) + Coinbase Commerce (crypto)
-- **Comms:** Postmark (email) + Twilio (SMS) + WhatsApp Business
-- **Maps:** OpenStreetMap (free) / Mapbox (satellite imagery for the property; NO auto roof-detection — proposals use bill + survey data)
-- **Deploy:** Vercel (static) + Supabase (serverless)
+| Layer | Tech |
+|---|---|
+| **Frontend** | Vite · React 18 · TypeScript · Tailwind · shadcn/ui (Radix) · framer-motion |
+| **Backend** | Supabase — Postgres · Auth · Edge Functions · Realtime · Storage (RLS-enforced, multi-tenant) |
+| **AI** | Pluggable LLM layer (bring-your-own key) for bill extraction, proposal drafting, and the customer/coach "brain" — with a **deterministic floor so every feature works without AI** |
+| **Payments** | Stripe (card) · Coinbase Commerce (crypto) |
+| **Email** | Postmark (transactional — magic links, notifications, receipts) with bounce/complaint suppression + `List-Unsubscribe` |
+| **Maps** | Google Maps + Solar API (satellite / property context — no auto roof-detection; proposals use the bill + survey) |
+| **Deploy** | Vercel (static) · Supabase (serverless edge functions) |
 
-## Quick Start
+## Quick start
 
 ```bash
-# Install
 npm install
-
-# Dev (with demo mode enabled)
-VITE_ENABLE_DEMO=true npm run dev
-
-# Build
-npm run build
-
-# Preview
-npm run preview
+npm run dev        # local dev server
+npm run build      # production build
+npm run preview    # serve the build
 ```
 
-## Environment Variables
+Demo data is a deliberate **toggle in the owner sidebar** (sample leads across every NC6/NC7 variant) — it never touches real data, and there's a guided tour behind it.
 
-See `.env.example` for the full list. Key vars:
+## Environment
+
+Client vars are prefixed `VITE_` (safe to expose); server secrets are set with `supabase secrets set` and never appear in the bundle. See [`.env.example`](.env.example) for the full manifest and [`docs/SECRETS.md`](docs/SECRETS.md) for the rotation runbook.
 
 ```bash
-# Client-side (safe to expose)
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
-VITE_ENABLE_DEMO=false  # Set true ONLY for staging/preview
-
-# Server-side (set via `supabase secrets set`)
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-POSTMARK_SERVER_TOKEN=...
-LOVABLE_API_KEY=...
+# server-side (supabase secrets set …): POSTMARK_SERVER_TOKEN, STRIPE_SECRET_KEY,
+# STRIPE_WEBHOOK_SECRET, POSTMARK_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY …
 ```
 
-See `docs/SECRETS.md` for the full rotation runbook.
+## The surfaces
 
-## Architecture
+| Surface | Route | Who |
+|---|---|---|
+| **Owner cockpit** | `/owner` | the installer's command centre — pipeline, calendar, clients, products, agents, analytics, settings |
+| **Consultant** | `/consultant` | inbox-first — leads, the estimate → proposal flow, AI coach |
+| **Installer (field)** | `/installer` | today · schedule · routing · inbox → the job view with the commissioning checklist + serial attestation |
+| **Customer portal** | `/customer/:token` | passwordless magic link — project status, chat with the brain, pay, download the compliance pack |
+| **Signup** | `/signup` | self-serve tenant provisioning (card-payer becomes their tenant's admin) |
+| **Embed widget** | `/embed` | a tenant-branded solar calculator for installer websites → captures leads |
 
-```
-┌─────────────────────────────────────────────────┐
-│                  Owner Cockpit                   │
-│  (sidebar: Overview, Calendar, Consultants,      │
-│   Installers, Clients, Products, Agents,         │
-│   Analytics, Settings, CRM)                      │
-├─────────────────────────────────────────────────┤
-│  Consultant Inbox    │  Installer Portal        │
-│  (messaging app +     │  (job cards → JobView   │
-│   slide-out estimate/ │   with tabbed checklist: │
-│   proposal panels)    │   Pre-install, Roof,     │
-│                       │   Electrical, Commission,│
-│  LeadFlow pipeline:   │   Handover + signature)  │
-│  Estimate→Survey→     │                          │
-│  Design→Proposal→Send │  Customer Portal V2      │
-│                       │  (conversation-first     │
-│                       │   chat thread + AI)       │
-├─────────────────────────────────────────────────┤
-│            Agent Foundation (10 agents)          │
-│  Tabs: Agents | Training | AI Config             │
-│                                                  │
-│  agent-drain edge function (every 1 min):        │
-│  claim_next_job → dispatch → complete/fail       │
-│                                                  │
-│  DB triggers: stage change → enqueue agent       │
-│  Idempotency: touchpoints table                 │
-│  Dead-letter: fail_agent_job at max_attempts    │
-├─────────────────────────────────────────────────┤
-│              Supabase Kernel                     │
-│  Postgres 15 + RLS + pg_cron + Vault             │
-│  Realtime (9 tables published)                   │
-│  Storage (survey-photos, project-documents)      │
-│  Edge Functions (12 + agent-drain)               │
-└─────────────────────────────────────────────────┘
-```
+## Autonomous agents
 
-## Key Views
+A job queue drained every minute by the `agent-drain` edge function; database triggers enqueue work on stage changes. **Proposals are draft-only — never auto-sent.** The agents cover lead intake + scoring, survey scheduling, proposal drafting, **SEAI grant tracking** (it *tracks* the application — it does not submit on the customer's behalf), install coordination, post-install warranty + review requests, stage-appropriate follow-ups, payment reminders, and stale-lead escalation.
 
-| Route | View | Who |
-|-------|------|-----|
-| `/owner` | Owner Cockpit (sidebar + pipeline + calendar + analytics) | Owner |
-| `/consultant` | Consultant Inbox (messaging app + estimate/proposal slide-out) | Consultant |
-| `/installer` | Installer Portal (job cards → JobView with checklist) | Installer |
-| `/my-projects` | Customer Portal (conversation-first chat + AI + docs + GDPR) | Customer |
-| `/lead-flow` | LeadFlow (Estimate → Eircode/Satellite → Survey → Design → Proposal → Send) | Consultant |
-| `/job` | JobView (tabbed: Overview, Pre-install, Roof, Electrical, Commissioning, Handover) | Installer |
-| `/calculator` | ROI Calculator (public, no signup) | Public |
-| `/auth` | Prestigious Auth (split-screen: customer path vs staff path) | All |
+## Security & compliance
 
-## The 10 Autonomous Agents
-
-| Agent | Trigger | What it does |
-|-------|---------|-------------|
-| Lead Intake | New lead (bill upload) | Normalize, dedupe by MPRN, score 0-100, create lead_intake |
-| Survey Scheduler | Stage → intake_complete | Book site survey based on installer availability + location |
-| Proposal Drafter | Stage → survey_complete | Auto-draft proposal from survey data (status=draft, never auto-send) |
-| Follow-Up | Cron daily 09:00 | Stage-appropriate emails, idempotent via touchpoints (3-day window) |
-| SEAI Grant | Stage → approved (contract signed) | Start SEAI application, compile paperwork checklist |
-| Install Coordinator | Invoice deposit_paid | Schedule install, order materials, send T-7/T-1 reminders |
-| PostInstall | Stage → installed | Warranty email, schedule review request T+7, handover pack |
-| Customer Digest | Cron Monday 10:00 | Weekly status email to active customers |
-| Stale Lead Escalator | Cron daily 08:00 | Flag leads past 2x threshold to consultant + manager |
-| Payment Reminder | Cron daily 09:30 | Escalating tone: T+7 friendly → T+45 final demand |
-
-## Agent Training + AI Config
-
-Inside the Agents view (3 tabs):
-1. **Agents** — status, runs, queue, manual trigger
-2. **Training** — edit system prompts, add behavioural rules, test prompts (dry run), view auto-learned patterns
-3. **AI Config** — OpenRouter API key, 7 LLM models, database access (12 tables), temperature, max tokens, daily cost cap
-
-## GDPR Compliance
-
-- Cookie consent banner (4 consent types: essential, performance, marketing, AI processing)
-- Data subject rights panel (access, portability, rectification, erasure)
-- Privacy policy at `/privacy` (GDPR Articles 13 & 14)
-- Terms of service at `/terms` (Irish consumer law)
-- Consent audit log (in System Settings → Audit)
-- Sub-processor disclosure (6 processors with DPA status)
-- `anonymise_lead()` SQL function for right-to-erasure
-- PII-safe logging in edge functions (email/phone/token redaction)
-- RLS on all tables
-- Storage buckets private with signed URLs
-
-## Security
-
-- `verify_jwt = true` on all non-webhook edge functions
-- Stripe webhook signature mandatory (no dev fallback)
-- Coinbase webhook HMAC-SHA256 verification
-- Service role key in Supabase Vault (not hardcoded)
-- Vercel security headers (HSTS, CSP, X-Frame-Options, etc.)
-- `.env` gitignored
-- Demo mode gated behind `import.meta.env.DEV`
-
-See `AISolar_v3_Security_Audit.md` for the full security audit.
-
-## Compliance Papertrail
-
-The system pre-populates compliance documents from survey + install data:
-
-| Cert | Source data | Status tracking |
-|------|------------|----------------|
-| SEAI Solar Electricity Grant | MPRN (from bill), system size (from survey), invoice (auto), install photos (from checklist) | pending → in_progress → submitted |
-| ESB NC6 Microgen Export | Inverter type (from survey), system size, install date | pending → submitted |
-| RECI Electrical Sign-off | Isolator installed, RCD tested, earth bond, SPD (all from installer checklist) | pending → filed |
-
-These certs are linked to the customer portal — what the customer sees in "Documents" is the same compliance status.
-
-## Database Migrations
-
-26 original migrations + 3 v3 migrations:
-- `20260718_agent_foundation.sql` — lead_intake, agent_runs, agent_queue, email_templates, touchpoints + pg_cron
-- `20260718_v3_security_fixes.sql` — RLS sweep, storage private, Vault secrets, retention crons, anonymise_lead, claim_next_agent_job
-- `20260718_v3_agent_runtime.sql` — DB triggers (stage change → enqueue), pg_cron for agent-drain
+- **Row-level security on every tenant table** — cross-tenant isolation proven live (reads and writes).
+- Edge functions are authenticated; the service-role key lives in Supabase, never in the client bundle.
+- Vercel security headers (HSTS, CSP, X-Frame-Options, nosniff, referrer-policy, permissions-policy).
+- **GDPR**: cookie consent, data-subject-rights panel, `anonymise_lead()` for erasure, sub-processor disclosure, PII-safe edge-function logging.
+- Email reputation: hard-bounce / spam-complaint suppression, so a cold or dead address never drags down deliverability.
+- Compliance paper-trail (SEAI grant, ESB NC6/NC7, RECI sign-off) is pre-populated from the survey + install data and surfaced to the customer.
 
 ## Documentation
 
-- `AISolar_Bug_Audit.md` — v1 audit (135 bugs)
-- `AISolar_v2_Rebuild_Documentation.md` — v2 architecture
-- `AISolar_v3_Audit_and_Plan.md` — v3 senior dev audit (150 findings)
-- `AISolar_v3_Week1_Security_Fixes.md` — v3 security fixes
-- `AISolar_v3_Security_Audit.md` — final security audit (28 findings)
-- `docs/SECRETS.md` — secrets rotation runbook
+- [`docs/LAST_MILE.md`](docs/LAST_MILE.md) — **start here.** The single source of truth: current state, every decision and its why, the security evidence, and the founder operating playbook.
+- [`docs/DEPLOYMENT_GATE.md`](docs/DEPLOYMENT_GATE.md) — the go-live runbook (env vars, edge functions, secrets, DNS, smoke test).
+- [`docs/COMMS_AI_SYSTEM.md`](docs/COMMS_AI_SYSTEM.md) — how the brains + comms work (three brains, every trigger, the guardrails).
+- [`docs/SECRETS.md`](docs/SECRETS.md) — secrets inventory + rotation.
+
+## Brand
+
+AISolar is a product of **Renewably**. Customer-facing surfaces carry each installer's own branding.
 
 ## License
 
-Proprietary. © AISOLAR 2026.
+Proprietary. © Renewably 2026. All rights reserved.
