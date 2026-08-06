@@ -44,6 +44,7 @@ import { useLead } from '@/lib/realLeads';
 import { DEFAULT_SERIALS, type SerialState, type CertRecord, type CertFile } from '@/lib/fieldRecord';
 import HandoverSignoff from '@/components/installer/HandoverSignoff';
 import ArtefactCheckCard from '@/components/installer/ArtefactCheckCard';
+import { uploadInstallPhoto } from '@/lib/installPhotos';
 import { recordCert } from '@/lib/paperTrail';
 import { useCompanyCompliance } from '@/lib/companyCompliance';
 import { downloadSubmissionPack } from '@/lib/pdfFill';
@@ -417,6 +418,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
             )}
             {activeTab === 'pre_install' && (
               <ChecklistTab
+                leadId={lead.id}
                 title="Pre-install electrical checks"
                 description="Verify the existing electrical installation before starting work."
                 items={preInstall}
@@ -428,6 +430,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
             )}
             {activeTab === 'roof' && (
               <ChecklistTab
+                leadId={lead.id}
                 title="Roof work"
                 description="Mounting rails, panels, weatherproofing. Take a photo at each stage."
                 items={roof}
@@ -439,6 +442,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
             )}
             {activeTab === 'electrical' && (
               <ChecklistTab
+                leadId={lead.id}
                 title="Electrical installation"
                 description="Inverter, battery, cabling, isolators, SPD, labelling."
                 items={electrical}
@@ -450,6 +454,7 @@ function JobViewV2Inner({ initialLead }: { initialLead: DummyLead }) {
             )}
             {activeTab === 'commissioning' && (
               <ChecklistTab
+                leadId={lead.id}
                 title="Commissioning & monitoring"
                 description="Power up, verify production, set up monitoring apps, capture the serials off the plate."
                 items={commissioning}
@@ -779,13 +784,15 @@ function OverviewTab({ lead, overallComplete, onBegin }: {
 }
 
 // ============= CHECKLIST TAB (used for pre-install, roof, electrical, commissioning) =============
-function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, onComplete, extra, extraDone = true }: {
+function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, onComplete, extra, extraDone = true, leadId }: {
   title: string;
   description: string;
   items: ToggleItem[];
   photos: PhotoItem[];
   onToggle: (id: string, updates: Partial<ToggleItem>) => void;
   onPhoto: (id: string, uploaded: boolean) => void;
+  /** The lead — so photos upload to the tenant-scoped bucket under {leadId}/. */
+  leadId: string;
   onComplete: () => void;
   /** Phase-specific section (e.g. commissioning's serial triple check). */
   extra?: ReactNode;
@@ -876,14 +883,19 @@ function ChecklistTab({ title, description, items, photos, onToggle, onPhoto, on
                     <div className="font-medium text-sm">{photo.label}</div>
                     <div className="text-xs text-muted-foreground">{photo.description}</div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={photo.uploaded ? "outline" : "default"}
-                    className="h-8 text-xs"
-                    onClick={() => onPhoto(photo.id, !photo.uploaded)}
-                  >
+                  <label className={`shrink-0 inline-flex h-8 items-center rounded-md px-3 text-xs font-medium cursor-pointer transition-colors ${photo.uploaded ? 'border border-border hover:bg-muted' : 'bg-primary text-primary-foreground hover:opacity-90'}`}>
                     {photo.uploaded ? 'Retake' : 'Capture'}
-                  </Button>
+                    <input
+                      type="file" accept="image/*" capture="environment" className="hidden"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0]; if (!f) return;
+                        const r = await uploadInstallPhoto(leadId, photo.id, f);
+                        if (r.ok) onPhoto(photo.id, true);
+                        else toast.error("Photo didn't upload — try again", { description: r.reason });
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
               ))}
             </div>
