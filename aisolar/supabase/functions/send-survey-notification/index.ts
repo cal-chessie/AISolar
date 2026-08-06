@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { requireRole } from "../_shared/auth.ts";
+import { isEmailSuppressed } from "../_shared/email.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
@@ -135,6 +136,12 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
+    if (await isEmailSuppressed(customerEmail)) {
+      return new Response(JSON.stringify({ success: false, suppressed: true }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const postmarkResponse = await fetch(POSTMARK_API_URL, {
       method: "POST",
       headers: {
@@ -148,6 +155,9 @@ const handler = async (req: Request): Promise<Response> => {
         Subject: `Your Solar Survey is Scheduled - ${formattedDate}`,
         HtmlBody: html,
         MessageStream: "outbound",
+        Headers: [
+          { Name: "List-Unsubscribe", Value: `<mailto:${POSTMARK_SENDER_EMAIL}?subject=unsubscribe>` },
+        ],
       }),
     });
 
