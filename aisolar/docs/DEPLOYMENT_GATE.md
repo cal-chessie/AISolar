@@ -29,6 +29,7 @@ Deploy the comms three via the script above. Then the ones the flows already cal
 | `brain-voice` | LLM voice on the brain (optional, floor works without) | portal polish() |
 | `create-checkout` | the deposit CHARGE (Stripe) | customer portal pay button |
 | `stripe-webhook` | marks deposit/final PAID in the DB | Stripe → project URL |
+| `postmark-webhook` | records hard bounces + spam complaints → suppression list (protects the shared domain's reputation) | Postmark → project URL |
 | `ingest-lead` | the widget/site lead door — **the embed widget is dead without it** | public sites, `/embed?src=` |
 | `extract-bill-data` | bill-photo → estimate numbers | intake/estimate |
 | `agent-drain` | the agent queue (drafter etc.) — draft-only law | owner approvals |
@@ -40,12 +41,24 @@ supabase secrets set POSTMARK_SERVER_TOKEN=...        # email rail is SILENT wit
 supabase secrets set POSTMARK_SENDER_EMAIL=notify@<verified-domain>
 supabase secrets set STRIPE_SECRET_KEY=...            # create-checkout
 supabase secrets set STRIPE_WEBHOOK_SECRET=...        # stripe-webhook signature check
+supabase secrets set POSTMARK_WEBHOOK_SECRET=...      # gates the bounce/complaint webhook
 ```
 - Postmark sender must be a **verified sender signature/domain** in Postmark or
   every send 422s. Set reply-to on the same domain (branded-outbound law).
 - Stripe webhook: after deploy, register the endpoint URL
   (`https://<ref>.functions.supabase.co/stripe-webhook`) in the Stripe dashboard
   and paste the signing secret back as the secret above. **Test mode first.**
+- **Email deliverability — do this or the whole cohort lands in spam (#69):**
+  - **DNS on the sending domain (the "together when back" Postmark session):**
+    **SPF** (add Postmark's include), **DKIM** (Postmark's CNAME records), and
+    **DMARC** — start `v=DMARC1; p=quarantine; rua=mailto:dmarc@<domain>`, move to
+    `p=reject` once reports are clean. Postmark's dashboard hands you the exact SPF/DKIM values.
+  - **Bounce/complaint webhook:** after deploy, in Postmark register the webhook for
+    **Bounce + SpamComplaint** →
+    `https://<ref>.functions.supabase.co/postmark-webhook?secret=<POSTMARK_WEBHOOK_SECRET>`.
+    Deploy it `--no-verify-jwt` (Postmark isn't a Supabase user — the secret IS the auth).
+  - Already in code: the pre-send **suppression check** + a `List-Unsubscribe` header
+    on every send. The webhook is what populates the suppression list.
 
 ## 3 · Auth config (Supabase dashboard → Auth)
 - **Site URL + Redirect URLs**: add the production domain (and `/signup`,

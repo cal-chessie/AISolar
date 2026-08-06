@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { requireRole } from "../_shared/auth.ts";
+import { isEmailSuppressed } from "../_shared/email.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
@@ -416,6 +417,16 @@ serve(async (req) => {
     }
 
     const recipient = to || lead?.email;
+
+    // Reputation guard: never re-mail a hard-bounced / complaining address
+    // (see _shared/email.ts + postmark-webhook). Fail-open on a check error.
+    if (recipient && await isEmailSuppressed(recipient)) {
+      console.log(`Recipient ${recipient} is suppressed (bounce/complaint) — skipping send`);
+      return new Response(JSON.stringify({ success: false, suppressed: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log(`Sending ${type} email to ${recipient} via Postmark`);
 
     // Send via Postmark API
@@ -432,6 +443,10 @@ serve(async (req) => {
         Subject: subject,
         HtmlBody: html,
         MessageStream: "outbound",
+        // Native unsubscribe UI (diverts spam complaints → helps reputation).
+        Headers: [
+          { Name: "List-Unsubscribe", Value: `<mailto:${BRAND_EMAIL}?subject=unsubscribe>` },
+        ],
       }),
     });
 

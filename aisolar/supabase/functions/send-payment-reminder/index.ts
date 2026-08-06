@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { requireRole } from "../_shared/auth.ts";
+import { isEmailSuppressed } from "../_shared/email.ts";
 
 const POSTMARK_SERVER_TOKEN = Deno.env.get("POSTMARK_SERVER_TOKEN");
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
@@ -156,6 +157,12 @@ serve(async (req) => {
       `;
 
       try {
+        // Reputation guard: don't re-send reminders to a suppressed address.
+        if (await isEmailSuppressed(lead.email)) {
+          console.log(`[PAYMENT-REMINDER] ${lead.email} suppressed (bounce/complaint) — skipping`);
+          results.push({ invoice_id: invoice.id, success: false, suppressed: true, email: lead.email });
+          continue;
+        }
         const postmarkResponse = await fetch(POSTMARK_API_URL, {
           method: "POST",
           headers: {
@@ -169,6 +176,9 @@ serve(async (req) => {
             Subject: `Payment Reminder - €${finalAmount.toLocaleString()} Balance Due`,
             HtmlBody: html,
             MessageStream: "outbound",
+            Headers: [
+              { Name: "List-Unsubscribe", Value: `<mailto:${POSTMARK_SENDER_EMAIL}?subject=unsubscribe>` },
+            ],
           }),
         });
 

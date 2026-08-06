@@ -16,10 +16,34 @@
  */
 
 import { log } from "./auth.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const FN = "email";
 
 const POSTMARK_API_URL = "https://api.postmarkapp.com/email";
+
+/**
+ * Is this address on the global suppression list (hard bounce / spam complaint)?
+ * Fail-OPEN: if we can't check (no env / DB error) we return false and let the
+ * send proceed — blocking all mail on a DB hiccup is worse than an occasional
+ * re-send. A definite hit always suppresses. See migration email_suppressions.
+ */
+export async function isEmailSuppressed(email: string): Promise<boolean> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key || !email) return false;
+    const sb = createClient(url, key);
+    const { data } = await sb
+      .from("email_suppressions")
+      .select("email")
+      .eq("email", email.toLowerCase().trim())
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
+}
 
 interface SendEmailParams {
   to: string;
@@ -35,6 +59,8 @@ interface SendEmailResult {
   ok: boolean;
   messageId?: string;
   error?: string;
+  /** True when the send was skipped because the address is suppressed. */
+  suppressed?: boolean;
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
@@ -47,6 +73,12 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   if (!serverToken) {
     log(FN, "error", "POSTMARK_SERVER_TOKEN not configured");
     return { ok: false, error: "Postmark not configured" };
+  }
+
+  // Reputation guard: never mail a hard-bounced / complaining address again.
+  if (await isEmailSuppressed(to)) {
+    log(FN, "info", "Email suppressed (bounce/complaint) — not sending", { to });
+    return { ok: false, suppressed: true, error: "suppressed" };
   }
 
   try {
@@ -63,6 +95,11 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
         Subject: subject,
         HtmlBody: htmlBody,
         MessageStream: messageStream,
+        // Native unsubscribe UI in Gmail/Outlook — diverts would-be spam
+        // complaints to an unsubscribe instead (helps domain reputation).
+        Headers: [
+          { Name: "List-Unsubscribe", Value: `<mailto:${senderEmail}?subject=unsubscribe>` },
+        ],
         ...(replyTo ? { ReplyTo: replyTo } : {}),
       }),
     });
