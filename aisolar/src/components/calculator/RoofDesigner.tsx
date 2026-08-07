@@ -7,7 +7,7 @@
  * rendered zoomed-out, fixed-px panels read as garden-sized slabs.
  *
  * Now the map is OURS end-to-end, the Design Studio's own system (ONE scale
- * everywhere): OSM Nominatim geocodes (keyless) → SatTiles paints Esri imagery
+ * everywhere): Google geocodes (key; OSM fallback) → RoofImagery paints Google satellite (Esri fallback)
  * for a view WE control → panel pixels are COMPUTED from real metres via
  * roofGeo's Web-Mercator maths at the current zoom + container width. A panel
  * is 1.134×1.722 m on every screen, at every zoom, full stop.
@@ -18,10 +18,10 @@
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { MapPin, Pencil, RotateCcw, Sparkles, Loader2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check, Plus, Minus, X } from 'lucide-react';
-import { detectRoof, hasMapsKey, type RoofInsight } from '@/lib/googleSolar';
+import { detectRoof, hasMapsKey, geocode as googleGeocode, type RoofInsight } from '@/lib/googleSolar';
 import { osmGeocode } from '@/lib/roofImagery';
 import { mppAt, IMG_LOGICAL_W, type MapView } from '@/lib/roofGeo';
-import SatTiles from '@/components/SatTiles';
+import { RoofImagery } from '@/components/SatTiles';
 
 // Real panel footprint in METRES — pixels are derived, never hardcoded.
 const PANEL_W_M = 1.134;
@@ -86,7 +86,8 @@ export default function RoofDesigner({
     setRect(null); setRotation(0); emit(null, 0); setDrawing(false);
     setAuto(null); setAutoUsed(false); setNoCoverage(false); setNotFound(false);
     setFinding(true);
-    const hit = await osmGeocode(address);
+    // Same as the Design Studio: Google geocode (key, CSP-allowed), OSM only as a last resort.
+    const hit = (await googleGeocode(address)) ?? (await osmGeocode(address));
     setFinding(false);
     if (hit) setView({ lat: hit.lat, lng: hit.lng, zoom: 20 });
     else setNotFound(true);
@@ -213,7 +214,7 @@ export default function RoofDesigner({
           on both axes (the studio's own rule), so metres never stretch. */}
       <div ref={boxRef} className="relative mt-2 aspect-[16/9] rounded-panel overflow-hidden border border-border bg-muted select-none touch-none">
         {view ? (
-          <SatTiles view={view} />
+          <RoofImagery view={view} />
         ) : (
           <div className="absolute inset-0 grid place-items-center text-2xs text-muted-foreground">
             {finding ? 'Finding your roof…' : 'Enter your address above to load the satellite view.'}
