@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { Shield, Loader2, Camera, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { verifyArtefact, FIELD_LABELS, type ArtefactKind, type ArtefactVerdict } from '@/lib/artefactCheck';
+import { setArtefactVerdict } from '@/lib/fieldRecord';
 import type { SerialState, CertFile } from '@/lib/fieldRecord';
 
 interface Props {

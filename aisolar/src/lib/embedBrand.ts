@@ -37,7 +37,7 @@ export function useEmbedBrand(): EmbedBrand {
         const { data } = await supabase.rpc('resolve_widget_brand', { p_source_key: src });
         const row = Array.isArray(data) ? data[0] : data;
         if (!alive || !row) return;
-        const theme: RemoteTheme = row.theme ?? {};
+        const theme: RemoteTheme = (row.theme ?? {}) as RemoteTheme;
         setRemote({ name: row.name, theme });
         // Dress the whole widget in the brand's accent + dark mode.
         const root = document.documentElement;

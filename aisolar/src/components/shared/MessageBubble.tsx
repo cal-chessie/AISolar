@@ -14,6 +14,7 @@ import {
   Award, ArrowRight,
 } from 'lucide-react';
 import type { ChatMessage } from '@/lib/conversation';
+import { getTenantBrand } from '@/lib/tenantBrand';
 
 export default function MessageBubble({ message, onAction }: { message: ChatMessage; onAction?: (data?: string) => void }) {
   if (message.type === 'system') {

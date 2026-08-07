@@ -529,7 +529,7 @@ export default function CustomerProposal({ lead, design, onAccept, onPayDeposit,
       <footer className="border-t border-border pt-4 pb-8 space-y-1.5">
         <p className="text-2xs text-muted-foreground">
           {[
-            brand.legal.registeredName && `${brand.legal.registeredName}${brand.legal.tradingName && brand.legal.registeredName !== brand.legal.tradingName ? ` trading as ${brand.legal.tradingName}` : ''}`,
+            brand.legal.registeredName && `${brand.legal.registeredName}${brand.legal.tradingName && brand.legal.registeredName !== (brand.legal.tradingName as string) ? ` trading as ${brand.legal.tradingName}` : ''}`,
             brand.legal.registeredAddress,
             brand.legal.companyNumber && `Company no. ${brand.legal.companyNumber}`,
             brand.legal.vatNumber && `VAT ${brand.legal.vatNumber}`,

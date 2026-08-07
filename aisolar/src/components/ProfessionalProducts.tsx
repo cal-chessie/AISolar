@@ -558,7 +558,7 @@ export default function ProfessionalProducts() {
                     </div>
                   </div>
 
-                  <Button size="sm" className="mt-3 w-full bg-tech transition-opacity hover:opacity-90 text-white" disabled={isOutOfStock} onClick={e => { e.stopPropagation(); addToProposalHint(product.name); }}>
+                  <Button size="sm" className="mt-3 w-full bg-tech transition-opacity hover:opacity-90 text-white" disabled={isOutOfStock} onClick={e => { e.stopPropagation(); addToProposalHint(`${product.manufacturer} ${product.model}`); }}>
                     Add to proposal <Plus className="h-3 w-3 ml-1" />
                   </Button>
                 </CardContent>

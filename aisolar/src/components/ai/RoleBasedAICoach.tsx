@@ -28,7 +28,7 @@ import {
 // ONE BRAIN (5 Aug): the panel talks to the facade — same grounding as the
 // customer portal, the coach voices, and the taught knowledge.
 import { ask as brainAsk, briefing as brainBriefing, prompts as brainPrompts } from '@/lib/brain';
-import type { CoachAnswer } from '@/lib/coachBrain';
+import { COACH_PROMPTS, type CoachAnswer } from '@/lib/coachBrain';
 import { aiReports, nextMove, type CoachPOV } from '@/lib/dealIntel';
 import { useLeads } from '@/lib/realLeads';
 import { isDemoMode } from '@/lib/demoMode';

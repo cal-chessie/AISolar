@@ -924,7 +924,7 @@ function PipelineKanban({
     const stageIds = PIPELINE_STAGES.filter(s => s.group === g.id).map(s => s.id);
     const firstStage = stageIds[0];
     const groupLeads = leads
-      .filter(l => stageIds.includes(l.workflow_stage))
+      .filter(l => (stageIds as string[]).includes(l.workflow_stage))
       .sort((a, b) => b.score - a.score);
     const value = groupLeads.reduce((s, l) => s + (l.proposal?.net_cost ?? 0), 0);
     return { ...g, firstStage, leads: groupLeads, value };

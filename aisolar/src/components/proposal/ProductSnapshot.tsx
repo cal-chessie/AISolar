@@ -8,13 +8,15 @@
  * homeowner nod. Reads from the SAME getProduct the customer proposal uses, so
  * the consultant is looking at exactly what the customer will.
  */
-import { Sun, Zap, Battery, FileText } from 'lucide-react';
+import { Sun, Zap, Battery, FileText, Plug, Car } from 'lucide-react';
 import type { CatalogProduct } from '@/config/productCatalog';
 
 const KIND: Record<CatalogProduct['kind'], { icon: typeof Sun; label: string; tint: string }> = {
   panel:    { icon: Sun,     label: 'Solar panels',   tint: 'text-tech bg-tech-subtle' },
   inverter: { icon: Zap,     label: 'Inverter',       tint: 'text-primary bg-primary/10' },
   battery:  { icon: Battery, label: 'Battery storage', tint: 'text-doc-deposit bg-doc-deposit/10' },
+  diverter: { icon: Plug,    label: 'Power diverter', tint: 'text-primary bg-primary/10' },
+  charger:  { icon: Car,     label: 'EV charger',     tint: 'text-tech bg-tech-subtle' },
 };
 
 export default function ProductSnapshot({ product, qty, dense = false }: {

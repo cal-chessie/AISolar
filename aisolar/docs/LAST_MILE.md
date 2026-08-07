@@ -16,6 +16,43 @@ prove it, and a short ranked list.
 
 ---
 
+## 📓 7 Aug — the onboarding / widget correction (read before touching either)
+
+**What today was, honestly:** an attempt to put the AISolar widget on Solar Ireland (first national site), brand it, collapse its two paths into one, then bug-audit. It went wrong — I rebuilt the `/embed` widget **blind** instead of reading what already existed, proved it only in a local preview Cal wasn't watching, and it was reverted. **Net product change today ≈ zero.** The value is the diagnosis below. _(Standing lesson: read the ask + read the code + PLAN the integration before building. Never blind.)_
+
+**What's actually true (grounded/verified today):**
+- **The good bill-first onboarding already EXISTS** → `src/pages/StartAnalysis.tsx` (light theme: "See what solar saves you" · Home/Business fork · **Upload = most accurate** / Enter manually · "What we read off your bill" 21-detail trust grid · "Take a photo" · "Build it on screen"). It was never missing — it's the standard the widget should carry.
+- The `/embed` widget `src/components/calculator/CalculatorWidget.tsx` is the **older/cruder** path (the one that shipped to the embed); it routes visitors into the roof-draw map.
+- 🔴 **The roof-draw map is BROKEN** — observed live on the Solar Ireland embed: a full street address ("45 Griffith Avenue, Drumcondra, Dublin 9") returns _"Couldn't pin that address on the free map"_ and the satellite view never loads. **Root cause NOT diagnosed** — candidates: Maps key referrer-lock (§C) · the geocode call · the `/embed` page CSP (note #5 fixed the *app* CSP 6 Aug, but the embed still fails). Diagnose before anyone claims it fixed.
+- **Solar Ireland is Cal's FIRST onboarding design and the origin of AISolar.** Its "4 calculators" (Bill Analyser upload + manual · savings slider · repayments calc) are that origin thinking — **refine, don't bulldoze.**
+- **Scale law (Cal):** the widget must embed on **ANY** website **AND** hold the **full flow** end-to-end, or it won't scale.
+
+**State after today (both repos reverted — verified with git):**
+- **AISolar `main`** — clean, unchanged from committed (HEAD `09ec30d`). The blind rebuild is **PARKED, not merged**, on branch `widget-upload-rebuild` (commit `fe3e6ce`). Do not resurrect it without a plan.
+- **Solar Ireland** — reverted: commit `efd07cd` (Revert of `3cb266c`) **pushed to origin/main**; the native calculators are restored. Two unrelated uncommitted files (`package-lock.json`, `public/solar-icon.svg`) left untouched (not ours).
+- **`AI_API_KEY` (OpenRouter) set on V5** → `extract-bill-data` vision now works (proven: a test Irish bill read back MPRN / €amount / kWh / day+night rates, HTTP 200). Solar Ireland brand `logoUrl` DB value left set. Both inert/harmless.
+
+**The plan — Cal's order, start fresh tomorrow (do NOT jump ahead):**
+1. **Fix Solar Ireland's bugs first** — the broken maps among them.
+2. **Refine the onboarding** into what it should be.
+3. **THEN** the widget + how it slots in (embed-anywhere + holds-the-flow).
+
+---
+
+## 🔴 7 Aug (cont.) — THE TYPE-CHECKER WAS CHECKING NOTHING (root cause of "errors everywhere")
+
+**The find:** the root `tsconfig.json` is references-only (`"files": []`), so `tsc --noEmit` — and every "tsc clean" claimed this session — checked **zero files**. The REAL check (`npm run typecheck` = `tsc -p tsconfig.app.json --noEmit`) surfaced **57 hidden type errors**. That's the "errors all over the app."
+
+**Fixed (57 → 14):**
+- **3 runtime crashers** (TS2304 "cannot find name" = the app throwing "X is not defined" on render): `getTenantBrand` (MessageBubble — crashed on ANY customer click, Cal's reported bug), `COACH_PROMPTS` (RoleBasedAICoach), `setArtefactVerdict` (ArtefactCheckCard). All were real functions/consts that existed but were **never imported**. **0 TS2304 remain.**
+- **40 stale-type errors** cleared by **regenerating `src/integrations/supabase/types.ts` from the live V5 schema** — it was dated **Jul 20**, didn't know `field_records` / `sources.source_key` / `seai_grants` etc. The queries were correct; the generated types were 3 weeks old. Regen via Management API (CLI unavailable): `GET /v1/projects/<ref>/types/typescript` — see `POST_DEPLOY_WATCH.md §2`.
+
+**The net (so it can't recur):** added `npm run typecheck`. **MUST be 0 before any deploy.** Standing health runbook = **`docs/POST_DEPLOY_WATCH.md`** (gates, stale-type regen, daily watch, escalation). Regenerate types after EVERY migration.
+
+**✅ FIXED — all 14 (57 → 0; `npm run typecheck` clean + prod build green):** wrong field names → the real ones (`needsG10`→`requiresG10`, `product.name`→`manufacturer`+`model`); `EsbFormChoice` prop widened to include NC8; stage-array membership widened to `string[]`; dead brand-literal comparison cast to string; `ProductSnapshot` given its missing `diverter`/`charger` kinds; survey/proposal dynamic fields typed (`keyof SurveyFormData`, `Record` casts); two jsonb payloads cast (`Json` / `TablesInsert<'field_records'>` — the latter because tenant_id is trigger-stamped server-side); and `installer_roster` registered as a real `tenant_settings` key + store. No stale-type hand-mangling — those 40 were cleared by the type regen, not by editing queries.
+
+---
+
 ## 📋 ALL REMAINING WORK — **THIS DOC NOW SUPERSEDES FINAL_SPRINT.md** (6 Aug)
 _Scraped everything not-done out of FINAL_SPRINT into here, so there's ONE source
 of truth. FINAL_SPRINT is retired (its ✅ history stays as the record; the OPEN

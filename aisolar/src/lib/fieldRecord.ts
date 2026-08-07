@@ -16,6 +16,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesInsert } from '@/integrations/supabase/types';
 import { isDemoMode } from './demoMode';
 
 /** Sandbox guard — never write real field-record rows while the owner is on the
@@ -165,7 +166,8 @@ export async function pushFieldRecord(leadId: string): Promise<void> {
     if (!raw) return;
     const data = JSON.parse(raw);
     const { error } = await supabase.from('field_records').upsert(
-      { lead_id: leadId, record: stripForDb(data) },
+      // tenant_id is trigger-stamped server-side (own_lead RLS), so the client omits it.
+      { lead_id: leadId, record: stripForDb(data) } as unknown as TablesInsert<'field_records'>,
       { onConflict: 'lead_id' },
     );
     setPending(leadId, !!error);   // error → retry on reconnect; ok → clear

@@ -282,7 +282,7 @@ export function Nc7Template({ lead }: { lead: DummyLead }) {
       <div className="pt-1">
         <div className="font-semibold mb-1">3 · Export</div>
         <Row label="Maximum export capacity" value={`${inverterAcKw(lead)} kW`} from="proposal" />
-        <Row label="Export limitation" value={d.needsG10 ? 'Required — G10 central protection relay' : 'Not required at this capacity'} />
+        <Row label="Export limitation" value={d.requiresG10 ? 'Required — G10 central protection relay' : 'Not required at this capacity'} />
         <Row label="Single line diagram" value="Attached — generated from the design" />
         <Row label="Estimated annual generation" value={f.yieldKwh ? `${f.yieldKwh.toLocaleString()} kWh` : undefined} from="proposal" />
       </div>
@@ -341,7 +341,7 @@ function ReadinessNote({ readiness, form }: { readiness: EsbReadiness; form: 'NC
 }
 
 /** ESB Letter of Authority — homeowner authorises the contractor for the NC6/NC7. */
-export function LoaTemplate({ lead, esbForm }: { lead: DummyLead; esbForm: 'NC6' | 'NC7' }) {
+export function LoaTemplate({ lead, esbForm }: { lead: DummyLead; esbForm: 'NC6' | 'NC7' | 'NC8' }) {
   const f = fields(lead);
   return (
     <div className="space-y-3 text-xs">

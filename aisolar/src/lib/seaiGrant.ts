@@ -199,6 +199,7 @@ export function reconcileGrantOnInstall(
 
 /** React hook — re-renders when this lead's grant changes here or in another tab. */
 import { useEffect, useState } from 'react';
+import type { Json } from '@/integrations/supabase/types';
 export function useGrant(leadId: string): SeaiGrantRecord {
   const [rec, setRec] = useState<SeaiGrantRecord>(() => getGrant(leadId));
   useEffect(() => {
@@ -223,7 +224,7 @@ async function recordGrantRemote(leadId: string, rec: SeaiGrantRecord): Promise<
     const { supabase } = await import('@/integrations/supabase/client');
     if (!(await supabase.auth.getSession()).data.session) return; // demo / signed-out
     const { error } = await supabase.from('seai_grants').upsert(
-      { lead_id: leadId, status: rec.status, data: rec, updated_at: new Date().toISOString() },
+      { lead_id: leadId, status: rec.status, data: rec as unknown as Json, updated_at: new Date().toISOString() },
       { onConflict: 'lead_id' },
     );
     if (error) console.warn('[seaiGrant] recordGrantRemote', error.message);

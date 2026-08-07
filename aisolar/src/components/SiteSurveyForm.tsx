@@ -975,8 +975,8 @@ export default function SiteSurveyForm({ leadId, onCreateProposal }: SiteSurveyF
                           <p className="text-2xs text-muted-foreground leading-body flex-1">{q}</p>
                           <div className="flex gap-1 shrink-0">
                             {(['yes', 'no'] as const).map(opt => (
-                              <button key={opt} type="button" onClick={() => setValue(k, opt)}
-                                className={`h-7 px-3 rounded-control border text-2xs font-medium capitalize transition-colors ${watch(k) === opt ? 'border-tech bg-tech/10 text-tech' : 'border-border hover:bg-muted text-muted-foreground'}`}>
+                              <button key={opt} type="button" onClick={() => setValue(k as keyof SurveyFormData, opt)}
+                                className={`h-7 px-3 rounded-control border text-2xs font-medium capitalize transition-colors ${(watch(k as keyof SurveyFormData) as string) === opt ? 'border-tech bg-tech/10 text-tech' : 'border-border hover:bg-muted text-muted-foreground'}`}>
                                 {opt}
                               </button>
                             ))}

@@ -85,7 +85,7 @@ export default function ProposalView({ lead }: { lead: DummyLead }) {
     systemSizeKw: proposal.system_size_kw,
     batteryKwh: proposal.battery_model ? ((survey as Record<string, unknown>)?.confirmed_battery_kwh as number ?? 5) : 0,
     roof: {
-      orientation: (survey as Record<string, unknown>)?.roof_orientation as string ?? survey?.confirmed_roof_orientation,
+      orientation: (survey as Record<string, unknown>)?.roof_orientation as string ?? (survey as Record<string, unknown>)?.confirmed_roof_orientation as string,
       pitchDeg: (survey as Record<string, unknown>)?.roof_pitch as number ?? (survey as Record<string, unknown>)?.confirmed_roof_pitch as number,
       shading: (survey as Record<string, unknown>)?.shading as string ?? (survey as Record<string, unknown>)?.confirmed_shading as string,
     },
