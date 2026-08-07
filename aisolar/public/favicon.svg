@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="AIOS">
-  <rect width="32" height="32" rx="6" fill="#1C1C1E"/>
-  <text x="16" y="16.5" text-anchor="middle" dominant-baseline="central"
-        fill="#FFFFFF"
-        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-        font-size="11" font-weight="800" letter-spacing="-0.5">AIOS</text>
+  <rect width="32" height="32" rx="5" fill="#1C1C1E"/>
+  <text x="16" y="17" text-anchor="middle" dominant-baseline="central"
+        textLength="29" lengthAdjust="spacingAndGlyphs"
+        fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, Arial, sans-serif"
+        font-size="18" font-weight="800">AIOS</text>
 </svg>
