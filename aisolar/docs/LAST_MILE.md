@@ -370,8 +370,11 @@ sandbox (`acct_1Sf4Bf…`); real money is NOT live yet.
 - Stripe CLI logged in to Solar Ireland sandbox (key expires 2026-11-06). Postmark secrets already set (6 Aug).
 
 **Still open on A1 (the rest is done + committed):**
-- ⏳ **End-to-end smoke test** (real fake-signup → Stripe test card `4242…` → confirm the
-  tenant row gets `stripe_subscription_id` + `trial_ends_at`) = the "proven live" step.
+- ✅ **End-to-end smoke test DONE (8 Aug) — PASSED + caught a launch-critical bug.** Real signup →
+  real card `4242` → subscription created → webhook → tenant stamped (`cus_…`/`sub_…`/`trial_ends_at`),
+  verified live. **Bug found + fixed:** the webhook used sync `stripe.webhooks.constructEvent`, which
+  ALWAYS throws in Deno → every event silently 400'd → subscriptions would never record. Now
+  `constructEventAsync` (commit `5fad3d2`). Webhook endpoint recreated as `we_1U2B2A…`, `STRIPE_WEBHOOK_SECRET` reset.
 - ✅ Pricing "Try for free" → `/signup` (was `/get-started`) — DONE + committed.
 - ⏳ Go-live needs Stripe **LIVE** keys (currently sandbox).
 - ✅ Committed + pushed (`origin/cowork-8aug` @ `40cabdc`): InstallerSignup.tsx, stripe-webhook, create-subscription-checkout/.
