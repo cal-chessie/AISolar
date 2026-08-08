@@ -11,6 +11,15 @@
 
 ## 1 · THE STATE — what is actually true today (vs what older docs say)
 
+- ⚠️CORRECTED (8 Aug, live-DB verified): **The two "waiting" migrations are ALREADY
+  APPLIED.** `20260802_rls_floor_extension.sql` + `20260802_tenant_settings_pricing_key.sql`
+  are LIVE on V5 — all 11 floor-extension policies present, the `pricing` key admitted (queried
+  pg_policies + pg_constraint 8 Aug; GO_LIVE §9 logged them applied 3 Aug via the mgmt API).
+  Docs still saying "db push the two migrations" (CAL_GATE_DECISIONS §C, CAL_APP_THESIS,
+  CAL_LAUNCH_STRATEGY, CALS_GROWTH_DEV) are STALE. The cross-tenant bleed is CLOSED. Also 8 Aug:
+  `/get-started` door removed (one signup door = `/signup`); A1 Stripe billing wired + deployed
+  (test mode); demo-in-prod is INTENDED (onboarding, gated to a signed-in owner) not a leak.
+  Full verified ledger: LAST_MILE "🔬 8 Aug — FULL VERIFICATION PASS".
 - ⚠️CORRECTED: **The 3 Supabase service_role keys were ROTATED 24 Jul** (Cal
   confirmed — vault GATE 0 Unblock Plan). FINAL_PUSH, repo docs, and the global
   conductor rules still say "must be rotated" — stale. **GATE 0 remaining:**

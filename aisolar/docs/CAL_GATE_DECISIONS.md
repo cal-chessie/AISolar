@@ -34,12 +34,11 @@ Code uses 6/11 kW. The rule is 25 A/phase = **5.75 kVA single-phase / 11.04 kVA 
 
 ---
 
-## C · RLS FLOOR — written, correct, NOT yet applied to live V5
+## C · RLS FLOOR — ✅ APPLIED + verified live (8 Aug)
 
-The cross-tenant bleed fix (`20260802_rls_floor_extension.sql` + `20260802_tenant_settings_pricing_key.sql`) is in your pushed branch and the SQL is sound. It has **not** been run against live V5 yet.
+The cross-tenant bleed fix (`20260802_rls_floor_extension.sql` + `20260802_tenant_settings_pricing_key.sql`) is **LIVE on V5** — verified 8 Aug by querying pg_policies + pg_constraint: all 11 floor-extension policies present (tenant_settings / conversation_messages / sources / products / feedback tenant-scoped on `has_tenant_access`), the `pricing` key admitted. Landed 3 Aug via the mgmt API (that's why there's no migration-history table).
 
-- [ ] **I'll run `supabase db push` at the deploy gate** (applies both migrations)
-- *Until pushed, live V5 still has the 5 loose tables (tenant_settings / conversation_messages / sources / products / feedback) open to any signed-in user of any tenant.*
+- [x] ~~run `supabase db push`~~ — **done via mgmt API; no push needed.** The bleed is CLOSED in production.
 
 ---
 

@@ -84,7 +84,7 @@ Every growth channel is another `source_key` into the same keyed pipe: the widge
 - dealIntel + coach on owner/consultant/installer/customer POVs; call-prep card.
 - `/customer/:token` magic-link portal (kills the paid-customer 404).
 - A9 security: production can never bypass login. A10: coach can never invent customers.
-- RLS floor extension + pricing-key migration written, correct, pushed — but **not yet applied to live V5** (needs your `db push`).
+- RLS floor extension + pricing-key migration **APPLIED + verified live on V5** (8 Aug: pg_policies + pg_constraint confirm all 11 policies + the `pricing` key; landed 3 Aug via the mgmt API). No `db push` outstanding.
 
 **The one true launch blocker:**
 - **The ESB paper trail is not recorded.** `lead_documents` + `esb_submissions` tables exist; nothing writes them. The compliance *vision* is built, but the compliance *record* — the sealed pack's REAL submission reference — is not yet saved. The system can now *see* a mistake; it does not yet *save the proof that it was caught and filed*. Until this is wired, the core compliance claim rests on a gap. This is Sprint 2's first item and it is the difference between "compliant by feature" and "compliant by record."
@@ -96,7 +96,7 @@ Every growth channel is another `source_key` into the same keyed pipe: the widge
 ## IX. The proof path to value
 The asset is real and unified. Its value is currently anchored to replacement cost (a sub-€1M floor for pre-revenue, undeployed software) because there is no receipt behind a higher number. The receipt is one real customer through the full chain in production: door → proposal → deposit → install → pack recorded → handover. That single event is the de-risk moment — it converts "promising build" into "proven OS." Ten paying customers converts "proven once" into "proven repeatable," which is where a real revenue multiple first applies and the strategic interest becomes concrete.
 
-The work between here and that receipt is execution, not invention: apply the two migrations, deploy the functions, flip to real data, wire the paper trail, run the smoke test. Weeks, not a rebuild.
+The work between here and that receipt is execution, not invention: deploy the functions, flip to real data, wire the paper trail, run the smoke test (the two migrations are already applied + verified live). Weeks, not a rebuild.
 
 ---
 

@@ -96,7 +96,7 @@ These three are why the pitch is "one platform runs the business," not "a better
 The verified order:
 
 1. **Close the one true blocker first — the ESB paper trail.** The vision is built; the *record* of the sealed pack's real submission reference is not yet written (`lead_documents` + `esb_submissions`). Until this lands, we can demo compliance but cannot *prove* it was recorded. This is the difference between "compliant by feature" and "compliant by record" — and it is the foundation of the entire sales wedge. **Do not launch the compliance story until this is wired.** (Your two statutory yes/no's — ESB bands, typed e-signature, NDMG/ACA — unblock this; they are yours to release.)
-2. **Apply the two migrations + deploy functions + your hands items** (db push, edge-fn deploy + secrets, Postmark token + DNS, Vercel domain, A1 auth functions or "build without").
+2. **Deploy functions + your hands items** (edge-fn deploy + secrets, Postmark token + DNS, Vercel domain, A1 auth functions or "build without"). _(The two migrations are already applied + verified live — 8 Aug.)_
 3. **Smoke test end-to-end** — door → proposal → deposit (real charge) → install → pack sealed → rows written → handover. Every human button, a real email lands.
 4. **Wave 1: Roscommon end-to-end** (the client's three brands) as the proof tenant. Then the grandfather offer rolls to the 32 counties.
 5. **The go-live signal is the doors on the live brand sites** — when RI/SI + Saunderson/WideAwake/Solar Roscommon carry the widget and a real lead lands attributed, we are launched. Not a press release. A lead.

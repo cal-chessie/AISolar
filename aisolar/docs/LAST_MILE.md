@@ -16,6 +16,119 @@ prove it, and a short ranked list.
 
 ---
 
+## 🔬 8 Aug — FULL VERIFICATION PASS (disk + live V5 DB, every item tool-proven)
+
+_Cal's order: green-tick ONLY what's proven; double-check before calling anything closed.
+Method: live DB via Management API (`pg_policies`, `pg_constraint`, function defs), Vercel env
+API, Supabase auth/backups config, git, disk grep. **No doc summary trusted.** This pass
+overturned a second agent's "reds list" on two points — noted below._
+
+### ✅ VERIFIED DONE (proven — tick it)
+- ✅ **RLS floor + floor-extension are APPLIED.** Live DB has all 11 floor-extension policies
+  (`tenant_settings_sel/ins/upd/del`, `sources_sel/write`, `products_sel/write`, `feedback_own`,
+  `conv_messages_sel/ins`), all on `has_tenant_access`. The **worst bleed** (tenant_settings r/w by
+  ANY signed-in user, any tenant) is **CLOSED**. → `20260802_rls_floor_extension.sql` is LIVE.
+- ✅ **Pricing-key migration is APPLIED.** Live `tenant_settings_key_check` admits `'pricing'`.
+  → `20260802_tenant_settings_pricing_key.sql` is LIVE.
+  **⇒ CORRECTION:** the other agent said "TWO migrations waiting — `supabase db push`". **FALSE.**
+  Both were applied via the Management API (that's why `schema_migrations` is absent). **No db push
+  needed for these.** The CALS_GROWTH_DEV note was stale; LAST_MILE line ~483 was right.
+- ✅ **4 of the 5 "no tenant_id policy" tables are SAFE by design** (queried the actual policies):
+  `field_records` + `notifications` isolate via `own_lead()`/`can_see_lead()` — both verified
+  tenant-scoped on `has_tenant_access`; `client_errors` = platform telemetry (admin-read);
+  `invoice_counters` = 0 policies (server-only, locked). Not a bleed.
+- ✅ **A1 Stripe billing DONE** (test mode) — checkout + webhook deployed, endpoint `we_1U1y8H…`
+  enabled, `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` set (confirmed via `secrets list`).
+  Open only for the e2e smoke + LIVE-keys swap. **Not a first-client blocker.**
+- ✅ **Truth-pass holds** — every `'AISOLAR'` literal in src is on AISolar's OWN surfaces
+  (brand.ts default, SEOHead, BlogArticle, PrivacyPolicy for aisolar.ie). Tenant-customer surfaces
+  read `getTenantBrand()`. No cross-brand leak. (Agent's correction confirmed.)
+- ✅ **One signup door** — `/get-started` removed (route + 13 marketing links → `/signup`; AuthPage
+  now login-only). Browser-verified: `/get-started` → 404, `/auth` login clean. **Supabase side had
+  nothing registered** for it (checked auth config — no redirect URL, no allow-list entry).
+
+### ⚠️ GENUINELY OPEN — Cal's hands (NOT closed)
+- ✅ **Auth Site URL FIXED (8 Aug)** — set to `https://aisolar.ie` via the Management API, with the
+  redirect allow-list `aisolar.ie/** · www.aisolar.ie/** · localhost:8788/** · localhost:3000/**`
+  (prod + dev both work). Verified by read-back. _(Was `http://localhost:3000` — would have broken prod
+  confirmation/reset/magic-link emails.)_
+- ⚠️ **PITR OFF** (verified `pitr_enabled=false`; only daily physical backups via walg). Turn on
+  Point-in-Time Recovery. Supabase → Database → Backups.
+- ✅ **Demo model — I HAD THIS WRONG, corrected:** demo DATA + the guided tour are in prod **BY DESIGN**
+  (Cal's 5 Aug spec: the archetype cast + walkthrough = every new user's onboarding/training). Gated to a
+  signed-in owner's sidebar toggle (localStorage) — an **anonymous visitor sees nothing fabricated**
+  (`isDemoMode()` returns false unless DEV or a real session). The **auth-bypass is impossible in a prod
+  build** (`isAuthBypassAllowed()` → false when PROD). `VITE_ENABLE_DEMO` only gates the dev/staging banner,
+  NOT the data or the bypass. So there's nothing to "turn off" — demo-in-prod is the intended feature. My
+  earlier "effectively OFF" was wrong: I misread the hidden Vercel value AND conflated demo-data vs auth-bypass.
+- ⚠️ **A1 work + door consolidation UNCOMMITTED** (verified git status): `create-subscription-checkout/`,
+  `stripe-webhook`, `InstallerSignup`, `App.tsx`, `AuthPage`, `MarketingShell`, `DocsPage`,
+  `AISolarLanding`, `AiosPage`, `AiTeamPageV2`, docs. Commit on Cal's word.
+- ⚠️ **Solar Ireland `/embed` map** — chain is `/embed → CalculatorWidget → SolarCalculator →
+  RoofDesigner` (the file fixed in 63d56fe: Google/RoofImagery). Root cause fixed; **needs one
+  in-browser `/embed` test on a real address** to fully close before pointing SolarIrelandGroup at it.
+
+### 🟠 MINOR / KNOWN
+- 🟠 **`brands` is role-scoped, not tenant-scoped** — DELIBERATE (rls_floor_extension left it: "name/
+  colour semi-public, writes admin-gated"). Residual: a tenant admin/consultant can r/w another
+  tenant's brand row. Not PII/money. Cal's call whether to tenant-scope it.
+- 🟠 **Stored-path pricing** — the CHECK now admits `'pricing'` (✅ above), but server-side persistence
+  of the owner pricing dial still no-ops until the A1 JWT tenant-claim lands (or `pushTenantSetting`
+  aligns to `user_roles`). On-screen correct (localStorage); the STORED proposal uses DEFAULT_PRICING.
+  Fine for concierge — verify your rate before a signed contract.
+- **Sites wiring** = the true go-live signal (real brand domains carry the door → attributed lead).
+  Distinct from "app deployed". Still to do.
+
+### Cal's product calls (his, not mine): NC8 (>50kW appendix-only?) · statutory flags (ESB bands / typed
+  e-sig / NDMG+ACA) · cooling-off wording.
+
+### The real last mile (all Cal-hands bar the smoke): Auth Site URL → aisolar.ie · PITR on · commit A1+door
+  · sites wiring · Maps referrer-lock (2 min) · joint prod smoke.
+
+---
+
+## 🟢 8 Aug — A1 Stripe billing WIRED (the installer can actually pay)
+
+**Plain English:** an installer signing up now picks a plan, then gets sent to
+Stripe to put a card on file. Nothing is charged for 7 days (free trial). When
+they pay, Stripe tells our server and we stamp their subscription onto their
+account. This is Cal's step **#3 (A1 Stripe)**. TEST MODE only — Solar Ireland
+sandbox (`acct_1Sf4Bf…`); real money is NOT live yet.
+
+**Built / deployed (all verified with tools):**
+- `supabase/functions/create-subscription-checkout/` **(NEW)** — `mode:subscription`,
+  `trial_period_days:7`, base-plan line + €97/extra-seat line. PLANS solo/team/aiteam
+  = 197/497/997 monthly (yearly 148/373/748 ×12), matches `PricingPage.PRICES`.
+  Reads `STRIPE_SECRET_KEY`; returns `{url,sessionId}`; metadata carries
+  tenant_id/user_id/plan. Deploy: `export SUPABASE_ACCESS_TOKEN=$(cat ~/.supabase/access-token); npx --yes supabase@latest functions deploy create-subscription-checkout --project-ref ywizcsulurxoqjdgnkvc`.
+- `stripe-webhook/index.ts` **(EXTENDED)** — `checkout.session.completed` now branches:
+  subscription → writes `stripe_customer_id`/`stripe_subscription_id`/`trial_ends_at`
+  onto `tenants` (by `session.metadata.tenant_id`); the old deposit/final INVOICE
+  path is untouched below it. Added `customer.subscription.updated`/`.deleted` to keep
+  the tenant in sync. Deploy same cmd + **`--no-verify-jwt`** (Stripe sends no Supabase
+  JWT; the `stripe-signature` header is the auth).
+- `src/pages/InstallerSignup.tsx` — new **"Pick your plan"** chip step (Solo/AISolar/
+  AITeam, real prices) before account creation; `onComplete` = `signUp → provisionTenant
+  → startCheckout(plan, tenantId) → window.location = Stripe`. Email-confirm branch
+  stashes the chosen plan. **Typecheck GREEN**; plan step **browser-verified** on the
+  running preview.
+
+**Stripe config (test/sandbox):**
+- Webhook endpoint `we_1U1y8H…` → `https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/stripe-webhook`,
+  status ENABLED, events: `checkout.session.completed` + `customer.subscription.updated`/`.deleted`.
+- Supabase secrets: `STRIPE_SECRET_KEY` ✅, `STRIPE_WEBHOOK_SECRET` ✅ (both confirmed via `secrets list`).
+- Stripe CLI logged in to Solar Ireland sandbox (key expires 2026-11-06). Postmark secrets already set (6 Aug).
+
+**NOT done yet — deliberate, Cal's order (Stripe → Postmark → SIG bugs → connect → smoke test):**
+- ⏳ **End-to-end smoke test** (real fake-signup → Stripe test card `4242…` → confirm the
+  tenant row gets `stripe_subscription_id` + `trial_ends_at`) = the FINAL step, after Postmark + Solar Ireland.
+- ⏳ Pricing "Try for free" still points at `/get-started` (AuthPage), NOT `/signup`. That's the
+  **overlapping-intake cleanup** Cal flagged for the "sharpen national brands" phase — left alone on purpose.
+- ⏳ Go-live needs Stripe **LIVE** keys (currently sandbox).
+- Uncommitted as of writing (awaiting Cal's "commit"): InstallerSignup.tsx, stripe-webhook, create-subscription-checkout/.
+
+---
+
 ## 📓 7 Aug — the onboarding / widget correction (read before touching either)
 
 **What today was, honestly:** an attempt to put the AISolar widget on Solar Ireland (first national site), brand it, collapse its two paths into one, then bug-audit. It went wrong — I rebuilt the `/embed` widget **blind** instead of reading what already existed, proved it only in a local preview Cal wasn't watching, and it was reverted. **Net product change today ≈ zero.** The value is the diagnosis below. _(Standing lesson: read the ask + read the code + PLAN the integration before building. Never blind.)_

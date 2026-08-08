@@ -20,7 +20,7 @@ origin-kind law proven 8/8 (independent→hold · county-owned→hold · unowned
 **Woven through ④–⑦, not parked (Cal: "the little growth tactics throughout"):** review ask at the 5★ moment · referral card IN the branded handover pack · milestone money emails with what-happens-next · SEAI grant status visible to the customer · doc vault in the portal (their certs forever) — the 360 feeling, "what they always wanted."
 
 ## 2 · YOUR HANDS (whenever ready)
-`supabase db push` (lands the RLS-floor + pricing-key fixes — written, waiting) · push the branch (commits local) ·
+~~`supabase db push`~~ (RLS-floor + pricing-key fixes — ✅ ALREADY APPLIED + verified live 8 Aug, see §9) · push the branch (commits local) ·
 the two ESB policy reads (5.75/11.04 bands · typed e-sig) · old-key rotation · edge-fn deploy + secrets · Postmark
 token + DNS (I prep) · Vercel domain · doors onto the live brand sites · paste your auth/onboarding functions (file/RAW).
 

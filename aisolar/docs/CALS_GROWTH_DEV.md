@@ -226,7 +226,7 @@ ingest browser-auth (source keys) · routing verified for the first deployment s
     Terms of Service rewrite (pre-launch legal) · CSV bulk import (P1, onboarding nicety).
 11. **A1 auth/tenant onboarding** (the Flowith flow IS its face) → then **the national merge — OUR finale, last.** 🎯
 
-**🔑 CAL'S HANDS:** `supabase db push` (⚠️ TWO migrations waiting: RLS floor extension + pricing key) · old-key rotation
+**🔑 CAL'S HANDS:** ~~`supabase db push`~~ (✅ RLS floor extension + pricing key ALREADY APPLIED + verified live 8 Aug — no push needed) · old-key rotation
 + git-history purge · deploy 16 edge fns + secrets (I prep the manifest) · Postmark token + DNS · Vercel deploy, demo
 OFF in prod env · doors onto the live brand sites (the go-live signal) · the two ❓ESB policy reads (5.75/11.04 bands ·
 typed e-sig) · paste the auth/onboarding functions (file/RAW).
@@ -271,3 +271,12 @@ From our current base (Stripe webhook plumbing + Supabase auth + tenant entitlem
 ## Why none of this is scary
 Each is bounded: it ends at `ingest-lead` with a `source_key`. The tenant isolation, routing, attribution, and the
 AIGate human gates all apply automatically. A new channel is a weekend, not a rebuild.
+
+## Billing / subscriptions (post-launch follow-ons)
+_A1 Stripe billing is LIVE in **test mode** (8 Aug): plan pick at signup → Stripe Checkout → 7-day trial → subscription stamped on the tenant. Full record in LAST_MILE "🟢 8 Aug"._
+- **Annual toggle in-app** — signup defaults to monthly; surface the yearly (25%-off) choice + an in-app switch.
+- **Seat management UI** — buy/remove the €97 extra seats from Settings (the checkout already prices seats).
+- **In-app "add a card" nudge** — for anyone who skips Stripe at signup (they land on trial without a card on file).
+- **Plan upgrade/downgrade** — Solo → AISolar → AITeam self-serve from Settings (Stripe subscription update, not a new checkout).
+- **Dunning / failed-payment recovery** — retry emails + a grace banner when a charge fails after the trial ends.
+- **Go-live keys** — swap the Solar Ireland sandbox for Stripe LIVE keys as part of launch.
