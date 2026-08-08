@@ -22,13 +22,13 @@ export type EsbFormChoice = 'NC6' | 'NC7' | 'NC8';
  *  from the field app to warn the crew the MOMENT a fitted rating would flip
  *  the form (NC6→NC7 needs pre-approval; catching it on the roof is the
  *  whole point of the triple check).
- *  ⚠️ VERIFY BEFORE LIVE (flagged 28 Jul, needs ESB policy read + Cal's yes):
- *  micro-gen is 25A/phase = 5.75 kVA single / 11.04 kVA three — the 6/11
- *  bands here are the common shorthand and UNDER-FILE at exactly 5.75–6.0 kW
- *  single-phase. Statutory threshold change requires sign-off, not a quiet
- *  edit. Until then boundary cases should be eyeballed. */
+ *  ✅ CAL SIGNED OFF (8 Aug 2026): bands set to the ESB rule — 25A/phase =
+ *  5.75 kVA single / 11.04 kVA three (was the 6/11 shorthand, which under-filed
+ *  at exactly 5.75–6.0 kW single-phase). The choice runs on the INVERTER AC
+ *  rating (inverterAcKw below), never the panel kWp — e.g. a 9 kWp array on a
+ *  5 kW inverter is NC6. */
 export function esbFormForAcKw(acKw: number, threePhase: boolean): EsbFormChoice {
-  const nc6Limit = threePhase ? 11 : 6;
+  const nc6Limit = threePhase ? 11.04 : 5.75;
   return acKw <= nc6Limit ? 'NC6' : acKw <= 50 ? 'NC7' : 'NC8';
 }
 
@@ -57,7 +57,7 @@ export function inverterAcKw(lead: DummyLead): number {
     // SolaX-style "X1-Hybrid-5.0 G4" / "X1-Mini-3.6": rating trails the family
     // name as a bare decimal (caught live 28 Jul — fell through to kWp and
     // over-filed NC7 on a 5kW hybrid).
-    ?? m.match(/(?:hybrid|mini|boost|air|pro)-(\d+(?:\.\d+)?)\b/i);
+    ?? m.match(/(?:hybrid|mini|boost|air|pro)[\s-](\d+(?:\.\d+)?)\b/i);
   const parsed = match ? parseFloat(match[1]) : 0;
   return parsed > 0 && parsed <= 1000 ? parsed : (lead.proposal?.system_size_kw ?? 0);
 }

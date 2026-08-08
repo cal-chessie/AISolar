@@ -267,11 +267,14 @@ interface Scenario {
  * phase, and each carries its compliance application, filled:
  *   1. Domestic small  · 3.5kW · NC6 · survey done
  *   2. Commercial small · 20kW · NC7 · proposal out
- *   3. Domestic large  · 6.8kW+battery · NC7 (residential-yet-NC7) · approved
+ *   3. Domestic large  · 6.8kWp on a 5kW inverter · NC6 · approved
  *   4. Farm            · 14kW · NC7 · deposit paid, install lining up
  *   5. Commercial large · 75kW · NC7 · installed, handover + NC pack
- * NC6 vs NC7 is not hand-set — it follows the real rule (>6kW inverter ⇒ NC7),
- * applied in the survey block below.
+ *   6. Domestic NC6 small · 3.5kWp / 3.6kW inverter · proposal sent   (Cal 8 Aug)
+ *   7. Domestic NC6 large · 9kWp / 5kW inverter · approved — the oversized-DC
+ *      case: lots of panels, capped inverter, STILL NC6                (Cal 8 Aug)
+ * The form is NOT hand-set — it follows the real ESB rule on the INVERTER AC
+ * rating (≤5.75 kVA single / ≤11.04 kVA three = NC6), via complianceDecision.ts.
  */
 export function generateDummyLeads(): DummyLead[] {
   const leads: DummyLead[] = [];
@@ -327,6 +330,27 @@ export function generateDummyLeads(): DummyLead[] {
         { stage: 'installing', channel: 'portal', direction: 'inbound', summary: 'Crew marked "on site" + uploaded progress photos', timestamp: iso(3, 9), actor: 'installer' },
         { stage: 'installed', channel: 'portal', direction: 'inbound', summary: 'Install checklist 100% complete + commissioning photos', timestamp: iso(1, 16), actor: 'installer' },
         { stage: 'installed', channel: 'email', direction: 'outbound', summary: 'Your handover pack and final invoice are in your portal', timestamp: iso(1, 16), actor: 'agent' },
+      ],
+    },
+    // 6. NC6 SMALL — domestic · 3.5kWp on a 3.6kW inverter · proposal sent. (Cal 8 Aug)
+    {
+      archetype: 'domestic_small', name: 'Niamh Byrne', address: '14 Ashfield Park, Ennis, Co. Clare, V95 KP62',
+      stage: 'proposal_sent', daysAgo: 4, consultant: CONSULTANTS[1], installer: INSTALLERS[1], source: 'referral',
+      touchpoints: [
+        { stage: 'new', channel: 'portal', direction: 'inbound', summary: 'Bill uploaded — small south-facing semi', timestamp: iso(7, 10), actor: 'customer' },
+        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: 'Surveyor confirmed a 3.6kW inverter, 8 panels', timestamp: iso(3, 14), actor: 'installer' },
+        { stage: 'proposal_sent', channel: 'email', direction: 'outbound', summary: 'Proposal sent — NC6 micro-gen, no ESB pre-approval needed', timestamp: iso(1, 11), actor: 'consultant' },
+      ],
+    },
+    // 7. NC6 LARGE — domestic · 9kWp array on a 5kW inverter · approved. The
+    //    oversized-DC case (Cal 8 Aug): big roof, capped inverter, STILL NC6.
+    {
+      archetype: 'domestic_large', name: 'Declan Fitzgerald', address: '3 Oakmount Rise, Douglas, Cork, T12 R6X8',
+      stage: 'approved', daysAgo: 7, consultant: CONSULTANTS[0], installer: INSTALLERS[0], sizeKw: 9,
+      touchpoints: [
+        { stage: 'survey_complete', channel: 'portal', direction: 'inbound', summary: '9kWp array on a 5kW hybrid — big south roof, capped inverter', timestamp: iso(4, 15), actor: 'installer' },
+        { stage: 'approved', channel: 'portal', direction: 'inbound', summary: 'Customer signed — files as NC6 despite the 9kWp array (5kW inverter)', timestamp: iso(0, 13), actor: 'customer' },
+        { stage: 'approved', channel: 'email', direction: 'outbound', summary: 'Deposit link + your SEAI grant steps are in your portal', timestamp: iso(0, 13), actor: 'agent' },
       ],
     },
   ];
