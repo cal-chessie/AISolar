@@ -16,6 +16,32 @@ prove it, and a short ranked list.
 
 ---
 
+# ═══════ PART 1 · 📍 CURRENT STATE & NEXT ═══════
+
+## 🔖 SESSION HANDOFF — end of 8 Aug → start of next  ⭐ READ FIRST
+
+**Where it stands:** branch `cowork-8aug`, **6 commits, ✅ PUSHED** to `origin/cowork-8aug` @
+`40cabdc` (ls-remote verified), working tree clean.
+Done: A1 Stripe billing wired (test) · one signup door (`/get-started` removed) · full live-DB
+verification pass (the "two migrations waiting" claim was FALSE — they're applied) · Auth Site
+URL → aisolar.ie · **map fixed** (the Google Maps key was missing from Vercel — added + prod
+redeployed READY) · NC6/NC7 now files on the **INVERTER** (5.75/11.04, Cal signed off) + 2 NC6
+demo leads (small 3.6 kW; large 9 kWp on a 5 kW inverter).
+
+**NEXT, in order:**
+1. ✅ **Push `cowork-8aug`** — DONE (verified on origin @ `40cabdc`).
+2. **Verify the map live** — load `aisolar.ie/embed`, draw a roof on a real address. If the satellite
+   won't load → add `aisolar.ie` + `www.aisolar.ie` to the Maps key's referrer list in Google Cloud (2 min).
+3. **PITR ON** (Supabase → Database → Backups — paid add-on, Cal's call).
+4. **e2e smoke** — fake installer signup → Stripe test card `4242 4242 4242 4242` → confirm the
+   subscription stamps the tenant; then a lead → close with Postmark firing at each trigger. The
+   "proven live" moment.
+5. Then: live Stripe keys · sites wiring (brand domains carry the door) · the numbered-backlog tick-through.
+
+**Read next:** the "🔬 8 Aug FULL VERIFICATION PASS" section just below = the honest current state.
+
+---
+
 ## 🔬 8 Aug — FULL VERIFICATION PASS (disk + live V5 DB, every item tool-proven)
 
 _Cal's order: green-tick ONLY what's proven; double-check before calling anything closed.
@@ -61,17 +87,13 @@ overturned a second agent's "reds list" on two points — noted below._
   build** (`isAuthBypassAllowed()` → false when PROD). `VITE_ENABLE_DEMO` only gates the dev/staging banner,
   NOT the data or the bypass. So there's nothing to "turn off" — demo-in-prod is the intended feature. My
   earlier "effectively OFF" was wrong: I misread the hidden Vercel value AND conflated demo-data vs auth-bypass.
-- ⚠️ **A1 work + door consolidation UNCOMMITTED** (verified git status): `create-subscription-checkout/`,
-  `stripe-webhook`, `InstallerSignup`, `App.tsx`, `AuthPage`, `MarketingShell`, `DocsPage`,
-  `AISolarLanding`, `AiosPage`, `AiTeamPageV2`, docs. Commit on Cal's word.
-- 🟡 **Maps calculator — REAL cause found + staged (8 Aug).** `/embed` map WORKS on localhost
-  (tested: geocoded a Dublin address, Google found the roof, satellite rendered, estimate computed).
+- ✅ **A1 work + door consolidation COMMITTED + PUSHED** — `origin/cowork-8aug` @ `40cabdc` (6 commits, ls-remote verified).
+- 🟡 **Maps calculator — cause found + FIXED + REDEPLOYED (8 Aug).** `/embed` map WORKS on localhost.
   It was DEAD on `aisolar.ie` because **`VITE_GOOGLE_MAPS_KEY` was missing from Vercel entirely**
-  (`googleSolar.ts:16` reads it from env → `key=undefined` in the prod bundle). It was NOT referrer-lock
-  (earlier guess was wrong). **FIX STAGED: added the key to Vercel production+preview (8 Aug, verified).**
-  ⏳ Takes effect on the **next prod redeploy** (Vite inlines env at build time — the current live bundle
-  still has no key). Then confirm the key's HTTP-referrer allow-list in Google Cloud includes `aisolar.ie`
-  + `www.aisolar.ie` (your Google Cloud — 2 min, may already be set).
+  (`googleSolar.ts:16` reads it from env → `key=undefined` in the prod bundle). NOT referrer-lock.
+  **Fixed: added the key to Vercel production+preview + redeployed prod (READY `ai-solar-87bd5l3i7`).**
+  ⏳ LEFT: load `aisolar.ie/embed` to confirm it renders; if not, add `aisolar.ie`/`www` to the key's
+  Google-Cloud referrer allow-list (Cal's — 2 min, may already be set).
 
 ### 🟠 MINOR / KNOWN
 - 🟠 **`brands` is role-scoped, not tenant-scoped** — DELIBERATE (rls_floor_extension left it: "name/
@@ -93,101 +115,42 @@ overturned a second agent's "reds list" on two points — noted below._
 
 ---
 
-## 🟢 8 Aug — NC6/NC7 now files on the INVERTER + 2 NC6 demo leads (Cal signed off)
+# ═══════ PART 2 · 📋 OPEN WORK (what is left) ═══════
 
-**The fix (Cal 8 Aug — statutory sign-off given):** the ESB form choice was on the wrong yardstick.
-In `complianceDecision.ts`:
-- **Threshold** set to the real ESB rule — **≤5.75 kVA single / ≤11.04 kVA three-phase = NC6**
-  (was the 6/11 shorthand, which under-filed at 5.75–6.0 kW single-phase).
-- **Parse bug fixed:** `inverterAcKw()` missed SolaX space-format models (`'X1-Hybrid 5.0 G4'`) and
-  silently fell back to the panel kWp — i.e. it was deciding on the PANELS for those models, the exact
-  thing to avoid. Now it reads the inverter AC rating. Side effect (correct): scenario 3 (6.8 kWp on a
-  5 kW inverter) now files **NC6**, not NC7.
-- The decision runs on the INVERTER, never the array: **a 9 kWp array on a 5 kW inverter = NC6.**
+## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
+_(The security final pass — Lane B's evidence — was pulled forward to this weekend at
+Cal's ask; results below.)_
 
-**2 new demo leads (`dummyData.ts`) — PROVEN NC6 by running the real parse+threshold:**
-- **NC6 small** — Niamh Byrne · 3.5 kWp / 3.6 kW inverter · proposal sent.
-- **NC6 large** — Declan Fitzgerald · **9 kWp array / 5 kW inverter** · approved (the oversized-DC case).
-Typecheck GREEN. Uncommitted (this batch): `complianceDecision.ts`, `dummyData.ts`.
+### 🎁 LANE C — polish (do first; Sprint 3 — the feel of one product)
+- ⬜ Shared page-header / shell conformity — consultant + installer adopt the owner shell header.
+- ⬜ AIField mobile-first — ClientHub · DayRoute · JobViewV2 on a phone + the full logic walk (serials → NC6 fields → sign-off).
+- ⬜ Design Studio — the default array snaps to the solar-read roof centroid (drops on the driveway today).
+- ⬜ Sweep-8 codes — M6 designs persistence (kills stored-vs-live kWp drift) · M7 proposal_versions.
 
----
+### 🚦 LANE A — deploy + prove (the true unlock; mostly Cal's hands, I prep every line)
+Runbook + the 10-minute prod smoke = **DEPLOYMENT_GATE.md**. Short form:
+1. `supabase login` → `./scripts/deploy-comms.sh` + `create-checkout` · `stripe-webhook` · `ingest-lead` · `extract-bill-data` · `agent-drain`.
+2. Secrets: Postmark token + verified sender · Stripe secret + webhook secret (register the webhook URL after deploy).
+3. ✅ Auth Site URL = aisolar.ie (done 8 Aug) · demo: intended-in-prod (nothing to turn off) · PITR backups on (still to do).
+4. Provision the client's tenant (`provision_tenant`) + seed brand/compliance.
+5. **Together:** the prod smoke — one real job, door → handover, a real email at every send.
 
-## 🟢 8 Aug — A1 Stripe billing WIRED (the installer can actually pay)
-
-**Plain English:** an installer signing up now picks a plan, then gets sent to
-Stripe to put a card on file. Nothing is charged for 7 days (free trial). When
-they pay, Stripe tells our server and we stamp their subscription onto their
-account. This is Cal's step **#3 (A1 Stripe)**. TEST MODE only — Solar Ireland
-sandbox (`acct_1Sf4Bf…`); real money is NOT live yet.
-
-**Built / deployed (all verified with tools):**
-- `supabase/functions/create-subscription-checkout/` **(NEW)** — `mode:subscription`,
-  `trial_period_days:7`, base-plan line + €97/extra-seat line. PLANS solo/team/aiteam
-  = 197/497/997 monthly (yearly 148/373/748 ×12), matches `PricingPage.PRICES`.
-  Reads `STRIPE_SECRET_KEY`; returns `{url,sessionId}`; metadata carries
-  tenant_id/user_id/plan. Deploy: `export SUPABASE_ACCESS_TOKEN=$(cat ~/.supabase/access-token); npx --yes supabase@latest functions deploy create-subscription-checkout --project-ref ywizcsulurxoqjdgnkvc`.
-- `stripe-webhook/index.ts` **(EXTENDED)** — `checkout.session.completed` now branches:
-  subscription → writes `stripe_customer_id`/`stripe_subscription_id`/`trial_ends_at`
-  onto `tenants` (by `session.metadata.tenant_id`); the old deposit/final INVOICE
-  path is untouched below it. Added `customer.subscription.updated`/`.deleted` to keep
-  the tenant in sync. Deploy same cmd + **`--no-verify-jwt`** (Stripe sends no Supabase
-  JWT; the `stripe-signature` header is the auth).
-- `src/pages/InstallerSignup.tsx` — new **"Pick your plan"** chip step (Solo/AISolar/
-  AITeam, real prices) before account creation; `onComplete` = `signUp → provisionTenant
-  → startCheckout(plan, tenantId) → window.location = Stripe`. Email-confirm branch
-  stashes the chosen plan. **Typecheck GREEN**; plan step **browser-verified** on the
-  running preview.
-
-**Stripe config (test/sandbox):**
-- Webhook endpoint `we_1U1y8H…` → `https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/stripe-webhook`,
-  status ENABLED, events: `checkout.session.completed` + `customer.subscription.updated`/`.deleted`.
-- Supabase secrets: `STRIPE_SECRET_KEY` ✅, `STRIPE_WEBHOOK_SECRET` ✅ (both confirmed via `secrets list`).
-- Stripe CLI logged in to Solar Ireland sandbox (key expires 2026-11-06). Postmark secrets already set (6 Aug).
-
-**NOT done yet — deliberate, Cal's order (Stripe → Postmark → SIG bugs → connect → smoke test):**
-- ⏳ **End-to-end smoke test** (real fake-signup → Stripe test card `4242…` → confirm the
-  tenant row gets `stripe_subscription_id` + `trial_ends_at`) = the FINAL step, after Postmark + Solar Ireland.
-- ⏳ Pricing "Try for free" still points at `/get-started` (AuthPage), NOT `/signup`. That's the
-  **overlapping-intake cleanup** Cal flagged for the "sharpen national brands" phase — left alone on purpose.
-- ⏳ Go-live needs Stripe **LIVE** keys (currently sandbox).
-- Uncommitted as of writing (awaiting Cal's "commit"): InstallerSignup.tsx, stripe-webhook, create-subscription-checkout/.
+### 🔨 LANE B — the real builds (ranked)
+1. ✅ **A1 · Stripe billing — DONE (8 Aug, test mode):** 7-day trial → subscription checkout + webhook + signup plan-pick, deployed. Open only for the e2e smoke + live keys.
+2. ✅ **2A · pack gate** *(Done 5 Aug)* — surfaced at all 3 touchpoints (owner/consultant/installer) + the compliance-vision mismatch now BLOCKS the pack. **Remaining:** the per-customer human eyeball (operational) + the **NC8 decision** (Cal's call — >50kW appendix-only?).
+3. **Founder operational setup (Cal: "I haven't got a baldy")** — I WALK CAL THROUGH: (a) **Branding** — Settings → Brand: logo, from-name, portal title, accent (touches every customer surface). (b) **Postmark** — verify a sending domain (DKIM/return-path), paste the token as the secret; the from-name comes from the tenant brand. (c) **How every customer uses it** — the customer journey playbook (magic-link portal, no password; they ask the AI, book, pay, download the pack). Notes seeded in Founder training below; expand as we do each.
+   - 🔒 **LOCKED (Cal, 6 Aug — AGREED): branding + Postmark + Stripe secrets + the first proof run happen TOGETHER when Cal's back at the machine.** Two honest reasons: (1) it needs **Cal's own Postmark/Stripe secrets** to actually work — I can't and shouldn't hold them; (2) Cal wants the **proof run side-by-side**, watched live, not reported after. My job before then: prep every line so the joint session is a click-through, not a build.
+4. ✅ **2C · installer photos → storage** *(Done 5 Aug)* — JobViewV2 photos now really upload (phone camera → `project-documents` bucket at `{leadId}/install/…`, tenant-scoped RLS). The last 2C leftover, closed.
+5. ✅ **Security proof pass** — DONE this weekend, see 🔒 below.
+6. **2E · Maps key** referrer-lock now / edge-proxy later (D4) · **sites wiring** (brand-site doors → ingest-lead).
 
 ---
 
-## 📓 7 Aug — the onboarding / widget correction (read before touching either)
-
-**What today was, honestly:** an attempt to put the AISolar widget on Solar Ireland (first national site), brand it, collapse its two paths into one, then bug-audit. It went wrong — I rebuilt the `/embed` widget **blind** instead of reading what already existed, proved it only in a local preview Cal wasn't watching, and it was reverted. **Net product change today ≈ zero.** The value is the diagnosis below. _(Standing lesson: read the ask + read the code + PLAN the integration before building. Never blind.)_
-
-**What's actually true (grounded/verified today):**
-- **The good bill-first onboarding already EXISTS** → `src/pages/StartAnalysis.tsx` (light theme: "See what solar saves you" · Home/Business fork · **Upload = most accurate** / Enter manually · "What we read off your bill" 21-detail trust grid · "Take a photo" · "Build it on screen"). It was never missing — it's the standard the widget should carry.
-- The `/embed` widget `src/components/calculator/CalculatorWidget.tsx` is the **older/cruder** path (the one that shipped to the embed); it routes visitors into the roof-draw map.
-- 🔴 **The roof-draw map is BROKEN** — observed live on the Solar Ireland embed: a full street address ("45 Griffith Avenue, Drumcondra, Dublin 9") returns _"Couldn't pin that address on the free map"_ and the satellite view never loads. **Root cause NOT diagnosed** — candidates: Maps key referrer-lock (§C) · the geocode call · the `/embed` page CSP (note #5 fixed the *app* CSP 6 Aug, but the embed still fails). Diagnose before anyone claims it fixed.
-- **Solar Ireland is Cal's FIRST onboarding design and the origin of AISolar.** Its "4 calculators" (Bill Analyser upload + manual · savings slider · repayments calc) are that origin thinking — **refine, don't bulldoze.**
-- **Scale law (Cal):** the widget must embed on **ANY** website **AND** hold the **full flow** end-to-end, or it won't scale.
-
-**State after today (both repos reverted — verified with git):**
-- **AISolar `main`** — clean, unchanged from committed (HEAD `09ec30d`). The blind rebuild is **PARKED, not merged**, on branch `widget-upload-rebuild` (commit `fe3e6ce`). Do not resurrect it without a plan.
-- **Solar Ireland** — reverted: commit `efd07cd` (Revert of `3cb266c`) **pushed to origin/main**; the native calculators are restored. Two unrelated uncommitted files (`package-lock.json`, `public/solar-icon.svg`) left untouched (not ours).
-- **`AI_API_KEY` (OpenRouter) set on V5** → `extract-bill-data` vision now works (proven: a test Irish bill read back MPRN / €amount / kWh / day+night rates, HTTP 200). Solar Ireland brand `logoUrl` DB value left set. Both inert/harmless.
-
-**The plan — Cal's order, start fresh tomorrow (do NOT jump ahead):**
-1. **Fix Solar Ireland's bugs first** — the broken maps among them.
-2. **Refine the onboarding** into what it should be.
-3. **THEN** the widget + how it slots in (embed-anywhere + holds-the-flow).
-
----
-
-## 🔴 7 Aug (cont.) — THE TYPE-CHECKER WAS CHECKING NOTHING (root cause of "errors everywhere")
-
-**The find:** the root `tsconfig.json` is references-only (`"files": []`), so `tsc --noEmit` — and every "tsc clean" claimed this session — checked **zero files**. The REAL check (`npm run typecheck` = `tsc -p tsconfig.app.json --noEmit`) surfaced **57 hidden type errors**. That's the "errors all over the app."
-
-**Fixed (57 → 14):**
-- **3 runtime crashers** (TS2304 "cannot find name" = the app throwing "X is not defined" on render): `getTenantBrand` (MessageBubble — crashed on ANY customer click, Cal's reported bug), `COACH_PROMPTS` (RoleBasedAICoach), `setArtefactVerdict` (ArtefactCheckCard). All were real functions/consts that existed but were **never imported**. **0 TS2304 remain.**
-- **40 stale-type errors** cleared by **regenerating `src/integrations/supabase/types.ts` from the live V5 schema** — it was dated **Jul 20**, didn't know `field_records` / `sources.source_key` / `seai_grants` etc. The queries were correct; the generated types were 3 weeks old. Regen via Management API (CLI unavailable): `GET /v1/projects/<ref>/types/typescript` — see `POST_DEPLOY_WATCH.md §2`.
-
-**The net (so it can't recur):** added `npm run typecheck`. **MUST be 0 before any deploy.** Standing health runbook = **the POST-DEPLOY WATCH section (in this doc)** (gates, stale-type regen, daily watch, escalation). Regenerate types after EVERY migration.
-
-**✅ FIXED — all 14 (57 → 0; `npm run typecheck` clean + prod build green):** wrong field names → the real ones (`needsG10`→`requiresG10`, `product.name`→`manufacturer`+`model`); `EsbFormChoice` prop widened to include NC8; stage-array membership widened to `string[]`; dead brand-literal comparison cast to string; `ProductSnapshot` given its missing `diverter`/`charger` kinds; survey/proposal dynamic fields typed (`keyof SurveyFormData`, `Record` casts); two jsonb payloads cast (`Json` / `TablesInsert<'field_records'>` — the latter because tenant_id is trigger-stamped server-side); and `installer_roster` registered as a real `tenant_settings` key + store. No stale-type hand-mangling — those 40 were cleared by the type regen, not by editing queries.
+## 🚀 THE GO-LIVE SEQUENCE (Cal, 5 Aug)
+1. **Slack rail** is set up for production (Cal did this). v2 wiring: per-tenant webhook on `notify()` — parked until after the smoke.
+2. **Cal is the FIRST user** — connect the NATIONAL brands first (Cal's own tenant), walk a real job through, shake it out as the founder.
+3. **Then the first clients** — provision each, onboard on the guided tour (concierge).
+4. **Then handover** — each client running their own jobs.
 
 ---
 
@@ -203,14 +166,14 @@ items are all below). Grouped by what it is + who owns it._
 - **NC8 decision** (statutory-adjacent) — >50kW jobs get the data appendix only; calibrate the overlay OR say "appendix-only for NC8" honestly. **Cal decides.**
 
 ### ⚖️ B. STATUTORY FLAGS — **Cal's explicit yes required; never a quiet edit**
-1. **ESB micro-gen bands** — code says 6/11 kW; rule is 25 A/phase = 5.75 kVA single-phase / 11.04 kVA three-phase. We under-file at 5.75–6.0 kW single-phase. Policy read + sign-off.
+1. ✅ **ESB micro-gen bands — DONE (Cal signed off 8 Aug).** `complianceDecision.ts` now uses the real ESB rule (≤5.75 kVA single / ≤11.04 kVA three-phase = NC6), decided on the INVERTER AC rating (was the 6/11 shorthand + a parse bug that fell back to panel kWp). See the "🟢 8 Aug — NC6/NC7 on the INVERTER" note.
 2. **Typed e-signature on NC6 vs wet ink** — until ESB confirms typed is accepted, the pack says "print, sign & date by hand."
 3. **NDMG + ACA figures** — verified vs the SEAI PDF before they show on a commercial proposal.
 
 ### 🚦 C. Deploy — Cal's hands (I prep every line; runbook = DEPLOYMENT_GATE.md)
-- The gate: `supabase login` → deploy the edge fns → set Postmark + Stripe secrets → Auth Site URL = prod domain → demo env OFF → PITR backups ON.
+- The gate: `supabase login` → deploy the edge fns → set Postmark + Stripe secrets → ✅ Auth Site URL = aisolar.ie (done 8 Aug) → ~~demo env OFF~~ (demo-in-prod is the intended onboarding feature — nothing to turn off) → PITR backups ON (still to do).
 - **Sites wiring** — the brand-site doors (SolarIrelandGroup · RenewableIreland · wideawakesolar) point at `ingest-lead`. The public go-live moment.
-- **Maps key referrer-lock** — 2 min in your Google console (before the sites go public).
+- **Maps key** — ✅ the missing `VITE_GOOGLE_MAPS_KEY` was added to Vercel + prod redeployed (8 Aug). LEFT: confirm the Google-console referrer allow-list includes aisolar.ie before the sites go public.
 - **The joint prod smoke** — one real job door→handover, every send real, read-flip verified signed-in.
 
 ### 🟡 D. Security remaining (the two deep sweeps closed the criticals — these are the tail)
@@ -245,7 +208,7 @@ _Grounded in THIS app, not generic. ✅ = done · ⚠️ = real gap · 🔴 = fi
 
 **🔴 Fix before live:**
 5. **CSP was blocking Google Maps** — it allowed Mapbox (unused) and omitted `maps.googleapis.com`, so satellite + geocoding would 've been dead in prod. **FIXED 6 Aug** (added to script-src + connect-src, Mapbox removed).
-6. **`brand.ts` placeholder stats** on customer pages — invented numbers, a truth-pass violation shipping today. Replace/remove. *(In "ALL REMAINING WORK" A.)*
+6. ✅ **`brand.ts` placeholder stats — CLOSED** (the invented-stats block was deleted 27 Jul; verified 8 Aug by reading `brand.ts:71-82`). No truth-pass violation.
 
 **⚠️ Real gaps a top team closes before/at launch (ranked by risk):**
 7. ✅ **Error reporting — floor DONE 6 Aug (dependency-free crash sink).** New `client_errors` table (RLS: insert-from-anywhere incl. the anon portal, read only for platform admins, payload size-bounded — *proven live*). `errorReporting.ts` captures **render crashes** (wired into `ErrorBoundary.componentDidCatch`), `window.onerror`, and `unhandledrejection` → `client_errors`. Demo-guarded, deduped (10s), and **token-masked** (`/customer/<token>` never logged — ties to #60). *tsc clean; mask + no-regression browser-verified.* **Upgrade later (Cal's DSN):** Sentry for stack grouping + source maps + alerting; this is the floor that works day one.
@@ -353,76 +316,234 @@ _Every discipline, grounded in this REGULATED, payment-handling, field-ops SaaS.
 
 **Honest floor:** that's ~73 items across three rounds. Rounds 1–2 were the categories; Round 3 is me **reading the source** and it turned up 6 real ones + confirmed 3 you'd already nailed. Beyond this I'd be padding. **The map is complete. The move now is to burn down the reds, not keep listing.**
 
-## 🧭 ORDER (Cal, 5 Aug): **Lane C → Lane A → Lane B**, tick the sprint as we go.
-_(The security final pass — Lane B's evidence — was pulled forward to this weekend at
-Cal's ask; results below.)_
+# ═══════ PART 3 · ✅ DONE & EVIDENCE (the record) ═══════
 
-### 🎁 LANE C — polish (do first; Sprint 3 — the feel of one product)
-- ⬜ Shared page-header / shell conformity — consultant + installer adopt the owner shell header.
-- ⬜ AIField mobile-first — ClientHub · DayRoute · JobViewV2 on a phone + the full logic walk (serials → NC6 fields → sign-off).
-- ⬜ Design Studio — the default array snaps to the solar-read roof centroid (drops on the driveway today).
-- ⬜ Sweep-8 codes — M6 designs persistence (kills stored-vs-live kWp drift) · M7 proposal_versions.
+## 🟢 8 Aug — NC6/NC7 now files on the INVERTER + 2 NC6 demo leads (Cal signed off)
 
-### 🚦 LANE A — deploy + prove (the true unlock; mostly Cal's hands, I prep every line)
-Runbook + the 10-minute prod smoke = **DEPLOYMENT_GATE.md**. Short form:
-1. `supabase login` → `./scripts/deploy-comms.sh` + `create-checkout` · `stripe-webhook` · `ingest-lead` · `extract-bill-data` · `agent-drain`.
-2. Secrets: Postmark token + verified sender · Stripe secret + webhook secret (register the webhook URL after deploy).
-3. Auth Site URL = prod domain · demo env OFF · PITR backups on.
-4. Provision the client's tenant (`provision_tenant`) + seed brand/compliance.
-5. **Together:** the prod smoke — one real job, door → handover, a real email at every send.
+**The fix (Cal 8 Aug — statutory sign-off given):** the ESB form choice was on the wrong yardstick.
+In `complianceDecision.ts`:
+- **Threshold** set to the real ESB rule — **≤5.75 kVA single / ≤11.04 kVA three-phase = NC6**
+  (was the 6/11 shorthand, which under-filed at 5.75–6.0 kW single-phase).
+- **Parse bug fixed:** `inverterAcKw()` missed SolaX space-format models (`'X1-Hybrid 5.0 G4'`) and
+  silently fell back to the panel kWp — i.e. it was deciding on the PANELS for those models, the exact
+  thing to avoid. Now it reads the inverter AC rating. Side effect (correct): scenario 3 (6.8 kWp on a
+  5 kW inverter) now files **NC6**, not NC7.
+- The decision runs on the INVERTER, never the array: **a 9 kWp array on a 5 kW inverter = NC6.**
 
-### 🔨 LANE B — the real builds (ranked)
-1. ⭐ **A1 · Stripe billing** — 7-day trial → per-seat subscription. Foundation is live; this is the money layer. Needed for self-serve + the 40, NOT for a concierge first client. *(Fresh session — A1_BUILD_PLAN.md.)*
-2. ✅ **2A · pack gate** *(Done 5 Aug)* — surfaced at all 3 touchpoints (owner/consultant/installer) + the compliance-vision mismatch now BLOCKS the pack. **Remaining:** the per-customer human eyeball (operational) + the **NC8 decision** (Cal's call — >50kW appendix-only?).
-3. **Founder operational setup (Cal: "I haven't got a baldy")** — I WALK CAL THROUGH: (a) **Branding** — Settings → Brand: logo, from-name, portal title, accent (touches every customer surface). (b) **Postmark** — verify a sending domain (DKIM/return-path), paste the token as the secret; the from-name comes from the tenant brand. (c) **How every customer uses it** — the customer journey playbook (magic-link portal, no password; they ask the AI, book, pay, download the pack). Notes seeded in Founder training below; expand as we do each.
-   - 🔒 **LOCKED (Cal, 6 Aug — AGREED): branding + Postmark + Stripe secrets + the first proof run happen TOGETHER when Cal's back at the machine.** Two honest reasons: (1) it needs **Cal's own Postmark/Stripe secrets** to actually work — I can't and shouldn't hold them; (2) Cal wants the **proof run side-by-side**, watched live, not reported after. My job before then: prep every line so the joint session is a click-through, not a build.
-4. ✅ **2C · installer photos → storage** *(Done 5 Aug)* — JobViewV2 photos now really upload (phone camera → `project-documents` bucket at `{leadId}/install/…`, tenant-scoped RLS). The last 2C leftover, closed.
-5. ✅ **Security proof pass** — DONE this weekend, see 🔒 below.
-6. **2E · Maps key** referrer-lock now / edge-proxy later (D4) · **sites wiring** (brand-site doors → ingest-lead).
+**2 new demo leads (`dummyData.ts`) — PROVEN NC6 by running the real parse+threshold:**
+- **NC6 small** — Niamh Byrne · 3.5 kWp / 3.6 kW inverter · proposal sent.
+- **NC6 large** — Declan Fitzgerald · **9 kWp array / 5 kW inverter** · approved (the oversized-DC case).
+Typecheck GREEN. ✅ Committed + pushed (`origin/cowork-8aug` @ `40cabdc`).
 
 ---
 
-## 🚀 THE GO-LIVE SEQUENCE (Cal, 5 Aug)
-1. **Slack rail** is set up for production (Cal did this). v2 wiring: per-tenant webhook on `notify()` — parked until after the smoke.
-2. **Cal is the FIRST user** — connect the NATIONAL brands first (Cal's own tenant), walk a real job through, shake it out as the founder.
-3. **Then the first clients** — provision each, onboard on the guided tour (concierge).
-4. **Then handover** — each client running their own jobs.
+## 🟢 8 Aug — A1 Stripe billing WIRED (the installer can actually pay)
+
+**Plain English:** an installer signing up now picks a plan, then gets sent to
+Stripe to put a card on file. Nothing is charged for 7 days (free trial). When
+they pay, Stripe tells our server and we stamp their subscription onto their
+account. This is Cal's step **#3 (A1 Stripe)**. TEST MODE only — Solar Ireland
+sandbox (`acct_1Sf4Bf…`); real money is NOT live yet.
+
+**Built / deployed (all verified with tools):**
+- `supabase/functions/create-subscription-checkout/` **(NEW)** — `mode:subscription`,
+  `trial_period_days:7`, base-plan line + €97/extra-seat line. PLANS solo/team/aiteam
+  = 197/497/997 monthly (yearly 148/373/748 ×12), matches `PricingPage.PRICES`.
+  Reads `STRIPE_SECRET_KEY`; returns `{url,sessionId}`; metadata carries
+  tenant_id/user_id/plan. Deploy: `export SUPABASE_ACCESS_TOKEN=$(cat ~/.supabase/access-token); npx --yes supabase@latest functions deploy create-subscription-checkout --project-ref ywizcsulurxoqjdgnkvc`.
+- `stripe-webhook/index.ts` **(EXTENDED)** — `checkout.session.completed` now branches:
+  subscription → writes `stripe_customer_id`/`stripe_subscription_id`/`trial_ends_at`
+  onto `tenants` (by `session.metadata.tenant_id`); the old deposit/final INVOICE
+  path is untouched below it. Added `customer.subscription.updated`/`.deleted` to keep
+  the tenant in sync. Deploy same cmd + **`--no-verify-jwt`** (Stripe sends no Supabase
+  JWT; the `stripe-signature` header is the auth).
+- `src/pages/InstallerSignup.tsx` — new **"Pick your plan"** chip step (Solo/AISolar/
+  AITeam, real prices) before account creation; `onComplete` = `signUp → provisionTenant
+  → startCheckout(plan, tenantId) → window.location = Stripe`. Email-confirm branch
+  stashes the chosen plan. **Typecheck GREEN**; plan step **browser-verified** on the
+  running preview.
+
+**Stripe config (test/sandbox):**
+- Webhook endpoint `we_1U1y8H…` → `https://ywizcsulurxoqjdgnkvc.supabase.co/functions/v1/stripe-webhook`,
+  status ENABLED, events: `checkout.session.completed` + `customer.subscription.updated`/`.deleted`.
+- Supabase secrets: `STRIPE_SECRET_KEY` ✅, `STRIPE_WEBHOOK_SECRET` ✅ (both confirmed via `secrets list`).
+- Stripe CLI logged in to Solar Ireland sandbox (key expires 2026-11-06). Postmark secrets already set (6 Aug).
+
+**Still open on A1 (the rest is done + committed):**
+- ⏳ **End-to-end smoke test** (real fake-signup → Stripe test card `4242…` → confirm the
+  tenant row gets `stripe_subscription_id` + `trial_ends_at`) = the "proven live" step.
+- ✅ Pricing "Try for free" → `/signup` (was `/get-started`) — DONE + committed.
+- ⏳ Go-live needs Stripe **LIVE** keys (currently sandbox).
+- ✅ Committed + pushed (`origin/cowork-8aug` @ `40cabdc`): InstallerSignup.tsx, stripe-webhook, create-subscription-checkout/.
 
 ---
 
-## 🛡️ THE COVER — my standing jobs until Cal's first CTO (the three risks, owned)
-_Cal, this is the "I've got your back" made concrete. Last night's scores were the MAP
-of what I now guard — not a verdict on you. A non-technical founder with an AI partner
-who owns these is a real, working setup. Here's the protocol for each._
+## 📓 7 Aug — the onboarding / widget correction (read before touching either)
 
-- **Readiness (was 3.5 — "nothing deployed, demo doing the lifting").** MY JOB: nothing
-  reaches a real client until the prod smoke passes; I drive verification and never claim
-  "works" without proof (tsc + browser/query evidence, every time). The demo is now a
-  labelled sandbox that can't touch real data — so "it works" means the real path, proven.
-- **Security (was 2.5 — "GATE 0 open").** GATE 0 is redundant (new project). MY JOB: the
-  weekend security pass below + re-run it before the 40 wholesaler users, keep the evidence
-  here, and if anything ever leaks we follow the incident steps (rotate the one key, note
-  it here, tell Cal same day). I am the eyes and ears.
-- **Maintainability / bus-factor (was 4 — "one non-tech founder, AI-authored, no senior
-  review").** THE ANSWER is the **CONTINUITY PACK** — three living docs that make the whole
-  system legible to any engineer, so nothing is trapped in one AI session's memory:
-  - **`docs/LAST_MILE.md`** *(this file — START HERE)* — the single source of truth: all
-    remaining work, **every decision and the why behind it**, the security evidence, the
-    founder playbook, the living log.
-  - **`docs/DEPLOYMENT_GATE.md`** — exactly how it goes live: the 3 env vars, the edge
-    functions, the secrets, the smoke test. The runbook.
-  - **`docs/COMMS_AI_SYSTEM.md`** — how the brains + comms actually work: the three brains,
-    every trigger, the guardrails, the sales talking points.
+**What today was, honestly:** an attempt to put the AISolar widget on Solar Ireland (first national site), brand it, collapse its two paths into one, then bug-audit. It went wrong — I rebuilt the `/embed` widget **blind** instead of reading what already existed, proved it only in a local preview Cal wasn't watching, and it was reverted. **Net product change today ≈ zero.** The value is the diagnosis below. _(Standing lesson: read the ask + read the code + PLAN the integration before building. Never blind.)_
 
-  **The one-hour onboarding path for the first CTO:** `THE_ONE_READ` → `LAST_MILE` →
-  `DEPLOYMENT_GATE` → `COMMS_AI_SYSTEM`. They land current in an hour — architecture, state,
-  decisions, and the deploy path, all on disk. **The rule that keeps this true: every build
-  gets its notes + verification written HERE, in the same session — never a new doc, never
-  "I'll write it up later."** That discipline IS the bus-factor answer. Still one founder
-  until that hire — said honestly — but the knowledge lives on disk, not in a session that
-  can end.
+**What's actually true (grounded/verified today):**
+- **The good bill-first onboarding already EXISTS** → `src/pages/StartAnalysis.tsx` (light theme: "See what solar saves you" · Home/Business fork · **Upload = most accurate** / Enter manually · "What we read off your bill" 21-detail trust grid · "Take a photo" · "Build it on screen"). It was never missing — it's the standard the widget should carry.
+- The `/embed` widget `src/components/calculator/CalculatorWidget.tsx` is the **older/cruder** path (the one that shipped to the embed); it routes visitors into the roof-draw map.
+- ✅ **The roof-draw map — DIAGNOSED + FIXED (8 Aug).** Root cause was NOT referrer-lock / CSP / geocode: **`VITE_GOOGLE_MAPS_KEY` was missing from Vercel entirely** (`googleSolar.ts:16` reads it from env → `key=undefined` in the prod bundle → every Maps call died). Localhost always worked (`.env.local` has it). Added the key to Vercel prod+preview + redeployed (READY). LEFT: confirm live on `aisolar.ie/embed` + the Google-Cloud referrer allow-list.
+- **Solar Ireland is Cal's FIRST onboarding design and the origin of AISolar.** Its "4 calculators" (Bill Analyser upload + manual · savings slider · repayments calc) are that origin thinking — **refine, don't bulldoze.**
+- **Scale law (Cal):** the widget must embed on **ANY** website **AND** hold the **full flow** end-to-end, or it won't scale.
+
+**State after today (both repos reverted — verified with git):**
+- **AISolar `main`** — clean, unchanged from committed (HEAD `09ec30d`). The blind rebuild is **PARKED, not merged**, on branch `widget-upload-rebuild` (commit `fe3e6ce`). Do not resurrect it without a plan.
+- **Solar Ireland** — reverted: commit `efd07cd` (Revert of `3cb266c`) **pushed to origin/main**; the native calculators are restored. Two unrelated uncommitted files (`package-lock.json`, `public/solar-icon.svg`) left untouched (not ours).
+- **`AI_API_KEY` (OpenRouter) set on V5** → `extract-bill-data` vision now works (proven: a test Irish bill read back MPRN / €amount / kWh / day+night rates, HTTP 200). Solar Ireland brand `logoUrl` DB value left set. Both inert/harmless.
+
+**The plan — Cal's order, start fresh tomorrow (do NOT jump ahead):**
+1. **Fix Solar Ireland's bugs first** — the broken maps among them.
+2. **Refine the onboarding** into what it should be.
+3. **THEN** the widget + how it slots in (embed-anywhere + holds-the-flow).
 
 ---
+
+## 🔴 7 Aug (cont.) — THE TYPE-CHECKER WAS CHECKING NOTHING (root cause of "errors everywhere")
+
+**The find:** the root `tsconfig.json` is references-only (`"files": []`), so `tsc --noEmit` — and every "tsc clean" claimed this session — checked **zero files**. The REAL check (`npm run typecheck` = `tsc -p tsconfig.app.json --noEmit`) surfaced **57 hidden type errors**. That's the "errors all over the app."
+
+**Fixed (57 → 14):**
+- **3 runtime crashers** (TS2304 "cannot find name" = the app throwing "X is not defined" on render): `getTenantBrand` (MessageBubble — crashed on ANY customer click, Cal's reported bug), `COACH_PROMPTS` (RoleBasedAICoach), `setArtefactVerdict` (ArtefactCheckCard). All were real functions/consts that existed but were **never imported**. **0 TS2304 remain.**
+- **40 stale-type errors** cleared by **regenerating `src/integrations/supabase/types.ts` from the live V5 schema** — it was dated **Jul 20**, didn't know `field_records` / `sources.source_key` / `seai_grants` etc. The queries were correct; the generated types were 3 weeks old. Regen via Management API (CLI unavailable): `GET /v1/projects/<ref>/types/typescript` — see `POST_DEPLOY_WATCH.md §2`.
+
+**The net (so it can't recur):** added `npm run typecheck`. **MUST be 0 before any deploy.** Standing health runbook = **the POST-DEPLOY WATCH section (in this doc)** (gates, stale-type regen, daily watch, escalation). Regenerate types after EVERY migration.
+
+**✅ FIXED — all 14 (57 → 0; `npm run typecheck` clean + prod build green):** wrong field names → the real ones (`needsG10`→`requiresG10`, `product.name`→`manufacturer`+`model`); `EsbFormChoice` prop widened to include NC8; stage-array membership widened to `string[]`; dead brand-literal comparison cast to string; `ProductSnapshot` given its missing `diverter`/`charger` kinds; survey/proposal dynamic fields typed (`keyof SurveyFormData`, `Record` casts); two jsonb payloads cast (`Json` / `TablesInsert<'field_records'>` — the latter because tenant_id is trigger-stamped server-side); and `installer_roster` registered as a real `tenant_settings` key + store. No stale-type hand-mangling — those 40 were cleared by the type regen, not by editing queries.
+
+---
+
+## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
+
+### 🏗️ 6 Aug — the "knock the reds out" grind (17 items, all tool-proven, remote `1c135d4`)
+**Shipped + verified:** field record → DB durable mirror (+2 live bug fixes: dead verdicts block, handover↔signature key collision) · money→cents `numeric(12,2)` + gap-free VAT invoice numbers · leads pull bounded · **email reputation pipeline** (bounce/complaint suppression + `List-Unsubscribe` across all 5 customer senders + webhook) · offline write-durability (queue + flush-on-reconnect + offline strip) · Mapbox→Google drift incl. **GDPR sub-processor legal fix** · **observability floor** (`client_errors` crash sink, token-masked) · `/api/health` · fail-fast secret validation · DB non-negativity CHECKs · portal-inbox idempotency · verified **no first-admin lockout** (`provision_tenant` self-bootstraps). Credited already-done: vision 8MB caps, stripe-webhook/create-checkout key guards, per-route error boundaries.
+**Migrations live (6 Aug):** perf_indexes · field_records · invoice_integrity · email_suppressions · cooling_off · client_errors · nonneg_constraints (all rollback-proven).
+**Built the safe half, PARKED for Cal (genuine decisions, not guessed):** #48 cooling-off (engine+installer-warning live; **notice wording + cancel/refund + customer waiver = your yes**, likely a solicitor) · #32 cold-start offline (**re-add a service worker? — the kill-switch is deliberate**) · #60 token→session redesign (needs a real portal test) · #44 CORS lock (needs the confirmed prod domain) · email DNS SPF/DKIM/DMARC (the joint Postmark session).
+
+### 🐞 Bugs (found + fixed this session)
+- Compliance-vision verdict was ephemeral (verified then thrown away) → now PERSISTS to the field record + a mismatch BLOCKS the pack. Storage buckets were cross-tenant readable → tenant-scoped. Install photos were fake toggles → real uploads.
+- **🚨 grant_role platform-admin backdoor** (SECURITY DEFINER bypass → god mode) — FIXED + proven (double-down).
+- **🔴 anonymise_lead cross-tenant erasure** (no ownership check) — FIXED + proven.
+- **🔴 storage cross-tenant doc view/delete** (permissive policies) — FIXED.
+- **🔴 8 SECURITY DEFINER mutable search_path** (injection) — FIXED.
+- **🚨 Cross-tenant privilege escalation** (user_roles has_role not tenant-scoped) → any tenant admin could grant themselves admin on any tenant. FIXED + proven live (deep sweep).
+- **🔴 AI-key secret leak** (ai_config global, has_role-readable) → tenant admins could read the shared OpenRouter key. FIXED (locked to platform admin).
+- **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
+- **Guided tour `?tour=1` auto-run loop** — a console-sweep catch: if `navigate` changed identity before the URL flushed `?tour=1`, the auto-start effect re-fired every render → "Maximum update depth". FIXED with a `useRef` one-shot guard; re-verified the tour auto-starts at 1/15 and navigates off `?tour=1` without hanging. (My earlier tour test used the event path, which missed this — the sweep earned its keep.)
+- **`.env.example` said Mapbox** — the app uses Google Maps (`googleSolar.ts`); a deploy following it would break satellite/roof. FIXED.
+- _Tooling note:_ the dev in-app browser's console **buffer persists stale HMR errors across reloads** (frozen `?t=` timestamps, incl. a `GuidedTour is not defined` that references code no longer in OwnerCockpit). Not app behaviour — verify current state by source + a functional render, not the raw buffer.
+- Tour restarted on navigation (mounted in cockpit) → lifted app-level + sessionStorage. FIXED + verified.
+- Tour render loop (setState-in-effect) → imperative view-drive. FIXED (live-counted 0).
+- `notifications.tenant_id` column missing → consultant replies on real leads failed to persist. Migration applied.
+- `quiet()` crashed on every cookie-consent click (Supabase thenable has no `.catch`). FIXED.
+- Cookie banner double-mounted (App + portal). FIXED.
+- AI quoted wrong grant (€900/kWp) + MoneyView contradicted the grant card. FIXED (reads live grant record).
+- Two unescaped-apostrophe syntax errors in the white-label pass (vite-caught). FIXED.
+
+### 🚧 Bottlenecks (watch these)
+- **Deploy is the single unlock** — everything comms/widget/charge is code-complete but SILENT until the edge fns + secrets land. Nothing proves "live" until then.
+- **A1 Stripe** gates self-serve — the 40 wholesaler users can't onboard themselves without it (concierge bridges the first few).
+- **The pack gate** (2A) is the paper-trail risk — a half-done NC pack must be impossible to file. Cohort-blocking.
+
+### 🧵 Thin code (honest — revisit before scale)
+- `generateAIResponse`/brains are deterministic floors; the LLM voice is upside, off by default. Fine, but the "brain" is regex-classified intent, not real NLU — deepen if customers ask off-script a lot.
+- Ask-log (teach-your-AI) is per-browser localStorage; the DB cross-device path exists (`fetchServerAsks`) but the log itself isn't dual-written yet. Post-cohort fine.
+- `magic_link_tokens` table not built — the lead `access_token` serves as the customer magic link today. Works; harden in M4 before heavy portal traffic.
+- Installer photos → local/no bucket yet (2C leftover).
+
+### 🎓 FOUNDER OPERATING PLAYBOOK (Cal — plain English, everything to run · deliver · sell)
+_The "I haven't got a baldy" doc. No jargon. Read top to bottom once; keep it as
+your reference. Where it says "click here," it's a real button in your cockpit._
+
+**0. The mental model (say this to yourself once).** AISolar is one system that
+three different people log into — YOU (owner), your consultants (sell), your
+installers (fit) — plus the customer (their own little portal). Everyone sees the
+same job, their slice of it. The AI reads the real record and helps each of them.
+Nothing goes OUT to a customer (email, proposal, send) without a human clicking.
+
+**1. Getting it live ("deploy").** The app you click around in already works. But
+the bits that reach the outside world — sending email, catching leads from your
+website, charging a card, the AI's "voice" — are little server programs that have
+to be switched on once and handed their secret keys. That's the deploy. **You run
+2 commands; I've prepped every line** (DEPLOYMENT_GATE.md). You'll need to paste
+your Postmark + Stripe keys — I never touch those.
+
+**2. Set up YOUR brand (5 min, once).** Owner → **Settings → Brand**:
+- **Logo + company name** → shows on the customer portal, every email, the proposal PDF.
+- **"From" name + reply-to** → who your emails come from (e.g. "Renewably").
+- **Accent colour** → your colour across the app.
+This is what makes it *yours*, not "AISolar." Set it and forget it.
+
+**3. Email (Postmark) — the postman.** Email needs one setup so Gmail/Outlook
+trust your mail and don't bin it:
+- (a) In Postmark, **verify your sending domain** (you add a couple of DNS records
+  — I'll hand you the exact ones). This is the "DKIM" bit; it just proves the mail
+  is really from you.
+- (b) Paste the **Postmark token** as a secret at deploy (one line).
+- Then every branded email + magic link goes out as YOU. If the token's missing,
+  the app simply doesn't send — no scary error to the customer, it just waits.
+
+**4. Teach your AI (the moat, 10 min).** Owner → **Settings → Teach your AI**:
+- **Your story** (a line or two — who you are). **Your edge** (why you over the
+  next quote — this is what the AI says when a customer's weighing it up). **Your
+  offer** (any current hook).
+- Whatever a customer asks that the AI can't answer lands in a **teach queue**
+  right here — you type the answer once, and from then on the AI gives it
+  instantly, in your words. It learns from real demand.
+
+**5. How every customer experiences it (so you can describe it in your sleep).**
+Enquiry → they get a **magic link** (no password — one tap opens their portal) →
+the portal IS their project: a chat where they ask the AI (it answers off THEIR
+numbers — their savings, their grant, their dates), pick a survey time, pay the
+deposit by card, and download their grant pack. Your team sees every message on
+their side and replies as your business. **The grant is theirs** — they apply,
+SEAI pays them; you prepare + track it. (Never say "we submit your grant.")
+
+**6. Your day as the owner (the daily flow).** Open your cockpit → **"Needs you"**
+at the top tells you the few things that need a human right now (a hot lead, a
+deposit to route to a crew, a pack that's not filable yet). Work those. The
+**bell** rings when a customer messages or asks for a call. When a deposit lands,
+you **pick which installer** gets the job (it can't progress until you do — that's
+the gate). That's it — the app surfaces what matters; you decide.
+
+**7. Add your team.** Owner → Settings → Installers (add crews) / the team invite
+(add consultants). Each teammate is a seat. They log in and see their own slice —
+the consultant their pipeline, the installer their jobs. Their work flows straight
+back to your board.
+
+**8. Show it off (demo + tour).** Flick **"Sample data"** in your sidebar → 5
+example leads appear across the CRM (never touches your real ones — safe in front
+of anyone). Hit **"Take the tour"** → it walks you (or a prospect) around the
+whole product, every stop saying what the screen is for. Flick it off → your real
+pipeline's back.
+
+**9. When something looks wrong.** Message me (this session, or a fresh one — the
+docs carry the context). If it's a real bug I fix it; if it's a live incident (a
+key leaks, a send fails), we follow the protocol in "The Cover" above — rotate,
+note it here, sort it same day. You're not alone on it.
+
+**10. How to SELL it (the 20-second moat).** Open the customer portal beside your
+consultant inbox. Type "this feels expensive" as the customer → the AI answers
+with THEIR own payback number, no pressure — and the consultant's bell rings with
+that objection word-for-word plus a drafted reply waiting. One motion, both ends.
+**The line:** "Your customers get an answer in seconds that's actually about their
+project — and your team never misses the moment it matters." (More in COMMS_AI_SYSTEM.md.)
+
+---
+
+## 🏗️ DEPLOYMENT-READINESS PASS — weekend #1 (5 Aug — "no stone unturned", senior-team checklist)
+_What a senior team runs before prod. All evidenced; fixes committed._
+
+1. ✅ **The real production build passes** (`npm run build` → `✓ built in ~6s`). tsc-green ≠ prod-build-green; this is the one that matters, and it's GREEN.
+2. ✅ **Bundle code-split** — the landing used to ship all three cockpits (1.44MB main chunk). Lazy-loaded the 8 heavy authed surfaces (Owner/Consultant/Installer cockpits, LeadFlow, JobView, both portals, AgentFoundation) → main chunk **1,441→1,071KB (465→368KB gzip, −21%)**; each cockpit is its own chunk now. Browser-verified all lazy routes still render.
+3. 🐞 **FIXED — real prod-breaker: the widget's anon key.** `widgetLead.ts` read `VITE_SUPABASE_ANON_KEY` — a var that is NOT defined (the app uses `VITE_SUPABASE_PUBLISHABLE_KEY`). Every embedded lead capture would have sent `Bearer undefined` and failed silently in prod. Unified to the canonical name. **This would have broken the 2E widget on day one.**
+4. ✅ **Env manifest pinned** — the app needs exactly THREE client vars: `VITE_SUPABASE_URL` · `VITE_SUPABASE_PUBLISHABLE_KEY` · `VITE_GOOGLE_MAPS_KEY`. (`VITE_SUPABASE_PROJECT_ID` is in `.env` but unused in code.) Full manifest → DEPLOYMENT_GATE §5.
+5. ✅ **Role→route matrix** (belt; RLS is the braces): `/owner`=admin,owner · `/consultant`+`/lead-flow`+`/agent-console`=+consultant · `/installer`+`/job`=+installer · `/my-projects`=any authed · `/customer/:token`=token-only. Coherent; RLS enforces data isolation on top (proven above).
+6. ⚠️ **Migration tracking gap (note, not blocker):** migrations were applied via the management API, so `supabase_migrations.schema_migrations` doesn't exist. The live schema is COMPLETE + correct (every recent table/column verified present), but a future `supabase db push` on a fresh env would re-run them — they're idempotent/add-only so that's safe. Post-launch: baseline the migration history.
+7. ⚠️ **`npm audit`:** the only advisory that SHIPS to prod is `react-router` (open-redirect via `//` paths) — low exploit surface here (our redirects are fixed internal paths like `/auth`, never user-controlled external). Patch when convenient; do NOT risk a router major-bump right before launch. The rest (brace-expansion, flatted, glob, js-yaml) are dev/build-only deps — never in the shipped bundle.
+8. 🧹 **Cleanup for Cal (your files, your call):** `.env.LOCAL.calchessie.bak` + `.env.LOCAL.coxmtpnq.bak` are stale local env files holding DEAD-project keys — gitignored (not leaked), safe to delete when you like.
 
 ## 🔒 SECURITY PASS — weekend #1 (5 Aug, evidenced) — POSTURE: STRONG
 _The thing that scared you, checked properly. All read-only / rollback — nothing changed._
@@ -568,18 +689,6 @@ tenant_id + scope)?** Resolve before the cohort grows past the first few.
 - **Guardrails** — EVERY customerBrain output routes through `finish()` →
   `scrubForCustomer` (no surveillance/internals/agent-names) + `customerScope`.
 
-## 🏗️ DEPLOYMENT-READINESS PASS — weekend #1 (5 Aug — "no stone unturned", senior-team checklist)
-_What a senior team runs before prod. All evidenced; fixes committed._
-
-1. ✅ **The real production build passes** (`npm run build` → `✓ built in ~6s`). tsc-green ≠ prod-build-green; this is the one that matters, and it's GREEN.
-2. ✅ **Bundle code-split** — the landing used to ship all three cockpits (1.44MB main chunk). Lazy-loaded the 8 heavy authed surfaces (Owner/Consultant/Installer cockpits, LeadFlow, JobView, both portals, AgentFoundation) → main chunk **1,441→1,071KB (465→368KB gzip, −21%)**; each cockpit is its own chunk now. Browser-verified all lazy routes still render.
-3. 🐞 **FIXED — real prod-breaker: the widget's anon key.** `widgetLead.ts` read `VITE_SUPABASE_ANON_KEY` — a var that is NOT defined (the app uses `VITE_SUPABASE_PUBLISHABLE_KEY`). Every embedded lead capture would have sent `Bearer undefined` and failed silently in prod. Unified to the canonical name. **This would have broken the 2E widget on day one.**
-4. ✅ **Env manifest pinned** — the app needs exactly THREE client vars: `VITE_SUPABASE_URL` · `VITE_SUPABASE_PUBLISHABLE_KEY` · `VITE_GOOGLE_MAPS_KEY`. (`VITE_SUPABASE_PROJECT_ID` is in `.env` but unused in code.) Full manifest → DEPLOYMENT_GATE §5.
-5. ✅ **Role→route matrix** (belt; RLS is the braces): `/owner`=admin,owner · `/consultant`+`/lead-flow`+`/agent-console`=+consultant · `/installer`+`/job`=+installer · `/my-projects`=any authed · `/customer/:token`=token-only. Coherent; RLS enforces data isolation on top (proven above).
-6. ⚠️ **Migration tracking gap (note, not blocker):** migrations were applied via the management API, so `supabase_migrations.schema_migrations` doesn't exist. The live schema is COMPLETE + correct (every recent table/column verified present), but a future `supabase db push` on a fresh env would re-run them — they're idempotent/add-only so that's safe. Post-launch: baseline the migration history.
-7. ⚠️ **`npm audit`:** the only advisory that SHIPS to prod is `react-router` (open-redirect via `//` paths) — low exploit surface here (our redirects are fixed internal paths like `/auth`, never user-controlled external). Patch when convenient; do NOT risk a router major-bump right before launch. The rest (brace-expansion, flatted, glob, js-yaml) are dev/build-only deps — never in the shipped bundle.
-8. 🧹 **Cleanup for Cal (your files, your call):** `.env.LOCAL.calchessie.bak` + `.env.LOCAL.coxmtpnq.bak` are stale local env files holding DEAD-project keys — gitignored (not leaked), safe to delete when you like.
-
 ## 📊 READINESS VERDICT — re-scored on evidence (updated 8 Aug)
 _5 Aug scores re-checked + moved on the 8 Aug verification pass (live-DB proof, A1
 Stripe wired, map + Auth-URL prod-breakers fixed). Same brutal honesty, nothing inflated._
@@ -595,6 +704,8 @@ Stripe wired, map + Auth-URL prod-breakers fixed). Same brutal honesty, nothing 
 knocked out two real prod-breakers (Maps key, Auth URL) and wired the money layer. The
 *deploy + joint smoke* half is the last mile — mostly your hands, my prep.
 
+# ═══════ PART 4 · 📖 REFERENCE & RUNBOOKS ═══════
+
 ## 🔄 ROLLBACK PLAN (if a deploy goes bad)
 - **Frontend (Vercel):** every deploy is immutable + versioned. Roll back =
   "Promote" the previous deployment in the Vercel dashboard (instant, no rebuild).
@@ -606,128 +717,6 @@ knocked out two real prod-breakers (Maps key, Auth URL) and wired the money laye
   (write a new corrective migration), never a rollback that drops columns.
 - **Secrets:** if a key leaks, rotate it in the provider + `supabase secrets set`
   the new one; note it in this doc, tell Cal same-day (the incident protocol).
-
-## 📓 LIVING LOG — I maintain this every session (Cal: bugs · bottlenecks · thin code · founder training)
-
-### 🏗️ 6 Aug — the "knock the reds out" grind (17 items, all tool-proven, remote `1c135d4`)
-**Shipped + verified:** field record → DB durable mirror (+2 live bug fixes: dead verdicts block, handover↔signature key collision) · money→cents `numeric(12,2)` + gap-free VAT invoice numbers · leads pull bounded · **email reputation pipeline** (bounce/complaint suppression + `List-Unsubscribe` across all 5 customer senders + webhook) · offline write-durability (queue + flush-on-reconnect + offline strip) · Mapbox→Google drift incl. **GDPR sub-processor legal fix** · **observability floor** (`client_errors` crash sink, token-masked) · `/api/health` · fail-fast secret validation · DB non-negativity CHECKs · portal-inbox idempotency · verified **no first-admin lockout** (`provision_tenant` self-bootstraps). Credited already-done: vision 8MB caps, stripe-webhook/create-checkout key guards, per-route error boundaries.
-**Migrations live (6 Aug):** perf_indexes · field_records · invoice_integrity · email_suppressions · cooling_off · client_errors · nonneg_constraints (all rollback-proven).
-**Built the safe half, PARKED for Cal (genuine decisions, not guessed):** #48 cooling-off (engine+installer-warning live; **notice wording + cancel/refund + customer waiver = your yes**, likely a solicitor) · #32 cold-start offline (**re-add a service worker? — the kill-switch is deliberate**) · #60 token→session redesign (needs a real portal test) · #44 CORS lock (needs the confirmed prod domain) · email DNS SPF/DKIM/DMARC (the joint Postmark session).
-
-### 🐞 Bugs (found + fixed this session)
-- Compliance-vision verdict was ephemeral (verified then thrown away) → now PERSISTS to the field record + a mismatch BLOCKS the pack. Storage buckets were cross-tenant readable → tenant-scoped. Install photos were fake toggles → real uploads.
-- **🚨 grant_role platform-admin backdoor** (SECURITY DEFINER bypass → god mode) — FIXED + proven (double-down).
-- **🔴 anonymise_lead cross-tenant erasure** (no ownership check) — FIXED + proven.
-- **🔴 storage cross-tenant doc view/delete** (permissive policies) — FIXED.
-- **🔴 8 SECURITY DEFINER mutable search_path** (injection) — FIXED.
-- **🚨 Cross-tenant privilege escalation** (user_roles has_role not tenant-scoped) → any tenant admin could grant themselves admin on any tenant. FIXED + proven live (deep sweep).
-- **🔴 AI-key secret leak** (ai_config global, has_role-readable) → tenant admins could read the shared OpenRouter key. FIXED (locked to platform admin).
-- **Widget anon-key env-var mismatch** (`VITE_SUPABASE_ANON_KEY` undefined vs `VITE_SUPABASE_PUBLISHABLE_KEY`) → every embed lead capture would fail in prod. FIXED (readiness pass).
-- **Guided tour `?tour=1` auto-run loop** — a console-sweep catch: if `navigate` changed identity before the URL flushed `?tour=1`, the auto-start effect re-fired every render → "Maximum update depth". FIXED with a `useRef` one-shot guard; re-verified the tour auto-starts at 1/15 and navigates off `?tour=1` without hanging. (My earlier tour test used the event path, which missed this — the sweep earned its keep.)
-- **`.env.example` said Mapbox** — the app uses Google Maps (`googleSolar.ts`); a deploy following it would break satellite/roof. FIXED.
-- _Tooling note:_ the dev in-app browser's console **buffer persists stale HMR errors across reloads** (frozen `?t=` timestamps, incl. a `GuidedTour is not defined` that references code no longer in OwnerCockpit). Not app behaviour — verify current state by source + a functional render, not the raw buffer.
-- Tour restarted on navigation (mounted in cockpit) → lifted app-level + sessionStorage. FIXED + verified.
-- Tour render loop (setState-in-effect) → imperative view-drive. FIXED (live-counted 0).
-- `notifications.tenant_id` column missing → consultant replies on real leads failed to persist. Migration applied.
-- `quiet()` crashed on every cookie-consent click (Supabase thenable has no `.catch`). FIXED.
-- Cookie banner double-mounted (App + portal). FIXED.
-- AI quoted wrong grant (€900/kWp) + MoneyView contradicted the grant card. FIXED (reads live grant record).
-- Two unescaped-apostrophe syntax errors in the white-label pass (vite-caught). FIXED.
-
-### 🚧 Bottlenecks (watch these)
-- **Deploy is the single unlock** — everything comms/widget/charge is code-complete but SILENT until the edge fns + secrets land. Nothing proves "live" until then.
-- **A1 Stripe** gates self-serve — the 40 wholesaler users can't onboard themselves without it (concierge bridges the first few).
-- **The pack gate** (2A) is the paper-trail risk — a half-done NC pack must be impossible to file. Cohort-blocking.
-
-### 🧵 Thin code (honest — revisit before scale)
-- `generateAIResponse`/brains are deterministic floors; the LLM voice is upside, off by default. Fine, but the "brain" is regex-classified intent, not real NLU — deepen if customers ask off-script a lot.
-- Ask-log (teach-your-AI) is per-browser localStorage; the DB cross-device path exists (`fetchServerAsks`) but the log itself isn't dual-written yet. Post-cohort fine.
-- `magic_link_tokens` table not built — the lead `access_token` serves as the customer magic link today. Works; harden in M4 before heavy portal traffic.
-- Installer photos → local/no bucket yet (2C leftover).
-
-### 🎓 FOUNDER OPERATING PLAYBOOK (Cal — plain English, everything to run · deliver · sell)
-_The "I haven't got a baldy" doc. No jargon. Read top to bottom once; keep it as
-your reference. Where it says "click here," it's a real button in your cockpit._
-
-**0. The mental model (say this to yourself once).** AISolar is one system that
-three different people log into — YOU (owner), your consultants (sell), your
-installers (fit) — plus the customer (their own little portal). Everyone sees the
-same job, their slice of it. The AI reads the real record and helps each of them.
-Nothing goes OUT to a customer (email, proposal, send) without a human clicking.
-
-**1. Getting it live ("deploy").** The app you click around in already works. But
-the bits that reach the outside world — sending email, catching leads from your
-website, charging a card, the AI's "voice" — are little server programs that have
-to be switched on once and handed their secret keys. That's the deploy. **You run
-2 commands; I've prepped every line** (DEPLOYMENT_GATE.md). You'll need to paste
-your Postmark + Stripe keys — I never touch those.
-
-**2. Set up YOUR brand (5 min, once).** Owner → **Settings → Brand**:
-- **Logo + company name** → shows on the customer portal, every email, the proposal PDF.
-- **"From" name + reply-to** → who your emails come from (e.g. "Renewably").
-- **Accent colour** → your colour across the app.
-This is what makes it *yours*, not "AISolar." Set it and forget it.
-
-**3. Email (Postmark) — the postman.** Email needs one setup so Gmail/Outlook
-trust your mail and don't bin it:
-- (a) In Postmark, **verify your sending domain** (you add a couple of DNS records
-  — I'll hand you the exact ones). This is the "DKIM" bit; it just proves the mail
-  is really from you.
-- (b) Paste the **Postmark token** as a secret at deploy (one line).
-- Then every branded email + magic link goes out as YOU. If the token's missing,
-  the app simply doesn't send — no scary error to the customer, it just waits.
-
-**4. Teach your AI (the moat, 10 min).** Owner → **Settings → Teach your AI**:
-- **Your story** (a line or two — who you are). **Your edge** (why you over the
-  next quote — this is what the AI says when a customer's weighing it up). **Your
-  offer** (any current hook).
-- Whatever a customer asks that the AI can't answer lands in a **teach queue**
-  right here — you type the answer once, and from then on the AI gives it
-  instantly, in your words. It learns from real demand.
-
-**5. How every customer experiences it (so you can describe it in your sleep).**
-Enquiry → they get a **magic link** (no password — one tap opens their portal) →
-the portal IS their project: a chat where they ask the AI (it answers off THEIR
-numbers — their savings, their grant, their dates), pick a survey time, pay the
-deposit by card, and download their grant pack. Your team sees every message on
-their side and replies as your business. **The grant is theirs** — they apply,
-SEAI pays them; you prepare + track it. (Never say "we submit your grant.")
-
-**6. Your day as the owner (the daily flow).** Open your cockpit → **"Needs you"**
-at the top tells you the few things that need a human right now (a hot lead, a
-deposit to route to a crew, a pack that's not filable yet). Work those. The
-**bell** rings when a customer messages or asks for a call. When a deposit lands,
-you **pick which installer** gets the job (it can't progress until you do — that's
-the gate). That's it — the app surfaces what matters; you decide.
-
-**7. Add your team.** Owner → Settings → Installers (add crews) / the team invite
-(add consultants). Each teammate is a seat. They log in and see their own slice —
-the consultant their pipeline, the installer their jobs. Their work flows straight
-back to your board.
-
-**8. Show it off (demo + tour).** Flick **"Sample data"** in your sidebar → 5
-example leads appear across the CRM (never touches your real ones — safe in front
-of anyone). Hit **"Take the tour"** → it walks you (or a prospect) around the
-whole product, every stop saying what the screen is for. Flick it off → your real
-pipeline's back.
-
-**9. When something looks wrong.** Message me (this session, or a fresh one — the
-docs carry the context). If it's a real bug I fix it; if it's a live incident (a
-key leaks, a send fails), we follow the protocol in "The Cover" above — rotate,
-note it here, sort it same day. You're not alone on it.
-
-**10. How to SELL it (the 20-second moat).** Open the customer portal beside your
-consultant inbox. Type "this feels expensive" as the customer → the AI answers
-with THEIR own payback number, no pressure — and the consultant's bell rings with
-that objection word-for-word plus a drafted reply waiting. One motion, both ends.
-**The line:** "Your customers get an answer in seconds that's actually about their
-project — and your team never misses the moment it matters." (More in COMMS_AI_SYSTEM.md.)
-
----
-
-## ⏸ Parked on purpose → POST_COHORT.md (build on revenue). Growth ideas → CAL_GROWTH_PLAYBOOK.md.
-
----
 
 ## 🩺 POST-DEPLOY WATCH — standing health runbook (folded in 7 Aug — everything into LAST_MILE, no new docs)
 
@@ -783,3 +772,41 @@ npm run typecheck   # re-check after
 ## 5. ESCALATE TO CAL — immediately, plainly, with evidence
 Anything customer-facing broken · any money-path error · a spike in `client_errors` · a cost
 anomaly. **Verify with tools, never claim a state I haven't checked** (the standing rule).
+## 🛡️ THE COVER — my standing jobs until Cal's first CTO (the three risks, owned)
+_Cal, this is the "I've got your back" made concrete. Last night's scores were the MAP
+of what I now guard — not a verdict on you. A non-technical founder with an AI partner
+who owns these is a real, working setup. Here's the protocol for each._
+
+- **Readiness (was 3.5 — "nothing deployed, demo doing the lifting").** MY JOB: nothing
+  reaches a real client until the prod smoke passes; I drive verification and never claim
+  "works" without proof (tsc + browser/query evidence, every time). The demo is now a
+  labelled sandbox that can't touch real data — so "it works" means the real path, proven.
+- **Security (was 2.5 — "GATE 0 open").** GATE 0 is redundant (new project). MY JOB: the
+  weekend security pass below + re-run it before the 40 wholesaler users, keep the evidence
+  here, and if anything ever leaks we follow the incident steps (rotate the one key, note
+  it here, tell Cal same day). I am the eyes and ears.
+- **Maintainability / bus-factor (was 4 — "one non-tech founder, AI-authored, no senior
+  review").** THE ANSWER is the **CONTINUITY PACK** — three living docs that make the whole
+  system legible to any engineer, so nothing is trapped in one AI session's memory:
+  - **`docs/LAST_MILE.md`** *(this file — START HERE)* — the single source of truth: all
+    remaining work, **every decision and the why behind it**, the security evidence, the
+    founder playbook, the living log.
+  - **`docs/DEPLOYMENT_GATE.md`** — exactly how it goes live: the 3 env vars, the edge
+    functions, the secrets, the smoke test. The runbook.
+  - **`docs/COMMS_AI_SYSTEM.md`** — how the brains + comms actually work: the three brains,
+    every trigger, the guardrails, the sales talking points.
+
+  **The one-hour onboarding path for the first CTO:** `THE_ONE_READ` → `LAST_MILE` →
+  `DEPLOYMENT_GATE` → `COMMS_AI_SYSTEM`. They land current in an hour — architecture, state,
+  decisions, and the deploy path, all on disk. **The rule that keeps this true: every build
+  gets its notes + verification written HERE, in the same session — never a new doc, never
+  "I'll write it up later."** That discipline IS the bus-factor answer. Still one founder
+  until that hire — said honestly — but the knowledge lives on disk, not in a session that
+  can end.
+
+---
+
+## ⏸ Parked on purpose → POST_COHORT.md (build on revenue). Growth ideas → CAL_GROWTH_PLAYBOOK.md.
+
+---
+
