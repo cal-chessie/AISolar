@@ -7,8 +7,9 @@
  * INSTALLER COPY throughout — the copy law: this is someone adopting the software
  * to run their business, NOT a homeowner getting a solar quote.
  *
- * Stripe card capture is the next slice; today the trial starts on signup and the
- * tenant provisions. Going live is gated on GATE 0 (key rotation).
+ * Card capture is wired: they pick a plan, the tenant provisions, then we hand off
+ * to Stripe Checkout (create-subscription-checkout) to take the card and start the
+ * 7-day trial — no charge until it ends. Going live is gated on GATE 0 (key rotation).
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,18 @@ import { Building2, Users, HardHat, Home, Search, MessageSquare, Calendar, Mail,
 import { supabase } from '@/integrations/supabase/client';
 import { provisionTenant } from '@/lib/tenant';
 import OnboardingFlow, { type OnboardingStep, type OnboardingAnswers } from '@/components/onboarding/OnboardingFlow';
+
+/** Hand off to Stripe Checkout (card capture + 7-day trial). Returns the URL, or null. */
+async function startCheckout(plan: string, tenantId: string | null): Promise<string | null> {
+  try {
+    const origin = window.location.origin;
+    const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+      body: { plan, billing: 'monthly', tenantId, successUrl: `${origin}/owner?welcome=1`, cancelUrl: `${origin}/owner?billing=skipped` },
+    });
+    if (error) { console.error('[signup] checkout', error.message); return null; }
+    return (data?.url as string) ?? null;
+  } catch (e) { console.error('[signup] checkout', e); return null; }
+}
 
 export default function InstallerSignup() {
   const navigate = useNavigate();
@@ -52,6 +65,15 @@ export default function InstallerSignup() {
       ],
     },
     {
+      kind: 'chip', id: 'plan', question: 'Pick your plan',
+      sub: 'Free for 7 days — no charge until then. Change or cancel anytime.',
+      options: [
+        { value: 'solo', label: 'Solo — €197/mo', sub: '1 seat · bill quotes + draw-your-roof calculator', icon: HardHat },
+        { value: 'team', label: 'AISolar — €497/mo', sub: '3 seats · the full installer OS + your branded lead engine', icon: Users },
+        { value: 'aiteam', label: 'AITeam — €997/mo', sub: '5 seats · ten agents on the admin + an AI Coach', icon: Building2 },
+      ],
+    },
+    {
       kind: 'input', id: 'account', question: 'Create your account', cta: 'Start my 7-day trial',
       sub: "You're the admin — you'll add your team after.",
       fields: [
@@ -66,15 +88,18 @@ export default function InstallerSignup() {
     try {
       const { data, error } = await supabase.auth.signUp({ email: a.email, password: a.password });
       if (error) { setNotice(error.message); return; }
+      const plan = a.plan || 'team';
       if (data.session) {
-        // Authenticated immediately (email confirmation off) — the card-payer
-        // provisions their tenant now and lands in the owner cockpit.
-        await provisionTenant(a.company, a.county || null);
-        navigate('/owner');
+        // Authenticated immediately (email confirmation off) — provision the
+        // tenant, then hand off to Stripe to capture the card + start the trial.
+        const tenantId = await provisionTenant(a.company, a.county || null);
+        const url = await startCheckout(plan, tenantId);
+        if (url) { window.location.href = url; return; }
+        navigate('/owner'); // checkout unavailable → land in the app on trial anyway
       } else {
-        // Email confirmation required — stash the pending tenant so it provisions
-        // on first authenticated load, and tell them to confirm.
-        try { localStorage.setItem('aisolar_pending_tenant', JSON.stringify({ company: a.company, county: a.county || null })); } catch { /* ignore */ }
+        // Email confirmation required — stash the pending tenant + plan so it
+        // provisions + prompts for the card on first authenticated load.
+        try { localStorage.setItem('aisolar_pending_tenant', JSON.stringify({ company: a.company, county: a.county || null, plan })); } catch { /* ignore */ }
         setNotice('confirm-email');
       }
     } finally { setBusy(false); }

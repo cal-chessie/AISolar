@@ -48,6 +48,33 @@ serve(async (req) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // A1 SaaS subscription (mode:subscription) — stamp the tenant, then done.
+      // Deposits/final payments are invoice-based (handled below); the SaaS
+      // subscription carries tenant_id/user_id metadata instead.
+      if (session.mode === "subscription" || session.metadata?.tenant_id) {
+        const tenantId = session.metadata?.tenant_id;
+        const customerId = typeof session.customer === "string" ? session.customer : (session.customer as any)?.id ?? null;
+        const subscriptionId = typeof session.subscription === "string" ? session.subscription : (session.subscription as any)?.id ?? null;
+        let trialEndsAt: string | null = null;
+        try {
+          if (subscriptionId) {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
+          }
+        } catch (e) { log(FN, "warn", "subscription retrieve failed", { error: String(e) }); }
+        if (tenantId) {
+          const { error } = await supabase.from("tenants").update({
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            trial_ends_at: trialEndsAt,
+          }).eq("id", tenantId);
+          if (error) log(FN, "error", "tenant subscription stamp failed", { tenantId, error: error.message });
+          else log(FN, "info", "tenant subscription stamped", { tenantId, subscriptionId });
+        }
+        return new Response(JSON.stringify({ received: true }), { headers: { ...headers, "Content-Type": "application/json" } });
+      }
+
     const { invoice_id, payment_type } = session.metadata || {};
 
     if (!invoice_id || !payment_type) {
@@ -205,6 +232,29 @@ serve(async (req) => {
       throw new HttpError(500, error.message);
     }
   }
+
+    // A1: keep the tenant's subscription/trial in sync with Stripe-side changes.
+    if (event.type === "customer.subscription.updated") {
+      const sub = event.data.object as Stripe.Subscription;
+      const tenantId = sub.metadata?.tenant_id;
+      if (tenantId) {
+        await supabase.from("tenants").update({
+          stripe_subscription_id: sub.id,
+          trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+        }).eq("id", tenantId);
+        log(FN, "info", "tenant subscription updated", { tenantId, status: sub.status });
+      }
+      return new Response(JSON.stringify({ received: true }), { headers: { ...headers, "Content-Type": "application/json" } });
+    }
+    if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object as Stripe.Subscription;
+      const tenantId = sub.metadata?.tenant_id;
+      if (tenantId) {
+        await supabase.from("tenants").update({ stripe_subscription_id: null }).eq("id", tenantId);
+        log(FN, "info", "tenant subscription cancelled", { tenantId });
+      }
+      return new Response(JSON.stringify({ received: true }), { headers: { ...headers, "Content-Type": "application/json" } });
+    }
 
   // Return success for unhandled events
   return new Response(JSON.stringify({ received: true }), {
