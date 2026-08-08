@@ -145,7 +145,6 @@ function AppRoutes() {
 
           {/* Auth + Onboarding */}
           <Route path="/auth" element={wrap(<AuthPage />)} />
-          <Route path="/get-started" element={wrap(<AuthPage />)} />
           {/* A1 — the AISolar-site door: installer signup (provisions a tenant) vs
               property estimate. INSTALLER copy; card-payer becomes admin. */}
           <Route path="/signup" element={wrap(<InstallerSignup />)} />

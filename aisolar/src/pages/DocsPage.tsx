@@ -13,7 +13,7 @@ const SECTIONS = [
     head: 'Get started', icon: Rocket,
     items: [
       { label: 'Run a free bill analysis', desc: 'Upload a bill, get the 21-point estimate, book the call.', to: '/start' },
-      { label: 'Create your workspace', desc: 'Google or email. Owner, sales or field role.', to: '/get-started' },
+      { label: 'Create your workspace', desc: 'Google or email. Owner, sales or field role.', to: '/signup' },
       { label: 'Take the tour', desc: 'Every view, guided, on demo data — nothing breaks.', to: '/owner?tour=1' },
     ],
   },

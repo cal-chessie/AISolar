@@ -32,7 +32,7 @@ function CtaPair({ light }: { light?: boolean }) {
         className={`inline-flex h-10 items-center gap-2 rounded-panel px-4 text-sm font-semibold transition-opacity hover:opacity-90 ${light ? 'bg-background text-foreground' : 'bg-primary text-primary-foreground'}`}>
         Talk to us <ArrowRight className="size-4" />
       </a>
-      <Link to="/get-started"
+      <Link to="/signup"
         className={`inline-flex h-10 items-center gap-2 rounded-panel px-4 text-sm font-semibold transition-colors ${light ? 'border border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10' : 'bg-card shadow-card hover:bg-muted'}`}>
         Get started <ArrowRight className="size-4" />
       </Link>
@@ -194,7 +194,7 @@ export default function AiosPage() {
                   CTAs side by side like every other page. */}
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <GoogleAuthButton label="Continue with Google" className="sm:w-auto sm:px-5" />
-                <Link to="/get-started"
+                <Link to="/signup"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
                   Get started with email <ArrowRight className="size-4" />
                 </Link>
@@ -357,7 +357,7 @@ export default function AiosPage() {
                   ))}
                 </ul>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-tech px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                  <Link to="/signup" className="inline-flex h-11 items-center gap-2 rounded-panel bg-tech px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                     Run your pipeline on AISales <ArrowRight className="size-4" />
                   </Link>
                   <Link to="/aisolar" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">

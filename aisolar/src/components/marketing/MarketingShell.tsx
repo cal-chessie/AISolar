@@ -33,9 +33,9 @@ const MARK: Record<ProductKey, (p: { className?: string }) => JSX.Element> = {
 };
 
 const PRODUCT = {
-  aisolar: { name: 'AISolar', home: '/aisolar', cta: { label: 'Get started', to: '/get-started' } },
+  aisolar: { name: 'AISolar', home: '/aisolar', cta: { label: 'Get started', to: '/signup' } },
   aios:    { name: 'AIOS',    home: '/',        cta: { label: 'Talk to us', to: '/auth' } },
-  aiteam:  { name: 'AITeam',  home: '/aiteam',  cta: { label: 'Get early access', to: '/get-started' } },
+  aiteam:  { name: 'AITeam',  home: '/aiteam',  cta: { label: 'Get early access', to: '/signup' } },
 } as const;
 
 // Cross-product nav — same on every page so the family is always one click away.

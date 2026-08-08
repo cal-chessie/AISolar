@@ -127,7 +127,7 @@ export default function AiTeamPageV2() {
               {/* Cal: CTAs beside each other, AITeam family green. Also fixes
                   the "See it working" link — it pointed at the AIOS homepage. */}
               <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                <Link to="/signup" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                   Get early access <ArrowRight className="size-4" />
                 </Link>
                 <Link to="/aisolar" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
@@ -299,7 +299,7 @@ export default function AiTeamPageV2() {
                   ))}
                 </ul>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                  <Link to="/signup" className="inline-flex h-11 items-center gap-2 rounded-panel bg-doc-deposit px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                     Give your customers AIChat <ArrowRight className="size-4" />
                   </Link>
                   <Link to="/my-projects" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
@@ -366,7 +366,7 @@ export default function AiTeamPageV2() {
             </p>
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
               {/* AITeam's page colour: the deposit green */}
-              <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
+              <Link to="/signup" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-doc-deposit text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
                 Request early access <ArrowRight className="size-4" />
               </Link>
               <a href={CAL_LINK} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors">

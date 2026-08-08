@@ -132,7 +132,7 @@ function Hero() {
             crews install. The platform runs the rest.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 sm:max-w-md">
-            <Link to="/get-started" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
+            <Link to="/signup" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors duration-instant">
               Get started <ArrowRight className="size-4" />
             </Link>
             <Link to="/start" className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors duration-instant">
@@ -382,7 +382,7 @@ function AISalesShowcase() {
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
+              <Link to="/signup" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
                 Put your closers on AISales <ArrowRight className="size-4" />
               </Link>
               <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
@@ -489,7 +489,7 @@ function AIFieldShowcase() {
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/get-started" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
+              <Link to="/signup" className="inline-flex h-11 items-center gap-2 rounded-panel bg-pop px-5 text-sm font-semibold text-pop-foreground hover:bg-pop/90 transition-colors">
                 Put your crew on AIField <ArrowRight className="size-4" />
               </Link>
               <Link to="/pricing" className="inline-flex h-11 items-center gap-2 rounded-panel bg-card px-5 text-sm font-semibold shadow-card hover:bg-muted transition-colors">
@@ -517,7 +517,7 @@ function FinalCTA() {
         </p>
         <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
           {/* AISolar's page colour: the pop red */}
-          <Link to="/get-started" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
+          <Link to="/signup" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel bg-pop text-white px-6 text-sm font-semibold hover:opacity-90 transition-opacity duration-instant">
             Get started <ArrowRight className="size-4" />
           </Link>
           <Link to="/start" className="inline-flex h-11 items-center justify-center gap-2 rounded-panel border border-primary-foreground/25 px-6 text-sm font-semibold hover:bg-primary-foreground/10 transition-colors duration-instant">
