@@ -377,6 +377,12 @@ sandbox (`acct_1Sf4Bf…`); real money is NOT live yet.
   `constructEventAsync` (commit `5fad3d2`). Webhook endpoint recreated as `we_1U2B2A…`, `STRIPE_WEBHOOK_SECRET` reset.
 - ✅ Pricing "Try for free" → `/signup` (was `/get-started`) — DONE + committed.
 - ⏳ Go-live needs Stripe **LIVE** keys (currently sandbox).
+- ✅ **DECISION (Cal, 8 Aug): this Stripe account = AISolar SaaS subscriptions ONLY.** Installer→homeowner
+  deposit/final payments (physical goods + install service) are a SEPARATE, later feature via **Stripe
+  Connect** — so the homeowner's money lands in the *installer's* own account, not the platform's. Keeping
+  this account subscriptions-only is the clean launch move, not a compromise. Nothing to solve now.
+  NOTE: the live account being activated (bank/passport/tax) is SEPARATE from the "Solar Ireland sandbox"
+  the integration was tested against; go-live = activate the live account + swap `STRIPE_SECRET_KEY` to the live key.
 - ✅ Committed + pushed (`origin/cowork-8aug` @ `40cabdc`): InstallerSignup.tsx, stripe-webhook, create-subscription-checkout/.
 
 ---
