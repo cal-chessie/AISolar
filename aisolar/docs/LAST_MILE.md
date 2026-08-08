@@ -64,9 +64,14 @@ overturned a second agent's "reds list" on two points — noted below._
 - ⚠️ **A1 work + door consolidation UNCOMMITTED** (verified git status): `create-subscription-checkout/`,
   `stripe-webhook`, `InstallerSignup`, `App.tsx`, `AuthPage`, `MarketingShell`, `DocsPage`,
   `AISolarLanding`, `AiosPage`, `AiTeamPageV2`, docs. Commit on Cal's word.
-- ⚠️ **Solar Ireland `/embed` map** — chain is `/embed → CalculatorWidget → SolarCalculator →
-  RoofDesigner` (the file fixed in 63d56fe: Google/RoofImagery). Root cause fixed; **needs one
-  in-browser `/embed` test on a real address** to fully close before pointing SolarIrelandGroup at it.
+- 🟡 **Maps calculator — REAL cause found + staged (8 Aug).** `/embed` map WORKS on localhost
+  (tested: geocoded a Dublin address, Google found the roof, satellite rendered, estimate computed).
+  It was DEAD on `aisolar.ie` because **`VITE_GOOGLE_MAPS_KEY` was missing from Vercel entirely**
+  (`googleSolar.ts:16` reads it from env → `key=undefined` in the prod bundle). It was NOT referrer-lock
+  (earlier guess was wrong). **FIX STAGED: added the key to Vercel production+preview (8 Aug, verified).**
+  ⏳ Takes effect on the **next prod redeploy** (Vite inlines env at build time — the current live bundle
+  still has no key). Then confirm the key's HTTP-referrer allow-list in Google Cloud includes `aisolar.ie`
+  + `www.aisolar.ie` (your Google Cloud — 2 min, may already be set).
 
 ### 🟠 MINOR / KNOWN
 - 🟠 **`brands` is role-scoped, not tenant-scoped** — DELIBERATE (rls_floor_extension left it: "name/
@@ -82,8 +87,28 @@ overturned a second agent's "reds list" on two points — noted below._
 ### Cal's product calls (his, not mine): NC8 (>50kW appendix-only?) · statutory flags (ESB bands / typed
   e-sig / NDMG+ACA) · cooling-off wording.
 
-### The real last mile (all Cal-hands bar the smoke): Auth Site URL → aisolar.ie · PITR on · commit A1+door
-  · sites wiring · Maps referrer-lock (2 min) · joint prod smoke.
+### The real last mile: ✅ Auth Site URL → aisolar.ie (done) · ✅ A1+door committed (cowork-8aug) ·
+  **Maps: redeploy prod** (key now staged in Vercel) + confirm Google-Cloud referrer allow-list ·
+  PITR on (yours, paid) · sites wiring · joint prod smoke.
+
+---
+
+## 🟢 8 Aug — NC6/NC7 now files on the INVERTER + 2 NC6 demo leads (Cal signed off)
+
+**The fix (Cal 8 Aug — statutory sign-off given):** the ESB form choice was on the wrong yardstick.
+In `complianceDecision.ts`:
+- **Threshold** set to the real ESB rule — **≤5.75 kVA single / ≤11.04 kVA three-phase = NC6**
+  (was the 6/11 shorthand, which under-filed at 5.75–6.0 kW single-phase).
+- **Parse bug fixed:** `inverterAcKw()` missed SolaX space-format models (`'X1-Hybrid 5.0 G4'`) and
+  silently fell back to the panel kWp — i.e. it was deciding on the PANELS for those models, the exact
+  thing to avoid. Now it reads the inverter AC rating. Side effect (correct): scenario 3 (6.8 kWp on a
+  5 kW inverter) now files **NC6**, not NC7.
+- The decision runs on the INVERTER, never the array: **a 9 kWp array on a 5 kW inverter = NC6.**
+
+**2 new demo leads (`dummyData.ts`) — PROVEN NC6 by running the real parse+threshold:**
+- **NC6 small** — Niamh Byrne · 3.5 kWp / 3.6 kW inverter · proposal sent.
+- **NC6 large** — Declan Fitzgerald · **9 kWp array / 5 kW inverter** · approved (the oversized-DC case).
+Typecheck GREEN. Uncommitted (this batch): `complianceDecision.ts`, `dummyData.ts`.
 
 ---
 
@@ -171,10 +196,10 @@ _Scraped everything not-done out of FINAL_SPRINT into here, so there's ONE sourc
 of truth. FINAL_SPRINT is retired (its ✅ history stays as the record; the OPEN
 items are all below). Grouped by what it is + who owns it._
 
-### 🔴 A. Launch-blocking (must close before a real customer sees it)
-- **A1 · Stripe billing** — 7-day trial → per-seat subscription checkout + webhook. The auth/tenant foundation is live; this is the money layer. *(Fresh session — A1_BUILD_PLAN.md.)*
-- **⚠️ TRUTH-PASS VIOLATION — `brand.ts` placeholder stats** are on customer-facing pages TODAY (invented numbers). Replace with real or remove. Non-negotiable before live.
-- **L5 · white-label sweep** — every customer-facing "AISOLAR" → the tenant brand (the demo bubbles are done; sweep the marketing/proposal/email surfaces).
+### ✅ A. Launch-blocking — ALL THREE CLOSED (verified 8 Aug; see the top "🔬 FULL VERIFICATION PASS")
+- ✅ **A1 · Stripe billing** — DONE (test mode): checkout + webhook deployed, endpoint enabled, both secrets set. Open only for the e2e smoke + live-keys swap. Not a first-client blocker.
+- ✅ **`brand.ts` placeholder stats** — CLOSED. The whole invented-stats block ("2,500+ customers", "€3.2M saved", etc.) was **deleted 27 Jul** (verified by reading `brand.ts:71-82` — numbers gone, with a comment forbidding re-adding). No truth-pass violation in the file.
+- ✅ **L5 · white-label** — CLOSED for cohort 1. Customer proposal + portal render the tenant brand via `getTenantBrand`/`tb`; **no hardcoded "AISOLAR" on any customer surface** (the literals are all on AISolar's own pages). Residual (post-cohort-1): the proposal's legal-registration footer still reads `brand.legal` (AISolar's own) — fine while cohort 1 IS platform-owned; wire to the tenant's company-compliance before a non-AISolar tenant sends proposals.
 - **NC8 decision** (statutory-adjacent) — >50kW jobs get the data appendix only; calibrate the overlay OR say "appendix-only for NC8" honestly. **Cal decides.**
 
 ### ⚖️ B. STATUTORY FLAGS — **Cal's explicit yes required; never a quiet edit**
@@ -555,20 +580,20 @@ _What a senior team runs before prod. All evidenced; fixes committed._
 7. ⚠️ **`npm audit`:** the only advisory that SHIPS to prod is `react-router` (open-redirect via `//` paths) — low exploit surface here (our redirects are fixed internal paths like `/auth`, never user-controlled external). Patch when convenient; do NOT risk a router major-bump right before launch. The rest (brace-expansion, flatted, glob, js-yaml) are dev/build-only deps — never in the shipped bundle.
 8. 🧹 **Cleanup for Cal (your files, your call):** `.env.LOCAL.calchessie.bak` + `.env.LOCAL.coxmtpnq.bak` are stale local env files holding DEAD-project keys — gitignored (not leaked), safe to delete when you like.
 
-## 📊 READINESS VERDICT — re-scored on evidence (5 Aug, after the pass)
-_Last night's scores were pre-pass. Here's where they honestly sit now — same
-brutal honesty, new evidence. Nothing inflated._
+## 📊 READINESS VERDICT — re-scored on evidence (updated 8 Aug)
+_5 Aug scores re-checked + moved on the 8 Aug verification pass (live-DB proof, A1
+Stripe wired, map + Auth-URL prod-breakers fixed). Same brutal honesty, nothing inflated._
 
-| Dimension | Was | Now | Why it moved |
-|---|---|---|---|
-| **Craft / architecture** | 8.5 | **8.5** | Unchanged — it was always the strength. Prod build green, code-split, clean separation. |
-| **Security posture** | 2.5 | **~8**| GATE 0 redundant · tenant isolation PROVEN (reads AND writes) · a CRITICAL cross-tenant escalation + an AI-key leak FOUND & FIXED & re-proven · edge auth all-gated · no secrets in bundle. To-do: Maps-key referrer-lock. *(Legacy-global-tables: DECIDED — platform-owned for cohort 1.)* |
-| **Readiness** | 3.5 | **~6** | Real prod build GREEN + 3 real prod-breakers found & fixed (widget key, tour loop, env.example). Still needs the actual DEPLOY + the joint smoke to hit "proven live." |
-| **Maintainability / bus-factor** | 4 | **~6** | The docs are now the continuity: LAST_MILE + DEPLOYMENT_GATE + COMMS_AI_SYSTEM make a CTO current in an hour. Still one-founder until that hire — honest. |
+| Dimension | 1am | 5 Aug | 8 Aug | Why it moved (8 Aug) |
+|---|---|---|---|---|
+| **Craft / architecture** | 8.5 | 8.5 | **8.5** | Unchanged — always the strength. Prod build green, code-split; the one-door signup consolidation removed a redundant intake. |
+| **Security posture** | 2.5 | ~8 | **~8.5** | RLS floor + floor-extension RE-VERIFIED applied on the LIVE DB (pg_policies/pg_constraint) — the worst bleed (tenant_settings) is closed; the "5 loose tables" analysed (4 safe by design, `brands` a documented minor). The Maps issue turned out to be a missing env var (NOT a leak). Auth Site URL fixed. |
+| **Readiness** | 3.5 | ~6 | **~7** | A1 Stripe billing DONE (test) · the aisolar.ie **map prod-breaker** found (missing Vercel Maps key) + fixed + redeploy triggered · Auth Site URL → aisolar.ie · work committed (`cowork-8aug`). Still needs the e2e smoke + live keys to hit "proven live." |
+| **Maintainability / bus-factor** | 4 | ~6 | **~7** | The docs are now the continuity AND self-consistent: the 8 Aug verified ledger propagated across THE_ONE_READ / CAL_GATE_DECISIONS / GO_LIVE etc., stale "db push the two migrations" claims corrected. A CTO is current in an hour. Still one-founder until the hire — honest. |
 
-**The honest line:** the two scores that scared you (security 2.5, readiness 3.5)
-were "unproven + not deployed." The pass answered the *proof* half. The *deploy*
-half is Lane A — your hands, my prep. You're in materially better shape than 1am.
+**The honest line:** the 5 Aug pass answered the *proof* half of security + readiness; 8 Aug
+knocked out two real prod-breakers (Maps key, Auth URL) and wired the money layer. The
+*deploy + joint smoke* half is the last mile — mostly your hands, my prep.
 
 ## 🔄 ROLLBACK PLAN (if a deploy goes bad)
 - **Frontend (Vercel):** every deploy is immutable + versioned. Roll back =
