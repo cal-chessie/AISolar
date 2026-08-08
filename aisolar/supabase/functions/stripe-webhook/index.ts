@@ -34,7 +34,10 @@ serve(async (req) => {
     let event: Stripe.Event;
     try {
       // v3: Signature verification is mandatory. No fallback to JSON.parse.
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      // MUST be constructEventAsync in Deno — the sync version uses Node crypto and
+      // ALWAYS throws in Supabase edge functions (Deno's SubtleCrypto is async), which
+      // silently 400'd every webhook. (Found 8 Aug during the A1 smoke test.)
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err: any) {
       log(FN, "error", "Signature verification failed", { error: err.message });
       throw new HttpError(400, `Invalid signature: ${err.message}`);
